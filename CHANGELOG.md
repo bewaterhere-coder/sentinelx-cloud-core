@@ -3,6 +3,25 @@
 Notable changes to `sentinelx-cloud-core`. Human-readable, date-stamped
 entries; releases before 0.3.0 predate this file — see the git history.
 
+## 0.11.19 - Reconnect sooner, and not all at once - 2026-09-14
+
+- The backoff curve jumped 5 -> 30 seconds, so a momentary break on an
+  otherwise healthy path cost close to a minute offline: one second, a failed
+  handshake, five seconds, another failed handshake, thirty. For a host whose
+  connection drops every couple of minutes that is a quarter of its life spent
+  reconnecting. The early steps are now gentle (1, 2, 5, 10, 20) and the tail
+  stays long for the case the curve was written for, a hub that is genuinely
+  down and should not be hammered on the way back up.
+- Delays are now jittered. Every agent sees the same hub restart at the same
+  instant and used to wait the identical time, so roughly 1700 of them came
+  back in one spike, precisely while the hub was starting. Spreading each
+  delay over its own window turns that into a trickle.
+- The hub can now suggest when to come back, via `retry_after=<seconds>` in
+  the close reason. It knows what the agent cannot: how many are reconnecting
+  at once. The agent caps the value and ignores anything malformed -- a
+  suggestion, not an instruction, so a buggy or hostile hub cannot tell the
+  fleet to go quiet. Agents that do not understand the field ignore it.
+
 ## 0.11.18 - sudo no longer exempts an edit from the writable allowlist - 2026-09-08
 
 - `edit` treated `sudo=true` as an exemption from the file_ops rw check, on

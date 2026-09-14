@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import random
 import os
 import platform
 import shutil
@@ -46,8 +47,22 @@ from sentinelx_core.jobs import build_completed_event_data
 logger = logging.getLogger(__name__)
 
 
-# Reconnection backoff (seconds): inmediate, 1, 5, 30, 60, 120, 300...
-BACKOFF_SCHEDULE = [0, 1, 5, 30, 60, 120, 300]
+# Reconnect delays, in seconds. The early steps are deliberately gentle: the
+# common failure is a momentary break on an otherwise healthy path, where the
+# next attempt usually works and waiting buys nothing. The old curve jumped
+# 5 -> 30, so a host whose connection dropped spent close to a minute away
+# (1s, a failed handshake, 5s, another failed handshake, 30s) even though the
+# hub was up the whole time. The tail stays long for the case the curve was
+# written for: the hub genuinely being down, where hammering it on the way
+# back up is how a fleet of ours takes it out again.
+BACKOFF_SCHEDULE = [0, 1, 2, 5, 10, 20, 30, 60, 120, 300]
+
+# Cap on a hub-supplied retry hint. The hub knows things the agent cannot --
+# how many agents are reconnecting at once, whether it is mid-deploy -- so its
+# suggestion is worth following. It is a suggestion, though: a buggy or hostile
+# hub must not be able to tell the fleet to go quiet for a day, so the agent
+# decides the ceiling.
+MAX_RETRY_AFTER_SECONDS = 300
 
 
 def _read_text(path: str) -> str | None:
@@ -277,10 +292,21 @@ class HubClient:
     async def run(self) -> None:
         """Main loop: connect, handle messages, reconnect on failure."""
         attempt = 0
+        retry_hint: float | None = None
         while not self._stop.is_set():
-            wait = BACKOFF_SCHEDULE[min(attempt, len(BACKOFF_SCHEDULE) - 1)]
+            if retry_hint is not None:
+                wait = retry_hint
+                logger.info("reconnecting in %.0fs (hub asked us to wait)", wait)
+                retry_hint = None
+            else:
+                wait = apply_jitter(
+                    BACKOFF_SCHEDULE[min(attempt, len(BACKOFF_SCHEDULE) - 1)]
+                )
+                if wait > 0:
+                    logger.info(
+                        "reconnecting in %.1fs (attempt %d)", wait, attempt
+                    )
             if wait > 0:
-                logger.info("reconnecting in %ss (attempt %d)", wait, attempt)
                 try:
                     await asyncio.wait_for(self._stop.wait(), timeout=wait)
                     return  # stop signalled during wait
@@ -304,7 +330,13 @@ class HubClient:
                 # Otherwise a hub restart could leave an agent that already
                 # had a high attempt count waiting up to 300s to return.
                 if exc.code == 1012:
-                    logger.info("hub restarting (1012); reconnecting promptly")
+                    retry_hint = parse_retry_after(_close_reason(exc))
+                    logger.info(
+                        "hub restarting (1012); reconnecting %s",
+                        f"in {retry_hint:.0f}s as asked"
+                        if retry_hint is not None
+                        else "promptly",
+                    )
                     attempt = 0
                 elif exc.code == 1008:
                     # Policy rejection. The hub closes right after sending the
@@ -318,6 +350,7 @@ class HubClient:
                     attempt += 1
                 else:
                     logger.warning("connection closed (%s): %s", exc.code, exc)
+                    retry_hint = parse_retry_after(_close_reason(exc))
                     attempt = 1 if self._session_established else attempt + 1
             except Exception as exc:  # noqa: BLE001
                 logger.warning("connection failed: %s", exc)
@@ -641,6 +674,45 @@ def _close_reason(exc: ConnectionClosed) -> str:
         return str(exc.reason or "")
     except Exception:  # noqa: BLE001
         return ""
+
+
+def parse_retry_after(reason: str | None) -> float | None:
+    """Read a ``retry_after=<seconds>`` hint out of a close reason.
+
+    The hub appends it to the reason string (``hub_shutdown;retry_after=37``)
+    so that a fleet-wide reconnect can be spread deliberately instead of every
+    agent picking the same delay. Returns None when absent or unusable: a
+    malformed hint must fall back to the local schedule rather than break
+    reconnection.
+    """
+    if not reason:
+        return None
+    for part in str(reason).replace(",", ";").split(";"):
+        key, _, value = part.strip().partition("=")
+        if key.strip() != "retry_after":
+            continue
+        try:
+            seconds = float(value.strip())
+        except (TypeError, ValueError):
+            return None
+        if seconds != seconds or seconds in (float("inf"), float("-inf")):
+            return None  # NaN / infinity
+        return max(0.0, min(seconds, MAX_RETRY_AFTER_SECONDS))
+    return None
+
+
+def apply_jitter(wait: float) -> float:
+    """Spread a delay over its own window so agents stop retrying in lockstep.
+
+    Every agent sees the same hub restart at the same instant and, without
+    this, waits exactly the same time and comes back in one spike -- roughly
+    1700 of them, precisely while the hub is starting up. Full jitter over the
+    interval turns that into a steady trickle. Zero stays zero: the first
+    attempt after a clean disconnect should still be immediate.
+    """
+    if wait <= 0:
+        return 0.0
+    return random.uniform(0.0, wait)
 
 
 def _log_enrollment_rejected(detail: str) -> None:

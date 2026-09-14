@@ -6,6 +6,7 @@ import asyncio
 import gc
 import json
 import unittest
+from unittest import mock
 from datetime import UTC, datetime
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock, patch
@@ -14,6 +15,7 @@ from sentinelx_protocol import HEARTBEAT_INTERVAL_SECONDS, MAX_BINARY_FRAME_BYTE
 from websockets import frames
 from websockets.exceptions import ConnectionClosed
 
+import sentinelx_core.client as client_module
 from sentinelx_core.client import BACKOFF_SCHEDULE, HubClient
 
 
@@ -34,6 +36,25 @@ class HubClientReconnectTests(unittest.IsolatedAsyncioTestCase):
         self.client._stop = asyncio.Event()
         self.client._session_established = False
         self.client._background_tasks = set()
+        # These tests are about WHICH delay the loop picks -- escalating on
+        # repeated failure, resetting once a session was established, staying
+        # prompt after 1012 -- not about the spread applied to it afterwards.
+        # Jitter is exercised on its own in test_backoff_retry.py; here it
+        # would only make the expected values random.
+        self._no_jitter = mock.patch.object(client_module, "apply_jitter", lambda w: w)
+        self._no_jitter.start()
+        self.addCleanup(self._no_jitter.stop)
+
+    @staticmethod
+    def _expected(n: int) -> list[float]:
+        """The delays a run of ``n`` consecutive failures should produce.
+
+        Derived from the schedule rather than written out, so lengthening or
+        reshaping BACKOFF_SCHEDULE does not break tests whose subject is the
+        escalation logic.
+        """
+        last = len(BACKOFF_SCHEDULE) - 1
+        return [BACKOFF_SCHEDULE[min(i, last)] for i in range(1, n + 1)]
 
     async def _run_actions(self, actions: list[str]) -> list[float]:
         remaining = list(actions)
@@ -75,19 +96,25 @@ class HubClientReconnectTests(unittest.IsolatedAsyncioTestCase):
             ["pre_welcome_failure"] * 6 + ["established_1006", "stop"]
         )
 
-        self.assertEqual(delays, BACKOFF_SCHEDULE[1:] + [1])
+        # Six failures escalate; the established session then resets the
+        # counter, so the final delay is the first step again.
+        self.assertEqual(delays, self._expected(6) + [BACKOFF_SCHEDULE[1]])
 
     async def test_pre_welcome_failures_keep_escalating(self) -> None:
         delays = await self._run_actions(["pre_welcome_failure"] * 7 + ["stop"])
 
-        self.assertEqual(delays, BACKOFF_SCHEDULE[1:] + [BACKOFF_SCHEDULE[-1]])
+        # Seven failures before any welcome: each one waits longer than
+        # the last, and the curve tops out rather than growing forever.
+        self.assertEqual(delays, self._expected(7))
 
     async def test_1012_remains_prompt_after_old_failures(self) -> None:
         delays = await self._run_actions(
             ["pre_welcome_failure"] * 6 + ["established_1012", "stop"]
         )
 
-        self.assertEqual(delays, BACKOFF_SCHEDULE[1:])
+        # 1012 means the hub is coming straight back, so the accumulated
+        # backoff is discarded rather than carried into the restart.
+        self.assertEqual(delays, self._expected(6))
 
 
 class HubClientKeepaliveTests(unittest.IsolatedAsyncioTestCase):
