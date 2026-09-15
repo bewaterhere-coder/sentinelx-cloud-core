@@ -3,6 +3,19 @@
 Notable changes to `sentinelx-cloud-core`. Human-readable, date-stamped
 entries; releases before 0.3.0 predate this file — see the git history.
 
+## 0.12.0 — local_api — 2026-09-15
+
+- New `local_api` op: list, describe and call host-local endpoints that already
+  speak a structured protocol (core#45). Only hosts declaring `local_apis`
+  register it, so nothing changes for the rest of the fleet.
+- The action allowlist is the entire security boundary and is required; an
+  endpoint declaring none is not registered.
+- Actions declare their own field projection. Measured on a real host: 712
+  bytes of `docker ps` text, 20,340 raw, 1,811 projected.
+- Compatibility constraints are evaluated once per connection epoch and fail
+  closed. Never inferred from `new_version >= configured`.
+- Requires protocol 1.13.0.
+
 ## 0.11.19 - Reconnect sooner, and not all at once - 2026-09-14
 
 - The backoff curve jumped 5 -> 30 seconds, so a momentary break on an
