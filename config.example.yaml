@@ -1196,6 +1196,12 @@ file_ops:
 # │ That is a deliberate security decision, not a configuration detail. If it
 # │ is not acceptable on this host, leave the endpoint out. Without the group
 # │ the endpoint still loads and every call returns endpoint_unreachable.
+# │
+# │ TO UNDO IT: deleting this block does NOT remove the group membership. The
+# │ agent keeps root-equivalent reach over Docker until you take it away:
+# │
+# │   sudo gpasswd -d sentinelx docker
+# │   sudo systemctl restart sentinelx-cloud-core
 # └───────────────────────────────────────────────────────────────────────────
 #
 # TWO RULES WORTH UNDERSTANDING BEFORE WRITING YOUR OWN:
