@@ -134,8 +134,10 @@ def test_a_host_without_the_block_has_no_endpoints(tmp_path: Path) -> None:
 
 
 def test_the_compatibility_constraint_is_carried_verbatim(tmp_path: Path) -> None:
-    # The agent evaluates a DECLARED constraint and never infers compatibility
-    # from new_version >= configured_version.
+    # BOTH halves are declared: how to obtain the metadata, and which values are
+    # accepted. An earlier draft of this test only declared the second half,
+    # which is exactly the shape that now gets dropped, because a constraint
+    # with nothing to compare against cannot be evaluated.
     pol = _policy(
         """
         local_apis:
@@ -144,10 +146,171 @@ def test_the_compatibility_constraint_is_carried_verbatim(tmp_path: Path) -> Non
             path: /run/herdr.sock
             protocol: jsonrpc
             compatibility:
-              protocol: { exact: 20 }
+              probe:   { method: session.describe }
+              extract: protocol
+              accept:  { exact: 20 }
             actions:
               agent.list: { method: agent.list }
         """,
         tmp_path,
     )
-    assert pol.local_apis["herdr"].compatibility == {"protocol": {"exact": 20}}
+    assert pol.local_apis["herdr"].compatibility == {
+        "probe": {"method": "session.describe"},
+        "extract": "protocol",
+        "accept": {"exact": 20},
+    }
+
+
+# --- compatibility, per connection epoch (core#45) -------------------------
+#
+# The contract, in the requester's words: "the profile declares how to obtain
+# compatibility metadata and which values it accepts; SentinelX evaluates that
+# declared constraint." Both halves are declared, and SentinelX never infers
+# compatibility from `new_version >= configured`.
+
+
+class _FakeEndpoint:
+    """Endpoint whose probe answers whatever the test wants."""
+
+    def __init__(self, compatibility, reply, name="ep"):
+        self.name = name
+        self.protocol = "jsonrpc"
+        self.path = "/tmp/unused.sock"
+        self.timeout_s = 5
+        self.compatibility = compatibility
+        self.actions = {}
+        self._reply = reply
+
+
+@pytest.fixture(autouse=True)
+def _clear_verdicts():
+    from sentinelx_core import local_api
+
+    local_api._compat_verdicts.clear()
+    yield
+    local_api._compat_verdicts.clear()
+
+
+@pytest.fixture
+def probe(monkeypatch):
+    """Answer the probe without a socket, counting how often it is asked."""
+    from sentinelx_core import local_api
+
+    calls = {"n": 0}
+
+    async def fake(endpoint, action, params):
+        calls["n"] += 1
+        return endpoint._reply
+
+    monkeypatch.setattr(local_api, "call_jsonrpc", fake)
+    return calls
+
+
+_EXACT_20 = {
+    "probe": {"method": "session.describe"},
+    "extract": "protocol",
+    "accept": {"exact": 20},
+}
+
+
+async def test_a_matching_version_passes(probe) -> None:
+    from sentinelx_core.local_api import ensure_compatible
+
+    await ensure_compatible(_FakeEndpoint(_EXACT_20, {"protocol": 20}))
+
+
+async def test_a_newer_version_is_refused_not_assumed_compatible(probe) -> None:
+    # The whole point. A higher number does not imply the protocol matches, and
+    # assuming it would put that judgement with the wrong party.
+    from sentinelx_core.local_api import LocalApiError, ensure_compatible
+
+    with pytest.raises(LocalApiError) as exc:
+        await ensure_compatible(_FakeEndpoint(_EXACT_20, {"protocol": 21}))
+    assert exc.value.code == "compatibility_mismatch"
+
+
+async def test_allowed_is_how_a_maintainer_widens_it(probe) -> None:
+    from sentinelx_core.local_api import ensure_compatible
+
+    constraint = dict(_EXACT_20, accept={"allowed": [20, 21]})
+    await ensure_compatible(_FakeEndpoint(constraint, {"protocol": 21}))
+
+
+async def test_an_unreported_version_fails_closed(probe) -> None:
+    # Refusing beats assuming: an endpoint that will not say what it speaks has
+    # not demonstrated anything.
+    from sentinelx_core.local_api import LocalApiError, ensure_compatible
+
+    with pytest.raises(LocalApiError) as exc:
+        await ensure_compatible(_FakeEndpoint(_EXACT_20, {"name": "x"}))
+    assert exc.value.code == "compatibility_unknown"
+
+
+async def test_no_constraint_means_no_probe(probe) -> None:
+    from sentinelx_core.local_api import ensure_compatible
+
+    await ensure_compatible(_FakeEndpoint({}, {"protocol": 99}))
+    assert probe["n"] == 0
+
+
+async def test_the_probe_runs_once_per_epoch_not_once_per_call(probe) -> None:
+    # The reason for caching at all: a probe before every call pays a round trip
+    # for a guarantee it cannot give, since the endpoint can restart between the
+    # check and the call regardless.
+    from sentinelx_core.local_api import ensure_compatible
+
+    ep = _FakeEndpoint(_EXACT_20, {"protocol": 20})
+    for _ in range(4):
+        await ensure_compatible(ep)
+    assert probe["n"] == 1
+
+
+async def test_a_failure_is_remembered_too(probe) -> None:
+    # Otherwise a mismatched endpoint gets re-probed on every single call.
+    from sentinelx_core.local_api import LocalApiError, ensure_compatible
+
+    ep = _FakeEndpoint(_EXACT_20, {"protocol": 21})
+    for _ in range(3):
+        with pytest.raises(LocalApiError):
+            await ensure_compatible(ep)
+    assert probe["n"] == 1
+
+
+async def test_losing_the_endpoint_ends_the_epoch(probe) -> None:
+    # The case a naive cache gets wrong: the endpoint comes back as a different
+    # version and inherits the old verdict.
+    from sentinelx_core.local_api import (
+        ensure_compatible,
+        forget_compatibility,
+        LocalApiError,
+    )
+
+    ep = _FakeEndpoint(_EXACT_20, {"protocol": 20})
+    await ensure_compatible(ep)
+
+    forget_compatibility(ep.name)          # what an unreachable endpoint triggers
+    ep._reply = {"protocol": 99}           # it restarts speaking something else
+
+    with pytest.raises(LocalApiError) as exc:
+        await ensure_compatible(ep)
+    assert exc.value.code == "compatibility_mismatch"
+
+
+def test_a_half_written_constraint_is_dropped_not_half_enforced(tmp_path) -> None:
+    # A constraint that silently does nothing is worse than no constraint: it
+    # reads as protection that is not there.
+    pol = _policy(
+        """
+        local_apis:
+          x:
+            transport: unix
+            path: /tmp/x.sock
+            protocol: jsonrpc
+            compatibility:
+              accept: { exact: 20 }
+            actions:
+              a: { method: a }
+        """,
+        tmp_path,
+    )
+    assert pol.local_apis["x"].compatibility == {}

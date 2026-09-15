@@ -147,9 +147,26 @@ class LocalApiEndpoint:
     actions: dict[str, LocalApiAction]
     timeout_s: float = 30.0
     run_as: str | None = None
-    # Declared compatibility constraint, evaluated per connection epoch.
-    # {"protocol": {"exact": 20}} or {"protocol": {"allowed": [20, 21]}}.
-    # NEVER inferred from >=: a higher number does not imply compatibility.
+    # Declared compatibility constraint, evaluated once per connection epoch.
+    #
+    # BOTH HALVES ARE DECLARED, per the contract agreed in core#45: "the profile
+    # declares how to obtain compatibility metadata and which values it accepts;
+    # SentinelX evaluates that declared constraint."
+    #
+    #   compatibility:
+    #     probe:   { method: session.describe }   # or request: GET /version
+    #     extract: protocol                        # dotted path into the reply
+    #     accept:  { exact: 20 }                   # or { allowed: [20, 21] }
+    #
+    # `exact` is the default strictness and `allowed` is how a maintainer widens
+    # it deliberately. SentinelX NEVER infers compatibility from
+    # `new_version >= configured`: a higher number does not imply the protocol
+    # still matches, and assuming it would put that judgement with the wrong
+    # party.
+    #
+    # A block missing either half is dropped with a warning rather than
+    # half-enforced, because a constraint that silently does nothing is worse
+    # than no constraint: it reads as protection that is not there.
     compatibility: dict[str, Any] = field(default_factory=dict)
 
 
@@ -455,7 +472,36 @@ class Policy:
                 )
                 continue
 
+            # Validate the compatibility block here so a malformed one is
+            # caught at load, where the operator sees the warning, rather than
+            # at first use where it would look like an endpoint fault.
             compat = meta.get("compatibility") or {}
+            if compat:
+                probe = compat.get("probe") if isinstance(compat, dict) else None
+                accept = compat.get("accept") if isinstance(compat, dict) else None
+                extract = compat.get("extract") if isinstance(compat, dict) else None
+                problem = None
+                if not isinstance(compat, dict):
+                    problem = "compatibility must be a mapping"
+                elif not isinstance(probe, dict) or not (
+                    probe.get("method") or probe.get("request")
+                ):
+                    problem = "compatibility.probe needs a `method` or a `request`"
+                elif not extract:
+                    problem = "compatibility.extract must name the field to read"
+                elif not isinstance(accept, dict) or not (
+                    "exact" in accept or "allowed" in accept
+                ):
+                    problem = "compatibility.accept needs `exact` or `allowed`"
+                elif "allowed" in accept and not isinstance(accept["allowed"], list):
+                    problem = "compatibility.accept.allowed must be a list"
+                if problem:
+                    logger.warning(
+                        "local_apis: %s has an unusable compatibility block (%s); "
+                        "dropping the constraint rather than half-enforcing it",
+                        name, problem,
+                    )
+                    compat = {}
             local_apis[str(name)] = LocalApiEndpoint(
                 name=str(name),
                 transport=transport,

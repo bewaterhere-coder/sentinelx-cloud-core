@@ -238,6 +238,136 @@ async def call_jsonrpc(endpoint: Any, action: Any, params: dict[str, Any]) -> An
     return message.get("result") if isinstance(message, dict) else message
 
 
+# ---------------------------------------------------------------------------
+# Compatibility, per connection epoch (core#45)
+#
+# THE CONTRACT, in the requester's own words: "the profile declares how to
+# obtain compatibility metadata and which values it accepts; SentinelX
+# evaluates that declared constraint."
+#
+# WHY NOT PER CALL. A probe before every call pays a round trip for a guarantee
+# it does not deliver: the endpoint can restart between the check and the call
+# regardless. Binding validation to a connection epoch gives a real boundary
+# instead of an expensive approximation.
+#
+# WHY NOT AT REGISTRATION. Probing when the agent boots would mean an endpoint
+# that happens to be down at that moment never registers at all, and stays dead
+# until someone restarts the agent. Validation is therefore lazy: first use in
+# an epoch checks, the verdict is cached, and the cache entry is dropped the
+# moment the endpoint becomes unreachable, because that IS the epoch ending.
+#
+# WHY NEVER `>=`. A higher version number does not imply the protocol still
+# matches. `exact` is the default and `allowed` is how a maintainer widens it
+# on purpose, which puts the judgement with whoever actually knows the answer.
+# ---------------------------------------------------------------------------
+
+# endpoint name -> True (passed) | (code, message) (failed). Absent means "not
+# checked in this epoch".
+_compat_verdicts: dict[str, Any] = {}
+
+
+def forget_compatibility(endpoint_name: str) -> None:
+    """Drop a cached verdict. Called when an endpoint goes unreachable."""
+    _compat_verdicts.pop(endpoint_name, None)
+
+
+def _extract(data: Any, path: str) -> Any:
+    cur = data
+    for part in str(path).split("."):
+        if isinstance(cur, dict) and part in cur:
+            cur = cur[part]
+        else:
+            return None
+    return cur
+
+
+async def ensure_compatible(endpoint: Any) -> None:
+    """Check the declared constraint once per epoch. Raises on mismatch.
+
+    Fails CLOSED: an endpoint that cannot be probed, or whose version cannot be
+    read, is refused rather than allowed through on the assumption it is fine.
+    """
+    constraint = getattr(endpoint, "compatibility", None) or {}
+    if not constraint:
+        return
+
+    cached = _compat_verdicts.get(endpoint.name)
+    if cached is True:
+        return
+    if isinstance(cached, tuple):
+        raise LocalApiError(cached[0], cached[1])
+
+    probe = constraint["probe"]
+    accept = constraint["accept"]
+    field = constraint["extract"]
+
+    # The probe is described exactly like an action, so it goes through the same
+    # transport rather than a parallel code path that could drift from it.
+    probe_action = type(
+        "ProbeAction",
+        (),
+        {
+            "request": probe.get("request"),
+            "method": probe.get("method"),
+            "select": (),
+        },
+    )()
+    try:
+        if endpoint.protocol == "http":
+            reply = await call_http(endpoint, probe_action, {})
+        else:
+            reply = await call_jsonrpc(endpoint, probe_action, {})
+    except LocalApiError as exc:
+        if exc.code in ("endpoint_unreachable", "timeout"):
+            # Not a verdict: the epoch never started. Leave the cache empty so
+            # the next attempt probes again instead of inheriting a failure
+            # that was only ever about reachability.
+            raise
+        verdict = (
+            "compatibility_unknown",
+            f"could not read the compatibility metadata '{field}' from "
+            f"'{endpoint.name}': {exc.message}",
+        )
+        _compat_verdicts[endpoint.name] = verdict
+        raise LocalApiError(*verdict) from exc
+
+    found = _extract(reply, field)
+    if found is None:
+        verdict = (
+            "compatibility_unknown",
+            f"'{endpoint.name}' did not report '{field}', so its compatibility "
+            "cannot be established. Refusing rather than assuming.",
+        )
+        _compat_verdicts[endpoint.name] = verdict
+        raise LocalApiError(*verdict)
+
+    if "exact" in accept:
+        ok = found == accept["exact"]
+        wanted = f"exactly {accept['exact']!r}"
+    else:
+        ok = found in (accept.get("allowed") or [])
+        wanted = f"one of {accept.get('allowed')!r}"
+
+    if not ok:
+        verdict = (
+            "compatibility_mismatch",
+            f"'{endpoint.name}' reports {field}={found!r}, but this profile "
+            f"accepts {wanted}. Widen `compatibility.accept.allowed` if the "
+            "profile's maintainer says the versions are compatible; SentinelX "
+            "will not assume a newer version is.",
+        )
+        _compat_verdicts[endpoint.name] = verdict
+        logger.warning(
+            "local_api compatibility mismatch on %s: %s=%r", endpoint.name, field, found
+        )
+        raise LocalApiError(*verdict)
+
+    _compat_verdicts[endpoint.name] = True
+    logger.info(
+        "local_api compatibility ok on %s: %s=%r", endpoint.name, field, found
+    )
+
+
 async def call_action(endpoint: Any, action_name: str, params: dict[str, Any]) -> Any:
     """Run one ALLOWLISTED action and return its projected result."""
     action = endpoint.actions.get(action_name)
@@ -249,8 +379,16 @@ async def call_action(endpoint: Any, action_name: str, params: dict[str, Any]) -
             f"'{action_name}' is not an allowed action on '{endpoint.name}'. "
             f"Allowed: {sorted(endpoint.actions)}",
         )
-    if endpoint.protocol == "http":
-        raw = await call_http(endpoint, action, params)
-    else:
-        raw = await call_jsonrpc(endpoint, action, params)
+    await ensure_compatible(endpoint)
+    try:
+        if endpoint.protocol == "http":
+            raw = await call_http(endpoint, action, params)
+        else:
+            raw = await call_jsonrpc(endpoint, action, params)
+    except LocalApiError as exc:
+        if exc.code in ("endpoint_unreachable", "timeout"):
+            # The epoch ended. Whatever we concluded about this endpoint no
+            # longer describes whatever comes back, so re-check next time.
+            forget_compatibility(endpoint.name)
+        raise
     return project(raw, action.select)

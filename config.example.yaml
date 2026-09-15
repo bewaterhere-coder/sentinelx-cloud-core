@@ -1249,11 +1249,26 @@ file_ops:
 #   #   protocol: jsonrpc
 #   #   run_as: youruser                # keep the Unix owner of the sessions
 #   #   compatibility:
-#   #     protocol: { exact: 20 }       # or { allowed: [20, 21] }
+#   #     probe:   { method: session.describe }  # how to ASK for the version
+#   #     extract: protocol                      # where to read it in the reply
+#   #     accept:  { exact: 20 }                 # or { allowed: [20, 21] }
 #   #   actions:
 #   #     session.snapshot: { method: session.snapshot }
 #
-# On `compatibility`: the profile declares how to obtain compatibility
-# metadata and which values it accepts; SentinelX evaluates that declared
-# constraint. It is never inferred from `new_version >= configured`, because a
-# higher number does not imply the protocol still matches.
+# On `compatibility`, both halves are declared: the profile says how to obtain
+# the metadata and which values it accepts, and SentinelX evaluates that
+# declared constraint. It is NEVER inferred from `new_version >= configured`,
+# because a higher number does not imply the protocol still matches; `accept.
+# allowed` is how whoever does know widens it deliberately.
+#
+# It is checked once per connection epoch, not per call: probing before every
+# call pays a round trip for a guarantee it cannot give, since the endpoint can
+# restart between the check and the call either way. The verdict is dropped the
+# moment the endpoint becomes unreachable, so an endpoint that comes back
+# speaking something else is judged again rather than inheriting the old answer.
+#
+# It fails CLOSED. An endpoint that cannot be probed, or that does not report
+# the field named in `extract`, is refused rather than assumed fine. A block
+# missing any of the three keys is dropped with a warning instead of being
+# half-enforced, because a constraint that silently does nothing reads as
+# protection that is not there.
