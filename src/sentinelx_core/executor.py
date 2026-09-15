@@ -59,9 +59,20 @@ class Executor:
         self._handlers: dict[str, Handler] | None = None
         self._upload_base: Path | None = None
 
+    # Protocol features this agent understands that are NOT ops. The hub gates
+    # on these the same way it gates on op names, which is what lets it add an
+    # optional wire field without breaking a mixed fleet: RequestMessage is
+    # extra="forbid", so an agent that has never heard of a field rejects the
+    # whole message rather than ignoring it.
+    #
+    # Capability rather than protocol version on purpose: an agent built against
+    # a different numbering -- a fork, a vendor build -- still gets the field as
+    # long as it says it can take it.
+    PROTOCOL_FEATURES = ("opaque_ref",)
+
     def capability_names(self) -> list[str]:
-        """Names of supported ops, used in the `hello` capabilities list."""
-        return list(self._get_handlers().keys())
+        """Names of supported ops plus protocol features, for `hello`."""
+        return list(self._get_handlers().keys()) + list(self.PROTOCOL_FEATURES)
 
     def config_summary(self) -> dict[str, int]:
         """Policy counts for the hello's ConfigSummary — aggregates only.
