@@ -159,4 +159,11 @@ def build_registry(
         policy, config_path, ops_supported=lambda: registry.keys()
     )
 
+    # Only when the host opted in. No local_apis block means no handler and no
+    # advertised capability, which is what makes this additive for the fleet.
+    if policy.local_apis:
+        from sentinelx_core.handlers.local_api import make_local_api_handler
+
+        registry["local_api"] = make_local_api_handler(policy)
+
     return registry

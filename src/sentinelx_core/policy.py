@@ -112,6 +112,47 @@ class FileOpsPath:
             object.__setattr__(self, "access", "r")
 
 
+@dataclass(frozen=True)
+class LocalApiAction:
+    """One permitted action on a local endpoint.
+
+    `request` is for protocol=http ("GET /v1.44/containers/json"); `method` is
+    for protocol=jsonrpc ("agent.list"). Exactly one applies.
+
+    `select` is NOT cosmetic. Measured against nine real containers on jupiter:
+    `docker ps` text is 712 bytes, the raw socket JSON for the same question is
+    20,336, and a curated projection is 1,457. A passthrough would be 28x worse
+    than the text it replaces, so an action declares what to keep.
+    """
+
+    request: str | None = None
+    method: str | None = None
+    select: tuple[str, ...] = ()
+    description: str | None = None
+
+
+@dataclass(frozen=True)
+class LocalApiEndpoint:
+    """A host-local endpoint the agent may talk to.
+
+    `path` is NOT a binary and actions are NOT subcommands. With transport
+    "unix" the agent OPENS a socket: no process, no shell, no argv, no exit
+    code. Only transport "stdio" has a binary at `path`.
+    """
+
+    name: str
+    transport: str            # "unix" | "stdio"
+    path: str
+    protocol: str             # "http" | "jsonrpc"
+    actions: dict[str, LocalApiAction]
+    timeout_s: float = 30.0
+    run_as: str | None = None
+    # Declared compatibility constraint, evaluated per connection epoch.
+    # {"protocol": {"exact": 20}} or {"protocol": {"allowed": [20, 21]}}.
+    # NEVER inferred from >=: a higher number does not imply compatibility.
+    compatibility: dict[str, Any] = field(default_factory=dict)
+
+
 @dataclass
 class Policy:
     """Loaded policy. Immutable after construction."""
@@ -122,6 +163,13 @@ class Policy:
 
     # service name -> ServiceSpec
     services: dict[str, ServiceSpec] = field(default_factory=dict)
+
+    # name -> LocalApiEndpoint. Empty unless the host declares `local_apis`,
+    # and an endpoint with no `actions` is NOT registered: the allowlist is the
+    # entire security boundary here. exec is bounded by command prefixes, but a
+    # socket bridge is bounded only by whatever the far side exposes, which the
+    # agent cannot enumerate.
+    local_apis: dict[str, LocalApiEndpoint] = field(default_factory=dict)
 
     # short label -> LocationSpec
     locations: dict[str, LocationSpec] = field(default_factory=dict)
@@ -331,6 +379,94 @@ class Policy:
                 backend=meta.get("backend", "service"),
             )
 
+        # ── local_apis ────────────────────────────────────────────────────
+        # Host-local endpoints that already speak a structured protocol. An
+        # endpoint is skipped, loudly, unless it is fully formed: `actions` is
+        # the whole security boundary, so a malformed block must not degrade
+        # into "allow everything" or into a half-configured endpoint.
+        local_apis: dict[str, LocalApiEndpoint] = {}
+        for name, meta in (data.get("local_apis") or {}).items():
+            if not isinstance(meta, dict):
+                logger.warning("local_apis: %s is not a mapping; skipped", name)
+                continue
+            transport = str(meta.get("transport") or "").strip()
+            protocol = str(meta.get("protocol") or "").strip()
+            path_value = str(meta.get("path") or "").strip()
+            raw_actions = meta.get("actions")
+            if transport not in ("unix", "stdio"):
+                logger.warning(
+                    "local_apis: %s has transport=%r; expected unix or stdio; skipped",
+                    name, transport,
+                )
+                continue
+            if protocol not in ("http", "jsonrpc"):
+                logger.warning(
+                    "local_apis: %s has protocol=%r; expected http or jsonrpc; skipped",
+                    name, protocol,
+                )
+                continue
+            if not path_value:
+                logger.warning("local_apis: %s has no path; skipped", name)
+                continue
+            if not isinstance(raw_actions, dict) or not raw_actions:
+                # Deliberate: no list, no endpoint. Registering one without an
+                # action allowlist would expose whatever the far side happens
+                # to offer, which the agent cannot see or bound.
+                logger.warning(
+                    "local_apis: %s declares no actions; skipped (an action "
+                    "allowlist is required)", name,
+                )
+                continue
+
+            actions: dict[str, LocalApiAction] = {}
+            for act_name, act in raw_actions.items():
+                act = act or {}
+                if not isinstance(act, dict):
+                    logger.warning(
+                        "local_apis: %s.%s is not a mapping; skipped", name, act_name
+                    )
+                    continue
+                request = act.get("request")
+                method = act.get("method")
+                if protocol == "http" and not request:
+                    logger.warning(
+                        "local_apis: %s.%s needs `request` for protocol http; skipped",
+                        name, act_name,
+                    )
+                    continue
+                if protocol == "jsonrpc" and not method:
+                    logger.warning(
+                        "local_apis: %s.%s needs `method` for protocol jsonrpc; skipped",
+                        name, act_name,
+                    )
+                    continue
+                sel = act.get("select") or ()
+                actions[str(act_name)] = LocalApiAction(
+                    request=str(request) if request else None,
+                    method=str(method) if method else None,
+                    select=tuple(str(x) for x in sel),
+                    description=(
+                        str(act["description"]) if act.get("description") else None
+                    ),
+                )
+            if not actions:
+                logger.warning(
+                    "local_apis: %s had actions but none were usable; skipped", name
+                )
+                continue
+
+            compat = meta.get("compatibility") or {}
+            local_apis[str(name)] = LocalApiEndpoint(
+                name=str(name),
+                transport=transport,
+                path=path_value,
+                protocol=protocol,
+                actions=actions,
+                timeout_s=float(meta.get("timeout_s") or 30),
+                run_as=str(meta["run_as"]) if meta.get("run_as") else None,
+                compatibility=compat if isinstance(compat, dict) else {},
+            )
+
         locations: dict[str, LocationSpec] = {}
         for label, meta in (data.get("locations") or {}).items():
             if isinstance(meta, str):
@@ -445,6 +581,7 @@ class Policy:
         policy = cls(
             allowed_commands=tuple(data.get("allowed_commands") or []),
             services=services,
+            local_apis=local_apis,
             locations=locations,
             playbooks=dict(data.get("playbooks") or {}),
             hostname_label=agent_block.get("hostname_label"),
