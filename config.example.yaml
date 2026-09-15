@@ -1169,3 +1169,85 @@ file_ops:
   # max_read_bytes: 65536       # per sentinel_read; larger files are truncated
   # max_list_entries: 1000      # per sentinel_list
   # max_search_results: 200     # per sentinel_search
+
+# ─────────────────────────────────────────────────────────────────────────────
+# local_apis  (optional)  —  sentinel_local_api
+#
+# Bridge to host-local tools that ALREADY speak a structured protocol, so the
+# model receives data instead of text meant for a terminal. `exec` remains the
+# right answer for plain-text CLIs; this does not replace it.
+#
+# Leave this block out entirely and nothing changes: the agent registers no
+# handler and advertises no such capability.
+#
+# ┌───────────────────────────────────────────────────────────────────────────
+# │ READ THIS BEFORE ENABLING THE DOCKER ENDPOINT
+# │
+# │ /var/run/docker.sock is root:docker 0660, so the agent's user must be in
+# │ the `docker` group to reach it. THAT GROUP IS ROOT-EQUIVALENT: whoever can
+# │ talk to that socket can start a privileged container with the host
+# │ filesystem mounted and take over the machine. Adding the agent to it
+# │ widens what a compromised agent could do, no matter how tight
+# │ `allowed_commands` is.
+# │
+# │   sudo usermod -aG docker sentinelx
+# │   sudo systemctl restart sentinelx-cloud-core
+# │
+# │ That is a deliberate security decision, not a configuration detail. If it
+# │ is not acceptable on this host, leave the endpoint out. Without the group
+# │ the endpoint still loads and every call returns endpoint_unreachable.
+# └───────────────────────────────────────────────────────────────────────────
+#
+# TWO RULES WORTH UNDERSTANDING BEFORE WRITING YOUR OWN:
+#
+# 1. `actions` is the entire security boundary, and it is required. `exec` is
+#    bounded by command prefixes, but a socket bridge is bounded only by what
+#    the far side exposes, which the agent cannot see or enumerate. An endpoint
+#    that declares no actions is NOT registered.
+#
+# 2. `select` is not cosmetic. Measured against nine real containers: the text
+#    `docker ps` prints is 712 bytes, the raw socket JSON answering the same
+#    question is 20,340, and the projection below is 1,811. Without `select`
+#    the answer is worse than the text it replaces. Omit it only for endpoints
+#    whose replies are already small.
+#
+# `path` is NOT a binary and actions are NOT subcommands: with transport
+# `unix` the agent opens a socket, so there is no process, no argv and no
+# shell. The whole shell-injection class cannot occur on this path.
+#
+# local_apis:
+#   docker:
+#     transport: unix                  # unix | stdio
+#     path: /var/run/docker.sock
+#     protocol: http                   # http | jsonrpc
+#     timeout_s: 20
+#     actions:
+#       # Reads only. The socket is root-equivalent, so nothing here starts,
+#       # stops, removes or executes.
+#       containers.list:
+#         request: GET /v1.44/containers/json
+#         select: [Names, Image, State, Status, Ports]
+#         description: what is running on this host
+#       containers.inspect:
+#         request: GET /v1.44/containers/{id}/json    # {id} comes from params
+#         select: [Name, State, Config.Image, HostConfig.RestartPolicy]
+#         description: full detail for one container
+#       images.list:
+#         request: GET /v1.44/images/json
+#         select: [RepoTags, Size, Created]
+#
+#   # A JSON-RPC endpoint looks like this instead. Actions name methods.
+#   # some_tool:
+#   #   transport: unix
+#   #   path: /run/user/1000/some_tool.sock
+#   #   protocol: jsonrpc
+#   #   run_as: youruser                # keep the Unix owner of the sessions
+#   #   compatibility:
+#   #     protocol: { exact: 20 }       # or { allowed: [20, 21] }
+#   #   actions:
+#   #     session.snapshot: { method: session.snapshot }
+#
+# On `compatibility`: the profile declares how to obtain compatibility
+# metadata and which values it accepts; SentinelX evaluates that declared
+# constraint. It is never inferred from `new_version >= configured`, because a
+# higher number does not imply the protocol still matches.
