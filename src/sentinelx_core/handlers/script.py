@@ -48,6 +48,7 @@ import asyncio
 import logging
 import os
 import shutil
+import signal
 import subprocess
 import sys
 import time
@@ -140,13 +141,24 @@ def _windows_legacy_encoding() -> str | None:
         return None
 
 
-def _kill_process_tree(proc) -> None:
-    """Kill a timed-out child, and on Windows its children too.
+def _kill_process_tree(proc, *, elevated: bool = False) -> None:
+    """Kill a timed-out child and everything it started.
 
-    The PowerShell bootstrap runs the user's script as an inner process, so
-    killing only the process we spawned would leave that inner one running
-    after a timeout. taskkill /T covers the tree; if it is unavailable we
-    still kill what we spawned rather than nothing.
+    Killing only the process we spawned leaves its descendants running. On
+    Windows that was already handled; on POSIX it was not, and a timed-out
+    `docker run` left the docker client and its root-owned wrapper alive for
+    hours -- reported after repeated attempts each leaked another pair.
+
+    On POSIX the child is started in its own session (start_new_session), so
+    the whole tree shares one process group and a single signal reaches all of
+    it. Two details decided by experiment rather than assumption:
+
+    - A tree started with sudo is root-owned, and the agent user cannot signal
+      it: killpg raises PermissionError and the processes survive. Those need
+      `sudo kill`.
+    - `kill -9 -<pgid>` is read as an option, not a group. It returns success
+      and kills nothing, which is the worst way to fail. The `--` separator is
+      what makes it a process group.
     """
     if sys.platform == "win32":
         try:
@@ -158,6 +170,34 @@ def _kill_process_tree(proc) -> None:
             return
         except Exception:
             logger.warning("taskkill failed; falling back to kill()", exc_info=True)
+    # POSIX: signal the whole group.
+    try:
+        pgid = os.getpgid(proc.pid)
+    except (ProcessLookupError, OSError):
+        pgid = None
+
+    if pgid is not None:
+        if elevated:
+            # Root-owned tree: we have no permission of our own.
+            try:
+                subprocess.run(
+                    ["sudo", "-n", "kill", "-9", "--", f"-{pgid}"],
+                    capture_output=True,
+                    timeout=10,
+                )
+                return
+            except Exception:
+                logger.warning("sudo kill of process group failed", exc_info=True)
+        else:
+            try:
+                os.killpg(pgid, signal.SIGKILL)
+                return
+            except ProcessLookupError:
+                return
+            except PermissionError:
+                logger.warning("no permission to kill process group %s", pgid)
+
+    # Last resort: at least the process we spawned.
     try:
         proc.kill()
     except ProcessLookupError:
@@ -367,6 +407,10 @@ def make_script_run_handler(policy: Policy, upload_base: Path):
             spawn_kwargs: dict[str, Any] = {}
             if sys.platform == "win32":
                 spawn_kwargs["creationflags"] = _CREATE_NO_WINDOW
+            else:
+                # Own session, so the whole tree shares one process group and a
+                # timeout can reach every descendant with a single signal.
+                spawn_kwargs["start_new_session"] = True
 
             start = time.time()
             try:
@@ -385,7 +429,7 @@ def make_script_run_handler(policy: Policy, upload_base: Path):
                 stdout = _decode_output(stdout_b).strip()
                 stderr = _decode_output(stderr_b).strip()
             except asyncio.TimeoutError:
-                _kill_process_tree(proc)
+                _kill_process_tree(proc, elevated=use_sudo)
                 await proc.wait()
                 return {
                     "ok": False,

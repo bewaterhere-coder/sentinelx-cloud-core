@@ -3,6 +3,21 @@
 Notable changes to `sentinelx-cloud-core`. Human-readable, date-stamped
 entries; releases before 0.3.0 predate this file — see the git history.
 
+## 0.12.3 - A timed-out script no longer leaks its descendants - 2026-09-16
+
+- On POSIX, a timeout killed only the process we spawned. Anything it had
+  started kept running: a timed-out `docker run` left the docker client and
+  its root-owned wrapper alive for hours, one pair per attempt, until the
+  host was cleaned by hand. Windows was already handled.
+- Scripts now start in their own session, so the whole tree shares one
+  process group and a single signal reaches all of it.
+- Two details found by experiment rather than reasoning. A tree started under
+  sudo is root-owned and the agent user cannot signal it -- killpg raises
+  PermissionError and everything survives -- so those go through `sudo kill`.
+  And `kill -9 -<pgid>` is parsed as an option, not a group: it exits 0 and
+  kills nothing, which is the worst way to fail. The `--` separator is what
+  makes it a process group, and a test holds that.
+
 ## 0.12.2 - sudo changes directory after it gains privileges - 2026-09-16
 
 - script_run passed cwd to the subprocess call, which makes the PARENT chdir
