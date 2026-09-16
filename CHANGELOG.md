@@ -3,6 +3,26 @@
 Notable changes to `sentinelx-cloud-core`. Human-readable, date-stamped
 entries; releases before 0.3.0 predate this file — see the git history.
 
+## 0.12.2 - sudo changes directory after it gains privileges - 2026-09-16
+
+- script_run passed cwd to the subprocess call, which makes the PARENT chdir
+  before exec -- as the agent's own user. Asking for sudo=true on a directory
+  only root can enter therefore failed with PermissionError before sudo ran
+  at all: the one case where the privileges were requested precisely because
+  the directory needs them. Reported against an 0700 worktree.
+- With sudo and a cwd, the chdir now happens inside the elevated process.
+  Everything else is unchanged: no sudo, or sudo without a cwd, behaves
+  exactly as before.
+- The directory travels as a positional argument rather than an environment
+  variable. sudo strips the environment, and an empty value would make the
+  cd a silent no-op that ran the script in / instead of failing. As a
+  positional it is also inert: a value containing shell metacharacters is
+  just a directory name that does not exist, which exits 126 without running
+  anything.
+- Not solved with `sudo --chdir`, which needs CWD=* in the sudoers policy. We
+  had just asked 1,290 operators to review and tighten that file; asking them
+  to widen it again would be a poor trade.
+
 ## 0.12.1 — run_as, and two Herdr integration fixes — 2026-09-15
 
 - `run_as` now actually reaches a socket owned by another Unix user. It parsed

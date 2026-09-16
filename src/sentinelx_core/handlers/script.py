@@ -277,7 +277,8 @@ def make_script_run_handler(policy: Policy, upload_base: Path):
 
             argv: list[str] = []
             # sudo has no meaning on Windows; ignore it there (M1 is read-only).
-            if sudo and sys.platform != "win32":
+            use_sudo = sudo and sys.platform != "win32"
+            if use_sudo:
                 argv.append("sudo")
             if interpreter == "bash":
                 argv.extend(["bash", str(script_path)])
@@ -334,6 +335,35 @@ def make_script_run_handler(policy: Policy, upload_base: Path):
                 # operator set for the service — stays authoritative.
                 full_env.setdefault("PYTHONIOENCODING", "utf-8")
 
+            # With sudo, let the ELEVATED process do the chdir.
+            #
+            # Passing cwd= to create_subprocess_exec makes the parent chdir
+            # before exec, which happens as the agent's own user. Asking for
+            # sudo=true on a root-owned directory therefore failed with
+            # PermissionError before sudo ran at all -- the one case where the
+            # privileges were requested precisely because the directory needs
+            # them. Reported against an 0700 worktree the agent user cannot
+            # enter.
+            #
+            # The directory travels as a positional argument, not in the
+            # environment: sudo strips the environment, and an empty $DIR would
+            # make `cd ""` a silent no-op that runs the script in / instead.
+            # As a positional it is also inert -- a value containing shell
+            # metacharacters is just a directory name that does not exist.
+            spawn_cwd = cwd
+            if use_sudo and cwd:
+                argv = [
+                    "sudo",
+                    "sh",
+                    "-c",
+                    'cd "$1" || { echo "sentinelx: cannot enter $1" >&2; exit 126; }; '
+                    'shift; exec "$@"',
+                    "sh",
+                    str(cwd),
+                    *argv[1:],
+                ]
+                spawn_cwd = None
+
             spawn_kwargs: dict[str, Any] = {}
             if sys.platform == "win32":
                 spawn_kwargs["creationflags"] = _CREATE_NO_WINDOW
@@ -344,7 +374,7 @@ def make_script_run_handler(policy: Policy, upload_base: Path):
                     *argv,
                     stdout=asyncio.subprocess.PIPE,
                     stderr=asyncio.subprocess.PIPE,
-                    cwd=cwd,
+                    cwd=spawn_cwd,
                     env=full_env,
                     **spawn_kwargs,
                 )
