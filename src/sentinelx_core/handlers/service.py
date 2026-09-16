@@ -57,6 +57,36 @@ def _build_launchctl(action: str, label: str, domain: str, requires_sudo: bool) 
 # the PowerShell shell). No per-command sudo — elevation on Windows comes from
 # the agent's own process token (LocalSystem when installed as a service), so
 # spec.requires_sudo isn't applied here.
+def _ps_single(value: str) -> str:
+    """Quote a value for a PowerShell single-quoted string.
+
+    Task and service names are operator-chosen and go straight into a command
+    line. Unquoted, a name with a space splits into two arguments and the call
+    silently addresses the wrong thing -- on a restart that means the stop
+    half runs and the start half does not, leaving the agent down with nothing
+    to bring it back. A literal single quote is escaped by doubling it, which
+    is PowerShell's own rule.
+    """
+    return "'" + str(value).replace("'", "''") + "'"
+
+
+def _cmd_double(value: str) -> str:
+    """Quote a value for a cmd.exe argument nested inside a PowerShell string.
+
+    The outer PowerShell literal already uses single quotes, so the inner
+    quoting has to be double. A name containing a double quote cannot be
+    expressed here and Windows does not allow one in a task name, so it is
+    rejected rather than mangled.
+    """
+    text = str(value)
+    if '"' in text:
+        raise HandlerError(
+            "invalid_service_name",
+            "service or task names containing a double quote are not supported",
+        )
+    return '"' + text + '"'
+
+
 _WIN_SERVICE_ACTIONS = {
     "status":     "Get-Service -Name {name}",
     "is-active":  "Get-Service -Name {name}",
@@ -64,6 +94,7 @@ _WIN_SERVICE_ACTIONS = {
     "start":      "Start-Service -Name {name}",
     "stop":       "Stop-Service -Name {name} -Force",
 }
+# Every {name} above is filled with _ps_single(), never the raw value.
 
 # restart/reload: a plain Restart-Service is Stop+Start IN THE CALLER, so when the
 # agent restarts its OWN service the Stop kills the caller before Start runs and
@@ -117,7 +148,7 @@ _WIN_TASK_RESTART_DETACHED = (
 def _build_windows_service(action: str, name: str, backend: str = "service") -> str:
     if backend == "task":
         if action in ("restart", "reload"):
-            return _WIN_TASK_RESTART_DETACHED.format(name=name)
+            return _WIN_TASK_RESTART_DETACHED.format(name=_ps_single(name))
         cmd = _WIN_TASK_ACTIONS.get(action)
         if cmd is None:
             supported = sorted([*_WIN_TASK_ACTIONS, "restart", "reload"])
@@ -126,10 +157,10 @@ def _build_windows_service(action: str, name: str, backend: str = "service") -> 
                 f"action '{action}' has no Windows Scheduled-Task equivalent "
                 f"(supported: {', '.join(supported)}).",
             )
-        return cmd.format(name=name)
+        return cmd.format(name=_ps_single(name))
 
     if action in ("restart", "reload"):
-        return _WIN_RESTART_DETACHED.format(name=name)
+        return _WIN_RESTART_DETACHED.format(name=_ps_single(name))
     cmd = _WIN_SERVICE_ACTIONS.get(action)
     if cmd is None:
         supported = sorted([*_WIN_SERVICE_ACTIONS, "restart", "reload"])
@@ -138,7 +169,7 @@ def _build_windows_service(action: str, name: str, backend: str = "service") -> 
             f"action '{action}' has no Windows Service equivalent "
             f"(supported: {', '.join(supported)}).",
         )
-    return cmd.format(name=name)
+    return cmd.format(name=_ps_single(name))
 
 
 def _build_service_cmd(action: str, spec) -> str:
@@ -185,7 +216,7 @@ async def _win_service_account(name: str) -> str | None:
     """Resolve the service's SERVICE_START_NAME via `sc.exe qc` (e.g. 'LocalSystem',
     'NT AUTHORITY\\LocalService'). None if it can't be resolved."""
     try:
-        qc = await run_shell_split(f"sc.exe qc {name}", timeout=10.0)
+        qc = await run_shell_split(f"sc.exe qc {_cmd_double(name)}", timeout=10.0)
         for line in (qc.get("stdout") or "").splitlines():
             stripped = line.strip()
             if stripped.upper().startswith("SERVICE_START_NAME") and ":" in stripped:
@@ -323,7 +354,7 @@ async def _windows_service_restart(name: str) -> dict[str, Any]:
 _WIN_TASK_RESTART_DETACHED_TREEKILL = (
     "Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments "
     "@{{ CommandLine = 'cmd /c timeout /t 2 /nobreak >nul & taskkill /F /T /PID {pid} "
-    "& schtasks /End /TN {name} & timeout /t 2 /nobreak >nul & schtasks /Run /TN {name}' }} "
+    "& schtasks /End /TN {qname} & timeout /t 2 /nobreak >nul & schtasks /Run /TN {qname}' }} "
     "| Select-Object -ExpandProperty ProcessId"
 )
 
@@ -342,7 +373,7 @@ async def _windows_task_restart(name: str) -> dict[str, Any]:
     "completed"); the caller must verify the new PID/version after reconnect.
     """
     agent_pid = os.getpid()
-    cmd = _WIN_TASK_RESTART_DETACHED_TREEKILL.format(pid=agent_pid, name=name)
+    cmd = _WIN_TASK_RESTART_DETACHED_TREEKILL.format(pid=agent_pid, qname=_cmd_double(name))
     launch = await run_shell_split(cmd, timeout=30.0)
     return {
         "ok": True,

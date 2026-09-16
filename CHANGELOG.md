@@ -3,6 +3,29 @@
 Notable changes to `sentinelx-cloud-core`. Human-readable, date-stamped
 entries; releases before 0.3.0 predate this file — see the git history.
 
+## 0.12.5 - Quote service and task names on Windows - 2026-09-16
+
+- Service and task names are operator-chosen and were interpolated straight
+  into PowerShell and cmd command lines. A name containing a space split into
+  two arguments, so the command addressed something other than what was asked
+  for -- silently, since schtasks and Get-Service simply act on the wrong
+  name.
+- It matters most on the self-restart, whose sequence is kill, end, start: the
+  kill half always works and the start half is the one that would address
+  nothing, leaving the agent down with nothing left to bring it back. The
+  operator then loses remote access to that host precisely because the tool
+  they manage it with is what died.
+- Names are now quoted for whichever shell receives them: single quotes for
+  PowerShell, with an embedded quote doubled per its own rule, and double
+  quotes for a cmd argument nested inside a PowerShell literal. A name
+  containing a double quote is refused rather than mangled; Windows does not
+  permit one in a task name.
+- Found while investigating a report of a Windows host that did not come back
+  after a restart. Whether it was the cause there is not established -- that
+  host runs a custom install and we have asked for its task name. The default
+  install uses "SentinelX", which has no space, which is why this never
+  surfaced in our own testing.
+
 ## 0.12.4 — local_apis is a recognised config key — 2026-09-16
 
 - A valid `local_apis` block no longer triggers `policy_unknown_keys`. It was
