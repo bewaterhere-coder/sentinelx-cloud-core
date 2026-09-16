@@ -3,6 +3,18 @@
 Notable changes to `sentinelx-cloud-core`. Human-readable, date-stamped
 entries; releases before 0.3.0 predate this file — see the git history.
 
+## 0.12.1 — run_as, and two Herdr integration fixes — 2026-09-15
+
+- `run_as` now actually reaches a socket owned by another Unix user. It parsed
+  and was never applied, so a 0600 socket stayed unreachable while the config
+  said otherwise. The connect happens in a small relay invoked through
+  `sudo -n -u`; running the agent as root is not a substitute, because root
+  connects but identifies as uid 0 rather than the owner.
+- Refused sudo reports `run_as_not_permitted` and names the exact sudoers line,
+  instead of being wrapped as a compatibility problem by the probe.
+- The JSON-RPC request id is a string, which satisfies both the 2.0 spec and a
+  receiver that declares it as one.
+
 ## 0.12.0 — local_api — 2026-09-15
 
 - New `local_api` op: list, describe and call host-local endpoints that already
