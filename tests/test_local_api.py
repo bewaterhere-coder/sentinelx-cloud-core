@@ -406,3 +406,27 @@ def test_the_jsonrpc_id_is_a_string() -> None:
 
     src = inspect.getsource(local_api.call_jsonrpc)
     assert '"id": f"sentinel-local-api-' in src
+
+
+def test_local_apis_is_a_recognised_top_level_key(tmp_path, caplog) -> None:
+    # It shipped parsed and working while policy_unknown_keys told the operator
+    # the block was unrecognised, so a correct config warned about itself.
+    # Reported twice from a real deployment before it was noticed here.
+    import logging
+
+    with caplog.at_level(logging.WARNING):
+        _policy(
+            """
+            allowed_commands: ["echo"]
+            local_apis:
+              x:
+                transport: unix
+                path: /tmp/x.sock
+                protocol: jsonrpc
+                actions:
+                  a: { method: a }
+            """,
+            tmp_path,
+        )
+    unknown = [r for r in caplog.records if "policy_unknown_keys" in r.getMessage()]
+    assert not unknown, "a valid local_apis block must not warn about itself"

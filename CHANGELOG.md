@@ -3,6 +3,13 @@
 Notable changes to `sentinelx-cloud-core`. Human-readable, date-stamped
 entries; releases before 0.3.0 predate this file — see the git history.
 
+## 0.12.4 — local_apis is a recognised config key — 2026-09-16
+
+- A valid `local_apis` block no longer triggers `policy_unknown_keys`. It was
+  parsed and working while the warning told the operator it was unrecognised.
+  Reported from a real deployment (core#45). Warning-only, but a correct config
+  should not warn about itself.
+
 ## 0.12.3 - A timed-out script no longer leaks its descendants - 2026-09-16
 
 - On POSIX, a timeout killed only the process we spawned. Anything it had

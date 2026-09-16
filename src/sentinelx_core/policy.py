@@ -368,6 +368,10 @@ class Policy:
             "agent", "exec", "allowed_commands", "services", "locations",
             "playbooks", "hub_url", "upload_base", "log", "security",
             "file_ops",
+            # Adding a top-level block means adding it here too, or a valid
+            # config warns about itself: local_apis shipped parsed and working
+            # while policy_unknown_keys told the operator it was unrecognised.
+            "local_apis",
         }
         unknown = set(data.keys()) - KNOWN_KEYS - set(TYPO_HINTS.keys())
         if unknown:
