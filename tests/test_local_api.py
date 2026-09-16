@@ -430,3 +430,118 @@ def test_local_apis_is_a_recognised_top_level_key(tmp_path, caplog) -> None:
         )
     unknown = [r for r in caplog.records if "policy_unknown_keys" in r.getMessage()]
     assert not unknown, "a valid local_apis block must not warn about itself"
+
+
+# --- declared parameter schemas (core#45) ----------------------------------
+#
+# describe returned an empty parameter list for EVERY JSON-RPC action: the
+# derivation reads {placeholders} out of an HTTP request template, and a
+# JSON-RPC action has a method and no template. A deployment with sixty such
+# actions therefore learned nothing from describe beyond their names.
+#
+# Declared rather than probed because a probe cannot be the baseline: Herdr's
+# schema is only reachable through its CLI (verified against 0.9.0 / protocol
+# 22) and Docker has no introspection at all.
+
+
+async def _describe(pol, endpoint):
+    from sentinelx_core.handlers import build_registry
+
+    return await build_registry(policy=pol)["local_api"](
+        {"operation": "describe", "endpoint": endpoint}
+    )
+
+
+_HERDR = """
+local_apis:
+  herdr:
+    transport: unix
+    path: /tmp/h.sock
+    protocol: jsonrpc
+    actions:
+      agent.wait:
+        method: agent.wait
+        params:
+          type: object
+          required: [target]
+          properties:
+            target: { type: string }
+            until:
+              type: array
+              items:
+                enum: [idle, done, blocked]
+            timeout_ms:
+              type: [integer, "null"]
+      agent.list:
+        method: agent.list
+"""
+
+
+async def test_a_declared_schema_gives_jsonrpc_actions_parameter_names(
+    tmp_path,
+) -> None:
+    # The original complaint: this list was empty for every JSON-RPC action.
+    d = await _describe(_policy(_HERDR, tmp_path), "herdr")
+    assert d["actions"]["agent.wait"]["params"] == ["target", "timeout_ms", "until"]
+
+
+async def test_required_parameters_come_first(tmp_path) -> None:
+    d = await _describe(_policy(_HERDR, tmp_path), "herdr")
+    assert d["actions"]["agent.wait"]["params"][0] == "target"
+
+
+async def test_the_schema_is_carried_verbatim(tmp_path) -> None:
+    # The agent does not interpret it: nesting, arrays and enums are the
+    # endpoint's business, and rewriting them here would be a second place for
+    # the truth to live.
+    d = await _describe(_policy(_HERDR, tmp_path), "herdr")
+    schema = d["actions"]["agent.wait"]["params_schema"]
+    assert schema["required"] == ["target"]
+    assert schema["properties"]["until"]["items"]["enum"] == [
+        "idle", "done", "blocked",
+    ]
+    assert schema["properties"]["timeout_ms"]["type"] == ["integer", "null"]
+
+
+async def test_an_undeclared_action_omits_the_schema_rather_than_nulling_it(
+    tmp_path,
+) -> None:
+    # Absence means something; a null would not.
+    d = await _describe(_policy(_HERDR, tmp_path), "herdr")
+    assert "params_schema" not in d["actions"]["agent.list"]
+
+
+async def test_http_actions_still_derive_from_the_template(tmp_path) -> None:
+    # Nothing to declare there, and the template cannot drift from what runs.
+    pol = _policy(
+        """
+        local_apis:
+          docker:
+            transport: unix
+            path: /var/run/docker.sock
+            protocol: http
+            actions:
+              inspect: { request: "GET /v1.44/containers/{id}/json" }
+        """,
+        tmp_path,
+    )
+    d = await _describe(pol, "docker")
+    assert d["actions"]["inspect"]["params"] == ["id"]
+
+
+def test_a_non_mapping_schema_is_ignored_not_carried(tmp_path) -> None:
+    pol = _policy(
+        """
+        local_apis:
+          x:
+            transport: unix
+            path: /tmp/x.sock
+            protocol: jsonrpc
+            actions:
+              a:
+                method: a
+                params: "not a schema"
+        """,
+        tmp_path,
+    )
+    assert pol.local_apis["x"].actions["a"].params_schema is None

@@ -16,6 +16,29 @@ from sentinelx_core.policy import Policy
 logger = logging.getLogger(__name__)
 
 
+def _param_names(action: Any) -> list[str]:
+    """Parameter names for one action, from whichever source it has.
+
+    A declared schema wins because it is the richer statement; the template is
+    the fallback and needs no declaring. Required names come first, since that
+    is the order a caller cares about.
+    """
+    schema = getattr(action, "params_schema", None)
+    if isinstance(schema, dict):
+        props = schema.get("properties")
+        if isinstance(props, dict):
+            required = [r for r in (schema.get("required") or []) if r in props]
+            rest = sorted(k for k in props if k not in required)
+            return list(required) + rest
+    return sorted(
+        {
+            seg.split("}")[0]
+            for seg in (getattr(action, "request", None) or "").split("{")[1:]
+            if "}" in seg
+        }
+    )
+
+
 def make_local_api_handler(policy: Policy):
     """Build the handler over this host's configured endpoints."""
 
@@ -64,15 +87,27 @@ def make_local_api_handler(policy: Policy):
                         "method": a.method,
                         "returns": list(a.select) or "the endpoint's own shape",
                         "description": a.description,
-                        # Placeholders the caller must supply, read off the
-                        # declared request rather than documented separately,
-                        # so the two cannot drift.
-                        "params": sorted(
-                            {
-                                seg.split("}")[0]
-                                for seg in (a.request or "").split("{")[1:]
-                                if "}" in seg
-                            }
+                        # Names the caller must supply. Two sources, and the
+                        # field stays a list of names either way so a consumer
+                        # that only reads this keeps working:
+                        #
+                        #   HTTP     -> the {placeholders} in the request
+                        #               template, which cannot drift from what
+                        #               actually runs.
+                        #   JSON-RPC -> the properties of the declared schema.
+                        #               There is no template to read, so
+                        #               without a declaration this was empty
+                        #               for every such action.
+                        "params": _param_names(a),
+                        # The declared shape, verbatim, when the profile gives
+                        # one. Nested objects, arrays and enums live here; the
+                        # flat list above cannot express them. Absent when
+                        # undeclared rather than null, so its presence means
+                        # something.
+                        **(
+                            {"params_schema": a.params_schema}
+                            if a.params_schema
+                            else {}
                         ),
                     }
                     for an, a in sorted(endpoint.actions.items())

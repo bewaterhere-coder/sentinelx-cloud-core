@@ -1270,6 +1270,27 @@ file_ops:
 #   #     accept:  { exact: 20 }                 # or { allowed: [20, 21] }
 #   #   actions:
 #   #     session.snapshot: { method: session.snapshot }
+#   #     # `params:` on an action declares its parameter SHAPE, not values.
+#   #     # An HTTP action does not need it: the names are already readable
+#   #     # from the {placeholders} in its request. A JSON-RPC action has no
+#   #     # template, so without this a caller is told the action exists and
+#   #     # nothing about what it takes.
+#   #     #
+#   #     # Carried verbatim and never interpreted here, so nesting, arrays
+#   #     # and enums mean whatever the endpoint says they mean.
+#   #     agent.wait:
+#   #       method: agent.wait
+#   #       params:
+#   #         type: object
+#   #         required: [target]
+#   #         properties:
+#   #           target: { type: string }
+#   #           until:
+#   #             type: array
+#   #             items:
+#   #               enum: [idle, done, blocked]
+#   #           timeout_ms:
+#   #             type: [integer, "null"]
 #
 # On `compatibility`, both halves are declared: the profile says how to obtain
 # the metadata and which values it accepts, and SentinelX evaluates that

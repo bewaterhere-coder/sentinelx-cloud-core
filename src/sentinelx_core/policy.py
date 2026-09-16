@@ -129,6 +129,24 @@ class LocalApiAction:
     method: str | None = None
     select: tuple[str, ...] = ()
     description: str | None = None
+    # Declared shape of this action's parameters, carried VERBATIM and never
+    # interpreted here. `describe` hands it to the caller as-is.
+    #
+    # WHY DECLARED RATHER THAN PROBED. For an HTTP action the parameters are
+    # readable from the request template ("/containers/{id}/json" yields `id`),
+    # so nothing needs declaring. A JSON-RPC action has a method and no
+    # template, so there is nothing to read: describe returned an empty list
+    # for every such action, which is no use to a caller that has to build a
+    # nested object. Asking the endpoint instead would be better, but it
+    # assumes introspection: Herdr's schema is only reachable through its CLI
+    # (verified against 0.9.0 / protocol 22, core#45) and Docker has none, so
+    # a probe cannot be the baseline.
+    #
+    # The cost is a second source of truth that can drift. The compatibility
+    # constraint is what bounds that: an endpoint that changes protocol fails
+    # closed, which forces these declarations to be revisited rather than
+    # silently used against a changed API.
+    params_schema: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -462,6 +480,16 @@ class Policy:
                     )
                     continue
                 sel = act.get("select") or ()
+                # `params:` on an action is its SCHEMA, not values. Only shape
+                # is checked; the content is the endpoint's business and the
+                # agent never reads it.
+                pschema = act.get("params")
+                if pschema is not None and not isinstance(pschema, dict):
+                    logger.warning(
+                        "local_apis: %s.%s has a non-mapping `params` schema; "
+                        "ignoring it", name, act_name,
+                    )
+                    pschema = None
                 actions[str(act_name)] = LocalApiAction(
                     request=str(request) if request else None,
                     method=str(method) if method else None,
@@ -469,6 +497,7 @@ class Policy:
                     description=(
                         str(act["description"]) if act.get("description") else None
                     ),
+                    params_schema=pschema,
                 )
             if not actions:
                 logger.warning(

@@ -3,6 +3,17 @@
 Notable changes to `sentinelx-cloud-core`. Human-readable, date-stamped
 entries; releases before 0.3.0 predate this file — see the git history.
 
+## 0.13.0 — declared parameter schemas for local_api actions — 2026-09-16
+
+- An action can declare `params:` as a JSON-Schema-like shape. `describe`
+  returns it verbatim and now also derives parameter NAMES from it, so a
+  JSON-RPC action no longer reports an empty parameter list (core#45).
+- Declared rather than probed: a probe cannot be the baseline, since Herdr's
+  schema is reachable only through its CLI and Docker has no introspection.
+  An optional probe can still be added later for endpoints that can answer.
+- The agent never interprets the schema. Nesting, arrays and enums mean
+  whatever the endpoint says they mean.
+
 ## 0.12.5 - Quote service and task names on Windows - 2026-09-16
 
 - Service and task names are operator-chosen and were interpolated straight
