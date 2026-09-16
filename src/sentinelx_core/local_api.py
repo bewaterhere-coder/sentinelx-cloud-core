@@ -27,6 +27,8 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import sys
+from uuid import uuid4
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -190,14 +192,115 @@ async def call_http(endpoint: Any, action: Any, params: dict[str, Any]) -> Any:
         raise LocalApiError("bad_response", "endpoint did not return JSON") from exc
 
 
+# ---------------------------------------------------------------------------
+# run_as: reach a socket owned by a different Unix user
+#
+# An endpoint like Herdr creates its socket 0600 and checks the peer
+# credentials, so reaching it means BEING that user. Opening it as the agent's
+# own user fails with EACCES, and running the agent as root does not help
+# either: root connects but identifies as uid 0, which is not the owner.
+#
+# So when `run_as` is declared, the connect happens in a tiny helper invoked
+# through `sudo -n -u <user>`. Measured on a real 0600 socket: as the agent
+# user EACCES, as root peer_uid=0, through the helper peer_uid=<target>.
+#
+# WHY NOT CAP_SETUID. Forking and setuid'ing before connect also works and
+# needs no sudo, but it requires AmbientCapabilities=CAP_SETUID on the unit:
+# a permanently privileged agent on every host in the fleet to serve a feature
+# few will use. Sudo keeps the cost on the hosts that opt in.
+#
+# THE OPERATOR HAS TO ALLOW IT. Since the OpenAI security work, sudo is not
+# granted by default, so `run_as` does not silently acquire authority: it fails
+# with an explanation naming the exact sudoers line, and the host's owner
+# decides. That is the same shape the requester asked for, which was not to
+# weaken the socket's permissions nor put the agent in a shared group.
+# ---------------------------------------------------------------------------
+
+
+def _relay_command(endpoint: Any) -> list[str]:
+    return [
+        "sudo", "-n", "-u", endpoint.run_as,
+        sys.executable, "-m", "sentinelx_core.local_api_relay",
+        endpoint.path, str(endpoint.timeout_s),
+    ]
+
+
+async def _call_via_run_as(endpoint: Any, payload: bytes) -> bytes:
+    """Send one request through the relay, under the declared Unix identity."""
+    proc = await asyncio.create_subprocess_exec(
+        *_relay_command(endpoint),
+        stdin=asyncio.subprocess.PIPE,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    try:
+        out, err = await asyncio.wait_for(
+            proc.communicate(payload), timeout=endpoint.timeout_s + 5
+        )
+    except (TimeoutError, asyncio.TimeoutError) as exc:
+        proc.kill()
+        raise LocalApiError(
+            "timeout", f"{endpoint.name} did not answer in time"
+        ) from exc
+
+    if proc.returncode == 0 and out:
+        return out
+
+    detail = (err or b"").decode("utf-8", "replace").strip()
+    # sudo's own refusal is the common case and deserves a real answer rather
+    # than the raw message, because the fix is a specific sudoers line.
+    if "a password is required" in detail or "not allowed to execute" in detail or (
+        proc.returncode == 1 and "sudo" in detail
+    ):
+        raise LocalApiError(
+            "run_as_not_permitted",
+            f"'{endpoint.name}' declares run_as={endpoint.run_as!r}, but this "
+            f"agent may not become that user. The host's owner can allow just "
+            f"this, and nothing else, with a sudoers rule such as:\n"
+            f"  sentinelx ALL=({endpoint.run_as}) NOPASSWD: "
+            f"{sys.executable} -m sentinelx_core.local_api_relay\n"
+            f"Until then this endpoint is unreachable. ({detail[:120]})",
+        )
+    if proc.returncode == 3:
+        raise LocalApiError(
+            "endpoint_unreachable",
+            f"cannot open {endpoint.path} as {endpoint.run_as}: {detail[:160]}",
+        )
+    raise LocalApiError(
+        "bad_response", f"relay failed (rc={proc.returncode}): {detail[:160]}"
+    )
+
+
 async def call_jsonrpc(endpoint: Any, action: Any, params: dict[str, Any]) -> Any:
     """One JSON-RPC 2.0 call over a unix socket, newline framed."""
     payload = {
         "jsonrpc": "2.0",
-        "id": 1,
+        # A STRING id. JSON-RPC 2.0 permits either, but a receiver may declare
+        # it as a string in its own schema, and a string is the shape that
+        # satisfies both. Named after the caller so it is recognisable in an
+        # endpoint's logs.
+        "id": f"sentinel-local-api-{uuid4().hex[:8]}",
         "method": action.method,
         "params": params or {},
     }
+    if getattr(endpoint, "run_as", None):
+        line = await _call_via_run_as(
+            endpoint, (json.dumps(payload) + "\n").encode()
+        )
+        try:
+            message = json.loads(line)
+        except ValueError as exc:
+            raise LocalApiError(
+                "bad_response", "endpoint did not return JSON"
+            ) from exc
+        if isinstance(message, dict) and message.get("error"):
+            err = message["error"]
+            raise LocalApiError(
+                "endpoint_error",
+                f"{err.get('code')}: {err.get('message')}"
+                if isinstance(err, dict) else str(err),
+            )
+        return message.get("result") if isinstance(message, dict) else message
     try:
         reader, writer = await asyncio.wait_for(
             asyncio.open_unix_connection(endpoint.path), timeout=endpoint.timeout_s
