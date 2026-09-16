@@ -1221,6 +1221,22 @@ file_ops:
 # `unix` the agent opens a socket, so there is no process, no argv and no
 # shell. The whole shell-injection class cannot occur on this path.
 #
+# ON `run_as`. Some endpoints create their socket 0600 and check who is
+# connecting, so reaching one means BEING its owner, not merely having
+# permission to open it. Running the agent as root does not solve that: root
+# connects but identifies as uid 0, which is not the owner.
+#
+# When `run_as` is set, the connect happens in a tiny relay invoked through
+# `sudo -n -u <user>`. Since the agent is not granted sudo by default, the
+# host's owner has to allow exactly that and nothing else:
+#
+#   sentinelx ALL=(youruser) NOPASSWD: /path/to/.venv/bin/python -m sentinelx_core.local_api_relay
+#
+# Until that rule exists the endpoint answers run_as_not_permitted and names
+# the line to add. The relay takes a socket path and a timeout, writes one
+# request and reads one reply: it loads no config, interprets no payload and
+# runs nothing, and the path comes from this file rather than from the caller.
+#
 # local_apis:
 #   docker:
 #     transport: unix                  # unix | stdio
@@ -1247,7 +1263,7 @@ file_ops:
 #   #   transport: unix
 #   #   path: /run/user/1000/some_tool.sock
 #   #   protocol: jsonrpc
-#   #   run_as: youruser                # keep the Unix owner of the sessions
+#   #   run_as: youruser                # connect AS this Unix user
 #   #   compatibility:
 #   #     probe:   { method: session.describe }  # how to ASK for the version
 #   #     extract: protocol                      # where to read it in the reply

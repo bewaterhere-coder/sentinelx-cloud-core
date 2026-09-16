@@ -314,3 +314,95 @@ def test_a_half_written_constraint_is_dropped_not_half_enforced(tmp_path) -> Non
         tmp_path,
     )
     assert pol.local_apis["x"].compatibility == {}
+
+
+# --- run_as: reaching a socket owned by another Unix user ------------------
+#
+# Raised by @codxt in core#45: the field parsed and was never applied, so a
+# 0600 socket owned by another user stayed unreachable while the config said
+# otherwise. Measured against a real socket that checks peer credentials: as
+# the agent user EACCES, as ROOT it connects but reports peer_uid=0, and only a
+# connect performed as the target user reports the owner's uid. Running the
+# agent as root is therefore not a fix.
+
+
+def _endpoint_with_run_as(user="userx"):
+    from sentinelx_core.policy import LocalApiAction, LocalApiEndpoint
+
+    return LocalApiEndpoint(
+        name="ep", transport="unix", path="/run/user/1002/x.sock",
+        protocol="jsonrpc", run_as=user, timeout_s=5,
+        actions={"a": LocalApiAction(method="a")},
+    )
+
+
+def test_the_relay_command_becomes_that_user_and_nothing_else() -> None:
+    # The relay is the piece that runs under sudo, so what it is invoked with
+    # is the security surface. It takes a path and a timeout: no shell, no
+    # config, no arbitrary argv.
+    from sentinelx_core.local_api import _relay_command
+
+    cmd = _relay_command(_endpoint_with_run_as())
+    assert cmd[:4] == ["sudo", "-n", "-u", "userx"]
+    assert "-m" in cmd and "sentinelx_core.local_api_relay" in cmd
+    assert cmd[-2] == "/run/user/1002/x.sock"
+    assert float(cmd[-1]) == 5.0
+    assert not any(";" in part or "&&" in part for part in cmd)
+
+
+@pytest.mark.asyncio
+async def test_a_refused_sudo_names_the_sudoers_line(monkeypatch) -> None:
+    # The operator's next action is a specific sudoers rule, so the error says
+    # which one rather than reporting a generic permission failure.
+    import asyncio as _asyncio
+
+    from sentinelx_core.local_api import LocalApiError, _call_via_run_as
+
+    class _Proc:
+        returncode = 1
+
+        async def communicate(self, data=None):
+            return b"", b"sudo: a password is required"
+
+        def kill(self): ...
+
+    async def fake(*a, **k):
+        return _Proc()
+
+    monkeypatch.setattr(_asyncio, "create_subprocess_exec", fake)
+    with pytest.raises(LocalApiError) as exc:
+        await _call_via_run_as(_endpoint_with_run_as(), b"{}\n")
+    assert exc.value.code == "run_as_not_permitted"
+    assert "NOPASSWD" in exc.value.message
+    assert "userx" in exc.value.message
+
+
+@pytest.mark.asyncio
+async def test_a_refused_sudo_is_not_reported_as_a_version_problem(
+    monkeypatch, probe
+) -> None:
+    # The compatibility probe runs first, so without an explicit pass-through
+    # the operator is told their endpoint has a version problem when what they
+    # need is a sudoers line.
+    from sentinelx_core import local_api
+    from sentinelx_core.local_api import LocalApiError, ensure_compatible
+
+    async def refuse(endpoint, action, params):
+        raise LocalApiError("run_as_not_permitted", "nope")
+
+    monkeypatch.setattr(local_api, "call_jsonrpc", refuse)
+    ep = _FakeEndpoint(_EXACT_20, {"protocol": 20})
+    with pytest.raises(LocalApiError) as exc:
+        await ensure_compatible(ep)
+    assert exc.value.code == "run_as_not_permitted"
+
+
+def test_the_jsonrpc_id_is_a_string() -> None:
+    # 2.0 permits either, but a receiver may declare it as a string in its own
+    # schema, and a string satisfies both.
+    import inspect
+
+    from sentinelx_core import local_api
+
+    src = inspect.getsource(local_api.call_jsonrpc)
+    assert '"id": f"sentinel-local-api-' in src

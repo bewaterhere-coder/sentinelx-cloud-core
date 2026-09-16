@@ -421,10 +421,16 @@ async def ensure_compatible(endpoint: Any) -> None:
         else:
             reply = await call_jsonrpc(endpoint, probe_action, {})
     except LocalApiError as exc:
-        if exc.code in ("endpoint_unreachable", "timeout"):
+        if exc.code in ("endpoint_unreachable", "timeout", "run_as_not_permitted"):
             # Not a verdict: the epoch never started. Leave the cache empty so
             # the next attempt probes again instead of inheriting a failure
             # that was only ever about reachability.
+            #
+            # run_as_not_permitted belongs here too, and for a sharper reason:
+            # wrapping it as compatibility_unknown tells the operator their
+            # endpoint has a version problem when what they actually need is a
+            # sudoers line. The probe runs first, so without this the real cause
+            # is hidden behind the first thing that happened to fail.
             raise
         verdict = (
             "compatibility_unknown",
