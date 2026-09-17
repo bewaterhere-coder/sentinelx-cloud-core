@@ -339,6 +339,9 @@ def summarize_capabilities(full: Mapping[str, Any]) -> dict[str, Any]:
         "host": full.get("host"),
         "ops_supported": full.get("ops_supported"),
         "limits": full.get("limits"),
+        # Kept in the summary: a client that only ever sees the compact view
+        # still needs to know where its uploads land.
+        "upload_base": full.get("upload_base"),
         "file_ops_limits": {
             "max_read_bytes": file_ops.get("max_read_bytes"),
             "max_list_entries": file_ops.get("max_list_entries"),

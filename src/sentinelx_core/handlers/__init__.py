@@ -156,7 +156,10 @@ def build_registry(
     # project_snapshot (issue #32) -- so a new op is now advertised the
     # moment it is registered here, and nothing else needs touching.
     registry["capabilities"] = make_capabilities_handler(
-        policy, config_path, ops_supported=lambda: registry.keys()
+        policy,
+        config_path,
+        ops_supported=lambda: registry.keys(),
+        upload_base=upload_base,
     )
 
     # Only when the host opted in. No local_apis block means no handler and no

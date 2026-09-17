@@ -3,6 +3,22 @@
 Notable changes to `sentinelx-cloud-core`. Human-readable, date-stamped
 entries; releases before 0.3.0 predate this file — see the git history.
 
+## 0.13.1 - capabilities reports where uploads land - 2026-09-17
+
+- The staging directory is resolved at start-up: from the config, or the first
+  writable candidate (/var/lib/sentinelx/uploads, then the legacy
+  /home/sentinelx/uploads), or the system temp space. Nothing exposed which
+  one won, so host-side tooling that resolves a bare filename had to hard-code
+  our path and failed silently when it guessed wrong.
+- capabilities now reports it as `upload_base`, and the summary view keeps it.
+  Read-only: it says where staging happens, it does not move it. Deliberately
+  separate from file_ops -- staging there grants nothing under file_ops, and on
+  most hosts the directory is not in that list at all.
+- Two operators asked for this on the same day. One had written to three
+  different directories trying to find the right one; upload_file had been
+  returning the resolved absolute path all along, but only after the upload,
+  which is too late to configure a wrapper with.
+
 ## 0.13.0 — declared parameter schemas for local_api actions — 2026-09-16
 
 - An action can declare `params:` as a JSON-Schema-like shape. `describe`

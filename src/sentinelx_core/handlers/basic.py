@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import asyncio
 import platform
 import socket
@@ -57,6 +59,7 @@ def make_capabilities_handler(
     policy: Policy,
     config_path=None,
     ops_supported: Callable[[], Iterable[str]] | None = None,
+    upload_base: Path | None = None,
 ):
     """Build the `capabilities` handler.
 
@@ -173,6 +176,21 @@ def make_capabilities_handler(
                 "max_list_entries": policy.file_ops_max_list_entries,
                 "max_search_results": policy.file_ops_max_search_results,
             },
+            # Where upload_file, edit and script_run stage their files.
+            #
+            # Resolved at start-up from the config, or from the first writable
+            # candidate, or from the system temp space -- so it differs between
+            # hosts and cannot be assumed. Without it, anything that hands a
+            # bare filename to a host-side tool has to hard-code our path and
+            # breaks silently when it is wrong. Two operators asked for this on
+            # the same day, one of them after testing three different
+            # directories to find the right one.
+            #
+            # Read-only: it reports where staging happens, it does not move it.
+            # Separate from file_ops on purpose -- being able to stage a file
+            # here grants nothing under file_ops, and this path is usually not
+            # in that list at all.
+            "upload_base": str(upload_base) if upload_base else None,
         }
         if detail == "summary":
             return summarize_capabilities(result)
