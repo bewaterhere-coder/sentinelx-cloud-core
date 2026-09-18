@@ -3,6 +3,18 @@
 Notable changes to `sentinelx-cloud-core`. Human-readable, date-stamped
 entries; releases before 0.3.0 predate this file — see the git history.
 
+## 0.13.2 — sentinel_git failure modes — 2026-09-18
+
+- `apply_patch` retries once with `--recount` when git rejects a patch as
+  corrupt, which is the signature of hunk header counts a model got wrong.
+  ~3,100 calls from 240 users failed that way in 14 days. A correct patch is
+  untouched; a recounted one reports `recounted: true` rather than passing
+  silently.
+- `not_a_git_repo` now says that retrying the same path will keep returning the
+  same thing, and gives the `find` invocation that locates a checkout. 46% of
+  those 5,523 failures came from retry loops, worst case 65 attempts on one
+  directory.
+
 ## 0.13.1 - capabilities reports where uploads land - 2026-09-17
 
 - The staging directory is resolved at start-up: from the config, or the first
