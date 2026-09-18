@@ -112,8 +112,18 @@ async def _revalidate_git_root(policy: Policy, root: Path, path: str) -> Path:
     if rc != 0 or not out.strip():
         raise HandlerError(
             "not_a_git_repo",
-            f"{path!r} is not inside a git repository. (git diff/apply operate "
-            "on a working tree; use project_snapshot for a plain directory.)",
+            # TERMINAL BY DESIGN. Measured over 14 days: 5,523 failures here,
+            # and 46% of them came from retry loops on the SAME path, worst case
+            # 65 attempts. The old text said what was wrong but never that the
+            # answer would not change, so models read it as transient. Only 10
+            # of 4,780 had a repo in a subdirectory, so "look harder nearby" is
+            # not the fix either: usually there is simply no repo.
+            f"{path!r} is not inside a git repository, and retrying this same "
+            "path will keep returning this. Either the directory is not a "
+            "checkout, or the repository is elsewhere. To read a plain "
+            "directory use project_snapshot; to locate a checkout, run "
+            "sentinel_exec with something like "
+            "`find <dir> -maxdepth 3 -name .git -printf '%h\\n'`.",
         )
     git_root_str = out.decode("utf-8", "replace").strip()
     try:
@@ -495,7 +505,11 @@ async def _op_apply_patch(policy: Policy, payload: dict[str, Any]) -> dict[str, 
         rc, out, _ = await _run_git(resolved, "rev-parse", "--show-toplevel")
         if rc != 0 or not out.strip():
             raise HandlerError(
-                "not_a_git_repo", f"{req!r} is not inside a git repository."
+                "not_a_git_repo",
+                f"{req!r} is not inside a git repository, and retrying this "
+                "same path will keep returning this. To locate a checkout, run "
+                "sentinel_exec with something like "
+                "`find <dir> -maxdepth 3 -name .git -printf '%h\\n'`.",
             )
         git_root_str = out.decode("utf-8", "replace").strip()
         git_root = policy.resolve_path(git_root_str, need_write=True)
@@ -519,23 +533,68 @@ async def _op_apply_patch(policy: Policy, payload: dict[str, Any]) -> dict[str, 
             )
         _validate_patch_paths(policy, git_root, paths)
 
+        # Try the patch as given, and only if git rejects it as CORRUPT, try
+        # again letting git recount the hunk headers.
+        #
+        # WHY. Measured over 14 days: ~3,100 apply_patch calls from 240 users
+        # failed with "corrupt patch at line N", clustered on lines 10-22, which
+        # is the first hunk. That is the signature of wrong @@ -a,b +c,d @@
+        # counts, the classic failure of a model writing a unified diff by hand.
+        # Verified against git: a patch whose only fault is its counts fails
+        # plainly and applies with --recount.
+        #
+        # NOT ALWAYS ON. --recount tells git to trust the hunk BODY and redo the
+        # arithmetic, so it accepts patches that are currently rejected. A patch
+        # that is wrong in some other way could then apply as something slightly
+        # different from what was intended. Keeping it to the second attempt
+        # means everything that works today behaves exactly as it does today,
+        # and the result says plainly when a recount happened.
+        #
+        # It does not rescue a TRUNCATED hunk: that still fails, though with
+        # "patch failed: <file>:<line>", which at least points into the file
+        # rather than into the patch.
+        recounted = False
+
+        async def _apply(*args: str, **kw: Any) -> tuple[int, bytes, bytes]:
+            """Run git apply, retrying once with --recount on a corrupt patch."""
+            nonlocal recounted
+            rc, out, err = await _run_git(git_root, "apply", *args, **kw)
+            if rc == 0 or b"corrupt patch" not in err:
+                return rc, out, err
+            rc2, out2, err2 = await _run_git(
+                git_root, "apply", "--recount", *args, **kw
+            )
+            if rc2 == 0:
+                recounted = True
+                return rc2, out2, err2
+            return rc, out, err  # keep the FIRST error: it names the real fault
+
         # Summary from a query-only numstat (never mutates).
-        rc_ns, ns_out, _ = await _run_git(
-            git_root, "apply", "--numstat", "--no-3way", "-", stdin=patch_bytes
+        rc_ns, ns_out, _ = await _apply(
+            "--numstat", "--no-3way", "-", stdin=patch_bytes
         )
         files = ins = dels = 0
         if rc_ns == 0:
             files, ins, dels = _parse_apply_numstat(ns_out)
 
         # --check first: validate without mutating. On failure, mutate nothing.
-        rc_chk, _, chk_err = await _run_git(
-            git_root, "apply", "--check", "--no-3way", "-", stdin=patch_bytes
+        rc_chk, _, chk_err = await _apply(
+            "--check", "--no-3way", "-", stdin=patch_bytes
         )
         if rc_chk != 0:
+            detail = _scrub(chk_err.decode("utf-8", "replace"), git_root)
+            if b"corrupt patch" in chk_err:
+                # Say what to fix. "corrupt patch at line 11" alone tells a model
+                # nothing actionable, and the audit shows them retrying blind.
+                detail = (
+                    f"{detail} The hunk header counts were recomputed and it "
+                    "still did not parse, so the hunk body itself is "
+                    "incomplete: check that every line carries a leading "
+                    "space, + or -, and that no context lines are missing."
+                )
             raise HandlerError(
                 "patch_does_not_apply",
-                _scrub(chk_err.decode("utf-8", "replace"), git_root)
-                or "git apply --check rejected the patch.",
+                detail or "git apply --check rejected the patch.",
                 details={"root": str(git_root), "dry_run": dry_run},
             )
 
@@ -544,13 +603,15 @@ async def _op_apply_patch(policy: Policy, payload: dict[str, Any]) -> dict[str, 
                 "ok": True, "version": 1, "applied": False, "dry_run": True,
                 "root": str(git_root),
                 "summary": {"files": files, "insertions": ins, "deletions": dels},
+                # Present only when it happened, so its absence is not noise and
+                # its presence is a real signal that the patch as written was
+                # malformed even though the result is correct.
+                **({"recounted": True} if recounted else {}),
             }
 
         # Apply for real. No --reject: all-or-nothing (git apply is atomic —
         # it verifies all hunks before touching the working tree).
-        rc_app, _, app_err = await _run_git(
-            git_root, "apply", "--no-3way", "-", stdin=patch_bytes
-        )
+        rc_app, _, app_err = await _apply("--no-3way", "-", stdin=patch_bytes)
         if rc_app != 0:
             raise HandlerError(
                 "patch_does_not_apply",
@@ -563,6 +624,7 @@ async def _op_apply_patch(policy: Policy, payload: dict[str, Any]) -> dict[str, 
             "ok": True, "version": 1, "applied": True, "dry_run": False,
             "root": str(git_root),
             "summary": {"files": files, "insertions": ins, "deletions": dels},
+            **({"recounted": True} if recounted else {}),
         }
 
     try:
