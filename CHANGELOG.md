@@ -3,6 +3,25 @@
 Notable changes to `sentinelx-cloud-core`. Human-readable, date-stamped
 entries; releases before 0.3.0 predate this file — see the git history.
 
+## 0.14.2 - Git diagnostics no longer depend on the host's language - 2026-09-18
+
+- The --recount retry branches on git's stderr, looking for "corrupt patch".
+  Git translates that text, so on a localized host the branch never fired and
+  the malformed-hunk recovery silently stopped existing -- no error, just a
+  feature that was not there.
+- Reported from a pl_PL.UTF-8 host with the exact message git produces there,
+  the failing upstream tests, the cause and the fix. Reproduced in a container
+  with the Polish translation installed: the old environment misses the
+  condition, the pinned one catches it and --recount then applies the patch.
+- LC_ALL=C in _GIT_ENV, which is merged OVER os.environ so an inherited locale
+  cannot win. C rather than C.UTF-8: the latter is absent on musl and older
+  glibc, and we only need the messages untranslated -- paths travel as bytes
+  and are never decoded through the locale.
+- Applied to project_snapshot.py as well, which git_ops copied its substrate
+  from and which its own header says must not diverge. A test holds the two
+  environments identical, because a key added to one and not the other is
+  exactly how the next one of these gets in.
+
 ## 0.14.1 - Reading a service's state no longer asks for sudo - 2026-09-17
 
 - requires_sudo is a property of the SERVICE, set by the operator because

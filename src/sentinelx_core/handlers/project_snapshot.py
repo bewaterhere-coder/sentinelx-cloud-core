@@ -39,6 +39,17 @@ _GIT_ENV = {
     "GIT_OPTIONAL_LOCKS": "0",    # read-only: don't take optional locks
     "GIT_PAGER": "cat",           # no pager
     "GIT_CONFIG_NOSYSTEM": "1",   # ignore /etc/gitconfig quirks
+    # Pin the language of git's own diagnostics. We branch on the text of
+    # stderr -- the --recount retry looks for "corrupt patch" -- and git
+    # translates that text, so on a host with a localized LANG the branch never
+    # fired and the recovery silently stopped existing. Reported from a
+    # pl_PL.UTF-8 host where git says "uszkodzona łatka".
+    #
+    # LC_ALL wins over LANG and LC_MESSAGES, so one key is enough. C rather
+    # than C.UTF-8 because C.UTF-8 is not present everywhere (musl, older
+    # glibc) and we only need the messages untranslated: paths still travel as
+    # bytes and are never decoded through the locale.
+    "LC_ALL": "C",
 }
 
 
