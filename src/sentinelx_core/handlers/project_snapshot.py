@@ -25,6 +25,7 @@ from typing import Any
 from sentinelx_core.executor import HandlerError
 from sentinelx_core.handlers.fileops import _require_str, _resolve_or_reject
 from sentinelx_core.policy import Policy
+from sentinelx_core.winspawn import spawn_kwargs
 
 # Hard caps (always win over any request-provided value).
 _MAX_CHANGED_FILES = 50
@@ -58,9 +59,11 @@ async def _run_git(root: Path, *args: str) -> tuple[int, bytes]:
     env = {**os.environ, **_GIT_ENV}
     proc = await asyncio.create_subprocess_exec(
         "git", "-C", str(root), "-c", "core.fsmonitor=false", *args,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.DEVNULL,
-        env=env,
+        **spawn_kwargs(
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.DEVNULL,
+            env=env,
+        ),
     )
     try:
         out, _ = await asyncio.wait_for(proc.communicate(), timeout=_GIT_CMD_TIMEOUT)

@@ -34,6 +34,7 @@ from typing import Any
 from sentinelx_core.executor import HandlerError
 from sentinelx_core.handlers.fileops import _require_str, _resolve_or_reject
 from sentinelx_core.policy import Policy
+from sentinelx_core.winspawn import spawn_kwargs
 
 # --- Hard caps (server ceilings ALWAYS win over any request-provided value) --
 _MAX_FILES_CEILING = 50            # max file entries returned by diff
@@ -80,10 +81,12 @@ async def _run_git(
     env = {**os.environ, **_GIT_ENV}
     proc = await asyncio.create_subprocess_exec(
         "git", "-C", str(root), "-c", "core.fsmonitor=false", *args,
-        stdin=asyncio.subprocess.PIPE if stdin is not None else asyncio.subprocess.DEVNULL,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-        env=env,
+        **spawn_kwargs(
+            stdin=asyncio.subprocess.PIPE if stdin is not None else asyncio.subprocess.DEVNULL,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            env=env,
+        ),
     )
     try:
         out, err = await asyncio.wait_for(

@@ -3,6 +3,25 @@
 Notable changes to `sentinelx-cloud-core`. Human-readable, date-stamped
 entries; releases before 0.3.0 predate this file — see the git history.
 
+## 0.14.4 - No console windows flash on Windows - 2026-09-18
+
+- A console application launched from a process with no console of its own
+  gets a new one allocated, and that console comes with a VISIBLE window. The
+  agent runs as a service or a pythonw scheduled task, so it has none: exec,
+  git, project_snapshot, edit and local_api each painted a brief black box on
+  the operator's desktop. Reported with the spawn sites already identified.
+- CREATE_NO_WINDOW was applied in exactly one handler and nowhere else -- what
+  happens when the knowledge lives in one file's comments instead of a shared
+  helper. It now lives in sentinelx_core.winspawn, used at every spawn site,
+  merging rather than overwriting flags the caller already set.
+- The nested PowerShell 5.1 bootstrap gets -WindowStyle Hidden as well: the
+  outer process is covered by the flag, but PowerShell launches the inner one
+  itself and the flag does not carry across.
+- A test walks every create_subprocess_exec/Popen call in the package via the
+  AST and fails if one does not suppress the window, with a guard so it cannot
+  pass by finding nothing. It immediately caught script.py building a local
+  dict that shadowed the helper's name -- now unified.
+
 ## 0.14.3 - Say which allowlisted commands the host cannot run - 2026-09-18
 
 - An operator allowlisted an exact sudo command on a host installed with

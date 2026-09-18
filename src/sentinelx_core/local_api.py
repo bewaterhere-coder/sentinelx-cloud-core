@@ -30,6 +30,7 @@ import logging
 import sys
 from uuid import uuid4
 from typing import Any
+from sentinelx_core.winspawn import spawn_kwargs
 
 logger = logging.getLogger(__name__)
 
@@ -229,9 +230,11 @@ async def _call_via_run_as(endpoint: Any, payload: bytes) -> bytes:
     """Send one request through the relay, under the declared Unix identity."""
     proc = await asyncio.create_subprocess_exec(
         *_relay_command(endpoint),
-        stdin=asyncio.subprocess.PIPE,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
+        **spawn_kwargs(
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        ),
     )
     try:
         out, err = await asyncio.wait_for(

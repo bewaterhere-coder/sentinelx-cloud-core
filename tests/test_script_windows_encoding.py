@@ -200,7 +200,11 @@ async def test_windows_children_get_their_own_console(policy, spawned, monkeypat
         {"interpreter": "powershell", "content": "Write-Output 'x'"}
     )
 
-    assert spawned[0]["creationflags"] == script_mod._CREATE_NO_WINDOW
+    from sentinelx_core import winspawn
+
+    # The flag moved to winspawn so every spawn site gets it, not just this
+    # one; the property this test guards is unchanged.
+    assert spawned[0]["creationflags"] & winspawn.CREATE_NO_WINDOW
 
 
 @pytest.mark.asyncio

@@ -16,6 +16,7 @@ import sys
 import time
 from pathlib import Path
 from typing import Any
+from sentinelx_core.winspawn import spawn_kwargs
 
 
 def _shell_argv(cmd: str) -> list[str]:
@@ -58,10 +59,12 @@ async def run_shell(
     try:
         proc = await asyncio.create_subprocess_exec(
             *_shell_argv(cmd),
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-            cwd=cwd,
-            env=full_env,
+            **spawn_kwargs(
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                cwd=cwd,
+                env=full_env,
+            ),
         )
         try:
             stdout_b, stderr_b = await asyncio.wait_for(proc.communicate(), timeout=timeout)
@@ -117,10 +120,12 @@ async def run_shell_split(
     try:
         proc = await asyncio.create_subprocess_exec(
             *_shell_argv(cmd),
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-            cwd=cwd,
-            env=full_env,
+            **spawn_kwargs(
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                cwd=cwd,
+                env=full_env,
+            ),
         )
         try:
             stdout_b, stderr_b = await asyncio.wait_for(proc.communicate(), timeout=timeout)
@@ -159,8 +164,10 @@ async def get_command_help(cmd: str, timeout: float = 10.0) -> str:
     try:
         proc = await asyncio.create_subprocess_exec(
             *_shell_argv(cmd),
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
+            **spawn_kwargs(
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            ),
         )
         try:
             stdout_b, stderr_b = await asyncio.wait_for(proc.communicate(), timeout=timeout)

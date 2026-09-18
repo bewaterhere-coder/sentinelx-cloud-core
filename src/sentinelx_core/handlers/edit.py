@@ -52,6 +52,7 @@ from typing import Any
 from sentinelx_core.executor import HandlerError
 from sentinelx_core.policy import Policy
 from sentinelx_core.staging import staging_root
+from sentinelx_core.winspawn import spawn_kwargs
 
 VALID_MODES = ("replace", "regex", "replace-block", "append", "prepend", "write")
 VALID_PRESETS = ("nginx", "json", "python", "sh", "yaml", "systemd", "toml")
@@ -246,8 +247,10 @@ async def _run_argv(argv: list[str], timeout: int = 60) -> dict[str, Any]:
     try:
         proc = await asyncio.create_subprocess_exec(
             *argv,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
+            **spawn_kwargs(
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            ),
         )
         stdout_b, stderr_b = await asyncio.wait_for(proc.communicate(), timeout=timeout)
     except asyncio.TimeoutError:

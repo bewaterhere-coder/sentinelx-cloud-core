@@ -60,6 +60,7 @@ from sentinelx_core.executor import HandlerError
 from sentinelx_core.jobs import BACKGROUND_TIMEOUT_MAX
 from sentinelx_core.policy import Policy
 from sentinelx_core.staging import staging_root
+from sentinelx_core.winspawn import spawn_kwargs
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +83,10 @@ _POWERSHELL_INTERPRETERS = ("powershell", "pwsh")
 # change dies with the child and the agent's console keeps its own code
 # page. It also guarantees the child HAS a console, which is what makes
 # the bootstrap work at all when the agent runs as a service.
-_CREATE_NO_WINDOW = 0x08000000
+#
+# The flag itself now lives in sentinelx_core.winspawn, applied at every spawn
+# site rather than only this one -- which is how seven others ended up without
+# it and flashed windows on operators' desktops.
 
 # Windows PowerShell 5.1 encodes redirected output in the console code page
 # (cp437 on a default es/en install), so anything outside it is destroyed at
@@ -109,7 +113,13 @@ _POWERSHELL_BOOTSTRAP = (
     "[Parameter(ValueFromRemainingArguments=$true)]$SentinelXArgs)\n"
     "[Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)\n"
     "$OutputEncoding = [Console]::OutputEncoding\n"
+    # -WindowStyle Hidden on the INNER powershell too. The outer process gets
+    # CREATE_NO_WINDOW below, but this one is launched by PowerShell itself and
+    # that flag does not carry across, so it could still paint a window on the
+    # operator's desktop. Placed before -File, which must stay last for its
+    # argument semantics to survive.
     "& powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass "
+    "-WindowStyle Hidden "
     "-File $SentinelXScript @SentinelXArgs\n"
     "exit $LASTEXITCODE\n"
 )
@@ -404,13 +414,12 @@ def make_script_run_handler(policy: Policy, upload_base: Path):
                 ]
                 spawn_cwd = None
 
-            spawn_kwargs: dict[str, Any] = {}
-            if sys.platform == "win32":
-                spawn_kwargs["creationflags"] = _CREATE_NO_WINDOW
-            else:
-                # Own session, so the whole tree shares one process group and a
-                # timeout can reach every descendant with a single signal.
-                spawn_kwargs["start_new_session"] = True
+            # Windows: no console window (see winspawn). POSIX: own session, so
+            # the whole tree shares one process group and a timeout can reach
+            # every descendant with a single signal.
+            extra: dict[str, Any] = {}
+            if sys.platform != "win32":
+                extra["start_new_session"] = True
 
             start = time.time()
             try:
@@ -418,9 +427,11 @@ def make_script_run_handler(policy: Policy, upload_base: Path):
                     *argv,
                     stdout=asyncio.subprocess.PIPE,
                     stderr=asyncio.subprocess.PIPE,
-                    cwd=spawn_cwd,
-                    env=full_env,
-                    **spawn_kwargs,
+                    **spawn_kwargs(
+                        cwd=spawn_cwd,
+                        env=full_env,
+                        **extra,
+                    ),
                 )
                 stdout_b, stderr_b = await asyncio.wait_for(
                     proc.communicate(), timeout=timeout
