@@ -842,14 +842,32 @@ async def _op_clone(policy: Policy, payload: dict[str, Any]) -> dict[str, Any]:
         # dest_not_empty, which reads as a different problem entirely and sends
         # the caller looking in the wrong place.
         _discard_partial_clone(target, created)
-        depth_hint = (
-            " Try again with depth (for example depth: 1), which fetches only "
-            "the latest commit and turns minutes into seconds for a large "
-            "repository."
-            if not payload.get("depth")
-            else " Even shallow, this repository did not arrive in time; clone "
-            "it on the host directly, or narrow it with branch."
-        )
+        # Two rungs, in order. depth keeps the caller inside this tool, where
+        # the destination is validated and a failure cleans up after itself.
+        # Only when that has already been tried is it worth leaving, and then
+        # the escape hatch is spelled out rather than described: a model told
+        # to "use another tool" will invent a command line, and the whole point
+        # of this operation is that it does not have to.
+        if not payload.get("depth"):
+            depth_hint = (
+                " Try again with depth (for example depth: 1), which fetches "
+                "only the latest commit and turns minutes into seconds on a "
+                "large repository. Most work on a checkout does not need the "
+                "full history."
+            )
+        else:
+            depth_hint = (
+                " A shallow clone still did not arrive in time, so this one is "
+                "too large for a single tool call. Run it as a background job "
+                "instead, which has an hour rather than a minute:\n"
+                "  sentinel_script_run(\n"
+                "      background=True,\n"
+                f"      content='git clone --depth 1 {url} {target}',\n"
+                "  )\n"
+                "then collect the result with notifications(operation='check'). "
+                "Note that path is not validated on that route, so check the "
+                "destination yourself."
+            )
         raise HandlerError(
             "clone_timeout",
             f"The clone did not finish within {_NET_TIMEOUT}s and the partial "

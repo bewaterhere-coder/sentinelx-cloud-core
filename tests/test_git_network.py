@@ -174,12 +174,9 @@ async def test_a_timed_out_clone_leaves_nothing_behind(workspace, monkeypatch) -
     assert not dest.exists(), "a partial clone must not survive its own failure"
 
 
-async def test_the_timeout_message_offers_depth(workspace, monkeypatch) -> None:
-    # A shallow clone turns minutes into seconds on a large repository, and the
-    # caller has no way to know that unless we say it.
+@pytest.fixture
+def always_times_out(monkeypatch):
     from sentinelx_core.handlers import git_ops
-
-    tmp, h, origin = workspace
 
     async def _raise_timeout(coro, timeout=None):
         coro.close()
@@ -187,6 +184,34 @@ async def test_the_timeout_message_offers_depth(workspace, monkeypatch) -> None:
         raise asyncio.TimeoutError
 
     monkeypatch.setattr(git_ops.asyncio, "wait_for", _raise_timeout)
+
+
+async def test_the_first_suggestion_is_depth(workspace, always_times_out) -> None:
+    # depth keeps the caller INSIDE this operation, where the destination is
+    # validated and a failure cleans up after itself. That is worth trying
+    # before sending anyone to a free-form command line.
+    tmp, h, origin = workspace
     with pytest.raises(HandlerError) as exc:
         await h({"operation": "clone", "url": str(origin), "dest": str(tmp / "s2")})
-    assert "depth" in str(exc.value)
+    msg = str(exc.value)
+    assert "depth" in msg
+    assert "script_run" not in msg, "do not send them away on the first failure"
+
+
+async def test_a_shallow_clone_that_still_times_out_gets_the_exact_call(
+    workspace, always_times_out
+) -> None:
+    # Second rung, and only now. A model told merely to "use another tool" will
+    # invent a command line; the whole point of this operation is that it does
+    # not have to. So the call is spelled out, with the url and destination
+    # already in it, and the cost of leaving is stated.
+    tmp, h, origin = workspace
+    dest = tmp / "s3"
+    with pytest.raises(HandlerError) as exc:
+        await h({"operation": "clone", "url": str(origin), "dest": str(dest),
+                 "depth": 1})
+    msg = str(exc.value)
+    assert "background=True" in msg
+    assert str(dest) in msg and str(origin) in msg
+    assert "notifications" in msg
+    assert "not validated" in msg
