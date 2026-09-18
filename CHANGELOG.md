@@ -3,6 +3,22 @@
 Notable changes to `sentinelx-cloud-core`. Human-readable, date-stamped
 entries; releases before 0.3.0 predate this file — see the git history.
 
+## 0.14.1 - Reading a service's state no longer asks for sudo - 2026-09-17
+
+- requires_sudo is a property of the SERVICE, set by the operator because
+  restarting needs root. It was applied to every action, so plain status,
+  is-active and is-enabled reads were prefixed with sudo as well.
+- On a host installed with NoNewPrivileges -- our own hardened default -- sudo
+  cannot run at all, so asking whether a service was up failed on exactly the
+  hosts that had followed our security advice. Reported by an operator who
+  declined the obvious workaround of weakening the install, and was right to.
+- Verified on a real host as the agent's unprivileged user before changing
+  anything: status, is-active and is-enabled return 0; restart and stop fail
+  with "Interactive authentication required". The split follows that
+  measurement.
+- The launchd path is left alone: launchctl print on the system domain does
+  appear to need root, and we have no macOS host to confirm it on.
+
 ## 0.14.0 — git over the network — 2026-09-18
 
 - `sentinel_git` gains ls_remote, fetch, clone and push. Measured over 7 days,

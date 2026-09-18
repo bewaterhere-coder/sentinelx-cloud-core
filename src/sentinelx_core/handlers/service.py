@@ -22,8 +22,25 @@ from sentinelx_core.executor_engine import run_shell_split
 from sentinelx_core.policy import Policy
 
 
+# systemctl actions that only read state. Verified on a real host as the agent's
+# own unprivileged user: status, is-active and is-enabled all return 0, while
+# restart and stop fail with "Interactive authentication required".
+_SYSTEMCTL_READ_ONLY = frozenset({"status", "is-active", "is-enabled"})
+
+
 def _build_systemctl(action: str, unit: str, requires_sudo: bool) -> str:
-    prefix = "sudo " if requires_sudo else ""
+    """Build the systemctl command, elevating only when the action needs it.
+
+    requires_sudo is a property of the SERVICE, and an operator sets it because
+    restarting needs root -- which then dragged sudo onto plain status reads as
+    well. On a host installed with NoNewPrivileges (our hardened default) sudo
+    cannot run at all, so asking whether a service was up failed on exactly the
+    hosts that had followed our own security advice.
+
+    Reading state needs no privileges, so it no longer asks for any.
+    """
+    elevate = requires_sudo and action not in _SYSTEMCTL_READ_ONLY
+    prefix = "sudo " if elevate else ""
     return f"{prefix}systemctl {action} {unit}"
 
 
