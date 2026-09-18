@@ -55,7 +55,10 @@ _GIT_ENV = {
 
 
 async def _run_git(
-    root: Path, *args: str, stdin: bytes | None = None
+    root: Path,
+    *args: str,
+    stdin: bytes | None = None,
+    timeout: float | None = None,
 ) -> tuple[int, bytes, bytes]:
     """Run a fixed git argv under ``root``. Returns (rc, stdout, stderr).
 
@@ -72,7 +75,11 @@ async def _run_git(
     )
     try:
         out, err = await asyncio.wait_for(
-            proc.communicate(input=stdin), timeout=_GIT_CMD_TIMEOUT
+            proc.communicate(input=stdin),
+            # Local git is fast and 15s is a generous ceiling for it. A network
+            # operation is a different animal: cloning a real repository over a
+            # slow link legitimately takes minutes, so those pass their own.
+            timeout=timeout if timeout is not None else _GIT_CMD_TIMEOUT,
         )
     except asyncio.TimeoutError:
         try:
@@ -638,6 +645,231 @@ async def _op_apply_patch(policy: Policy, payload: dict[str, Any]) -> dict[str, 
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# Network operations
+#
+# diff and apply_patch never touch the network. These four do, which is why
+# sentinel_git's openWorldHint changes with them.
+#
+# WHAT IS DELIBERATELY ABSENT: `pull`. It is fetch plus merge, and a merge can
+# conflict, leave a dirty tree, or move HEAD somewhere the caller did not
+# intend. Exposing it as one operation would hide all of that behind a verb that
+# sounds atomic. fetch, then an explicit merge or rebase, is honest about what
+# is happening; pull is merely convenient.
+#
+# CREDENTIALS ARE NEVER OURS. Every one of these runs git on the host, using
+# whatever that machine already has: ssh-agent, a credential helper, a deploy
+# key. SentinelX does not see, store or forward any of it, exactly as it does
+# not when the same command goes through exec.
+# ---------------------------------------------------------------------------
+
+_NET_TIMEOUT = 120  # seconds: a clone of a real repository is not instant
+
+
+def _remote_hint(err: str) -> str:
+    """Turn git's transport errors into something a caller can act on.
+
+    git's own wording assumes a human with a terminal and an ssh config. A model
+    reading "Permission denied (publickey)" cannot tell whether to retry, ask
+    for a different URL, or stop. Each of these says which, because the audit
+    shows what happens otherwise: the not_a_git_repo message never said retrying
+    was pointless and models retried the same path up to 65 times.
+    """
+    low = err.lower()
+    if "permission denied (publickey)" in low or "authentication failed" in low:
+        return (
+            " This host has no usable credential for that remote, and retrying "
+            "will not change that. Credentials belong to the host, not to "
+            "SentinelX: someone with access needs to add an SSH key, a deploy "
+            "key or a credential helper there."
+        )
+    if "could not resolve host" in low or "name or service not known" in low:
+        return (
+            " The remote host name did not resolve from this machine. Check the "
+            "URL, or whether this host has DNS and egress to it."
+        )
+    if "connection refused" in low or "connection timed out" in low:
+        return (
+            " The remote refused or did not answer. This may be transient, but "
+            "it may equally be a firewall on this host; do not retry more than "
+            "once without checking."
+        )
+    if "repository not found" in low or "does not appear to be a git repo" in low:
+        return (
+            " The remote exists but does not expose that repository to this "
+            "host's credential. Often a private repo the key cannot see, which "
+            "looks identical to a missing one."
+        )
+    if "shallow" in low:
+        return " The local clone is shallow; a full history operation needs --unshallow."
+    return ""
+
+
+def _net_error(code: str, action: str, rc: int, err: bytes, root: Path) -> HandlerError:
+    text = _scrub(err.decode("utf-8", "replace"), root).strip()
+    return HandlerError(
+        code,
+        f"{action} failed (exit {rc}): {text or 'no output'}{_remote_hint(text)}",
+    )
+
+
+async def _op_ls_remote(policy: Policy, payload: dict[str, Any]) -> dict[str, Any]:
+    """Read refs from a remote. Touches no working tree at all.
+
+    The safest thing here, and the one that answers "what SHA is that branch on
+    right now", which is what a compare-and-swap publish needs before it starts.
+    """
+    remote = str(payload.get("remote") or "origin").strip()
+    pattern = payload.get("ref_pattern")
+    path = payload.get("path")
+
+    root = _resolve_or_reject(policy, str(path)) if path else None
+    if root is not None:
+        root = await _revalidate_git_root(policy, root, str(path))
+
+    args = ["ls-remote", remote]
+    if pattern:
+        args.append(str(pattern))
+    rc, out, err = await _run_git(root or Path.cwd(), *args, timeout=_NET_TIMEOUT)
+    if rc != 0:
+        raise _net_error("remote_failed", f"git ls-remote {remote}", rc, err,
+                         root or Path("/"))
+
+    refs = []
+    for line in out.decode("utf-8", "replace").splitlines():
+        if "\t" in line:
+            sha, ref = line.split("\t", 1)
+            refs.append({"sha": sha.strip(), "ref": ref.strip()})
+    return {"ok": True, "version": 1, "operation": "ls_remote",
+            "remote": remote, "refs": refs[:200], "count": len(refs)}
+
+
+async def _op_fetch(policy: Policy, payload: dict[str, Any]) -> dict[str, Any]:
+    """Bring objects down without touching the working tree.
+
+    Safe by construction: fetch updates remote-tracking refs and nothing the
+    caller can lose. It is the honest half of what `pull` does.
+    """
+    path = payload.get("path")
+    if not path:
+        raise HandlerError("invalid_payload", "fetch needs `path`: the repository.")
+    root = await _revalidate_git_root(
+        policy, _resolve_or_reject(policy, str(path)), str(path)
+    )
+    remote = str(payload.get("remote") or "origin").strip()
+    args = ["fetch", "--prune", remote]
+    if payload.get("ref"):
+        args.append(str(payload["ref"]))
+    rc, out, err = await _run_git(root, *args, timeout=_NET_TIMEOUT)
+    if rc != 0:
+        raise _net_error("remote_failed", f"git fetch {remote}", rc, err, root)
+    return {"ok": True, "version": 1, "operation": "fetch", "root": str(root),
+            "remote": remote,
+            "output": _scrub(err.decode("utf-8", "replace"), root).strip()[:2000]}
+
+
+async def _op_clone(policy: Policy, payload: dict[str, Any]) -> dict[str, Any]:
+    """Create a checkout where there was none.
+
+    Writes, but cannot destroy: it refuses a destination that already exists
+    rather than merging into it or emptying it.
+    """
+    url = str(payload.get("url") or "").strip()
+    dest = str(payload.get("dest") or "").strip()
+    if not url or not dest:
+        raise HandlerError("invalid_payload", "clone needs `url` and `dest`.")
+
+    # clone CREATES a tree, so the destination needs rw, not just readability.
+    # Same check apply_patch makes, through the same policy API.
+    try:
+        target = Path(policy.resolve_path(dest, need_write=True))
+    except Exception as exc:
+        rw_paths = [e.path for e in policy.file_ops_paths if e.access == "rw"]
+        raise HandlerError(
+            "path_not_allowed",
+            f"clone writes a new tree, so {dest!r} must sit under a file_ops "
+            f"entry with access: rw. Writable paths on this host: {rw_paths}.",
+            details={"writable_paths": rw_paths, "dest": dest},
+        ) from exc
+    if target.exists() and any(target.iterdir()):
+        raise HandlerError(
+            "dest_not_empty",
+            f"{dest!r} already exists and is not empty. clone refuses to write "
+            "into an existing tree; choose an empty or new directory, or use "
+            "fetch if this is already a checkout.",
+        )
+    args = ["clone"]
+    if payload.get("depth"):
+        args += ["--depth", str(_clamp_int(payload["depth"], 1, 1, 1000))]
+    if payload.get("branch"):
+        args += ["--branch", str(payload["branch"])]
+    args += [url, str(target)]
+
+    rc, _, err = await _run_git(target.parent, *args, timeout=_NET_TIMEOUT)
+    if rc != 0:
+        raise _net_error("remote_failed", "git clone", rc, err, target.parent)
+    return {"ok": True, "version": 1, "operation": "clone",
+            "root": str(target), "url": url}
+
+
+async def _op_push(policy: Policy, payload: dict[str, Any]) -> dict[str, Any]:
+    """Publish a branch. A forced push MUST carry the SHA it expects to replace.
+
+    NO BARE FORCE, EVER. Measured over 7 days: 189 users force-pushed through
+    exec without a lease against 56 who used one. A bare force silently discards
+    whatever someone else pushed in the meantime, and an assistant has no way to
+    notice. Requiring the expected SHA turns it into a compare-and-swap: if the
+    remote moved, the push fails and says so instead of overwriting.
+
+    Anyone who genuinely wants an unconditional force can still reach for exec.
+    That is deliberately the less convenient path.
+    """
+    path = payload.get("path")
+    if not path:
+        raise HandlerError("invalid_payload", "push needs `path`: the repository.")
+    root = await _revalidate_git_root(
+        policy, _resolve_or_reject(policy, str(path)), str(path)
+    )
+    remote = str(payload.get("remote") or "origin").strip()
+    branch = str(payload.get("branch") or "").strip()
+    if not branch:
+        raise HandlerError("invalid_payload", "push needs `branch`.")
+
+    expected = payload.get("expected_remote_sha")
+    force = _as_bool(payload.get("force"), False)
+    if force and not expected:
+        raise HandlerError(
+            "force_requires_lease",
+            "A forced push must carry `expected_remote_sha`: the commit you "
+            "believe the remote branch is on right now. Without it the push "
+            "would silently discard anything pushed since you last looked. "
+            "Use ls_remote to read the current SHA, then pass it here. If you "
+            "truly need an unconditional force, that is only available through "
+            "sentinel_exec.",
+        )
+
+    args = ["push"]
+    if force:
+        args.append(f"--force-with-lease={branch}:{expected}")
+    args += [remote, branch]
+
+    rc, _, err = await _run_git(root, *args, timeout=_NET_TIMEOUT)
+    text = _scrub(err.decode("utf-8", "replace"), root).strip()
+    if rc != 0:
+        if "stale info" in text.lower():
+            raise HandlerError(
+                "lease_stale",
+                f"The remote branch is no longer at {expected!r}, so the push "
+                "was refused and nothing was overwritten. Someone pushed since "
+                "you read it. Re-read with ls_remote, reconcile, and try again.",
+            )
+        raise _net_error("remote_failed", f"git push {remote} {branch}", rc,
+                         err, root)
+    return {"ok": True, "version": 1, "operation": "push", "root": str(root),
+            "remote": remote, "branch": branch, "forced": force,
+            "output": text[:2000]}
+
+
 def make_git_handler(policy: Policy):
     """Return the async handler for the single agent op ``git``.
 
@@ -649,10 +881,19 @@ def make_git_handler(policy: Policy):
             return await _op_diff(policy, payload)
         if operation == "apply_patch":
             return await _op_apply_patch(policy, payload)
+        if operation == "ls_remote":
+            return await _op_ls_remote(policy, payload)
+        if operation == "fetch":
+            return await _op_fetch(policy, payload)
+        if operation == "clone":
+            return await _op_clone(policy, payload)
+        if operation == "push":
+            return await _op_push(policy, payload)
         raise HandlerError(
             "invalid_payload",
-            "git: 'operation' must be 'diff' or 'apply_patch' "
-            f"(got {operation!r}).",
+            "git: 'operation' must be one of diff, apply_patch, ls_remote, "
+            f"fetch, clone, push (got {operation!r}). Note there is no 'pull': "
+            "it is fetch plus a merge, and the merge is worth doing explicitly.",
         )
 
     return handle
