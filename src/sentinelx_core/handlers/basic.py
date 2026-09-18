@@ -55,6 +55,57 @@ def make_read_audit_handler():
     return handle_read_audit
 
 
+def _unusable_commands(policy: Policy) -> dict[str, Any]:
+    """Allowlisted commands the host cannot actually execute, and why.
+
+    Empty (and cheap) on the common case: the check is one small read, and
+    nothing is reported unless the host really is in that state AND the
+    operator really did allowlist something that needs privileges.
+    """
+    if not _no_new_privileges():
+        return {}
+    blocked = [
+        c for c in policy.allowed_commands
+        if c == "sudo" or c.startswith("sudo ") or "/sudo" in c.split()[0]
+    ]
+    if not blocked:
+        return {}
+    return {
+        "commands": blocked,
+        "reason": "no_new_privileges",
+        "detail": (
+            "This agent runs with NoNewPrivileges set, so sudo can never "
+            "elevate regardless of sudoers. These entries are in the allowlist "
+            "but will always fail. Either run the privileged step through a "
+            "service action, or have the operator install the agent without "
+            "that hardening -- not recommended -- or wrap the work in a "
+            "setuid-free helper the agent can call directly."
+        ),
+    }
+
+
+def _no_new_privileges() -> bool:
+    """Whether this process can never gain privileges, so sudo cannot work.
+
+    Set by the hardened install (NoNewPrivileges=yes in the unit) and
+    inherited by everything we spawn: once the bit is on, sudo fails with
+    'the "no new privileges" flag is set' no matter what sudoers says.
+
+    Reported by an operator whose allowlist contained an exact sudo command:
+    we advertised it as executable, it could not possibly run, and the only
+    way to find out was to run it and read the error. Linux-only; anywhere
+    else there is no such bit and the answer is no.
+    """
+    try:
+        with open("/proc/self/status", encoding="ascii", errors="replace") as fh:
+            for line in fh:
+                if line.startswith("NoNewPrivs:"):
+                    return line.split()[1].strip() == "1"
+    except OSError:
+        pass
+    return False
+
+
 def make_capabilities_handler(
     policy: Policy,
     config_path=None,
@@ -110,6 +161,12 @@ def make_capabilities_handler(
             # stable, readable, diff-friendly response.
             "ops_supported": sorted(ops_supported()) if ops_supported else [],
             "allowed_commands": list(policy.allowed_commands),
+            # Commands that are allowlisted but cannot run on this host. Today
+            # only one cause: sudo under NoNewPrivileges. Advertising a command
+            # as executable when the kernel guarantees it will fail sends the
+            # caller to run it and read the error, which is a poor way to learn
+            # the shape of a host.
+            "unusable_commands": _unusable_commands(policy),
             "services": {
                 name: {
                     "unit": spec.unit,

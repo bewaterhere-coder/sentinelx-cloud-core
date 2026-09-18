@@ -3,6 +3,24 @@
 Notable changes to `sentinelx-cloud-core`. Human-readable, date-stamped
 entries; releases before 0.3.0 predate this file — see the git history.
 
+## 0.14.3 - Say which allowlisted commands the host cannot run - 2026-09-18
+
+- An operator allowlisted an exact sudo command on a host installed with
+  NoNewPrivileges. The kernel guarantees sudo fails there regardless of
+  sudoers, but capabilities listed the command like any other, so the only way
+  to find out was to run it and read the error. Their words: it should execute,
+  or it should not be advertised as executable.
+- We cannot make it execute. The bit is the operator's security decision and
+  the right one -- it is also our own hardened default. So capabilities now
+  reports unusable_commands: which entries cannot run, why, and what to do
+  instead (a service action, or a helper the agent can call directly).
+- Silent and cheap on the common case: one small read of /proc/self/status,
+  and nothing reported unless the host really is hardened AND the allowlist
+  really contains something needing privileges. No /proc means no such bit,
+  which is the correct answer on Windows and macOS.
+- Verified in both real conditions with the reporter's own command, using
+  systemd-run --property=NoNewPrivileges=yes to reproduce their host.
+
 ## 0.14.2 - Git diagnostics no longer depend on the host's language - 2026-09-18
 
 - The --recount retry branches on git's stderr, looking for "corrupt patch".
