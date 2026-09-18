@@ -136,3 +136,57 @@ async def test_pull_is_not_an_operation_and_says_why(workspace) -> None:
     with pytest.raises(HandlerError) as exc:
         await h({"operation": "pull", "path": "/tmp"})
     assert "fetch plus a merge" in str(exc.value)
+
+
+# --- a clone that runs out of time ----------------------------------------
+#
+# The hub cuts a tool call at 60s by default, so the agent's own budget is 50s:
+# anything longer is time the caller never sees, while git keeps running on the
+# host and the answer is already lost. A big repository legitimately needs more
+# than that, so what matters is what the failure leaves behind.
+
+
+async def test_a_timed_out_clone_leaves_nothing_behind(workspace, monkeypatch) -> None:
+    # Without the cleanup the next attempt hits dest_not_empty, which reads as a
+    # completely different problem and sends the caller looking in the wrong
+    # place for a fault that was only ever a timeout.
+    from sentinelx_core.handlers import git_ops
+
+    tmp, h, origin = workspace
+    dest = tmp / "slow"
+
+    async def _never(*a, **k):
+        import asyncio
+        await asyncio.sleep(10)
+
+    monkeypatch.setattr(git_ops, "_NET_TIMEOUT", 1)
+    monkeypatch.setattr(git_ops.asyncio, "wait_for",
+                        lambda coro, timeout: _raise_timeout(coro))
+
+    async def _raise_timeout(coro):
+        coro.close()
+        import asyncio
+        raise asyncio.TimeoutError
+
+    with pytest.raises(HandlerError) as exc:
+        await h({"operation": "clone", "url": str(origin), "dest": str(dest)})
+    assert exc.value.code == "clone_timeout"
+    assert not dest.exists(), "a partial clone must not survive its own failure"
+
+
+async def test_the_timeout_message_offers_depth(workspace, monkeypatch) -> None:
+    # A shallow clone turns minutes into seconds on a large repository, and the
+    # caller has no way to know that unless we say it.
+    from sentinelx_core.handlers import git_ops
+
+    tmp, h, origin = workspace
+
+    async def _raise_timeout(coro, timeout=None):
+        coro.close()
+        import asyncio
+        raise asyncio.TimeoutError
+
+    monkeypatch.setattr(git_ops.asyncio, "wait_for", _raise_timeout)
+    with pytest.raises(HandlerError) as exc:
+        await h({"operation": "clone", "url": str(origin), "dest": str(tmp / "s2")})
+    assert "depth" in str(exc.value)

@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import shutil
 from pathlib import Path
 from typing import Any
 
@@ -663,7 +664,12 @@ async def _op_apply_patch(policy: Policy, payload: dict[str, Any]) -> dict[str, 
 # not when the same command goes through exec.
 # ---------------------------------------------------------------------------
 
-_NET_TIMEOUT = 120  # seconds: a clone of a real repository is not instant
+# The hub cuts a tool call at 60s by default, so anything longer here is time
+# the caller never sees: git would still be running on the host while the answer
+# was already lost. 50s leaves room for the reply to get back inside that
+# budget. A clone that needs more than this needs --depth, or a background job,
+# not a bigger number on the agent side.
+_NET_TIMEOUT = 50
 
 
 def _remote_hint(err: str) -> str:
@@ -768,6 +774,26 @@ async def _op_fetch(policy: Policy, payload: dict[str, Any]) -> dict[str, Any]:
             "output": _scrub(err.decode("utf-8", "replace"), root).strip()[:2000]}
 
 
+def _discard_partial_clone(target: Path, created_by_us: bool) -> None:
+    """Remove a checkout that git did not finish writing.
+
+    ONLY when git itself created the directory in this call. The caller has
+    already been told the destination must be empty, but "empty" is not "ours",
+    and deleting a directory we merely found empty is not a risk worth taking
+    for a tidier error message.
+    """
+    if not created_by_us or not target.exists():
+        return
+    try:
+        shutil.rmtree(target)
+    except OSError:
+        # Swallowed on purpose. This runs while an error is already being
+        # raised, and a cleanup failure must not replace the real reason the
+        # clone failed with a confusing second one. The caller learns about it
+        # anyway: the next attempt says dest_not_empty.
+        pass
+
+
 async def _op_clone(policy: Policy, payload: dict[str, Any]) -> dict[str, Any]:
     """Create a checkout where there was none.
 
@@ -805,8 +831,34 @@ async def _op_clone(policy: Policy, payload: dict[str, Any]) -> dict[str, Any]:
         args += ["--branch", str(payload["branch"])]
     args += [url, str(target)]
 
-    rc, _, err = await _run_git(target.parent, *args, timeout=_NET_TIMEOUT)
+    created = not target.exists()
+    try:
+        rc, _, err = await _run_git(target.parent, *args, timeout=_NET_TIMEOUT)
+    except HandlerError as exc:
+        if exc.code != "git_timeout":
+            raise
+        # LEAVE NOTHING HALF-WRITTEN. git was killed mid-clone, so the
+        # destination holds a partial tree. Without this the next attempt hits
+        # dest_not_empty, which reads as a different problem entirely and sends
+        # the caller looking in the wrong place.
+        _discard_partial_clone(target, created)
+        depth_hint = (
+            " Try again with depth (for example depth: 1), which fetches only "
+            "the latest commit and turns minutes into seconds for a large "
+            "repository."
+            if not payload.get("depth")
+            else " Even shallow, this repository did not arrive in time; clone "
+            "it on the host directly, or narrow it with branch."
+        )
+        raise HandlerError(
+            "clone_timeout",
+            f"The clone did not finish within {_NET_TIMEOUT}s and the partial "
+            f"checkout was removed, so {dest!r} is clean for another attempt."
+            + depth_hint,
+        ) from exc
+
     if rc != 0:
+        _discard_partial_clone(target, created)
         raise _net_error("remote_failed", "git clone", rc, err, target.parent)
     return {"ok": True, "version": 1, "operation": "clone",
             "root": str(target), "url": url}
