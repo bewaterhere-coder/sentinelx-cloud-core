@@ -3,6 +3,20 @@
 Notable changes to `sentinelx-cloud-core`. Human-readable, date-stamped
 entries; releases before 0.3.0 predate this file — see the git history.
 
+## 0.14.0 — git over the network — 2026-09-18
+
+- `sentinel_git` gains ls_remote, fetch, clone and push. Measured over 7 days,
+  distinct users already doing this through exec: fetch 489, push 399,
+  ls-remote 374, clone 359.
+- A forced push MUST carry `expected_remote_sha`, making it a compare-and-swap.
+  189 users force-pushed without a lease against 56 who used one; a bare force
+  silently discards whatever someone else pushed in between.
+- No `pull`: it is fetch plus merge, and the merge is worth doing explicitly.
+- clone refuses a non-empty destination, requires rw, and removes its own
+  partial tree if it runs out of time rather than leaving a dest_not_empty
+  failure for the next attempt.
+- Transport errors say whether retrying helps.
+
 ## 0.13.2 — sentinel_git failure modes — 2026-09-18
 
 - `apply_patch` retries once with `--recount` when git rejects a patch as
