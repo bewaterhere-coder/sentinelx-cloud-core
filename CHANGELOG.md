@@ -3,6 +3,27 @@
 Notable changes to `sentinelx-cloud-core`. Human-readable, date-stamped
 entries; releases before 0.3.0 predate this file — see the git history.
 
+## 0.14.7 - An uppercase SHA-256 is a correct SHA-256 - 2026-09-19
+
+- upload_complete compared the caller's digest against hexdigest() as a plain
+  string. hexdigest() is always lowercase, so a digest correct in every way but
+  letter case was rejected as checksum_mismatch -- a message that says the bytes
+  arrived wrong when they arrived perfectly. Uppercase is the convention in
+  plenty of manifests and record systems.
+- Reported with a three-chunk reproduction of b"abcdefghi" and a lowercase
+  control of the identical payload that completed successfully. Cause and fix
+  both named correctly in the report.
+- Hex is now normalised before comparison, and a malformed value is told apart
+  from a wrong one: invalid_sha256 for "that is not hex" versus
+  checksum_mismatch for "the bytes differ". Those call for different responses
+  and the old code gave them the same name.
+- The mismatch message now shows both digests, so a caller can see at a glance
+  whether they are looking at truncation, the wrong file, or real corruption.
+- VERIFIED BY SABOTAGE, and the first attempt did not survive it: that version
+  reimplemented the comparison inside the test, so it passed with the fix
+  deleted. The tests now drive the real init/chunk/complete handlers. Removing
+  the normalisation fails three of them; accepting everything fails three more.
+
 ## 0.14.6 - A checkout owned by another user is no longer "not a git repo" - 2026-09-19
 
 - git refuses to read a repository owned by a different user than the process

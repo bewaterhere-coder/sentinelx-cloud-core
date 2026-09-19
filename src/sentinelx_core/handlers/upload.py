@@ -483,8 +483,39 @@ def make_upload_complete_handler(upload_base: Path):
                 "size_mismatch",
                 f"expected {expected_size}, got {total}",
             )
-        if sha256_expected and sha256_expected != sha256:
-            raise HandlerError("checksum_mismatch", "sha256 does not match")
+        if sha256_expected:
+            # Compare hex case-insensitively. hexdigest() is always lowercase,
+            # so a correct digest written in uppercase -- the convention in many
+            # manifests and record systems -- was rejected as a mismatch, with a
+            # message saying the bytes were wrong when they were identical.
+            # Reported with a three-chunk reproduction and a lowercase control
+            # of the same payload that succeeded.
+            #
+            # A malformed value is told apart from a wrong one: "not valid hex"
+            # and "the bytes differ" call for different responses, and the old
+            # message gave both the same name.
+            expected_norm = str(sha256_expected).strip().lower()
+            try:
+                bytes.fromhex(expected_norm)
+            except ValueError:
+                raise HandlerError(
+                    "invalid_sha256",
+                    f"{sha256_expected!r} is not a valid hex SHA-256 digest. "
+                    "Expected 64 hexadecimal characters; case does not matter.",
+                ) from None
+            if len(expected_norm) != 64:
+                raise HandlerError(
+                    "invalid_sha256",
+                    f"expected a 64-character hex SHA-256 digest, got "
+                    f"{len(expected_norm)} characters.",
+                )
+            if expected_norm != sha256:
+                raise HandlerError(
+                    "checksum_mismatch",
+                    f"sha256 does not match: the assembled file hashes to "
+                    f"{sha256}, the upload declared {expected_norm}. The bytes "
+                    "differ, so the upload is incomplete or corrupted.",
+                )
         if dest.exists() and not meta.get("overwrite", False):
             raise HandlerError(
                 "conflict",
