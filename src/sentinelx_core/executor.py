@@ -122,6 +122,16 @@ class Executor:
             logger.warning("preferred_profile: policy load failed", exc_info=True)
             return None
 
+    @property
+    def upload_base(self) -> Path:
+        """Public read of the resolved upload base.
+
+        The client needs a directory it can write to for results that outlive
+        their connection; this is the one place that already knows which
+        directory that is on this host.
+        """
+        return self._get_upload_base()
+
     def _get_upload_base(self) -> Path:
         if self._upload_base is None:
             from sentinelx_core.policy import Policy

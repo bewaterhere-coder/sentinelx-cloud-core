@@ -44,6 +44,8 @@ from sentinelx_core.executor import Executor
 from sentinelx_core.identity import Identity
 from sentinelx_core.jobs import build_completed_event_data
 
+from sentinelx_core import pending_results
+
 logger = logging.getLogger(__name__)
 
 
@@ -414,7 +416,12 @@ class HubClient:
             self._session_established = True
             logger.info("connected; session=%s", welcome.session_id)  # type: ignore[union-attr]
 
-            # 3. Concurrent loops: read messages, send heartbeat
+            # 3. Deliver results whose own connection did not survive them.
+            # Before the read loop, so an operator waiting on an answer from
+            # before the interruption gets it as soon as we are back.
+            await self._replay_pending_results(ws)
+
+            # 4. Concurrent loops: read messages, send heartbeat
             read_task = asyncio.create_task(self._read_loop(ws))
             heartbeat_task = asyncio.create_task(self._heartbeat_loop(ws))
             try:
@@ -466,6 +473,35 @@ class HubClient:
                 pass  # heartbeat ack
             else:
                 logger.warning("unexpected message type: %s", msg.type)  # type: ignore[union-attr]
+
+    async def _replay_pending_results(
+        self, ws: websockets.WebSocketClientProtocol
+    ) -> None:
+        """Re-send job results recorded while no connection could carry them.
+
+        Safe to repeat: the hub matches a completion by job id and owning user,
+        not by session, and applying the same one twice leaves the same record.
+        A result for a job the hub has already forgotten is discarded there,
+        which is why these expire locally too.
+
+        Never raises. A replay failure must not stop a session from starting --
+        the results stay on disk for the next one.
+        """
+        try:
+            waiting = list(pending_results.drain(self._executor.upload_base))
+        except Exception:  # noqa: BLE001
+            logger.exception("could not read pending results")
+            return
+        if not waiting:
+            return
+        logger.info("replaying %d result(s) held from an earlier session", len(waiting))
+        for path, event in waiting:
+            try:
+                await ws.send(json.dumps(event, default=str))
+            except Exception:  # noqa: BLE001
+                logger.warning("replay failed for %s; keeping it", path.name)
+                return  # the socket is gone again; stop and keep the rest
+            pending_results.clear(path)
 
     async def _start_background_job(
         self,
@@ -525,16 +561,30 @@ class HubClient:
             started_at=started_at,
             finished_at=datetime.now(timezone.utc),
         )
+        event = EventMessage(
+            kind="job_completed",
+            data=data,
+            timestamp=datetime.now(timezone.utc),
+        )
+
+        # Write the answer down BEFORE trying to send it. This send goes over
+        # the socket the request arrived on, and if that socket has gone the
+        # result is lost -- the work done, the answer built, and nobody
+        # listening. Recorded here, it is replayed on the next connection.
+        pending_path = None
         try:
-            await ws.send(
-                EventMessage(
-                    kind="job_completed",
-                    data=data,
-                    timestamp=datetime.now(timezone.utc),
-                ).model_dump_json()
+            pending_path = pending_results.record(
+                self._executor.upload_base, job_id, json.loads(event.model_dump_json())
             )
         except Exception:  # noqa: BLE001
+            logger.exception("could not record pending result for %s", job_id)
+
+        try:
+            await ws.send(event.model_dump_json())
+        except Exception:  # noqa: BLE001
             logger.exception("failed to emit job_completed for %s", job_id)
+            return  # leave it on disk; the next connection carries it
+        pending_results.clear(pending_path)
 
     async def _handle_request(
         self,

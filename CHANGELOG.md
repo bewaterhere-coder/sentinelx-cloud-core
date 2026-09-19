@@ -3,6 +3,33 @@
 Notable changes to `sentinelx-cloud-core`. Human-readable, date-stamped
 entries; releases before 0.3.0 predate this file — see the git history.
 
+## 0.15.0 - A job's answer outlives the connection meant to carry it - 2026-09-19
+
+- A background job's completion was sent over the very socket the request
+  arrived on. If that socket had gone by the time the work finished -- our
+  deployment, the operator's network, anything -- the send failed and the answer
+  was lost. Work done, result built, nobody listening. The code even said so:
+  'even an emit failure is only logged'.
+- Three users reported that shape of loss in one day, and 98 job records were
+  sitting at running fleet-wide with nothing ever coming back for them.
+- The event is now written to disk BEFORE the send, cleared once the send
+  succeeds, and replayed on the next connection. Safe to repeat: the hub matches
+  a completion by job id and owning user rather than by session, and applying
+  one twice leaves the same record.
+- Bounded on purpose: 500 files and a 24h TTL, oldest dropped first so the most
+  recent answer -- the one someone is still waiting on -- survives. Beyond that
+  the hub has expired the job anyway.
+- Written beside the upload base, not inside it: those directories are the
+  operator's. Write-then-rename, and the job id is sanitised before it reaches
+  the filesystem.
+- WHAT THIS IS NOT: a job registry. The work still runs inside the agent and
+  still dies with it. What survives is the ANSWER, which is the failure everyone
+  actually hit; surviving an agent restart needs detached execution and is a
+  separate change.
+- Five sabotages, and one of them earned its keep: removing the record() call
+  left every test passing, because they all began from an already-written file.
+  Three tests now drive the emit path itself.
+
 ## 0.14.7 - An uppercase SHA-256 is a correct SHA-256 - 2026-09-19
 
 - upload_complete compared the caller's digest against hexdigest() as a plain
