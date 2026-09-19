@@ -3,6 +3,23 @@
 Notable changes to `sentinelx-cloud-core`. Human-readable, date-stamped
 entries; releases before 0.3.0 predate this file — see the git history.
 
+## 0.14.5 - The empty command prefix no longer kills capabilities - 2026-09-19
+
+- On a NoNewPrivileges host, `allowed_commands: [""]` made every capabilities
+  request fail with IndexError: the unusable-commands scan called `c.split()[0]`
+  on each entry, and "".split() is []. The crash is caught per request, so the
+  session and exec kept working -- the hub simply never heard back about that
+  host's capabilities.
+- The empty prefix is a first-class entry: matching is `cmd.startswith(allowed)`,
+  so "" is how an operator grants any command within the host account. It had to
+  keep working, not be rejected.
+- Reported by danshapiro in issue #47, with the traceback, the cause and a fix.
+- The suggested `if c` would have fixed the reported case and left a
+  whitespace-only entry crashing identically: " " is truthy and " ".split() is
+  also []. Our test for that failed on the first attempt, so the guard is on the
+  split result rather than on the string.
+- Introduced in 0.14.3, which added unusable_commands. Six tests cover it.
+
 ## 0.14.4 - No console windows flash on Windows - 2026-09-18
 
 - A console application launched from a process with no console of its own

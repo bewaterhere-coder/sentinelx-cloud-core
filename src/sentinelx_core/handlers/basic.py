@@ -64,10 +64,23 @@ def _unusable_commands(policy: Policy) -> dict[str, Any]:
     """
     if not _no_new_privileges():
         return {}
-    blocked = [
-        c for c in policy.allowed_commands
-        if c == "sudo" or c.startswith("sudo ") or "/sudo" in c.split()[0]
-    ]
+    # Guard on the SPLIT, not on the string. The empty prefix is a first-class
+    # entry in this format -- matching is `cmd.startswith(allowed)`, so "" is how
+    # an operator grants any command within the host account -- and "".split() is
+    # [], so the index access raised IndexError and took the whole capabilities
+    # report with it. Reported by danshapiro (issue #47) with the traceback.
+    #
+    # `if c` would fix the reported case and leave a whitespace-only entry
+    # crashing the same way: " " is truthy but " ".split() is also []. Our own
+    # test for that failed on the first attempt, which is why this checks the
+    # list the index is taken from rather than the string it came from.
+    blocked = []
+    for c in policy.allowed_commands:
+        parts = c.split()
+        if not parts:
+            continue
+        if c == "sudo" or c.startswith("sudo ") or "/sudo" in parts[0]:
+            blocked.append(c)
     if not blocked:
         return {}
     return {
