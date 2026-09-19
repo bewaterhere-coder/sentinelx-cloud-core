@@ -54,6 +54,36 @@ _GIT_ENV = {
 }
 
 
+async def _git_toplevel(root: Path) -> tuple[int, bytes, bytes]:
+    """`rev-parse --show-toplevel`, keeping stderr. Returns (rc, stdout, stderr).
+
+    A separate probe rather than widening _run_git: every other caller here
+    wants stdout only, and stderr matters for exactly one question -- whether a
+    non-zero rc means "no repo" or means git refusing a perfectly good checkout
+    because it belongs to another user. Without it both look identical and the
+    snapshot silently downgrades a real repository to kind=directory.
+    """
+    env = {**os.environ, **_GIT_ENV}
+    proc = await asyncio.create_subprocess_exec(
+        "git", "-C", str(root), "-c", "core.fsmonitor=false",
+        "rev-parse", "--show-toplevel",
+        **spawn_kwargs(
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            env=env,
+        ),
+    )
+    try:
+        out, err = await asyncio.wait_for(proc.communicate(), timeout=_GIT_CMD_TIMEOUT)
+    except asyncio.TimeoutError:
+        try:
+            proc.kill()
+        except ProcessLookupError:
+            pass
+        return 1, b"", b""
+    return proc.returncode or 0, out, err
+
+
 async def _run_git(root: Path, *args: str) -> tuple[int, bytes]:
     """Run a fixed git argv under `root`. Returns (returncode, stdout). Never shell."""
     env = {**os.environ, **_GIT_ENV}
@@ -294,7 +324,23 @@ def make_project_snapshot_handler(policy: Policy):
 
         async def _work() -> dict[str, Any]:
             # git repo?
-            rc, out = await _run_git(root, "rev-parse", "--show-toplevel")
+            rc, out, err = await _git_toplevel(root)
+            if rc != 0 and b"dubious ownership" in err:
+                # A real checkout that git will not read as this user. Saying
+                # "directory" here is not merely incomplete, it is wrong, and it
+                # sends the caller looking for a repo that is already there.
+                res = await _directory_snapshot(root)
+                res["git_unavailable"] = (
+                    "This IS a git checkout, but git refuses to read it as the "
+                    "user this agent runs as, because the repository is owned by "
+                    "someone else. Git's own safety check, not a SentinelX "
+                    "restriction -- which is why git over sentinel_exec works "
+                    "when that runs as the owner. The operator can give the "
+                    "agent's user ownership, or declare the exception with "
+                    "`git config --global --add safe.directory <path>` as that "
+                    "user. The directory summary below is still accurate."
+                )
+                return res
             if rc == 0 and out.strip():
                 git_root_str = out.decode("utf-8", "replace").strip()
                 # SECURITY: the repo root may sit ABOVE an allowed path.

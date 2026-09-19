@@ -126,11 +126,41 @@ def _clamp_int(value: Any, default: int, lo: int, hi: int) -> int:
     return max(lo, min(value, hi))
 
 
+def _dubious_ownership(stderr: bytes) -> bool:
+    """Did git refuse because the repo belongs to another user?
+
+    Git returns a non-zero rc for this, exactly as it does for "no repo here",
+    so without reading stderr the two are indistinguishable -- and we reported
+    both as not_a_git_repo. That message is actively wrong here: the checkout is
+    a perfectly good one, sitting right where the caller said it was. Reported
+    by a user whose /var/www checkout git handled fine over exec (running as the
+    owner) and refused under the agent's own account.
+
+    Matched on the stable token rather than the whole sentence, which git has
+    reworded across versions and translates under a localized LANG. _GIT_ENV
+    pins LC_ALL=C so this sees English, but the narrower match costs nothing.
+    """
+    return b"dubious ownership" in stderr
+
+
 async def _revalidate_git_root(policy: Policy, root: Path, path: str) -> Path:
     """Confirm ``root`` is inside a git repo AND the repo root is STILL inside
     the file_ops allowlist (read access). A repo whose real root sits ABOVE an
     allowed path is rejected — we never silently climb out of the sandbox."""
-    rc, out, _ = await _run_git(root, "rev-parse", "--show-toplevel")
+    rc, out, err = await _run_git(root, "rev-parse", "--show-toplevel")
+    if rc != 0 and _dubious_ownership(err):
+        raise HandlerError(
+            "git_dubious_ownership",
+            f"{path!r} IS a git checkout, but git refuses to read it because the "
+            "repository is owned by a different user than the one this agent runs "
+            "as. This is git's own safety check, not a SentinelX restriction, and "
+            "it is why the same commands succeed over sentinel_exec when that runs "
+            "as the owner. Retrying will not change it. Two ways out, both for the "
+            "operator to decide on the host: give the agent's user ownership of the "
+            "checkout, or declare the exception deliberately with "
+            "`git config --global --add safe.directory <path>` as the agent's user. "
+            "Until then, git through sentinel_exec is the working route.",
+        )
     if rc != 0 or not out.strip():
         raise HandlerError(
             "not_a_git_repo",
@@ -524,7 +554,17 @@ async def _op_apply_patch(policy: Policy, payload: dict[str, Any]) -> dict[str, 
 
     async def _work() -> dict[str, Any]:
         # Revalidate the git root AND require it under rw (not just readable).
-        rc, out, _ = await _run_git(resolved, "rev-parse", "--show-toplevel")
+        rc, out, err = await _run_git(resolved, "rev-parse", "--show-toplevel")
+        if rc != 0 and _dubious_ownership(err):
+            raise HandlerError(
+                "git_dubious_ownership",
+                f"{req!r} IS a git checkout, but git refuses to read it because "
+                "the repository is owned by a different user than the one this "
+                "agent runs as. Git's own safety check, not a SentinelX "
+                "restriction. The operator can either give the agent's user "
+                "ownership of the checkout, or declare the exception with "
+                "`git config --global --add safe.directory <path>` as that user.",
+            )
         if rc != 0 or not out.strip():
             raise HandlerError(
                 "not_a_git_repo",

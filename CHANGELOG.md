@@ -3,6 +3,33 @@
 Notable changes to `sentinelx-cloud-core`. Human-readable, date-stamped
 entries; releases before 0.3.0 predate this file — see the git history.
 
+## 0.14.6 - A checkout owned by another user is no longer "not a git repo" - 2026-09-19
+
+- git refuses to read a repository owned by a different user than the process
+  running it, and exits non-zero -- the same rc as "there is no repo here". We
+  read only the rc, so both became not_a_git_repo, whose text then told the
+  caller the directory was not a checkout or the repository was elsewhere. For
+  this case both halves are false, and the suggested `find -name .git` finds the
+  repo that was never missing.
+- Reported on /var/www, where the checkout belongs to the web account and the
+  agent runs as its own -- which is also why the same commands succeeded over
+  sentinel_exec, running as the owner.
+- sentinel_git now raises git_dubious_ownership, naming git's safety check as
+  the cause and giving the operator the two real ways out: ownership, or a
+  deliberate `git config --global --add safe.directory` as the agent's user. We
+  do not add that exception ourselves -- the check exists to stop a repository
+  you do not control from running its config and hooks.
+- project_snapshot had the same blind spot for a different reason: its _run_git
+  sends stderr to DEVNULL, so it silently downgraded a real repository to
+  kind=directory. It now reports the directory summary WITH a git_unavailable
+  note explaining why the git view is missing.
+- Both modules share substrate and have drifted before -- yesterday's locale fix
+  was present in both and found in one. A parity test now asserts they detect
+  the same condition.
+- Verified as the agent's own user against a repository owned by root: the
+  ownership refusal and a plain non-repo both return rc=128 and are now told
+  apart by stderr.
+
 ## 0.14.5 - The empty command prefix no longer kills capabilities - 2026-09-19
 
 - On a NoNewPrivileges host, `allowed_commands: [""]` made every capabilities
