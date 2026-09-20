@@ -3,6 +3,33 @@
 Notable changes to `sentinelx-cloud-core`. Human-readable, date-stamped
 entries; releases before 0.3.0 predate this file — see the git history.
 
+## 0.15.2 - A directory we cannot enter is not a missing repository - 2026-09-20
+
+- `git rev-parse` exits 128 for `cannot change to '<path>': Permission denied`
+  exactly as it does for "there is no repo here". We read only the rc, so an
+  EACCES surfaced as not_a_git_repo -- whose text tells the caller the directory
+  is not a checkout, that the repository must be elsewhere, and that retrying is
+  pointless. The first two are false. The third is true for the wrong reason,
+  which is worse than being wrong: it tells the model to stop looking at a
+  problem the operator can fix in one command.
+- Same shape as the 0.13.x dubious-ownership fix, different cause. That one
+  already carries a comment saying not_a_git_repo is "actively wrong here"; this
+  is the second member of the family, and stderr distinguished them all along.
+- Found on a host where /home/<user> is 0750 and the agent runs as its own
+  account: every repo underneath answered "not a git repository" while
+  sentinel_read on a file inside the same tree correctly said "Permission
+  denied". Two tools, one cause, contradictory diagnoses.
+- The new error names the account the agent runs as, says the refusal is the
+  HOST's file permissions rather than SentinelX's file_ops allowlist -- naming a
+  path there permits work, it does not grant access the kernel refuses -- and
+  points at sentinel_exec running as the owner as the route that works
+  meanwhile. Applied at both sites that resolve a git root (diff and
+  apply_patch).
+- "Permission denied (publickey)" is excluded: that is a transport failure from
+  the network operations and sends the operator to a deploy key, not a chmod.
+- Tests cover the predicate and the handler behaviour. Verified against the
+  pre-fix handler, which returns not_a_git_repo for the same stderr.
+
 ## 0.15.1 - Pin the protocol that actually has opaque_ref - 2026-09-20
 
 - Executor advertised the opaque_ref capability while pyproject pinned protocol

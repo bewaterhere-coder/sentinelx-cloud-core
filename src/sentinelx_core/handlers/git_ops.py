@@ -143,6 +143,49 @@ def _dubious_ownership(stderr: bytes) -> bool:
     return b"dubious ownership" in stderr
 
 
+def _agent_user() -> str:
+    """Name the account this agent runs as.
+
+    The operator has to act on the permission error below, and the first thing
+    they need is which user to grant. Windows has no geteuid, hence the guard.
+    """
+    try:
+        import getpass
+
+        name = getpass.getuser()
+    except (KeyError, OSError):
+        # No passwd entry for this uid, or the environment has nothing to read.
+        # Rare, and never worth failing the caller's git operation over.
+        name = "unknown"
+    geteuid = getattr(os, "geteuid", None)
+    return f"{name} (uid {geteuid()})" if geteuid is not None else name
+
+
+def _permission_denied(stderr: bytes) -> bool:
+    """Did the OS refuse, rather than there being no repository here?
+
+    The same mistake _dubious_ownership fixes, with a different cause. git exits
+    128 for `cannot change to '<path>': Permission denied` exactly as it does
+    for "no repo here", so reading only the rc reported an EACCES as
+    not_a_git_repo -- a message that states the directory is not a checkout and
+    that retrying is pointless. The first half is false, and the second is true
+    for entirely the wrong reason: the checkout is fine, this agent's user
+    simply cannot traverse the path.
+
+    Found on a host where /home/<user> is 0750 and the agent runs as its own
+    account: every repository under it answered "not a git repository" while
+    sentinel_read on a file inside said "Permission denied". Two tools, one
+    cause, contradictory diagnoses -- and the git one sent the caller looking
+    for a repo that was never missing.
+
+    "Permission denied (publickey)" is a transport failure from the network
+    operations and means something else entirely. It cannot reach this helper
+    today; excluding it keeps that true if the call sites ever move.
+    """
+    low = stderr.lower()
+    return b"permission denied" in low and b"publickey" not in low
+
+
 async def _revalidate_git_root(policy: Policy, root: Path, path: str) -> Path:
     """Confirm ``root`` is inside a git repo AND the repo root is STILL inside
     the file_ops allowlist (read access). A repo whose real root sits ABOVE an
@@ -160,6 +203,18 @@ async def _revalidate_git_root(policy: Policy, root: Path, path: str) -> Path:
             "checkout, or declare the exception deliberately with "
             "`git config --global --add safe.directory <path>` as the agent's user. "
             "Until then, git through sentinel_exec is the working route.",
+        )
+    if rc != 0 and _permission_denied(err):
+        raise HandlerError(
+            "permission_denied",
+            f"{path!r} exists, but the account this agent runs as "
+            f"({_agent_user()}) cannot read it. This is the HOST's file "
+            "permissions, not SentinelX's allowlist: naming a path under "
+            "file_ops permits the agent to work there, it does not grant "
+            "access the kernel refuses. Retrying will not change it. The "
+            "operator can add the agent's user to the group owning the "
+            "directory, or widen its mode. Until then git through "
+            "sentinel_exec, running as the owner, is the working route.",
         )
     if rc != 0 or not out.strip():
         raise HandlerError(
@@ -564,6 +619,15 @@ async def _op_apply_patch(policy: Policy, payload: dict[str, Any]) -> dict[str, 
                 "restriction. The operator can either give the agent's user "
                 "ownership of the checkout, or declare the exception with "
                 "`git config --global --add safe.directory <path>` as that user.",
+            )
+        if rc != 0 and _permission_denied(err):
+            raise HandlerError(
+                "permission_denied",
+                f"{req!r} exists, but the account this agent runs as "
+                f"({_agent_user()}) cannot read it. The host's own file "
+                "permissions, not SentinelX's allowlist, and retrying will "
+                "not change it. The operator can add the agent's user to the "
+                "group owning the directory, or widen its mode.",
             )
         if rc != 0 or not out.strip():
             raise HandlerError(
