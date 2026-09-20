@@ -192,6 +192,21 @@ class LocalApiEndpoint:
 class Policy:
     """Loaded policy. Immutable after construction."""
 
+    # Ops the operator has switched off on this host. An op named here is not
+    # built into the registry at all, so it vanishes from capabilities and
+    # dispatch answers unsupported_op -- the same as if this agent had never
+    # shipped it. One lever, one place, no second enforcement path to drift.
+    #
+    # WHY THIS EXISTS. allowed_commands gates `exec` and only `exec`; that is
+    # what its own heading says and always has. script_run runs a script body
+    # through an interpreter and was never bound by it. Reasonable operators
+    # read an empty allowlist as "this host executes nothing" and were
+    # surprised -- reported independently by two of them, one after a
+    # governance audit on a Windows host where the service runs as LocalSystem.
+    # Being documented did not make the surprise unreasonable, and there was no
+    # supported way to say no. Now there is.
+    disabled_ops: frozenset[str] = field(default_factory=frozenset)
+
     # Command prefixes the agent will execute via the `exec` op.
     # An exec request matches if cmd.startswith(allowed) for some entry.
     allowed_commands: tuple[str, ...] = field(default_factory=tuple)
@@ -390,6 +405,7 @@ class Policy:
             # config warns about itself: local_apis shipped parsed and working
             # while policy_unknown_keys told the operator it was unrecognised.
             "local_apis",
+            "disabled_ops",
         }
         unknown = set(data.keys()) - KNOWN_KEYS - set(TYPO_HINTS.keys())
         if unknown:
@@ -659,6 +675,9 @@ class Policy:
 
         policy = cls(
             allowed_commands=tuple(data.get("allowed_commands") or []),
+            disabled_ops=frozenset(
+                str(o).strip() for o in (data.get("disabled_ops") or []) if str(o).strip()
+            ),
             services=services,
             local_apis=local_apis,
             locations=locations,

@@ -3,6 +3,36 @@
 Notable changes to `sentinelx-cloud-core`. Human-readable, date-stamped
 entries; releases before 0.3.0 predate this file — see the git history.
 
+## 0.16.0 - An operator can switch an op off - 2026-09-20
+
+- New `disabled_ops` in config.yaml. An op named there is not built into the
+  registry at all, so it disappears from capabilities and any call to it is
+  answered unsupported_op -- as if this agent had never shipped it.
+- WHY. allowed_commands governs `exec` and only `exec`; that is what its own
+  heading says and always has. script_run hands a script body to an interpreter
+  and was never bound by it. Reasonable operators read an empty allowlist as
+  "this host executes nothing" and were surprised. Two reported it
+  independently, one after a governance audit on a Windows host where the
+  service runs as LocalSystem, which makes the gap between expectation and
+  behaviour considerably more expensive. Being documented did not make the
+  surprise unreasonable, and there was no supported way to say no.
+- Removal rather than a guard inside each handler, deliberately: capabilities
+  DERIVES ops_supported from the registry keys and dispatch answers
+  unsupported_op for anything absent, so one deletion makes an op invisible AND
+  unreachable with no second enforcement path to drift. A per-handler guard
+  would have to be remembered everywhere and forgotten in one place.
+- ping, capabilities, state and help cannot be disabled. An agent that cannot
+  say what it is or whether it is alive still holds a slot and still looks
+  connected, which is worse than one that is absent. Naming them logs a warning
+  and is ignored; the rest of the list still applies.
+- A name this agent does not have is ignored and logged as not recognised: a
+  typo in a deny list otherwise reads as protection that is not there.
+- config.example.yaml now states the scope of allowed_commands explicitly and
+  points to disabled_ops for the stronger statement.
+- 13 tests, three sabotages: dropping the core protection fails two, deleting
+  names without intersecting the registry fails the same two, and skipping the
+  filter entirely fails six.
+
 ## 0.15.2 - A directory we cannot enter is not a missing repository - 2026-09-20
 
 - `git rev-parse` exits 128 for `cannot change to '<path>': Permission denied`

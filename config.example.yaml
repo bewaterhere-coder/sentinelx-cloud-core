@@ -24,8 +24,35 @@
 # When in doubt, less is more. You can always add more later.
 
 # ============================================================================
+# Ops this host will not perform at all.
+#
+# An op named here is not built at all: it disappears from `capabilities` and
+# any call to it is answered `unsupported_op`, exactly as if this agent had
+# never shipped it.
+#
+# READ THIS IF YOU CAME HERE FROM allowed_commands. That list governs the
+# `exec` op and nothing else. `script_run` hands a script body to an
+# interpreter and has never been bound by it, so an empty allowed_commands
+# does NOT mean "this host runs nothing" -- it means "this host runs nothing
+# THROUGH exec". If you want the stronger statement, that is what this key is
+# for:
+#
+#   disabled_ops:
+#     - script_run
+#
+# ping, capabilities, state and help cannot be switched off. They are how the
+# hub learns what this host is and whether it is alive; an agent that cannot
+# answer them still holds a slot and still looks connected, which is worse
+# than one that is absent.
+# ============================================================================
+disabled_ops: []
+
+# ============================================================================
 # Commands the agent can execute via the `exec` op.
 # Empty or missing = nothing allowed (deny by default).
+#
+# Scope note: this governs `exec`. It does not govern `script_run` -- see
+# disabled_ops above.
 # ============================================================================
 allowed_commands:
 

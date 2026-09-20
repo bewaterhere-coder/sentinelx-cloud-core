@@ -60,6 +60,18 @@ from sentinelx_core.policy import Policy
 Handler = Callable[[dict[str, Any]], Awaitable[dict[str, Any]]]
 
 
+# Ops an operator cannot switch off. Without these the hub cannot learn what a
+# host is, tell whether it is alive, or explain itself -- an agent that answers
+# nothing is worse than one that is absent, because it still holds a slot and
+# still looks connected. `help` stays for the same reason: the one op that can
+# explain why another is missing must not be the one that is missing.
+import logging
+
+logger = logging.getLogger(__name__)
+
+UNDISABLEABLE_OPS = frozenset({"ping", "capabilities", "state", "help"})
+
+
 def build_registry(
     config_path: Path | None = None,
     policy: Policy | None = None,
@@ -168,5 +180,40 @@ def build_registry(
         from sentinelx_core.handlers.local_api import make_local_api_handler
 
         registry["local_api"] = make_local_api_handler(policy)
+
+    # Switched-off ops are removed here, at the end, so this is the last word
+    # regardless of how a handler got in. Removal rather than a guard inside
+    # each handler: capabilities derives ops_supported from these keys and
+    # dispatch answers unsupported_op for anything absent, so one deletion
+    # makes the op invisible AND unreachable with no second path to keep in
+    # step. A guard would have to be remembered in every handler, and forgotten
+    # in one.
+    if policy.disabled_ops:
+        refused = policy.disabled_ops & UNDISABLEABLE_OPS
+        if refused:
+            logger.warning(
+                "policy_undisableable_ops",
+                extra={
+                    "requested": sorted(refused),
+                    "reason": (
+                        "these ops are how the hub learns what this host is and "
+                        "whether it is alive; an agent that cannot answer them "
+                        "still holds a slot and still looks connected"
+                    ),
+                },
+            )
+        removed = sorted((policy.disabled_ops & registry.keys()) - UNDISABLEABLE_OPS)
+        for op in removed:
+            del registry[op]
+        unknown = sorted(policy.disabled_ops - set(registry) - UNDISABLEABLE_OPS - set(removed))
+        logger.info(
+            "policy_disabled_ops",
+            extra={
+                "removed": removed,
+                # A name this agent never had is almost always a typo, and a
+                # typo in a deny list reads as protection that is not there.
+                "not_recognised": unknown,
+            },
+        )
 
     return registry
