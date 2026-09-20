@@ -3,6 +3,26 @@
 Notable changes to `sentinelx-cloud-core`. Human-readable, date-stamped
 entries; releases before 0.3.0 predate this file — see the git history.
 
+## 0.15.1 - Pin the protocol that actually has opaque_ref - 2026-09-20
+
+- Executor advertised the opaque_ref capability while pyproject pinned protocol
+  v1.11.0, whose RequestMessage has no such field. RequestMessage is
+  extra="forbid", so the hub -- which only sends the field to an agent that
+  asked for it -- would send it and the agent would reject the ENTIRE message.
+  Advertising it was worse than not advertising it: the operation died with
+  extra_forbidden before dispatch instead of merely losing the correlation.
+- The field arrived in protocol v1.12.0; the pin is now v1.13.0.
+- Reported by FalconZip (issue #21), who installed from the declared dependency
+  rather than from a tree that already had a newer protocol in it. That is why
+  none of us saw it: every working environment here was fine, and only a clean
+  install reproduced it.
+- A test now compares Executor.PROTOCOL_FEATURES against the INSTALLED
+  RequestMessage, so the advertisement and the dependency cannot drift apart
+  again. It fails against v1.11.0 and passes against v1.13.0, which is how it
+  was verified.
+- Full suite re-run against v1.13.0: 426 passing, so the two-version bump
+  carries nothing else with it.
+
 ## 0.15.0 - A job's answer outlives the connection meant to carry it - 2026-09-19
 
 - A background job's completion was sent over the very socket the request
