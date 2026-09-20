@@ -3,6 +3,24 @@
 Notable changes to `sentinelx-cloud-core`. Human-readable, date-stamped
 entries; releases before 0.3.0 predate this file — see the git history.
 
+## 0.17.1 - capabilities evidences the policy, not only its effect - 2026-09-20
+
+- capabilities now reports `disabled_ops` and `exec_strict` alongside
+  `ops_supported`.
+- ops_supported is the permitted set and a disabled op is simply not in it,
+  which is correct but not sufficient for an audit: an old agent that never had
+  the op and a current one where the operator deliberately turned it off look
+  identical from outside. Asked for by an operator running a governance audit
+  who needed to evidence the difference rather than infer it.
+- disabled_ops is echoed from the config rather than derived from the registry,
+  so a name that matched nothing still appears. A typo in a deny list otherwise
+  reads as protection that was never applied -- the worst possible answer to an
+  auditor.
+- exec_strict is reported for the same reason: whether chained commands are
+  checked segment by segment is part of what this host is willing to run, and
+  should not require reading config.yaml off the machine to establish.
+- 7 tests. Sabotage: filtering the list down to recognised op names fails four.
+
 ## 0.17.0 - exec_strict: check every segment, not just the first - 2026-09-20
 
 - allowed_commands matches what a command STARTS with, and the matched string

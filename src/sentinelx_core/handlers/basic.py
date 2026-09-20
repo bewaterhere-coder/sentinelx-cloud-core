@@ -174,6 +174,22 @@ def make_capabilities_handler(
             # stable, readable, diff-friendly response.
             "ops_supported": sorted(ops_supported()) if ops_supported else [],
             "allowed_commands": list(policy.allowed_commands),
+            # What the operator switched off, echoed back. ops_supported is the
+            # permitted set -- a disabled op is simply not in it -- but that
+            # alone cannot tell an auditor WHY something is absent: an old agent
+            # that never had the op and a current one where it was deliberately
+            # turned off look identical. Requested by an operator running a
+            # governance audit, who needed to evidence the difference rather
+            # than infer it.
+            #
+            # Echoed from the config, not derived from the registry: a name that
+            # matched nothing still belongs here, because a typo in a deny list
+            # otherwise reads as protection that was never applied.
+            "disabled_ops": sorted(policy.disabled_ops),
+            # Whether chained exec commands are checked segment by segment.
+            # Part of the same question -- what is this host actually willing to
+            # run -- and an auditor should not have to read config.yaml to know.
+            "exec_strict": policy.exec_strict,
             # Commands that are allowlisted but cannot run on this host. Today
             # only one cause: sudo under NoNewPrivileges. Advertising a command
             # as executable when the kernel guarantees it will fail sends the
