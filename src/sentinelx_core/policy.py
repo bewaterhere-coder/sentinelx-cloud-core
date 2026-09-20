@@ -192,6 +192,14 @@ class LocalApiEndpoint:
 class Policy:
     """Loaded policy. Immutable after construction."""
 
+    # Check EVERY segment of a chained command against allowed_commands, not
+    # just what the whole string starts with. Off by default: measured against
+    # 48h of fleet traffic, turning it on unconditionally would reject roughly a
+    # third of chained calls even with the cd and read-only-filter concessions,
+    # and every single one of them without. A security default that gets
+    # reverted within the hour protects nobody. See segment_check.py.
+    exec_strict: bool = False
+
     # Ops the operator has switched off on this host. An op named here is not
     # built into the registry at all, so it vanishes from capabilities and
     # dispatch answers unsupported_op -- the same as if this agent had never
@@ -406,6 +414,7 @@ class Policy:
             # while policy_unknown_keys told the operator it was unrecognised.
             "local_apis",
             "disabled_ops",
+            "exec_strict",
         }
         unknown = set(data.keys()) - KNOWN_KEYS - set(TYPO_HINTS.keys())
         if unknown:
@@ -675,6 +684,7 @@ class Policy:
 
         policy = cls(
             allowed_commands=tuple(data.get("allowed_commands") or []),
+            exec_strict=bool(data.get("exec_strict", False)),
             disabled_ops=frozenset(
                 str(o).strip() for o in (data.get("disabled_ops") or []) if str(o).strip()
             ),

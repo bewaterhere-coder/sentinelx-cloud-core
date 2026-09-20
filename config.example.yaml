@@ -48,6 +48,33 @@
 disabled_ops: []
 
 # ============================================================================
+# Check EVERY segment of a chained exec command, not just what it starts with.
+#
+# allowed_commands matches by PREFIX, and the matched string then goes to a
+# shell. So with `/usr/local/bin/probe` allowlisted, this passes today:
+#
+#   /usr/local/bin/probe ; id
+#
+# because the string starts with an allowed prefix. Turn this on and every
+# segment must be covered on its own, and command substitution -- $(...) and
+# backticks -- is refused outright, since a prefix list cannot say anything
+# about what runs inside one.
+#
+#   exec_strict: true
+#
+# Two things still work, because neither widens what you can reach:
+#   - `cd` in any position, so `cd /srv/app && <allowed>` keeps working;
+#   - read-only filters (head, grep, sort, jq, wc...) AFTER a pipe. Not as the
+#     first segment: `cat /etc/shadow` reads a file, `| cat` cannot.
+#
+# Off by default, deliberately. Measured against real fleet traffic, turning it
+# on unconditionally would reject about a third of chained calls -- `git`,
+# `npm`, `for` loops, anything a prefix list cannot express. Those belong in
+# script_run, which is the explicit path for a workflow.
+# ============================================================================
+exec_strict: false
+
+# ============================================================================
 # Commands the agent can execute via the `exec` op.
 # Empty or missing = nothing allowed (deny by default).
 #

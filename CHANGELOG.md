@@ -3,6 +3,37 @@
 Notable changes to `sentinelx-cloud-core`. Human-readable, date-stamped
 entries; releases before 0.3.0 predate this file — see the git history.
 
+## 0.17.0 - exec_strict: check every segment, not just the first - 2026-09-20
+
+- allowed_commands matches what a command STARTS with, and the matched string
+  then goes to `bash -lc`. So `allowed-probe; id` passed the check and the
+  shell ran both halves: the allowlist bounded the prefix, not the execution.
+  Reported with working demonstrations using ';', '&&' and '|'.
+- The obvious remedy -- refuse compound operators -- was MEASURED against 48
+  hours of fleet traffic before being rejected: it would have failed every
+  chained call, 87,281 of them across more than a thousand hosts, including
+  patterns as ordinary as `cd /srv/app && make`. A security fix reverted within
+  the hour protects nobody.
+- So: opt-in `exec_strict`, which checks each segment against the allowlist.
+  Two concessions, neither widening reach: `cd` in any position (90% of what
+  strict checking otherwise rejected), and read-only filters after a pipe but
+  never as the first segment -- `cat /etc/shadow` reads a file, `| cat` cannot.
+  Measured with those: 68.5% of chained traffic passes rather than 23.4%.
+- Command substitution is refused outright under exec_strict. Our own
+  verification found that gap on the first run: `probe $(id)` is ONE segment,
+  starts with an allowed prefix, and passes every check while the shell runs
+  the substitution first. A strict mode that permits it answers "checked" to a
+  question it did not ask, which is worse than no strict mode at all.
+- Splitting is quote-aware. A naive split reported a false 100% breakage when
+  this was first measured, because `find . -name '*.py;'` was cut into
+  fragments. A separator inside quotes is data, not structure.
+- OFF BY DEFAULT and documented as such. What still fails under it is `git`,
+  `npm`, `for` loops and substitutions -- things a prefix allowlist cannot
+  express. Those belong in script_run.
+- 27 tests, four sabotages: first-segment-only fails six, filters anywhere
+  fails one, no substitution check fails three, quote-blind splitting fails
+  one.
+
 ## 0.16.0 - An operator can switch an op off - 2026-09-20
 
 - New `disabled_ops` in config.yaml. An op named there is not built into the

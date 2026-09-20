@@ -15,6 +15,7 @@ import re
 from typing import Any
 
 from sentinelx_core.executor import HandlerError
+from sentinelx_core.segment_check import has_substitution, unauthorised_segment
 from sentinelx_core.executor_engine import run_shell
 from sentinelx_core.jobs import BACKGROUND_TIMEOUT_MAX
 from sentinelx_core.policy import Policy
@@ -130,6 +131,42 @@ def make_exec_handler(policy: Policy):
         else:
             ceiling = policy.exec_timeout_max
         timeout = min(timeout, ceiling)
+
+        # Strict mode first: the prefix check below asks what the command
+        # STARTS with, which is exactly the question that let `allowed; id`
+        # through. When the operator has asked for it, every segment answers
+        # for itself.
+        if policy.exec_strict:
+            substitution = has_substitution(command)
+            if substitution is not None:
+                raise HandlerError(
+                    "command_not_allowed",
+                    f"exec_strict is on for this host, and this command uses "
+                    f"{substitution} command substitution. The allowlist matches "
+                    f"command prefixes and cannot say anything about what runs "
+                    f"inside a substitution, so strict mode refuses it rather "
+                    f"than answer 'checked' to a question it did not ask. Use "
+                    f"script_run for anything that needs one.",
+                    details={"command": command, "substitution": substitution},
+                )
+
+            offending = unauthorised_segment(policy, command)
+            if offending is not None:
+                raise HandlerError(
+                    "command_not_allowed",
+                    f"exec_strict is on for this host, and the segment "
+                    f"{offending!r} is not covered by allowed_commands. Every "
+                    f"part of a chained command is checked, not just the first "
+                    f"-- otherwise an allowed prefix followed by ';' would run "
+                    f"anything. Add that segment's prefix to allowed_commands "
+                    f"if it is safe and routine, or use script_run, which is "
+                    f"the explicit path for a workflow.",
+                    details={
+                        "command": command,
+                        "offending_segment": offending,
+                        "allowed_commands": list(policy.allowed_commands),
+                    },
+                )
 
         if not policy.is_command_allowed(command):
             problem, suggestion = _classify_rejection(command)
