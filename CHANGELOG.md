@@ -3,6 +3,22 @@
 Notable changes to `sentinelx-cloud-core`. Human-readable, date-stamped
 entries; releases before 0.3.0 predate this file — see the git history.
 
+## 0.18.0 - The agent reports when it received and finished a request - 2026-09-20
+
+- Two timestamps, carried inside `result` under `_sx_timing`: when the request
+  reached this agent, and when the handler finished.
+- WHY. The hub could only ever measure hub-out to hub-back, so "this call took
+  57 seconds" was unanswerable: the wire, queueing here and the work itself
+  were one number. An operator reported seconds-long calls whose host-side work
+  was milliseconds, and the honest answer was that we could not tell.
+- Inside `result` rather than as a new top-level field on purpose:
+  ResponseMessage is extra="forbid", so a field the hub's pinned protocol did
+  not know would make it reject the whole message. That mismatch cost an outage
+  once already (issue #21), and this needs no protocol change at all.
+- The hub removes the key before the caller sees the result, so no response
+  shape changes for anyone.
+- Not added to binary transfer results, which leave the JSON path entirely.
+
 ## 0.17.1 - capabilities evidences the policy, not only its effect - 2026-09-20
 
 - capabilities now reports `disabled_ops` and `exec_strict` alongside

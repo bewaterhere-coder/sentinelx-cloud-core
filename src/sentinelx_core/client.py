@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import time
 import random
 import os
 import platform
@@ -597,6 +598,15 @@ class HubClient:
         if request.payload.get("background"):
             await self._start_background_job(ws, request)
             return
+
+        # When this request reached us, before anything else happens to it. The
+        # hub already knows when it dispatched and when the answer came back,
+        # but end to end is all it can measure, so "this took 57 seconds" has
+        # never been answerable: transit, queueing here, and the work itself
+        # were one number. An operator reported exactly that -- seconds-long
+        # calls whose host-side work was milliseconds -- and we could only
+        # reason from distributions. These two stamps split the number.
+        received_at = time.time()
         try:
             response = await self._executor.dispatch(request)
         except Exception as exc:  # noqa: BLE001
@@ -611,7 +621,18 @@ class HubClient:
         # under "__binary_payload__" — emit them as a raw binary frame instead of
         # a JSON response (the Hub coordinator awaits the binary frame, not a
         # response; a chunk-level failure still comes back as a JSON error).
+        # Carried inside `result`, which is a free-form dict, rather than as a
+        # new top-level field: ResponseMessage is extra="forbid", so a field the
+        # hub's pinned protocol does not know would make it reject the whole
+        # message. That exact shape of mismatch cost us an outage once already.
+        # The hub records these and strips the key before the caller sees it.
         result = response.get("result") if isinstance(response, dict) else None
+        if isinstance(result, dict) and "__binary_payload__" not in result:
+            result["_sx_timing"] = {
+                "received_at": received_at,
+                "finished_at": time.time(),
+            }
+
         if response.get("ok") and isinstance(result, dict) and "__binary_payload__" in result:
             payload = result.pop("__binary_payload__")  # bytes leave the JSON path
             try:
