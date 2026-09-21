@@ -229,9 +229,48 @@ def _win_is_system_account(account: str | None) -> bool:
     return a.endswith("\\system")
 
 
+async def _win_cim_service_field(name: str, field: str) -> str | None:
+    """Read one Win32_Service property via CIM as plain text.
+
+    PowerShell hands CIM back as objects and we ask for a single property, so
+    there is no console codepage in the path and no localized label to match --
+    the two things that made the sc.exe text parse fail on a non-English host.
+    Returns the trimmed value, or None if empty/unavailable.
+    """
+    # -EncodedCommand would be sturdier still, but a single ExpandProperty of a
+    # known-ASCII field (StartName, ProcessId) is safe as plain -Command.
+    ps = (
+        f"(Get-CimInstance Win32_Service -Filter \"Name='{name}'\" "
+        f"-ErrorAction Stop).{field}"
+    )
+    try:
+        res = await run_shell_split(ps, timeout=10.0)
+        if (res.get("returncode") or res.get("exit_code") or 0) not in (0, None):
+            return None
+        value = (res.get("stdout") or "").strip()
+        return value or None
+    except Exception:
+        return None
+
+
 async def _win_service_account(name: str) -> str | None:
-    """Resolve the service's SERVICE_START_NAME via `sc.exe qc` (e.g. 'LocalSystem',
-    'NT AUTHORITY\\LocalService'). None if it can't be resolved."""
+    """Resolve the service's start account. None if it can't be resolved.
+
+    Primary source is CIM (Win32_Service.StartName): a structured value returned
+    as an object property, so it is immune to the two failures that dogged the
+    sc.exe path. sc.exe qc emits console-codepage OEM text -- decoded as UTF-8
+    it becomes mojibake -- and its labels are LOCALIZED, so on a non-English
+    Windows the line does not even start with SERVICE_START_NAME. A LocalSystem
+    host was refused a self-restart on both counts. Reported with CIM proving
+    LocalSystem while sc.exe came back garbled.
+
+    sc.exe qc remains a fallback for the rare box where CIM is unavailable, with
+    the optional-colon parsing from 0.18.1 -- but it is no longer the primary,
+    and its locale/encoding fragility no longer decides the safe path.
+    """
+    cim = await _win_cim_service_field(name, "StartName")
+    if cim:
+        return cim
     try:
         qc = await run_shell_split(f"sc.exe qc {_cmd_double(name)}", timeout=10.0)
         for line in (qc.get("stdout") or "").splitlines():
@@ -260,8 +299,38 @@ async def _win_service_account(name: str) -> str | None:
 
 
 async def _win_has_scm_restart_recovery(name: str) -> bool:
-    """True if `sc.exe qfailure` lists at least one RESTART failure action, i.e. the
-    SCM will restart the service on its own after we force-kill the tree."""
+    """True if the service has at least one SCM RESTART failure action.
+
+    Read from the registry FailureActions blob rather than parsed from
+    `sc.exe qfailure` text: qfailure is both localized and OEM-encoded, so the
+    word RESTART may be translated or turned to mojibake, and the old regex for
+    it returned False on a host that plainly had RESTART/10000 configured. The
+    registry value is a fixed binary layout, language-independent.
+
+    The FailureActions binary encodes an array of (Type, Delay) pairs; the Type
+    for "restart the service" is SC_ACTION_RESTART = 1. We ask PowerShell for
+    the raw bytes and look for a type-1 action. Falls back to the qfailure text
+    only if the registry read fails outright.
+    """
+    ps = (
+        "$p='HKLM:\\SYSTEM\\CurrentControlSet\\Services\\" + name + "';"
+        "$v=(Get-ItemProperty -Path $p -Name FailureActions -ErrorAction Stop)"
+        ".FailureActions;"
+        # bytes 0..11 are header (reset period, reboot msg ptr, command ptr);
+        # from offset 20 come (type:int32, delay:int32) pairs. Type 1 = RESTART.
+        "$n=[BitConverter]::ToInt32($v,16);$off=20;$found=$false;"
+        "for($i=0;$i -lt $n;$i++){if([BitConverter]::ToInt32($v,$off) -eq 1){$found=$true};$off+=8};"
+        "if($found){'RESTART'}else{'NONE'}"
+    )
+    try:
+        res = await run_shell_split(ps, timeout=10.0)
+        out = (res.get("stdout") or "").strip().upper()
+        if out in ("RESTART", "NONE"):
+            return out == "RESTART"
+    except Exception:
+        pass
+    # Fallback: the old text parse, better than nothing where the registry read
+    # failed. Still locale-fragile, hence only a fallback.
     try:
         qf = await run_shell_split(f"sc.exe qfailure {name}", timeout=10.0)
         return re.search(r"\bRESTART\b", qf.get("stdout") or "", re.IGNORECASE) is not None

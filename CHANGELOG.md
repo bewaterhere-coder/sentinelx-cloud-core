@@ -3,6 +3,31 @@
 Notable changes to `sentinelx-cloud-core`. Human-readable, date-stamped
 entries; releases before 0.3.0 predate this file — see the git history.
 
+## 0.18.3 - Windows service detection no longer depends on sc.exe text - 2026-09-21
+
+- 0.18.1 fixed the optional colon in sc.exe qc, and it was not enough. The same
+  operator's non-English host returns sc.exe output that is BOTH localized (the
+  label is not the English SERVICE_START_NAME) AND OEM-encoded (decoded as UTF-8
+  it is mojibake). So _win_service_account still returned None and
+  _win_has_scm_restart_recovery still returned False on a host whose CIM plainly
+  showed LocalSystem and RESTART/10000 -- and the self-restart was refused
+  again, one layer down.
+- Account resolution now reads Win32_Service.StartName via CIM: a structured
+  object property, so there is no console codepage in the path and no localized
+  label to match. sc.exe qc stays only as a fallback, with the 0.18.1 parsing,
+  for the rare host where CIM is unavailable.
+- SCM restart-recovery detection now reads the registry FailureActions blob -- a
+  fixed binary layout, language-independent -- and looks for a type-1
+  (SC_ACTION_RESTART) action, instead of grepping localized sc.exe qfailure text
+  for the word RESTART. qfailure text remains the fallback.
+- Reported by a paying operator who cited the exact 0.18.1 commit and proved the
+  gap with CIM output beside the garbled sc.exe output. Structured data was the
+  right call and they said so.
+- 8 new tests, verified by sabotage: making account resolution skip CIM, or
+  recovery skip the registry, each fails the cases where sc.exe is garbage --
+  which is the reported host. The 0.18.1 tests were updated to stub CIM empty so
+  they exercise the sc.exe fallback they were written for.
+
 ## 0.18.2 - exec resolves a PowerShell the service account can launch - 2026-09-21
 
 - sentinel_exec failed on a Windows LocalSystem service with WinError 1920 while

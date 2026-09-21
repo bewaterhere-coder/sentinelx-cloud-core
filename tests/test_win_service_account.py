@@ -26,7 +26,13 @@ def _parse(stdout: str):
     import asyncio
 
     async def _fake_shell(cmd, timeout=10.0):
-        return {"stdout": stdout, "exit_code": 0}
+        # These tests exercise the sc.exe qc FALLBACK path, so CIM must come back
+        # empty and let the resolver fall through to sc.exe -- otherwise the CIM
+        # branch (added when account resolution moved to Win32_Service.StartName)
+        # would receive this sc.exe text as if it were the CIM answer.
+        if "Get-CimInstance" in cmd:
+            return {"stdout": "", "returncode": 1}
+        return {"stdout": stdout, "returncode": 0, "exit_code": 0}
 
     orig = service.run_shell_split
     service.run_shell_split = _fake_shell
