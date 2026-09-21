@@ -3,6 +3,27 @@
 Notable changes to `sentinelx-cloud-core`. Human-readable, date-stamped
 entries; releases before 0.3.0 predate this file — see the git history.
 
+## 0.18.2 - exec resolves a PowerShell the service account can launch - 2026-09-21
+
+- sentinel_exec failed on a Windows LocalSystem service with WinError 1920 while
+  script_run on the same host worked. _shell_argv trusted shutil.which('pwsh'),
+  which under a service resolves to the per-user WindowsApps execution alias --
+  a reparse stub in a user profile that LocalSystem cannot execute.
+- Resolution now probes, in order: concrete PowerShell 7 paths in Program
+  Files, shutil.which('pwsh') ONLY if it is not a WindowsApps alias, Windows
+  PowerShell 5.1 at its System32 absolute path, and finally the bare name. Each
+  candidate is checked as a real file; the WindowsApps path is excluded
+  outright.
+- Reported by a paying operator already on 0.18.0, with the alias path and the
+  working Program Files path side by side -- the defect survives the update, so
+  it had to be found by a host that reproduced it.
+- The resolved interpreter is cached, except the bare-name fallback, so a
+  later-installed shell is still picked up.
+- 10 tests, verified by sabotage. The first version had a coverage hole: the
+  alias test still passed with the exclusion removed, because System32 was
+  present as a fallback. Added the sharp case -- alias present as the only file
+  -- which fails without the exclusion, exactly the reported host.
+
 ## 0.18.1 - Parse sc.exe SERVICE_START_NAME with or without a colon - 2026-09-21
 
 - The Windows self-restart preflight refused a LocalSystem service with

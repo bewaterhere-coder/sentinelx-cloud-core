@@ -28,11 +28,74 @@ def _shell_argv(cmd: str) -> list[str]:
     fast and non-blocking; `-Command` takes the full command string.
     """
     if sys.platform == "win32":
-        import shutil as _shutil
-
-        exe = _shutil.which("pwsh") or _shutil.which("powershell") or "powershell"
-        return [exe, "-NoProfile", "-NonInteractive", "-Command", cmd]
+        return [_win_powershell(), "-NoProfile", "-NonInteractive", "-Command", cmd]
     return ["bash", "-lc", cmd]
+
+
+# Cache the resolved interpreter: the probing below touches the filesystem and
+# the answer does not change while the process runs.
+_WIN_PS_CACHE: str | None = None
+
+
+def _win_powershell() -> str:
+    """Return a PowerShell executable the SERVICE ACCOUNT can actually launch.
+
+    shutil.which('pwsh') was trusted directly, and under a LocalSystem service
+    it resolves to the per-user WindowsApps execution alias
+    (C:\\Users\\<someone>\\AppData\\Local\\Microsoft\\WindowsApps\\pwsh.EXE) --
+    a zero-byte reparse stub in a user profile that LocalSystem cannot execute,
+    failing with WinError 1920. script_run worked and exec did not, on the same
+    host, for exactly this reason. Reported with the alias path and the working
+    Program Files path side by side.
+
+    Resolution order, each candidate checked for real:
+      1. concrete PowerShell 7 install locations (Program Files),
+      2. shutil.which('pwsh'), but ONLY if it is not a WindowsApps alias,
+      3. Windows PowerShell 5.1 at its System32 absolute path,
+      4. the bare name 'powershell' as a last resort.
+    """
+    global _WIN_PS_CACHE
+    if _WIN_PS_CACHE is not None:
+        return _WIN_PS_CACHE
+
+    import os as _os
+    import shutil as _shutil
+
+    def _usable(path: str | None) -> bool:
+        # A real, executable file -- not a WindowsApps alias stub. The alias
+        # lives under ...\Local\Microsoft\WindowsApps and is a reparse point
+        # the service token cannot traverse, so exclude that path outright and
+        # require an ordinary readable file elsewhere.
+        if not path:
+            return False
+        low = path.replace("/", "\\").lower()
+        if "\\microsoft\\windowsapps\\" in low:
+            return False
+        return _os.path.isfile(path)
+
+    candidates: list[str] = []
+    pf = _os.environ.get("ProgramFiles", r"C:\Program Files")
+    pf86 = _os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)")
+    candidates.append(_os.path.join(pf, "PowerShell", "7", "pwsh.exe"))
+    candidates.append(_os.path.join(pf86, "PowerShell", "7", "pwsh.exe"))
+
+    which_pwsh = _shutil.which("pwsh")
+    if which_pwsh:
+        candidates.append(which_pwsh)
+
+    sysroot = _os.environ.get("SystemRoot", r"C:\Windows")
+    candidates.append(
+        _os.path.join(sysroot, "System32", "WindowsPowerShell", "v1.0", "powershell.exe")
+    )
+
+    for cand in candidates:
+        if _usable(cand):
+            _WIN_PS_CACHE = cand
+            return cand
+
+    # Nothing concrete resolved; the bare name lets the OS search PATH and is
+    # the historical behaviour. Not cached, so a later-installed shell is found.
+    return "powershell"
 
 
 async def run_shell(
