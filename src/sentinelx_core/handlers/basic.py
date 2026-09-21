@@ -292,6 +292,51 @@ def make_help_handler(policy: Policy):
         example tasks and reference links."""
         paths = policy.file_ops_paths
         writable = [p for p in paths if getattr(p, "access", "r") == "rw"]
+
+        # What this host can actually do. help used to list every operation in
+        # navigation and recommend edit/service/playbooks unconditionally, so on
+        # a deny-all host -- disabled_ops covering read/list/edit/exec/service,
+        # no file_ops paths, no playbooks -- it guided the operator straight into
+        # walls: "use op:edit" when edit is disabled, "run add_allowed_read_path"
+        # when no playbook exists. Reported on a Windows host where only
+        # ping/help/capabilities were live. Now navigation shows only live ops,
+        # and extending_access is phrased for what is reachable.
+        disabled = set(policy.disabled_ops)
+        has_read_paths = bool(paths)
+        has_commands = bool(policy.allowed_commands)
+        has_services = bool(getattr(policy, "services", None))
+        has_playbooks = bool(getattr(policy, "playbooks", None))
+
+        def _op_live(*ops: str) -> bool:
+            # An op is live if it is not switched off. ping/help/capabilities/
+            # state are never disableable, so they are always live.
+            return not any(o in disabled for o in ops)
+        def _build_navigation() -> dict[str, str]:
+            # Always-live orientation ops.
+            nav = {
+                "capabilities": "full policy: allowed paths (r/rw), commands, services, playbooks, limits",
+                "state": "live host status (hostname, kernel, uptime, load)",
+            }
+            if _op_live("read", "list", "search") and has_read_paths:
+                nav["read / list / search"] = "inspect files under allowed paths"
+            if _op_live("edit"):
+                nav["edit"] = "structured file edits; sudo=true for rw-gated or privileged writes"
+            if _op_live("move", "copy", "delete", "chmod", "chown") and writable:
+                nav["move / copy / delete / chmod / chown"] = "mutate files under rw paths (never sudo)"
+            if _op_live("exec") and has_commands:
+                nav["exec"] = "run ONE allowlisted command (no pipes or redirects)"
+            if _op_live("script_run"):
+                nav["script_run"] = "run a multi-step bash/python script for complex tasks"
+            if _op_live("service", "restart") and has_services:
+                nav["service / restart"] = "manage allowlisted services"
+            if _op_live("upload_file", "upload_init"):
+                nav["upload_file / upload_init+chunk+complete"] = "get files onto the host"
+            if _op_live("read_audit"):
+                nav["read_audit"] = "review this host's own recent operation log"
+            if has_playbooks:
+                nav["playbooks"] = "guided multi-step recipes (see 'playbooks' in capabilities)"
+            return nav
+
         full = {
             "agent": "sentinelx-cloud-core",
             "version": AGENT_VERSION,
@@ -339,20 +384,23 @@ def make_help_handler(policy: Policy):
                 "For destructive ops (delete, overwrite), confirm intent and keep a rollback.",
                 "Use 'capabilities' for full policy detail; this 'help' is the orientation map.",
             ],
-            "navigation": {
-                "capabilities": "full policy: allowed paths (r/rw), commands, services, playbooks, limits",
-                "state": "live host status (hostname, kernel, uptime, load)",
-                "read / list / search": "inspect files under allowed paths",
-                "edit": "structured file edits; sudo=true for rw-gated or privileged writes",
-                "move / copy / delete / chmod / chown": "mutate files under rw paths (never sudo)",
-                "exec": "run ONE allowlisted command (no pipes or redirects)",
-                "script_run": "run a multi-step bash/python script for complex tasks",
-                "service / restart": "manage allowlisted services",
-                "upload_file / upload_init+chunk+complete": "get files onto the host",
-                "read_audit": "review this host's own recent operation log",
-                "playbooks": "guided multi-step recipes (see 'playbooks' in capabilities)",
-            },
+            "navigation": _build_navigation(),
             "extending_access": {
+                # On a deny-all host with edit disabled and no writable path,
+                # the operator cannot apply these changes THROUGH the agent --
+                # the playbooks and config edits below all need a capability this
+                # host does not have. Say so first, rather than recommending a
+                # door that is locked. Reported alongside the navigation issue.
+                "note": (
+                    "This host cannot edit its own config remotely: edit is "
+                    "disabled and no writable path is configured. The steps below "
+                    "must be applied by the operator ON the host (edit "
+                    "config.yaml directly and reload the agent), not through "
+                    "SentinelX."
+                ) if (("edit" in disabled) or not writable) else (
+                    "These changes need the operator's approval; apply them via "
+                    "SentinelX where a config path is available, or on the host."
+                ),
                 "read_or_write_directory": (
                     f"Add an entry under file_ops.paths (via {_pg.edit_config_via()}) "
                     "with access 'r' (read-only) or 'rw' (also editable), covering a "

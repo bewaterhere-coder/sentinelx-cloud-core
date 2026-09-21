@@ -3,6 +3,23 @@
 Notable changes to `sentinelx-cloud-core`. Human-readable, date-stamped
 entries; releases before 0.3.0 predate this file — see the git history.
 
+## 0.18.4 - help stops recommending disabled operations - 2026-09-21
+
+- On a deny-all host -- disabled_ops covering read/list/edit/exec/service, no
+  file_ops paths, no playbooks -- help(topic='operations') listed every op and
+  help(topic='access') recommended op:edit, op:service and playbooks that do not
+  exist there. It pointed the operator straight at locked doors.
+- navigation now shows only LIVE operations: an op that is in disabled_ops, or
+  whose prerequisite is absent (exec with no allowed_commands, read with no
+  paths, service with no services), is omitted rather than advertised.
+- extending_access now leads with an honest note when the host cannot edit its
+  own config remotely (edit disabled or no writable path): the change has to be
+  made on the host, not through SentinelX -- instead of recommending an edit the
+  host will refuse.
+- Reported on a Windows host where only ping/help/capabilities were live.
+- 8 tests, verified by sabotage: making navigation ignore the live-op check
+  fails the deny-all case. The 31 existing help tests still pass.
+
 ## 0.18.3 - Windows service detection no longer depends on sc.exe text - 2026-09-21
 
 - 0.18.1 fixed the optional colon in sc.exe qc, and it was not enough. The same
