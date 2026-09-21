@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "capability": "host_runtime.git_authenticated_v1",
+  "allowed_roots": ["D:\\coco"],
+  "allow_push": true,
+  "timeout_seconds": 20,
+  "max_timeout_seconds": 60,
+  "force_http_1_1": true
+}
