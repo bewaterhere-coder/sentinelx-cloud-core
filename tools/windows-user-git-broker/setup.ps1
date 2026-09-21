@@ -1,16 +1,20 @@
 param(
   [string]$TaskName = "DevForgeUserGitBroker",
-  [string]$BrokerDir = "D:\coco\_host-runtime\user-git-broker"
+  [string]$BrokerDir = $PSScriptRoot,
+  [string]$PythonwPath = "C:\ProgramData\SentinelX\.venv\Scripts\pythonw.exe"
 )
 $ErrorActionPreference = "Stop"
 
 $interactiveUser = (Get-CimInstance Win32_ComputerSystem).UserName
 if (-not $interactiveUser) { throw "No interactive Windows user is logged on." }
 
-$pythonw = "C:\ProgramData\SentinelX\.venv\Scripts\pythonw.exe"
+$pythonw = $PythonwPath
 $broker = Join-Path $BrokerDir "broker.py"
 if (-not (Test-Path $pythonw)) { throw "SentinelX pythonw not found: $pythonw" }
 if (-not (Test-Path $broker)) { throw "Broker script not found: $broker" }
+if (-not (Test-Path (Join-Path $BrokerDir "broker-config.json"))) {
+  throw "broker-config.json is required. Copy broker-config.example.json and set operator-approved allowed_roots first."
+}
 
 New-Item -ItemType Directory -Force -Path (Join-Path $BrokerDir "runtime\requests") | Out-Null
 New-Item -ItemType Directory -Force -Path (Join-Path $BrokerDir "runtime\results") | Out-Null
