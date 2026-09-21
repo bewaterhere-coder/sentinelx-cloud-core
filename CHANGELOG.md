@@ -3,6 +3,27 @@
 Notable changes to `sentinelx-cloud-core`. Human-readable, date-stamped
 entries; releases before 0.3.0 predate this file — see the git history.
 
+## 0.18.1 - Parse sc.exe SERVICE_START_NAME with or without a colon - 2026-09-21
+
+- The Windows self-restart preflight refused a LocalSystem service with
+  service_restart_unsafe, claiming a non-SYSTEM account and no SCM recovery --
+  a message the host's own `sc.exe qc` contradicted, showing LocalSystem and
+  FAILURE_ACTIONS=RESTART.
+- Cause: _win_service_account required a colon after SERVICE_START_NAME. sc.exe
+  aligns columns with whitespace and the colon is present or absent depending
+  on Windows version and locale. On a host that omits it, the account resolved
+  to None, _win_is_system_account(None) was False, and a LocalSystem service
+  fell into the underprivileged branch and was refused.
+- The label is now stripped whether or not a colon follows it. LocalSystem in
+  both forms is privileged; LocalService and NetworkService stay
+  underprivileged, unchanged.
+- Reported by a paying operator with the full sc.exe qc / qfailure readback. It
+  had blocked a governed 0.14.1 -> 0.18.0 update that fails closed on a refused
+  restart, so the parse bug was holding the fix for every other bug off that
+  host.
+- 13 tests, verified by sabotage: restoring the colon requirement fails the two
+  no-colon cases, which is precisely the reported host.
+
 ## 0.18.0 - The agent reports when it received and finished a request - 2026-09-20
 
 - Two timestamps, carried inside `result` under `_sx_timing`: when the request

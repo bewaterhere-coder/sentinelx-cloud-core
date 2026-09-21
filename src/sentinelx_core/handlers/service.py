@@ -236,8 +236,24 @@ async def _win_service_account(name: str) -> str | None:
         qc = await run_shell_split(f"sc.exe qc {_cmd_double(name)}", timeout=10.0)
         for line in (qc.get("stdout") or "").splitlines():
             stripped = line.strip()
-            if stripped.upper().startswith("SERVICE_START_NAME") and ":" in stripped:
-                return stripped.split(":", 1)[1].strip()
+            if not stripped.upper().startswith("SERVICE_START_NAME"):
+                continue
+            # sc.exe qc aligns columns with whitespace, and whether a colon
+            # appears depends on Windows version and locale:
+            #     SERVICE_START_NAME : LocalSystem
+            #     SERVICE_START_NAME   LocalSystem      <- no colon
+            # The old code required the colon, so on hosts whose sc.exe omits it
+            # this returned None, _win_is_system_account(None) was False, and a
+            # LocalSystem service fell into the underprivileged branch and was
+            # refused with a message flatly contradicted by `sc.exe qc`.
+            # Reported with the sc.exe readback proving LocalSystem. Strip the
+            # label (with or without a trailing colon), take the remainder.
+            rest = stripped[len("SERVICE_START_NAME"):].lstrip()
+            if rest.startswith(":"):
+                rest = rest[1:]
+            value = rest.strip()
+            if value:
+                return value
     except Exception:
         pass
     return None
