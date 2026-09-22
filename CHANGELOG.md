@@ -3,6 +3,25 @@
 Notable changes to `sentinelx-cloud-core`. Human-readable, date-stamped
 entries; releases before 0.3.0 predate this file — see the git history.
 
+## 0.19.1 - An unreadable parent gives permission_denied, not internal_error - 2026-09-22
+
+- read and list already had a detailed permission_denied message for a path the
+  agent's user cannot reach -- explaining it is a Unix permission issue rather
+  than an allowlist one, and how to fix it. Callers were not getting it: they
+  got a bare 'internal_error: [Errno 13] Permission denied'.
+- Cause: after _stat_safe returns None, both handlers probe with Path.exists()
+  to tell 'missing' from 'no permission'. exists() traverses parents too, so on
+  a directory the agent cannot enter THE PROBE ITSELF raised PermissionError and
+  escaped -- two lines above the message it was trying to choose.
+- _probably_missing() now answers only when it can actually look; when the probe
+  cannot traverse, 'missing' is unproven and the handler falls through to
+  permission_denied, which is the accurate answer when we cannot even look.
+  Applied to read and list, which shared the flaw verbatim.
+- Reported by an operator whose target sat under a directory the agent's user
+  could not traverse: every read and list against it surfaced as internal_error.
+- 7 tests (the permission ones skip as root, where traversal always succeeds).
+  Sabotage: restoring the bare probe reproduces the exact internal_error.
+
 ## 0.19.0 - upload_init can land a file at its real path under an rw entry - 2026-09-22
 
 - New opt-in land_in_place on upload_init. When set AND the target resolves
