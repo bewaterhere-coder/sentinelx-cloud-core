@@ -322,12 +322,15 @@ def make_upload_file_handler(policy: Policy, upload_base: Path):
     return handle_upload_file
 
 
-def make_upload_init_handler(upload_base: Path):
+def make_upload_init_handler(upload_base: Path, policy: Policy | None = None):
     async def handle_upload_init(payload: dict[str, Any]) -> dict[str, Any]:
         target_path = payload.get("target_path")
         overwrite = bool(payload.get("overwrite", False))
         total_size = int(payload.get("total_size", 0) or 0)
         filename = payload.get("filename")
+        # Opt-in: land at the real path when covered by an rw file_ops entry,
+        # else fall back to staging (old behaviour). Additive, breaks nothing.
+        land_in_place = bool(payload.get("land_in_place", False))
 
         if not target_path:
             raise HandlerError("invalid_payload", "missing 'target_path'")
@@ -340,15 +343,28 @@ def make_upload_init_handler(upload_base: Path):
             )
 
         upload_base.mkdir(parents=True, exist_ok=True)
-        try:
-            dest = safe_path_under(upload_base, str(target_path))
-        except ValueError as exc:
-            raise HandlerError(
-                "path_traversal",
-                f"target_path rejected: {exc}. It must resolve to a location "
-                "under the agent's upload_base directory; '..' or symlinks "
-                "that escape upload_base are refused.",
-            ) from exc
+        # Land-in-place only when asked AND under an rw file_ops entry.
+        # resolve_path(need_write=True) canonicalises symlinks and defeats
+        # '..' before the prefix check -- identical to move/delete -- so this
+        # widens nothing already not opened rw. Not rw -> fall through to
+        # staging, no failure.
+        dest = None
+        landed = False
+        if land_in_place and policy is not None:
+            resolved_rw = policy.resolve_path(str(target_path), need_write=True)
+            if resolved_rw is not None:
+                dest = resolved_rw
+                landed = True
+        if dest is None:
+            try:
+                dest = safe_path_under(upload_base, str(target_path))
+            except ValueError as exc:
+                raise HandlerError(
+                    "path_traversal",
+                    f"target_path rejected: {exc}. It must resolve to a location "
+                    "under the agent's upload_base directory; '..' or symlinks "
+                    "that escape upload_base are refused.",
+                ) from exc
 
         if dest.exists() and not overwrite:
             raise HandlerError(
@@ -365,6 +381,7 @@ def make_upload_init_handler(upload_base: Path):
         meta = {
             "upload_id": upload_id,
             "target_path": str(dest),
+            "landed_in_place": landed,
             "overwrite": overwrite,
             "total_size": total_size,
             "filename": filename,

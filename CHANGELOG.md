@@ -3,6 +3,26 @@
 Notable changes to `sentinelx-cloud-core`. Human-readable, date-stamped
 entries; releases before 0.3.0 predate this file — see the git history.
 
+## 0.19.0 - upload_init can land a file at its real path under an rw entry - 2026-09-22
+
+- New opt-in land_in_place on upload_init. When set AND the target resolves
+  under a file_ops rw entry, the file is written at that real path instead of
+  under upload staging. Used by host-to-host transfer so a caller can land
+  bytes directly in an authorized workspace rather than transfer-then-move.
+- ADDITIVE. Without the flag, or when the target is not under an rw entry, it
+  falls back to staging exactly as before -- no existing flow changes, and a
+  non-writable target is NOT an error, just a staged landing. Verified: default
+  stays staging even for an rw path; a read-only entry never lands; '..'
+  traversal is still refused.
+- The rw check is policy.resolve_path(need_write=True) -- the identical gate
+  move and delete use, canonicalising symlinks and defeating '..' before the
+  prefix check. This opens nothing the operator has not already declared rw.
+- upload_init now takes the policy (optional) to run that check; the registry
+  passes it. The meta records landed_in_place so the result can report it.
+- Requested by a report with transfer_id/sha256/requested-vs-actual paths.
+- 6 tests, two sabotages: dropping need_write lets a read-only path land
+  (fails), and ignoring the flag lands by default (fails).
+
 ## 0.18.4 - help stops recommending disabled operations - 2026-09-21
 
 - On a deny-all host -- disabled_ops covering read/list/edit/exec/service, no
