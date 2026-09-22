@@ -3,6 +3,24 @@
 Notable changes to `sentinelx-cloud-core`. Human-readable, date-stamped
 entries; releases before 0.3.0 predate this file — see the git history.
 
+## 0.19.2 - Host conditions while staging get a name - 2026-09-22
+
+- script_run prepares a work directory before running. A full disk failed there
+  as a bare 'internal_error: [Errno 28] No space left on device', which reads
+  like an agent defect rather than the host filling up.
+- ENOSPC is now no_space, EACCES/EPERM permission_denied, EROFS
+  read_only_filesystem, anything else staging_failed -- each with the path and
+  what to do. no_space also says plainly that a full disk destabilises the agent,
+  so unrelated failures on the same host may be downstream of it.
+- That last line is the point. An operator reported exec/script_run returning
+  duplicate_session while ping stayed healthy, and suspected stale session
+  routing in the hub. The records showed ENOSPC eight hours earlier: the full
+  disk was restarting the agent in a loop, and each reconnect closed the previous
+  session -- duplicate_session being the CLOSE REASON, not a rejection. The
+  symptom was three layers from the cause, and a named error at the bottom would
+  have shortened that.
+- 8 tests, sabotage: unmapping ENOSPC fails three.
+
 ## 0.19.1 - An unreadable parent gives permission_denied, not internal_error - 2026-09-22
 
 - read and list already had a detailed permission_denied message for a path the
