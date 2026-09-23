@@ -68,6 +68,10 @@ def main() -> None:
 
     try:
         identity = load_identity(args.identity)
+        # Prefer a rotated credential if a valid one is on disk; otherwise this
+        # returns the original unchanged. Never fails onto a bad credential.
+        from sentinelx_core.rotation import load_effective_identity
+        identity = load_effective_identity(Path(args.identity), identity)
     except IdentityError as exc:
         logging.getLogger("sentinelx_core").error("identity: %s", exc)
         sys.exit(1)
@@ -105,6 +109,7 @@ def main() -> None:
         hub_url=hub_url,
         identity=identity,
         config_path=args.config,
+        identity_path=Path(args.identity),
     )
 
     try:

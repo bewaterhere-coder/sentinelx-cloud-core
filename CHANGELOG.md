@@ -3,6 +3,22 @@
 Notable changes to `sentinelx-cloud-core`. Human-readable, date-stamped
 entries; releases before 0.3.0 predate this file — see the git history.
 
+## 0.20.0 - Credential rotation (phase 2, agent side) - 2026-09-23
+
+- Past its credential's half-life, the agent calls POST /agent/rotate (urllib,
+  no HTTP dependency) after a proven-good session, writes the new credential to
+  a SEPARATE file (identity.rotated.json) in a dir it owns, and uses it from the
+  next reconnect. It never touches identity.json.
+- The invariant: a bad rotation never strands a host. On startup the agent
+  prefers the rotated file only if it is present, parses, is unexpired and is
+  for the same host; ANY doubt falls back to identity.json, still a valid
+  credential. The write is atomic (temp + fsync + os.replace, 600). If no dir
+  is writable, rotation disables itself with a warning.
+- Legacy tokens rotate too (issued >182 days ago), migrating onto a typed,
+  revocable credential -- which is exactly the fleet facing the 2027 wall.
+- 12 tests: half-life logic, and every fallback (corrupt, expired, host
+  mismatch, no writable dir), plus atomicity and 600 perms.
+
 ## 0.19.3 - script_run names an unusable cwd - 2026-09-23
 
 - Without sudo, the parent chdirs into cwd as the agent's own user before the
