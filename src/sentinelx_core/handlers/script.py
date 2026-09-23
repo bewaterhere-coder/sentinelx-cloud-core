@@ -489,6 +489,33 @@ def make_script_run_handler(policy: Policy, upload_base: Path):
                 returncode = proc.returncode
                 stdout = _decode_output(stdout_b).strip()
                 stderr = _decode_output(stderr_b).strip()
+            except (PermissionError, NotADirectoryError, FileNotFoundError) as exc:
+                # Without sudo the PARENT chdirs into cwd, as the agent's own
+                # user, before the script exists as a process. A directory that
+                # user cannot enter raised a bare PermissionError here, which
+                # surfaced as "internal_error: [Errno 13]" and read like an
+                # agent defect. Only the cwd case is renamed: a
+                # FileNotFoundError for a missing interpreter is a different
+                # failure and must keep its own meaning.
+                if spawn_cwd and str(getattr(exc, "filename", "") or "") == str(spawn_cwd):
+                    if isinstance(exc, PermissionError):
+                        raise HandlerError(
+                            "permission_denied",
+                            f"cannot enter cwd {cwd!r}: the agent's OS user lacks "
+                            f"permission to change into it ([Errno {exc.errno}]). "
+                            "Being inside an rw file_ops path does not grant Unix "
+                            "access. Either run with sudo=true -- the directory is "
+                            "then entered after elevation -- or grant the agent's "
+                            "user execute (+x) on it and its parents.",
+                        ) from exc
+                    if isinstance(exc, NotADirectoryError):
+                        raise HandlerError(
+                            "not_a_directory", f"cwd {cwd!r} is not a directory."
+                        ) from exc
+                    raise HandlerError(
+                        "not_found", f"cwd {cwd!r} does not exist."
+                    ) from exc
+                raise
             except asyncio.TimeoutError:
                 _kill_process_tree(proc, elevated=use_sudo)
                 await proc.wait()

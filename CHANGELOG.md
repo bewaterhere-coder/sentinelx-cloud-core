@@ -3,6 +3,23 @@
 Notable changes to `sentinelx-cloud-core`. Human-readable, date-stamped
 entries; releases before 0.3.0 predate this file — see the git history.
 
+## 0.19.3 - script_run names an unusable cwd - 2026-09-23
+
+- Without sudo, the parent chdirs into cwd as the agent's own user before the
+  script runs. A directory that user cannot enter raised a bare PermissionError,
+  reported as 'internal_error: [Errno 13]'. It is now permission_denied, saying
+  that rw in file_ops does not grant Unix access and offering both ways out:
+  sudo=true (entered after elevation since 0.12.2) or +x for the agent's user.
+  A missing cwd is not_found, a file is not_a_directory.
+- Only the cwd case is renamed. FileNotFoundError also means a missing
+  interpreter, so the handler checks the exception's filename against cwd and
+  re-raises anything else untouched. Sabotage: dropping that check makes a
+  missing interpreter read as 'cwd does not exist' and fails a test.
+- Reported by a paying operator running agent 0.11.19 with sudo=true -- that
+  half was already fixed in 0.12.2; this closes the no-sudo half of the same
+  message. Their assistant ran diagnose first, got inconclusive, and reported:
+  the first real case of diagnose correctly routing a genuine defect to us.
+
 ## 0.19.2 - Host conditions while staging get a name - 2026-09-22
 
 - script_run prepares a work directory before running. A full disk failed there
