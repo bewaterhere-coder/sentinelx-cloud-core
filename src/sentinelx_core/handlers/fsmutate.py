@@ -161,6 +161,20 @@ def _audit(op: str, detail: dict[str, Any]) -> None:
         pass
 
 
+import re as _re
+
+# A backup this agent created: "<name>.bak.<YYYYMMDD-HHMMSS>" for a file (make_backup
+# adds -%f microseconds), or "...bak.<ts>.tar.gz" for a directory. Matched exactly so
+# a user's own file like "config.bak" or "notes.bak.txt" is NOT treated as ours.
+_OWN_BACKUP_RE = _re.compile(r"\.bak\.\d{8}-\d{6}(-\d+)?(\.tar\.gz)?$")
+
+
+def _is_own_backup(target: Path) -> bool:
+    """True if target is a backup artifact this agent created (see the pattern
+    make_backup / _dir_backup_targz produce)."""
+    return bool(_OWN_BACKUP_RE.search(target.name))
+
+
 def _dir_backup_targz(src: Path) -> Path:
     """Make a timestamped .tar.gz of a directory next to it."""
     ts = time.strftime("%Y%m%d-%H%M%S")
@@ -329,6 +343,13 @@ def make_delete_handler(policy: Policy):
         If the backup can't be made the delete is refused — we never
         destroy without a recovery path. A directory delete without
         recursive=true is refused (is_directory).
+
+        EXCEPTION: deleting one of our OWN backup artifacts
+        (name.bak.<ts> / .bak.<ts>.tar.gz) is TERMINAL — no backup of a
+        backup is made, or the user could never reclaim the space. The
+        result carries terminal=true and a note. User files that merely
+        contain ".bak" do not match the pattern and keep the mandatory
+        backup.
         """
         path_str = _require_str(payload, "path")
         recursive = bool(payload.get("recursive", False))
@@ -349,18 +370,26 @@ def make_delete_handler(policy: Policy):
                 "directory is never removed implicitly.",
             )
 
-        # Mandatory backup BEFORE destruction.
-        try:
-            if is_dir:
-                backup = _dir_backup_targz(target)
-            else:
-                backup = make_backup(target, None)
-        except Exception as exc:
-            raise HandlerError(
-                "backup_failed",
-                f"refusing to delete: could not back up {path_str!r} "
-                f"first ({exc})",
-            ) from exc
+        # Deleting one of OUR OWN backups is terminal: backing up a backup just
+        # creates another .bak, so the user can never reclaim the space (reported
+        # in a feature request -- 5.2 GB of stranded .bak files). For a backup
+        # artifact we skip the copy and delete it directly. Everything else keeps
+        # the mandatory-backup guarantee unchanged.
+        own_backup = _is_own_backup(target)
+        backup = None
+        if not own_backup:
+            # Mandatory backup BEFORE destruction.
+            try:
+                if is_dir:
+                    backup = _dir_backup_targz(target)
+                else:
+                    backup = make_backup(target, None)
+            except Exception as exc:
+                raise HandlerError(
+                    "backup_failed",
+                    f"refusing to delete: could not back up {path_str!r} "
+                    f"first ({exc})",
+                ) from exc
 
         try:
             if is_dir:
@@ -386,21 +415,34 @@ def make_delete_handler(policy: Policy):
                 "delete_failed", f"delete failed: {exc}"
             ) from exc
 
+        # backup is None only when we deliberately skipped it for our own .bak
+        # artifact -- report that clearly rather than the string "None", so the
+        # caller knows this delete was terminal (no recovery copy) by design.
+        backup_str = str(backup) if backup is not None else None
         _audit(
             "delete",
             {
                 "path": str(target),
                 "kind": "dir" if is_dir else "file",
-                "backup": str(backup),
+                "backup": backup_str,
+                "terminal": own_backup,
             },
         )
-        return {
+        result = {
             "ok": True,
             "op": "delete",
             "path": str(target),
             "kind": "dir" if is_dir else "file",
-            "backup": str(backup),
+            "backup": backup_str,
         }
+        if own_backup:
+            result["terminal"] = True
+            result["note"] = (
+                "This was a SentinelX backup artifact, so it was deleted "
+                "permanently without making a backup of the backup. Space is "
+                "reclaimed; there is no recovery copy."
+            )
+        return result
 
     return handle_delete
 

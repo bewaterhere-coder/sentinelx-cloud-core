@@ -3,6 +3,22 @@
 Notable changes to `sentinelx-cloud-core`. Human-readable, date-stamped
 entries; releases before 0.3.0 predate this file — see the git history.
 
+## 0.21.0 - Deleting a SentinelX backup is terminal (reclaim disk space) - 2026-09-24
+
+- delete always backs up before destroying, and refuses if it can't -- good, but
+  it turned against users for .bak artifacts: deleting a backup made another
+  backup, so space could never be reclaimed (feature request: 5.2 GB of stranded
+  .bak files on an 79 GB volume, no supported way to release it).
+- Now, deleting one of OUR OWN backups (name.bak.<ts> for a file,
+  name.bak.<ts>.tar.gz for a directory) is terminal: the copy is skipped and the
+  artifact is removed directly. The result carries terminal=true and a note so
+  the caller knows there is no recovery copy.
+- Matched by the exact timestamped pattern make_backup/_dir_backup_targz
+  produce, so a user's own file that merely contains '.bak' (config.bak,
+  notes.bak.txt) is NOT treated as ours and keeps the mandatory backup.
+- Agent-only; no hub or protocol change. 12 tests, incl. the over-match guard
+  (a lax pattern that would delete config.bak terminally fails).
+
 ## 0.20.0 - Credential rotation (phase 2, agent side) - 2026-09-23
 
 - Past its credential's half-life, the agent calls POST /agent/rotate (urllib,
