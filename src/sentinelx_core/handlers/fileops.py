@@ -189,6 +189,22 @@ def _stat_safe(p: Path) -> os.stat_result | None:
         return None
 
 
+def _probably_missing(p: Path) -> bool:
+    """True only if we could actually confirm the path is absent.
+
+    Path.exists() traverses every parent, so on a directory the agent cannot
+    enter it raises PermissionError -- and a bare probe there escapes as
+    "internal_error: [Errno 13]", losing the permission_denied guidance the
+    caller should have got. When the probe cannot answer, "missing" is
+    unproven, so we report the permission problem instead, which is the
+    accurate thing to say when we cannot even look.
+    """
+    try:
+        return not p.exists()
+    except OSError:
+        return False
+
+
 def _file_type(st: os.stat_result) -> str:
     """Map stat mode to a short label."""
     mode = st.st_mode
@@ -436,8 +452,14 @@ def make_read_handler(policy: Policy):
         st = _stat_safe(resolved)
         if st is None:
             # Could be not-found OR permission to stat the parent. Probe
-            # to give a clearer error.
-            if not resolved.exists():
+            # to tell them apart -- but the probe itself must be safe:
+            # Path.exists() traverses parents too, so on a directory the
+            # agent cannot enter it raises PermissionError and escapes as a
+            # bare "internal_error: [Errno 13]", losing the useful message
+            # two lines below. Treat a probe that cannot answer as "not
+            # found is unproven" and fall through to permission_denied,
+            # which is the accurate answer when we cannot even look.
+            if _probably_missing(resolved):
                 raise HandlerError("not_found", f"path does not exist: {path_str!r}")
             raise HandlerError(
                 "permission_denied",
@@ -632,7 +654,7 @@ def make_list_handler(policy: Policy):
 
         st = _stat_safe(resolved)
         if st is None:
-            if not resolved.exists():
+            if _probably_missing(resolved):
                 raise HandlerError("not_found", f"path does not exist: {path_str!r}")
             raise HandlerError(
                 "permission_denied",

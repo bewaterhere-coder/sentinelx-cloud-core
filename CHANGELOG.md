@@ -3,6 +3,139 @@
 Notable changes to `sentinelx-cloud-core`. Human-readable, date-stamped
 entries; releases before 0.3.0 predate this file — see the git history.
 
+## 0.21.1 - Windows user-scoped Git execution capability V1 - 2026-09-26
+
+- Port the operator-approved Windows user-scoped Git runner onto the 0.21.x baseline.
+- `authenticated_git.enabled` automatically routes validated `ls_remote`/`fetch` through
+  the active interactive user's Git credential context; no new MCP tool argument is required.
+- `push` requires a separate `allow_push: true` opt-in; clone never borrows user credentials.
+- Advertise `host_runtime.git_execution_context_v1` (plus the deprecated V1 alias), keep
+  credential material private, and classify missing execution context separately from
+  credential rejection and transient transport failures.
+
+## 0.21.0 - Deleting a SentinelX backup is terminal (reclaim disk space) - 2026-09-24
+
+- delete always backs up before destroying, and refuses if it can't -- good, but
+  it turned against users for .bak artifacts: deleting a backup made another
+  backup, so space could never be reclaimed (feature request: 5.2 GB of stranded
+  .bak files on an 79 GB volume, no supported way to release it).
+- Now, deleting one of OUR OWN backups (name.bak.<ts> for a file,
+  name.bak.<ts>.tar.gz for a directory) is terminal: the copy is skipped and the
+  artifact is removed directly. The result carries terminal=true and a note so
+  the caller knows there is no recovery copy.
+- Matched by the exact timestamped pattern make_backup/_dir_backup_targz
+  produce, so a user's own file that merely contains '.bak' (config.bak,
+  notes.bak.txt) is NOT treated as ours and keeps the mandatory backup.
+- Agent-only; no hub or protocol change. 12 tests, incl. the over-match guard
+  (a lax pattern that would delete config.bak terminally fails).
+
+## 0.20.0 - Credential rotation (phase 2, agent side) - 2026-09-23
+
+- Past its credential's half-life, the agent calls POST /agent/rotate (urllib,
+  no HTTP dependency) after a proven-good session, writes the new credential to
+  a SEPARATE file (identity.rotated.json) in a dir it owns, and uses it from the
+  next reconnect. It never touches identity.json.
+- The invariant: a bad rotation never strands a host. On startup the agent
+  prefers the rotated file only if it is present, parses, is unexpired and is
+  for the same host; ANY doubt falls back to identity.json, still a valid
+  credential. The write is atomic (temp + fsync + os.replace, 600). If no dir
+  is writable, rotation disables itself with a warning.
+- Legacy tokens rotate too (issued >182 days ago), migrating onto a typed,
+  revocable credential -- which is exactly the fleet facing the 2027 wall.
+- 12 tests: half-life logic, and every fallback (corrupt, expired, host
+  mismatch, no writable dir), plus atomicity and 600 perms.
+
+## 0.19.3 - script_run names an unusable cwd - 2026-09-23
+
+- Without sudo, the parent chdirs into cwd as the agent's own user before the
+  script runs. A directory that user cannot enter raised a bare PermissionError,
+  reported as 'internal_error: [Errno 13]'. It is now permission_denied, saying
+  that rw in file_ops does not grant Unix access and offering both ways out:
+  sudo=true (entered after elevation since 0.12.2) or +x for the agent's user.
+  A missing cwd is not_found, a file is not_a_directory.
+- Only the cwd case is renamed. FileNotFoundError also means a missing
+  interpreter, so the handler checks the exception's filename against cwd and
+  re-raises anything else untouched. Sabotage: dropping that check makes a
+  missing interpreter read as 'cwd does not exist' and fails a test.
+- Reported by a paying operator running agent 0.11.19 with sudo=true -- that
+  half was already fixed in 0.12.2; this closes the no-sudo half of the same
+  message. Their assistant ran diagnose first, got inconclusive, and reported:
+  the first real case of diagnose correctly routing a genuine defect to us.
+
+## 0.19.2 - Host conditions while staging get a name - 2026-09-22
+
+- script_run prepares a work directory before running. A full disk failed there
+  as a bare 'internal_error: [Errno 28] No space left on device', which reads
+  like an agent defect rather than the host filling up.
+- ENOSPC is now no_space, EACCES/EPERM permission_denied, EROFS
+  read_only_filesystem, anything else staging_failed -- each with the path and
+  what to do. no_space also says plainly that a full disk destabilises the agent,
+  so unrelated failures on the same host may be downstream of it.
+- That last line is the point. An operator reported exec/script_run returning
+  duplicate_session while ping stayed healthy, and suspected stale session
+  routing in the hub. The records showed ENOSPC eight hours earlier: the full
+  disk was restarting the agent in a loop, and each reconnect closed the previous
+  session -- duplicate_session being the CLOSE REASON, not a rejection. The
+  symptom was three layers from the cause, and a named error at the bottom would
+  have shortened that.
+- 8 tests, sabotage: unmapping ENOSPC fails three.
+
+## 0.19.1 - An unreadable parent gives permission_denied, not internal_error - 2026-09-22
+
+- read and list already had a detailed permission_denied message for a path the
+  agent's user cannot reach -- explaining it is a Unix permission issue rather
+  than an allowlist one, and how to fix it. Callers were not getting it: they
+  got a bare 'internal_error: [Errno 13] Permission denied'.
+- Cause: after _stat_safe returns None, both handlers probe with Path.exists()
+  to tell 'missing' from 'no permission'. exists() traverses parents too, so on
+  a directory the agent cannot enter THE PROBE ITSELF raised PermissionError and
+  escaped -- two lines above the message it was trying to choose.
+- _probably_missing() now answers only when it can actually look; when the probe
+  cannot traverse, 'missing' is unproven and the handler falls through to
+  permission_denied, which is the accurate answer when we cannot even look.
+  Applied to read and list, which shared the flaw verbatim.
+- Reported by an operator whose target sat under a directory the agent's user
+  could not traverse: every read and list against it surfaced as internal_error.
+- 7 tests (the permission ones skip as root, where traversal always succeeds).
+  Sabotage: restoring the bare probe reproduces the exact internal_error.
+
+## 0.19.0 - upload_init can land a file at its real path under an rw entry - 2026-09-22
+
+- New opt-in land_in_place on upload_init. When set AND the target resolves
+  under a file_ops rw entry, the file is written at that real path instead of
+  under upload staging. Used by host-to-host transfer so a caller can land
+  bytes directly in an authorized workspace rather than transfer-then-move.
+- ADDITIVE. Without the flag, or when the target is not under an rw entry, it
+  falls back to staging exactly as before -- no existing flow changes, and a
+  non-writable target is NOT an error, just a staged landing. Verified: default
+  stays staging even for an rw path; a read-only entry never lands; '..'
+  traversal is still refused.
+- The rw check is policy.resolve_path(need_write=True) -- the identical gate
+  move and delete use, canonicalising symlinks and defeating '..' before the
+  prefix check. This opens nothing the operator has not already declared rw.
+- upload_init now takes the policy (optional) to run that check; the registry
+  passes it. The meta records landed_in_place so the result can report it.
+- Requested by a report with transfer_id/sha256/requested-vs-actual paths.
+- 6 tests, two sabotages: dropping need_write lets a read-only path land
+  (fails), and ignoring the flag lands by default (fails).
+
+## 0.18.4 - help stops recommending disabled operations - 2026-09-21
+
+- On a deny-all host -- disabled_ops covering read/list/edit/exec/service, no
+  file_ops paths, no playbooks -- help(topic='operations') listed every op and
+  help(topic='access') recommended op:edit, op:service and playbooks that do not
+  exist there. It pointed the operator straight at locked doors.
+- navigation now shows only LIVE operations: an op that is in disabled_ops, or
+  whose prerequisite is absent (exec with no allowed_commands, read with no
+  paths, service with no services), is omitted rather than advertised.
+- extending_access now leads with an honest note when the host cannot edit its
+  own config remotely (edit disabled or no writable path): the change has to be
+  made on the host, not through SentinelX -- instead of recommending an edit the
+  host will refuse.
+- Reported on a Windows host where only ping/help/capabilities were live.
+- 8 tests, verified by sabotage: making navigation ignore the live-op check
+  fails the deny-all case. The 31 existing help tests still pass.
+
 ## 0.18.3 - Windows service detection no longer depends on sc.exe text - 2026-09-21
 
 - 0.18.1 fixed the optional colon in sc.exe qc, and it was not enough. The same

@@ -13,6 +13,15 @@
 
 # SentinelX Core - Windows example config (derived from config.example.yaml).
 #
+# Optional authenticated Git bridge for a LocalSystem service. Default deny.
+# When enabled, ls_remote/fetch on a validated repository automatically run as
+# the active interactive Windows user so that user's existing GCM/SSH context
+# can be used without copying or exposing credentials. Push is a second opt-in.
+authenticated_git:
+  enabled: false
+  allow_push: false
+  timeout_seconds: 20
+#
 # SCOPE: the default Windows config. allowed_commands ship READ-ONLY
 # (PowerShell-native inspection). The agent runs as a WinSW service (so it can
 # self-restart), ships diagnostic playbooks, and exposes config.yaml as
@@ -173,7 +182,7 @@ playbooks:
     - 'Note the current version: call sentinel_capabilities and read the ''version'' field.'
     - 'Reinstall from git into the venv (Windows installs the agent as a pip package, NOT a git checkout):
       run in a powershell script_run: C:\ProgramData\SentinelX\.venv\Scripts\python.exe -m pip install --upgrade
-      --force-reinstall "sentinelx-cloud-core @ git+https://github.com/pensados/sentinelx-cloud-core.git@main".
+      --force-reinstall "sentinelx-cloud-core @ git+https://github.com/bewaterhere-coder/sentinelx-cloud-core.git@main".
       This also pulls the pinned sentinelx-cloud-protocol. git must be on PATH so pip can fetch the git
       dependencies.'
     - 'Load the new code with a self-restart: sentinel_service action=restart service=sentinelx. A detached

@@ -219,9 +219,9 @@ class Policy:
     # An exec request matches if cmd.startswith(allowed) for some entry.
     allowed_commands: tuple[str, ...] = field(default_factory=tuple)
 
-    # Authenticated Git through an operator-approved interactive Windows user session.
-    # Default deny: the LocalSystem service never borrows user credentials unless
-    # the operator explicitly opts in.  Credential material is never exposed.
+    # Optional Windows user-scoped Git execution. Default deny: a service
+    # process never borrows an interactive user's credential context unless
+    # the operator explicitly opts in. Credential material is never exposed.
     authenticated_git_enabled: bool = False
     authenticated_git_allow_push: bool = False
     authenticated_git_timeout_seconds: int = 20

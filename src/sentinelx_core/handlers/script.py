@@ -60,6 +60,46 @@ from sentinelx_core.executor import HandlerError
 from sentinelx_core.jobs import BACKGROUND_TIMEOUT_MAX
 from sentinelx_core.policy import Policy
 from sentinelx_core.staging import staging_root
+
+
+def _staging_oserror(exc: OSError, path: str) -> HandlerError:
+    """Turn an OS error while preparing the work area into a named failure.
+
+    These are host conditions, not agent defects, and the operator can act on
+    each one -- but only if we say which it is instead of returning a bare
+    internal_error with an errno in it.
+    """
+    import errno as _errno
+
+    if exc.errno == _errno.ENOSPC:
+        return HandlerError(
+            "no_space",
+            f"cannot prepare the work area at {path!r}: the filesystem is full "
+            f"([Errno {exc.errno}]). This is a host condition, not a policy or "
+            "allowlist issue. Free space on that filesystem (or point "
+            "`upload_base` in the agent config at one with room) and retry. "
+            "A full disk also makes the agent itself unstable, so unrelated "
+            "errors on this host may clear up once space is available.",
+        )
+    if exc.errno in (_errno.EACCES, _errno.EPERM):
+        return HandlerError(
+            "permission_denied",
+            f"cannot prepare the work area at {path!r}: the agent's OS user "
+            f"lacks write permission ([Errno {exc.errno}]). Grant that user "
+            "write access to the staging directory, or set `upload_base` in "
+            "the agent config to a directory it can write.",
+        )
+    if exc.errno == _errno.EROFS:
+        return HandlerError(
+            "read_only_filesystem",
+            f"cannot prepare the work area at {path!r}: the filesystem is "
+            f"mounted read-only ([Errno {exc.errno}]). Set `upload_base` to a "
+            "writable location.",
+        )
+    return HandlerError(
+        "staging_failed",
+        f"cannot prepare the work area at {path!r}: {exc}.",
+    )
 from sentinelx_core.winspawn import spawn_kwargs
 
 logger = logging.getLogger(__name__)
@@ -292,12 +332,19 @@ def make_script_run_handler(policy: Policy, upload_base: Path):
         ):
             raise HandlerError("invalid_payload", "'env' must be dict[str, str]")
 
-        # Workdir
+        # Workdir. A full disk surfaces here first, and used to escape as a bare
+        # "internal_error: [Errno 28] No space left on device" -- which reads like
+        # an agent defect when it is the host filling up. An operator chased a
+        # duplicate_session symptom for hours before the real cause (ENOSPC
+        # restarting the agent in a loop) became visible. Name it.
         tmp_root = staging_root(upload_base)
 
         script_id = uuid.uuid4().hex
         workdir = tmp_root / f"script_job_{script_id}"
-        workdir.mkdir(parents=True, exist_ok=True)
+        try:
+            workdir.mkdir(parents=True, exist_ok=True)
+        except OSError as exc:
+            raise _staging_oserror(exc, str(workdir)) from exc
 
         ext = {"bash": "sh", "python3": "py", "powershell": "ps1", "pwsh": "ps1"}.get(
             interpreter, "txt"
@@ -322,7 +369,10 @@ def make_script_run_handler(policy: Policy, upload_base: Path):
                 if sys.platform == "win32" and interpreter in _POWERSHELL_INTERPRETERS
                 else "utf-8"
             )
-            script_path.write_text(content, encoding=script_encoding)
+            try:
+                script_path.write_text(content, encoding=script_encoding)
+            except OSError as exc:
+                raise _staging_oserror(exc, str(script_path)) from exc
             script_path.chmod(0o700)
 
             argv: list[str] = []
@@ -439,6 +489,33 @@ def make_script_run_handler(policy: Policy, upload_base: Path):
                 returncode = proc.returncode
                 stdout = _decode_output(stdout_b).strip()
                 stderr = _decode_output(stderr_b).strip()
+            except (PermissionError, NotADirectoryError, FileNotFoundError) as exc:
+                # Without sudo the PARENT chdirs into cwd, as the agent's own
+                # user, before the script exists as a process. A directory that
+                # user cannot enter raised a bare PermissionError here, which
+                # surfaced as "internal_error: [Errno 13]" and read like an
+                # agent defect. Only the cwd case is renamed: a
+                # FileNotFoundError for a missing interpreter is a different
+                # failure and must keep its own meaning.
+                if spawn_cwd and str(getattr(exc, "filename", "") or "") == str(spawn_cwd):
+                    if isinstance(exc, PermissionError):
+                        raise HandlerError(
+                            "permission_denied",
+                            f"cannot enter cwd {cwd!r}: the agent's OS user lacks "
+                            f"permission to change into it ([Errno {exc.errno}]). "
+                            "Being inside an rw file_ops path does not grant Unix "
+                            "access. Either run with sudo=true -- the directory is "
+                            "then entered after elevation -- or grant the agent's "
+                            "user execute (+x) on it and its parents.",
+                        ) from exc
+                    if isinstance(exc, NotADirectoryError):
+                        raise HandlerError(
+                            "not_a_directory", f"cwd {cwd!r} is not a directory."
+                        ) from exc
+                    raise HandlerError(
+                        "not_found", f"cwd {cwd!r} does not exist."
+                    ) from exc
+                raise
             except asyncio.TimeoutError:
                 _kill_process_tree(proc, elevated=use_sudo)
                 await proc.wait()

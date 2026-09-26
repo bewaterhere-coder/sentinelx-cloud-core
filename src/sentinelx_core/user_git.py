@@ -19,7 +19,8 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-FEATURE_NAME = "host_runtime.git_authenticated_v1"
+FEATURE_NAME = "host_runtime.git_execution_context_v1"
+LEGACY_FEATURE_NAME = "host_runtime.git_authenticated_v1"
 
 _SECRET_URL_RE = re.compile(r"(https?://)([^/@:\s]+):([^/@\s]+)@", re.IGNORECASE)
 
@@ -41,14 +42,14 @@ def user_scoped_git_supported() -> bool:
 
 def _classify_git_failure(stderr: str) -> str:
     low = stderr.lower()
+    if "authentication failed" in low or "permission denied (publickey)" in low:
+        return "GitCredentialRejected"
     if (
-        "authentication failed" in low
-        or "permission denied (publickey)" in low
-        or "could not read username" in low
+        "could not read username" in low
         or "terminal prompts disabled" in low
         or "cannot prompt" in low
     ):
-        return "GitCredentialRejected"
+        return "GitCredentialInteractiveRequired"
     if "connection was reset" in low or "recv failure" in low:
         return "GitTransportReset"
     if (
@@ -109,7 +110,7 @@ def _run_windows_user_git(root: Path, args: tuple[str, ...], timeout: float) -> 
     """Run fixed Git argv as the active interactive Windows user."""
     if sys.platform != "win32":
         raise UserScopedGitError(
-            "GitCredentialContextUnavailable",
+            "GitExecutionContextUnavailable",
             "user-scoped Git execution is available only on Windows in V1",
         )
 
@@ -119,7 +120,7 @@ def _run_windows_user_git(root: Path, args: tuple[str, ...], timeout: float) -> 
 
     git_exe = shutil.which("git")
     if not git_exe:
-        raise UserScopedGitError("GitCredentialContextUnavailable", "git.exe is not on PATH")
+        raise UserScopedGitError("GitExecutionContextUnavailable", "git.exe is not on PATH")
 
     kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
     advapi32 = ctypes.WinDLL("advapi32", use_last_error=True)
@@ -192,7 +193,7 @@ def _run_windows_user_git(root: Path, args: tuple[str, ...], timeout: float) -> 
     session_id = kernel32.WTSGetActiveConsoleSessionId()
     if session_id == INVALID_SESSION:
         raise UserScopedGitError(
-            "GitCredentialContextUnavailable",
+            "GitExecutionContextUnavailable",
             "no active interactive Windows console session",
         )
 
@@ -200,7 +201,7 @@ def _run_windows_user_git(root: Path, args: tuple[str, ...], timeout: float) -> 
     if not wtsapi32.WTSQueryUserToken(session_id, ctypes.byref(token)):
         err = ctypes.get_last_error()
         raise UserScopedGitError(
-            "GitCredentialContextUnavailable",
+            "GitExecutionContextUnavailable",
             f"WTSQueryUserToken failed with Windows error {err}",
         )
 
@@ -210,7 +211,7 @@ def _run_windows_user_git(root: Path, args: tuple[str, ...], timeout: float) -> 
         if not userenv.CreateEnvironmentBlock(ctypes.byref(env_ptr), token, False):
             err = ctypes.get_last_error()
             raise UserScopedGitError(
-                "GitCredentialContextUnavailable",
+                "GitExecutionContextUnavailable",
                 f"CreateEnvironmentBlock failed with Windows error {err}",
             )
 
@@ -258,7 +259,7 @@ def _run_windows_user_git(root: Path, args: tuple[str, ...], timeout: float) -> 
             if not ok:
                 err = ctypes.get_last_error()
                 raise UserScopedGitError(
-                    "GitCredentialContextUnavailable",
+                    "GitExecutionContextUnavailable",
                     f"CreateProcessAsUserW failed with Windows error {err}",
                 )
 
@@ -300,7 +301,7 @@ async def run_user_scoped_git(
         raise
     except Exception as exc:  # noqa: BLE001
         raise UserScopedGitError(
-            "GitCredentialContextUnavailable",
+            "GitExecutionContextUnavailable",
             f"user-scoped git execution failed: {exc}",
         ) from exc
 

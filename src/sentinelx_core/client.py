@@ -277,6 +277,7 @@ class HubClient:
         hub_url: str,
         identity: Identity,
         config_path: Path,
+        identity_path: Path | None = None,
     ) -> None:
         # Normalize: hub URL might be https://, we need wss://
         if hub_url.startswith("http://"):
@@ -285,6 +286,12 @@ class HubClient:
             self._ws_url = "wss://" + hub_url[8:]
         else:
             self._ws_url = hub_url
+
+        # Kept as-is for the HTTP rotate endpoint (which is http(s), not ws).
+        self._hub_url = hub_url
+        # Where identity.json lives; the rotated credential is written in a
+        # writable dir near it. None disables rotation (nowhere to persist).
+        self._identity_path = identity_path
 
         self._identity = identity
         self._executor = Executor(config_path=config_path)
@@ -417,6 +424,12 @@ class HubClient:
             self._session_established = True
             logger.info("connected; session=%s", welcome.session_id)  # type: ignore[union-attr]
 
+            # Rotate the credential if it is past its half-life. AFTER a
+            # proven-good session, so a rotation only ever follows a credential
+            # that just worked. Best-effort: any failure is logged and the
+            # agent keeps its current, still-valid credential.
+            await self._maybe_rotate_credential()
+
             # 3. Deliver results whose own connection did not survive them.
             # Before the read loop, so an operator waiting on an answer from
             # before the interruption gets it as soon as we are back.
@@ -474,6 +487,61 @@ class HubClient:
                 pass  # heartbeat ack
             else:
                 logger.warning("unexpected message type: %s", msg.type)  # type: ignore[union-attr]
+
+    async def _maybe_rotate_credential(self) -> None:
+        """Rotate past the credential's half-life; never disturb the session."""
+        import asyncio as _asyncio
+
+        # getattr, not self._identity_path: some construction paths (tests using
+        # object.__new__) skip __init__, and rotation must simply no-op then
+        # rather than raise into the connect path.
+        if getattr(self, "_identity_path", None) is None:
+            return
+        try:
+            from sentinelx_core import rotation
+
+            if not rotation.should_rotate(self._identity.token):
+                return
+            new_token = await _asyncio.to_thread(
+                self._rotate_over_http, self._hub_url, self._identity.token
+            )
+            if not new_token:
+                return
+            ok = await _asyncio.to_thread(
+                rotation.persist_rotated,
+                self._identity_path,
+                self._identity.host_id,
+                new_token,
+                self._identity.hub,
+            )
+            if ok:
+                logger.info("credential rotated; effective next reconnect")
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("credential rotation skipped: %s", exc)
+
+    @staticmethod
+    def _rotate_over_http(hub_url: str, token: str) -> "str | None":
+        """POST /agent/rotate with urllib (the agent has no HTTP dependency).
+        Returns the new credential, or None on any failure."""
+        import json as _json
+        import urllib.error
+        import urllib.request
+
+        url = f"{hub_url.rstrip('/')}/agent/rotate"
+        req = urllib.request.Request(
+            url, data=b"", method="POST",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                body = _json.loads(resp.read().decode("utf-8") or "{}")
+        except (urllib.error.URLError, OSError, ValueError) as exc:
+            logger.warning("rotate request failed: %s", exc)
+            return None
+        cred = body.get("credential") if isinstance(body, dict) else None
+        if isinstance(cred, str) and cred.count(".") == 2:
+            return cred
+        return None
 
     async def _replay_pending_results(
         self, ws: websockets.WebSocketClientProtocol
