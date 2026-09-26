@@ -3,6 +3,16 @@
 Notable changes to `sentinelx-cloud-core`. Human-readable, date-stamped
 entries; releases before 0.3.0 predate this file — see the git history.
 
+## 0.21.1 - Windows user-scoped Git execution capability V1 - 2026-09-26
+
+- Port the operator-approved Windows user-scoped Git runner onto the 0.21.x baseline.
+- `authenticated_git.enabled` automatically routes validated `ls_remote`/`fetch` through
+  the active interactive user's Git credential context; no new MCP tool argument is required.
+- `push` requires a separate `allow_push: true` opt-in; clone never borrows user credentials.
+- Advertise `host_runtime.git_execution_context_v1` (plus the deprecated V1 alias), keep
+  credential material private, and classify missing execution context separately from
+  credential rejection and transient transport failures.
+
 ## 0.21.0 - Deleting a SentinelX backup is terminal (reclaim disk space) - 2026-09-24
 
 - delete always backs up before destroying, and refuses if it can't -- good, but

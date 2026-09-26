@@ -219,6 +219,13 @@ class Policy:
     # An exec request matches if cmd.startswith(allowed) for some entry.
     allowed_commands: tuple[str, ...] = field(default_factory=tuple)
 
+    # Optional Windows user-scoped Git execution. Default deny: a service
+    # process never borrows an interactive user's credential context unless
+    # the operator explicitly opts in. Credential material is never exposed.
+    authenticated_git_enabled: bool = False
+    authenticated_git_allow_push: bool = False
+    authenticated_git_timeout_seconds: int = 20
+
     # service name -> ServiceSpec
     services: dict[str, ServiceSpec] = field(default_factory=dict)
 
@@ -415,6 +422,7 @@ class Policy:
             "local_apis",
             "disabled_ops",
             "exec_strict",
+            "authenticated_git",
         }
         unknown = set(data.keys()) - KNOWN_KEYS - set(TYPO_HINTS.keys())
         if unknown:
@@ -430,6 +438,9 @@ class Policy:
         exec_block = data.get("exec", {}) or {}
         security_block = data.get("security", {}) or {}
         file_ops_block = data.get("file_ops", {}) or {}
+        authenticated_git_block = data.get("authenticated_git", {}) or {}
+        if not isinstance(authenticated_git_block, dict):
+            raise ValueError("authenticated_git must be a mapping")
 
         services: dict[str, ServiceSpec] = {}
         for name, meta in (data.get("services") or {}).items():
@@ -687,6 +698,11 @@ class Policy:
             exec_strict=bool(data.get("exec_strict", False)),
             disabled_ops=frozenset(
                 str(o).strip() for o in (data.get("disabled_ops") or []) if str(o).strip()
+            ),
+            authenticated_git_enabled=bool(authenticated_git_block.get("enabled", False)),
+            authenticated_git_allow_push=bool(authenticated_git_block.get("allow_push", False)),
+            authenticated_git_timeout_seconds=max(
+                5, min(int(authenticated_git_block.get("timeout_seconds", 20)), 50)
             ),
             services=services,
             local_apis=local_apis,

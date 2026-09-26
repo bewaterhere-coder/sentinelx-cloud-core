@@ -35,6 +35,7 @@ from sentinelx_core.executor import HandlerError
 from sentinelx_core.handlers.fileops import _require_str, _resolve_or_reject
 from sentinelx_core.policy import Policy
 from sentinelx_core.winspawn import spawn_kwargs
+from sentinelx_core.user_git import UserScopedGitError, classify_result, run_user_scoped_git
 
 # --- Hard caps (server ceilings ALWAYS win over any request-provided value) --
 _MAX_FILES_CEILING = 50            # max file entries returned by diff
@@ -790,6 +791,92 @@ async def _op_apply_patch(policy: Policy, payload: dict[str, Any]) -> dict[str, 
 _NET_TIMEOUT = 50
 
 
+def _credential_context_for_remote(
+    policy: Policy, payload: dict[str, Any], operation: str
+) -> str:
+    """Resolve current vs user-scoped Git without requiring a hub schema field.
+
+    Explicit `credential_context` remains accepted for direct-protocol backward
+    compatibility, but normal MCP callers need not know about it.
+    """
+    explicit = payload.get("credential_context")
+    if explicit is not None:
+        context = str(explicit).strip()
+        if context not in ("current", "user_scoped"):
+            raise HandlerError(
+                "invalid_payload",
+                "credential_context must be 'current' or 'user_scoped'",
+            )
+        if context == "user_scoped":
+            if not policy.authenticated_git_enabled:
+                raise HandlerError(
+                    "GitExecutionContextUnavailable",
+                    "user-scoped authenticated Git is disabled by host policy",
+                )
+            if operation == "push" and not policy.authenticated_git_allow_push:
+                raise HandlerError(
+                    "GitExecutionContextUnavailable",
+                    "user-scoped Git push is not enabled by host policy",
+                )
+        return context
+
+    if not policy.authenticated_git_enabled:
+        return "current"
+    if operation in ("ls_remote", "fetch"):
+        return "user_scoped"
+    if operation == "push" and policy.authenticated_git_allow_push:
+        return "user_scoped"
+    return "current"
+
+
+async def _run_remote_git(
+    policy: Policy,
+    root: Path,
+    payload: dict[str, Any],
+    operation: str,
+    *args: str,
+) -> tuple[int, bytes, bytes, str]:
+    context = _credential_context_for_remote(policy, payload, operation)
+    if context == "current":
+        rc, out, err = await _run_git(root, *args, timeout=_NET_TIMEOUT)
+        return rc, out, err, context
+
+    # User-scoped credentials may only target a configured remote name from an
+    # already-validated repository. Never borrow credentials for arbitrary URLs.
+    remote = None
+    for token in args[1:]:
+        if token and not token.startswith("-"):
+            remote = token
+            break
+    if remote and ("://" in remote or "@" in remote or "/" in remote or "\\" in remote):
+        raise HandlerError(
+            "GitRemoteIdentityConflict",
+            "user-scoped Git requires a configured repository remote name, not a URL/path",
+        )
+    if remote:
+        rc, _, _ = await _run_git(root, "remote", "get-url", remote)
+        if rc != 0:
+            raise HandlerError(
+                "GitRemoteIdentityConflict",
+                f"{remote!r} is not a configured remote in the canonical repository",
+            )
+
+    try:
+        rc, out, err = await run_user_scoped_git(
+            root, *args, timeout=float(policy.authenticated_git_timeout_seconds)
+        )
+    except UserScopedGitError as exc:
+        raise HandlerError(exc.code, str(exc)) from exc
+
+    reason = classify_result(rc, err)
+    if reason is not None:
+        raise HandlerError(
+            reason,
+            f"user-scoped git {operation} failed without exposing credential material",
+        )
+    return rc, out, err, context
+
+
 def _remote_hint(err: str) -> str:
     """Turn git's transport errors into something a caller can act on.
 
@@ -854,7 +941,15 @@ async def _op_ls_remote(policy: Policy, payload: dict[str, Any]) -> dict[str, An
     args = ["ls-remote", remote]
     if pattern:
         args.append(str(pattern))
-    rc, out, err = await _run_git(root or Path.cwd(), *args, timeout=_NET_TIMEOUT)
+    context = _credential_context_for_remote(policy, payload, "ls_remote")
+    if context == "user_scoped" and root is None:
+        raise HandlerError(
+            "GitRemoteIdentityConflict",
+            "user-scoped ls_remote requires `path` so the configured remote can be verified",
+        )
+    rc, out, err, context = await _run_remote_git(
+        policy, root or Path.cwd(), payload, "ls_remote", *args
+    )
     if rc != 0:
         raise _net_error("remote_failed", f"git ls-remote {remote}", rc, err,
                          root or Path("/"))
@@ -865,7 +960,8 @@ async def _op_ls_remote(policy: Policy, payload: dict[str, Any]) -> dict[str, An
             sha, ref = line.split("\t", 1)
             refs.append({"sha": sha.strip(), "ref": ref.strip()})
     return {"ok": True, "version": 1, "operation": "ls_remote",
-            "remote": remote, "refs": refs[:200], "count": len(refs)}
+            "remote": remote, "refs": refs[:200], "count": len(refs),
+            "credential_context": context}
 
 
 async def _op_fetch(policy: Policy, payload: dict[str, Any]) -> dict[str, Any]:
@@ -884,11 +980,13 @@ async def _op_fetch(policy: Policy, payload: dict[str, Any]) -> dict[str, Any]:
     args = ["fetch", "--prune", remote]
     if payload.get("ref"):
         args.append(str(payload["ref"]))
-    rc, out, err = await _run_git(root, *args, timeout=_NET_TIMEOUT)
+    rc, out, err, context = await _run_remote_git(
+        policy, root, payload, "fetch", *args
+    )
     if rc != 0:
         raise _net_error("remote_failed", f"git fetch {remote}", rc, err, root)
     return {"ok": True, "version": 1, "operation": "fetch", "root": str(root),
-            "remote": remote,
+            "remote": remote, "credential_context": context,
             "output": _scrub(err.decode("utf-8", "replace"), root).strip()[:2000]}
 
 
@@ -1041,7 +1139,9 @@ async def _op_push(policy: Policy, payload: dict[str, Any]) -> dict[str, Any]:
         args.append(f"--force-with-lease={branch}:{expected}")
     args += [remote, branch]
 
-    rc, _, err = await _run_git(root, *args, timeout=_NET_TIMEOUT)
+    rc, _, err, context = await _run_remote_git(
+        policy, root, payload, "push", *args
+    )
     text = _scrub(err.decode("utf-8", "replace"), root).strip()
     if rc != 0:
         if "stale info" in text.lower():
@@ -1055,7 +1155,7 @@ async def _op_push(policy: Policy, payload: dict[str, Any]) -> dict[str, Any]:
                          err, root)
     return {"ok": True, "version": 1, "operation": "push", "root": str(root),
             "remote": remote, "branch": branch, "forced": force,
-            "output": text[:2000]}
+            "credential_context": context, "output": text[:2000]}
 
 
 def make_git_handler(policy: Policy):

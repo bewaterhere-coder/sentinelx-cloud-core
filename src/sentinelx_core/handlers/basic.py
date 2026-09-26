@@ -186,6 +186,30 @@ def make_capabilities_handler(
             # matched nothing still belongs here, because a typo in a deny list
             # otherwise reads as protection that was never applied.
             "disabled_ops": sorted(policy.disabled_ops),
+            "execution_features": {
+                "host_runtime.git_execution_context_v1": {
+                    "available": bool(
+                        policy.authenticated_git_enabled and platform.system() == "Windows"
+                    ),
+                    "context_class": "user_scoped",
+                    "selection": "automatic_when_enabled",
+                    "non_interactive": True,
+                    "credential_material_exposed": False,
+                    "operations": [
+                        "ls_remote",
+                        "fetch",
+                        *(["push"] if policy.authenticated_git_allow_push else []),
+                    ],
+                    "timeout_seconds": policy.authenticated_git_timeout_seconds,
+                },
+                "host_runtime.git_authenticated_v1": {
+                    "available": bool(
+                        policy.authenticated_git_enabled and platform.system() == "Windows"
+                    ),
+                    "alias_of": "host_runtime.git_execution_context_v1",
+                    "deprecated": True,
+                },
+            },
             # Whether chained exec commands are checked segment by segment.
             # Part of the same question -- what is this host actually willing to
             # run -- and an auditor should not have to read config.yaml to know.
