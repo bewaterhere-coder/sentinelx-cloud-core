@@ -1,0 +1,243 @@
+from __future__ import annotations
+
+import asyncio
+import os
+import shutil
+import sys
+from datetime import UTC, datetime
+from pathlib import Path
+
+import pytest
+
+from sentinelx_core.executor import HandlerError
+from sentinelx_core.handlers.scoped_script import make_profiled_script_run_handler
+from sentinelx_core.mutation_placement import RepositoryIdentity, SemanticIdentity
+from sentinelx_core.mutation_scope import MutationScopeStore
+from sentinelx_core.policy import MutationExecutionPolicy, Policy
+from sentinelx_core.request_context import RequestContext
+
+pytestmark = pytest.mark.skipif(sys.platform != "win32", reason="Windows scoped mutation only")
+
+
+def _fixture(tmp_path: Path, *, attempt_id: str, interpreter: str = "python3"):
+    workspace_root = tmp_path / "workspaces"
+    state_root = tmp_path / "provider-state"
+    upload_base = tmp_path / "uploads"
+    protected = tmp_path / "protected"
+    for path in (workspace_root, state_root, upload_base, protected):
+        path.mkdir(parents=True, exist_ok=True)
+
+    runtime_roots = {Path(sys.executable).resolve().parent}
+    if interpreter == "pwsh":
+        executable = shutil.which("pwsh")
+        if executable:
+            runtime_roots.add(Path(executable).resolve().parent)
+
+    mutation_policy = MutationExecutionPolicy(
+        configured=True,
+        scoped_mutation_enabled=True,
+        workspace_root=workspace_root,
+        protected_roots=(protected,),
+        runtime_read_roots=tuple(sorted(runtime_roots, key=lambda p: str(p).casefold())),
+        scope_ttl_seconds=600,
+        evidence_retention_days=7,
+        operator_unrestricted_enabled=False,
+    )
+    policy = Policy(mutation_execution=mutation_policy, upload_base=upload_base)
+    repository = RepositoryIdentity(
+        vcs="git",
+        authority="github.com",
+        path="bewaterhere-coder/sentinelx-cloud-core",
+    )
+    semantic = SemanticIdentity(
+        project_id="sentinelx-cloud-core",
+        task_id="SX-HMSA-001",
+        run_id="s05-real-windows",
+        attempt_id=attempt_id,
+        slice_id="S05",
+    )
+    store = MutationScopeStore(state_root)
+    record = store.provision_scope(
+        mutation_policy,
+        repository,
+        semantic,
+        allowed_operation_classes=("workspace_materialize", "scoped_mutation"),
+        provider_protected_roots=(state_root.resolve(),),
+    )
+    handler = make_profiled_script_run_handler(
+        policy,
+        upload_base,
+        mutation_state_root=state_root,
+    )
+    context = RequestContext(
+        request_id=f"req-{attempt_id}",
+        op="script_run",
+        opaque_ref="s05",
+        received_at=datetime.now(UTC),
+    )
+    mutation = {
+        "execution_profile": "scoped_mutation",
+        "scope_ref": {"scope_id": record.scope_id, "generation": record.generation},
+    }
+    lineage = {
+        "project_id": semantic.project_id,
+        "task_id": semantic.task_id,
+        "run_id": semantic.run_id,
+        "attempt_id": semantic.attempt_id,
+        "slice_id": semantic.slice_id,
+    }
+    repo = {"vcs": repository.vcs, "authority": repository.authority, "path": repository.path}
+    return handler, context, store, record, mutation, lineage, repo
+
+
+def _run(handler, context, payload):
+    return asyncio.run(handler(context, payload))
+
+
+def test_scoped_python_preserves_unicode_cwd_and_drops_host_credentials(tmp_path: Path, monkeypatch) -> None:
+    handler, context, store, record, mutation, lineage, repo = _fixture(
+        tmp_path, attempt_id="python", interpreter="python3"
+    )
+    monkeypatch.setenv("GITHUB_TOKEN", "must-not-inherit")
+    payload = {
+        "interpreter": "python3",
+        "content": (
+            "import os\n"
+            "print('臺灣 café 漢字')\n"
+            "print('cwd=' + os.path.basename(os.getcwd()))\n"
+            "print('credential=' + os.environ.get('GITHUB_TOKEN', '<none>'))\n"
+            "print('custom=' + os.environ.get('S05_SAFE', '<none>'))\n"
+        ),
+        "args": [],
+        "cwd": "subdir",
+        "env": {"S05_SAFE": "preserved"},
+        "timeout": 30,
+        "cleanup": True,
+        "mutation": mutation,
+        "lineage": lineage,
+        "repository": repo,
+    }
+    result = _run(handler, context, payload)
+    assert result["ok"] is True
+    assert result["execution_profile"] == "scoped_mutation"
+    assert "臺灣 café 漢字" in result["output"]
+    assert "cwd=subdir" in result["output"]
+    assert "credential=<none>" in result["output"]
+    assert "custom=preserved" in result["output"]
+    assert result["terminal_state"] == "terminal"
+    assert store.read_scope(record.scope_id).state == "terminal"
+
+
+def test_scoped_powershell_preserves_unicode(tmp_path: Path) -> None:
+    handler, context, _store, _record, mutation, lineage, repo = _fixture(
+        tmp_path, attempt_id="powershell", interpreter="powershell"
+    )
+    try:
+        result = _run(
+            handler,
+            context,
+            {
+                "interpreter": "powershell",
+                "content": "Write-Output '臺灣 café 漢字'",
+                "timeout": 30,
+                "mutation": mutation,
+                "lineage": lineage,
+                "repository": repo,
+            },
+        )
+    except HandlerError as exc:
+        # Windows PowerShell 5.1 is not AppContainer-compatible on every Host.
+        # That platform outcome must be explicit and fail closed, never fallback.
+        assert exc.code == "HostMutationSandboxUnavailable"
+        assert "required AppContainer" in str(exc)
+        return
+    assert result["ok"] is True
+    assert "臺灣 café 漢字" in result["output"]
+
+
+def test_scoped_pwsh_preserves_unicode_when_installed(tmp_path: Path) -> None:
+    if shutil.which("pwsh") is None:
+        pytest.skip("pwsh is not installed on this Windows host")
+    handler, context, _store, _record, mutation, lineage, repo = _fixture(
+        tmp_path, attempt_id="pwsh", interpreter="pwsh"
+    )
+    result = _run(
+        handler,
+        context,
+        {
+            "interpreter": "pwsh",
+            "content": "Write-Output '臺灣 café 漢字'",
+            "timeout": 30,
+            "mutation": mutation,
+            "lineage": lineage,
+            "repository": repo,
+        },
+    )
+    assert result["ok"] is True
+    assert "臺灣 café 漢字" in result["output"]
+
+
+def test_scoped_rejects_elevation_absolute_cwd_and_authority_env(tmp_path: Path) -> None:
+    cases = [
+        ("sudo", {"sudo": True}),
+        ("cwd", {"cwd": str(tmp_path / "outside")}),
+        ("env", {"env": {"GITHUB_TOKEN": "caller-token"}}),
+    ]
+    for name, extra in cases:
+        case_root = tmp_path / name
+        handler, context, store, record, mutation, lineage, repo = _fixture(
+            case_root, attempt_id=name, interpreter="python3"
+        )
+        payload = {
+            "interpreter": "python3",
+            "content": "print('must not escape')",
+            "timeout": 30,
+            "mutation": mutation,
+            "lineage": lineage,
+            "repository": repo,
+            **extra,
+        }
+        with pytest.raises(HandlerError):
+            _run(handler, context, payload)
+        current = store.read_scope(record.scope_id)
+        if name == "sudo":
+            assert current.state == "provisioned"
+        else:
+            assert current.state in {"terminal", "revoked"}
+
+
+def test_scoped_failure_never_falls_back_to_unrestricted(tmp_path: Path) -> None:
+    handler, context, _store, record, mutation, lineage, repo = _fixture(
+        tmp_path, attempt_id="no-fallback", interpreter="python3"
+    )
+    marker = tmp_path / "outside-marker.txt"
+    bad_mutation = dict(mutation)
+    bad_mutation["scope_ref"] = {"scope_id": "caller-minted", "generation": record.generation}
+    payload = {
+        "interpreter": "python3",
+        "content": f"from pathlib import Path\nPath(r'{marker}').write_text('fallback-ran')",
+        "timeout": 30,
+        "mutation": bad_mutation,
+        "lineage": lineage,
+        "repository": repo,
+    }
+    with pytest.raises(HandlerError):
+        _run(handler, context, payload)
+    assert not marker.exists()
+
+
+def test_operator_unrestricted_requires_explicit_opt_in(tmp_path: Path) -> None:
+    mutation_policy = MutationExecutionPolicy(configured=True, operator_unrestricted_enabled=False)
+    policy = Policy(mutation_execution=mutation_policy, upload_base=tmp_path / "uploads")
+    handler = make_profiled_script_run_handler(policy, policy.upload_base, mutation_state_root=tmp_path / "state")
+    context = RequestContext("req-op", "script_run", None, datetime.now(UTC))
+    with pytest.raises(HandlerError, match="explicit Host policy opt-in"):
+        _run(
+            handler,
+            context,
+            {
+                "execution_profile": "operator_unrestricted",
+                "interpreter": "python3",
+                "content": "print('no')",
+            },
+        )
