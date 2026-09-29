@@ -158,6 +158,8 @@ slices:
         - Documentation explains scoped mutation, explicit unrestricted opt-in, audit evidence and V1 platform availability.
     checkpoint:
       required: true
-    state: pending
-    run_refs: []
-    completion_receipt_ref: null
+    state: completed
+    run_refs:
+      - github-commit:1234b99ade8434f305915769fc8f7dc609a27895
+      - github-pr-comment:5894603911
+    completion_receipt_ref: github-pr-comment:5894603911
