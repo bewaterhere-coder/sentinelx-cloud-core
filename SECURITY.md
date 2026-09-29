@@ -146,11 +146,15 @@ so reviewers can decide whether they're acceptable for their threat model.
 
 ### Things that might be assumed but aren't
 
-  - **There is no sandbox.** The agent shells out to real binaries via
-    `subprocess.run`. There is no chroot, no namespace isolation, no
-    seccomp filter beyond what the OS gives `sentinelx` by default. The
-    allowlist is the boundary; if it allowlists `bash`, you've just
-    allowlisted everything.
+  - **Unrestricted execution is not sandboxed.** Historical unprofiled
+    `script_run` (legacy compatibility) and explicit `operator_unrestricted`
+    execute with the host account's authority. They are not the new scoped
+    sandbox. On Windows V1, `scoped_mutation` is a separate fail-closed path:
+    provider-owned scope/placement, durable pre-spawn audit, retained script
+    evidence, an AppContainer SID with an exact workspace DACL, and a
+    kill-on-close/no-breakaway Job. Scoped failure never falls back to an
+    unrestricted profile. `operator_unrestricted` requires explicit policy
+    opt-in.
 
   - **`sudo NOPASSWD` is opt-in but on by default.** The installer's
     default grants `sentinelx` passwordless `sudo` for a small set of

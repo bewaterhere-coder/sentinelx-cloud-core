@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import asyncio
 import platform
 import socket
 from collections.abc import Callable, Iterable
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 from sentinelx_core import AGENT_VERSION
@@ -18,6 +17,7 @@ from sentinelx_core.handlers.progressive_help import (
     select_help_response,
     summarize_capabilities,
 )
+from sentinelx_core.mutation_readiness import MutationRuntimeReadiness, probe_mutation_runtime
 from sentinelx_core.policy import Policy
 
 
@@ -91,7 +91,7 @@ def _unusable_commands(policy: Policy) -> dict[str, Any]:
             "elevate regardless of sudoers. These entries are in the allowlist "
             "but will always fail. Either run the privileged step through a "
             "service action, or have the operator install the agent without "
-            "that hardening -- not recommended -- or wrap the work in a "
+            "that hardening -- not recommed -- or wrap the work in a "
             "setuid-free helper the agent can call directly."
         ),
     }
@@ -157,6 +157,26 @@ def make_capabilities_handler(
                 "path": str(config_path),
                 "description": "The agent's active config.yaml.",
             }
+
+        readiness: MutationRuntimeReadiness
+        state_parent = (
+            Path(config_path).parent
+            if config_path is not None
+            else (upload_base.parent if upload_base is not None else None)
+        )
+        if state_parent is None:
+            readiness = MutationRuntimeReadiness(
+                False,
+                "provider state root cannot be derived",
+                {},
+            )
+        else:
+            readiness = await asyncio.to_thread(
+                probe_mutation_runtime,
+                policy.mutation_execution,
+                state_parent / "state",
+            )
+        mutation_feature = readiness.feature()
         result = {
             "agent": "sentinelx-cloud-core",
             "version": AGENT_VERSION,
@@ -208,6 +228,11 @@ def make_capabilities_handler(
                     ),
                     "alias_of": "host_runtime.git_execution_context_v1",
                     "deprecated": True,
+                },
+                "host_mutation_sandbox_v1": mutation_feature,
+                "pre_execution_audit_lineage_v1": {
+                    **mutation_feature,
+                    "bound_to": "host_mutation_sandbox_v1",
                 },
             },
             # Whether chained exec commands are checked segment by segment.

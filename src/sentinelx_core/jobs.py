@@ -13,6 +13,7 @@ See sentinelx-notifications-integration-spec.md §2e (schema) and §3b (frame).
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from datetime import datetime
 from typing import Any
 
@@ -41,6 +42,43 @@ def _truncate_output(text: str | None) -> tuple[str, bool]:
         return text, False
     clipped = raw[:MAX_EVENT_OUTPUT_BYTES].decode("utf-8", errors="replace")
     return clipped, True
+
+
+class MutationJobIdentityError(RuntimeError):
+    """A background mutation completion did not preserve its sealed identity."""
+
+
+def _validated_mutation_identity(
+    result: Mapping[str, Any], *, expected_job_id: str
+) -> dict[str, Any] | None:
+    raw = result.get("mutation_identity")
+    if raw is None:
+        return None
+    if not isinstance(raw, Mapping):
+        raise MutationJobIdentityError("mutation_identity must be a mapping")
+
+    identity = dict(raw)
+    for field in (
+        "operation_id",
+        "binding_digest",
+        "request_id",
+        "scope_id",
+        "workspace_id",
+        "semantic_digest",
+    ):
+        value = identity.get(field)
+        if not isinstance(value, str) or not value:
+            raise MutationJobIdentityError(f"mutation_identity missing {field}")
+    generation = identity.get("scope_generation")
+    if isinstance(generation, bool) or not isinstance(generation, int) or generation <= 0:
+        raise MutationJobIdentityError("mutation_identity has invalid scope_generation")
+    identity_job = identity.get("job_id")
+    if identity_job is not None and identity_job != expected_job_id:
+        raise MutationJobIdentityError(
+            "background job id does not match mutation audit identity"
+        )
+    identity["job_id"] = expected_job_id
+    return identity
 
 
 def build_completed_event_data(
@@ -96,7 +134,7 @@ def build_completed_event_data(
 
     clipped_output, output_truncated = _truncate_output(output)
 
-    return {
+    data: dict[str, Any] = {
         "job_id": job_id,
         "tool": op,
         "host": host,
@@ -109,3 +147,10 @@ def build_completed_event_data(
         "output_truncated": output_truncated,
         "error": error_msg,
     }
+    if isinstance(result, Mapping):
+        mutation_identity = _validated_mutation_identity(
+            result, expected_job_id=job_id
+        )
+        if mutation_identity is not None:
+            data["mutation_identity"] = mutation_identity
+    return data
