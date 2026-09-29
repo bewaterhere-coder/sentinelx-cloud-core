@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import shutil
 import subprocess
 import sys
 import time
@@ -8,7 +9,12 @@ from pathlib import Path
 
 import pytest
 
-from sentinelx_core.mutation_audit import MutationAuditBinding, MutationAuditJournal
+from sentinelx_core.mutation_audit import (
+    MutationAuditBinding,
+    MutationAuditJournal,
+    MutationAuthorityEvidence,
+    MutationProcessIntent,
+)
 from sentinelx_core.mutation_placement import (
     HostMutationScopeBindingMismatch,
     RepositoryIdentity,
@@ -28,6 +34,8 @@ from sentinelx_core.windows_mutation_sandbox import (
     _ensure_appcontainer_profile,
     _profile_name,
     _set_exact_acl,
+    final_executable_path,
+    requested_mutation_identity,
     windows_sandbox_primitives_available,
 )
 
@@ -100,7 +108,25 @@ class Fixture:
             workspace_id=self.record.workspace_id,
             unique_lease_key=self.record.unique_lease_key,
         )
-        self.start = self.audit.begin(binding, evidence)
+        cmd = Path(shutil.which("cmd.exe") or r"C:\Windows\System32\cmd.exe")
+        authority = MutationAuthorityEvidence(
+            scope_digest=self.record.scope_digest,
+            exact_workspace_digest=self.record.exact_workspace_digest,
+            protected_inventory_digest=self.record.protected_inventory_digest,
+            policy_digest=self.record.policy_digest,
+            repository_identity_digest=self.record.repository_identity_digest,
+            semantic_identity_digest=self.record.semantic_identity_digest,
+        )
+        intent = MutationProcessIntent(
+            interpreter="cmd.exe",
+            argv=(str(cmd),),
+            executable_final_path=final_executable_path(cmd),
+            cwd_final_path=self.record.exact_workspace,
+        )
+        self.start = self.audit.begin(
+            binding, evidence, authority=authority, process_intent=intent,
+            requested_identity=requested_mutation_identity(self.record.unique_lease_key),
+        )
         self.sandbox = WindowsMutationSandbox(
             policy=self.policy,
             scope_store=self.scope_store,

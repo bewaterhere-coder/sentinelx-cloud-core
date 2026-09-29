@@ -17,7 +17,14 @@ from contextlib import contextmanager
 from ctypes import wintypes
 from pathlib import Path
 
-from sentinelx_core.mutation_audit import MutationAuditJournal, MutationAuditStart
+from sentinelx_core.mutation_audit import (
+    MutationAuditJournal,
+    MutationAuditStart,
+    MutationContainmentEvidence,
+    MutationOsIdentityEvidence,
+    MutationSpawnEvidence,
+    RequestedMutationIdentity,
+)
 from sentinelx_core.mutation_placement import RepositoryIdentity, SemanticIdentity
 from sentinelx_core.mutation_sandbox import (
     ActivatedMutationSandbox,
@@ -45,6 +52,10 @@ ERROR_ALREADY_EXISTS_HRESULT = 0x800700B7
 ERROR_FILE_NOT_FOUND_HRESULT = 0x80070002
 TOKEN_QUERY = 0x0008
 TOKEN_USER = 1
+TOKEN_IS_APPCONTAINER = 29
+TOKEN_APPCONTAINER_SID = 31
+TH32CS_SNAPPROCESS = 0x00000002
+INVALID_HANDLE_VALUE = ctypes.c_void_p(-1).value
 FILE_ALL_ACCESS = 0x001F01FF
 OBJECT_INHERIT_ACE = 0x1
 CONTAINER_INHERIT_ACE = 0x2
@@ -72,6 +83,25 @@ class _SID_AND_ATTRIBUTES(ctypes.Structure):
 
 class _TOKEN_USER(ctypes.Structure):
     _fields_ = [("User", _SID_AND_ATTRIBUTES)]
+
+
+class _TOKEN_APPCONTAINER_INFORMATION(ctypes.Structure):
+    _fields_ = [("TokenAppContainer", ctypes.c_void_p)]
+
+
+class _PROCESSENTRY32W(ctypes.Structure):
+    _fields_ = [
+        ("dwSize", wintypes.DWORD),
+        ("cntUsage", wintypes.DWORD),
+        ("th32ProcessID", wintypes.DWORD),
+        ("th32DefaultHeapID", ctypes.c_size_t),
+        ("th32ModuleID", wintypes.DWORD),
+        ("cntThreads", wintypes.DWORD),
+        ("th32ParentProcessID", wintypes.DWORD),
+        ("pcPriClassBase", ctypes.c_long),
+        ("dwFlags", wintypes.DWORD),
+        ("szExeFile", wintypes.WCHAR * 260),
+    ]
 
 
 class _TRUSTEE_W(ctypes.Structure):
@@ -150,6 +180,16 @@ def _windows_only() -> tuple[ctypes.WinDLL, ctypes.WinDLL, ctypes.WinDLL]:
     k32.OpenProcess.restype = wintypes.HANDLE
     k32.GetExitCodeProcess.argtypes = [wintypes.HANDLE, ctypes.POINTER(wintypes.DWORD)]
     k32.GetExitCodeProcess.restype = wintypes.BOOL
+    k32.QueryFullProcessImageNameW.argtypes = [
+        wintypes.HANDLE, wintypes.DWORD, wintypes.LPWSTR, ctypes.POINTER(wintypes.DWORD)
+    ]
+    k32.QueryFullProcessImageNameW.restype = wintypes.BOOL
+    k32.CreateToolhelp32Snapshot.argtypes = [wintypes.DWORD, wintypes.DWORD]
+    k32.CreateToolhelp32Snapshot.restype = wintypes.HANDLE
+    k32.Process32FirstW.argtypes = [wintypes.HANDLE, ctypes.POINTER(_PROCESSENTRY32W)]
+    k32.Process32FirstW.restype = wintypes.BOOL
+    k32.Process32NextW.argtypes = [wintypes.HANDLE, ctypes.POINTER(_PROCESSENTRY32W)]
+    k32.Process32NextW.restype = wintypes.BOOL
 
     advapi.OpenProcessToken.argtypes = [
         wintypes.HANDLE,
@@ -295,6 +335,102 @@ def _current_process_sid() -> str:
             raise _win32_error("GetTokenInformation(TokenUser) failed")
         token_user = ctypes.cast(buffer, ctypes.POINTER(_TOKEN_USER)).contents
         return _sid_to_string(int(token_user.User.Sid))
+    finally:
+        k32.CloseHandle(token)
+
+
+def final_executable_path(path: Path) -> str:
+    """Resolve an existing executable through the same Win32 final-path primitive used at SPAWN."""
+    return str(_final_path(path))
+
+
+def requested_mutation_identity(unique_lease_key: str) -> RequestedMutationIdentity:
+    """Provider-derived Host/AppContainer identity sealed before materialization."""
+    profile = _profile_name(unique_lease_key)
+    return RequestedMutationIdentity(
+        host_platform="windows",
+        host_user_sid=_current_process_sid(),
+        sandbox_kind="appcontainer",
+        sandbox_profile=profile,
+        sandbox_identity=_derive_appcontainer_sid(profile),
+    )
+
+
+def _process_parent_pid(pid: int) -> int:
+    k32, _, _ = _windows_only()
+    snapshot = k32.CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0)
+    if not snapshot or int(snapshot) == INVALID_HANDLE_VALUE:
+        raise _win32_error("CreateToolhelp32Snapshot failed")
+    try:
+        entry = _PROCESSENTRY32W()
+        entry.dwSize = ctypes.sizeof(entry)
+        if not k32.Process32FirstW(snapshot, ctypes.byref(entry)):
+            raise _win32_error("Process32FirstW failed")
+        while True:
+            if int(entry.th32ProcessID) == pid:
+                parent = int(entry.th32ParentProcessID)
+                if parent <= 0:
+                    raise HostMutationSandboxContainmentFailed(
+                        "suspended process PPID read-back was empty"
+                    )
+                return parent
+            if not k32.Process32NextW(snapshot, ctypes.byref(entry)):
+                break
+        raise HostMutationSandboxContainmentFailed("suspended process absent from process snapshot")
+    finally:
+        k32.CloseHandle(snapshot)
+
+
+def _process_image_path(process_handle: int) -> str:
+    k32, _, _ = _windows_only()
+    size = wintypes.DWORD(32768)
+    buffer = ctypes.create_unicode_buffer(size.value)
+    if not k32.QueryFullProcessImageNameW(process_handle, 0, buffer, ctypes.byref(size)):
+        raise _win32_error("QueryFullProcessImageNameW failed")
+    return str(_final_path(Path(buffer.value)))
+
+
+def _process_os_identity(process_handle: int) -> MutationOsIdentityEvidence:
+    k32, advapi, _ = _windows_only()
+    token = wintypes.HANDLE()
+    if not advapi.OpenProcessToken(process_handle, TOKEN_QUERY, ctypes.byref(token)):
+        raise _win32_error("OpenProcessToken(suspended process) failed")
+    try:
+        def token_buffer(info_class: int):
+            required = wintypes.DWORD()
+            advapi.GetTokenInformation(token, info_class, None, 0, ctypes.byref(required))
+            if not required.value:
+                raise _win32_error(f"GetTokenInformation({info_class}) sizing failed")
+            buffer = ctypes.create_string_buffer(required.value)
+            if not advapi.GetTokenInformation(
+                token, info_class, buffer, required.value, ctypes.byref(required)
+            ):
+                raise _win32_error(f"GetTokenInformation({info_class}) failed")
+            return buffer
+
+        user_buffer = token_buffer(TOKEN_USER)
+        user = ctypes.cast(user_buffer, ctypes.POINTER(_TOKEN_USER)).contents
+        app_flag = wintypes.DWORD()
+        returned = wintypes.DWORD()
+        if not advapi.GetTokenInformation(
+            token,
+            TOKEN_IS_APPCONTAINER,
+            ctypes.byref(app_flag),
+            ctypes.sizeof(app_flag),
+            ctypes.byref(returned),
+        ):
+            raise _win32_error("GetTokenInformation(TokenIsAppContainer) failed")
+        app_buffer = token_buffer(TOKEN_APPCONTAINER_SID)
+        app = ctypes.cast(
+            app_buffer, ctypes.POINTER(_TOKEN_APPCONTAINER_INFORMATION)
+        ).contents.TokenAppContainer
+        if not app:
+            raise HostMutationSandboxContainmentFailed("suspended process has no AppContainer SID")
+        return MutationOsIdentityEvidence(
+            process_user_sid=_sid_to_string(int(user.User.Sid)),
+            appcontainer_sid=_sid_to_string(int(app)),
+            is_appcontainer=bool(app_flag.value),
+        )
     finally:
         k32.CloseHandle(token)
 
@@ -654,6 +790,10 @@ class ManagedMutationProcess:
     def exit_code(self) -> int | None:
         return self._process.exit_code
 
+    @property
+    def job_handle_closed(self) -> bool:
+        return self._process._closed
+
     def _release(self) -> None:
         if self._released:
             return
@@ -907,11 +1047,32 @@ class WindowsMutationSandbox:
             managed._release()
 
         try:
+            executable_final_path = _process_image_path(raw._process)
+            cwd_final_path = str(_final_path(spawn_cwd))
+            spawn_evidence = MutationSpawnEvidence(
+                pid=raw.pid,
+                ppid=_process_parent_pid(raw.pid),
+                executable_final_path=executable_final_path,
+                cwd_final_path=cwd_final_path,
+                os_identity=_process_os_identity(raw._process),
+                containment=MutationContainmentEvidence(
+                    job_binding=raw.job_ref,
+                    contained=raw.contained,
+                    breakaway_allowed=raw.breakaway_allowed,
+                    active_process_count=raw.active_process_count,
+                ),
+            )
+            if (
+                executable_final_path.casefold()
+                != audit_start.process_intent.executable_final_path.casefold()
+                or cwd_final_path.casefold() != audit_start.process_intent.cwd_final_path.casefold()
+            ):
+                raise HostMutationSandboxBindingMismatch(
+                    "suspended process final executable/cwd differs from sealed START intent"
+                )
             audit.commit_spawn_before_resume(
                 audit_start,
-                pid=raw.pid,
-                job_binding=raw.job_ref,
-                sandbox_identity=activation.sandbox_identity,
+                spawn_evidence,
                 terminate_suspended=terminate_suspended,
                 resume_suspended=raw.resume,
             )

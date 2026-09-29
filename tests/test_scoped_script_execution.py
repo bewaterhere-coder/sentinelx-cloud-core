@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import os
 import shutil
 import sys
 from datetime import UTC, datetime
@@ -11,10 +10,17 @@ import pytest
 
 from sentinelx_core.executor import HandlerError
 from sentinelx_core.handlers.scoped_script import make_profiled_script_run_handler
+from sentinelx_core.mutation_audit import (
+    EVENT_FINISHED,
+    EVENT_SPAWNED,
+    EVENT_STARTED,
+    MutationAuditJournal,
+)
 from sentinelx_core.mutation_placement import RepositoryIdentity, SemanticIdentity
 from sentinelx_core.mutation_scope import MutationScopeStore
 from sentinelx_core.policy import MutationExecutionPolicy, Policy
 from sentinelx_core.request_context import RequestContext
+from sentinelx_core.windows_mutation_sandbox import WindowsMutationSandbox
 
 pytestmark = pytest.mark.skipif(sys.platform != "win32", reason="Windows scoped mutation only")
 
@@ -126,6 +132,22 @@ def test_scoped_python_preserves_unicode_cwd_and_drops_host_credentials(tmp_path
     assert "custom=preserved" in result["output"]
     assert result["terminal_state"] == "terminal"
     assert store.read_scope(record.scope_id).state == "terminal"
+    events = MutationAuditJournal(store.root.parent, evidence_retention_days=7).read_events(
+        result["audit_operation_id"]
+    )
+    assert [event["event"] for event in events] == [
+        EVENT_STARTED, EVENT_SPAWNED, EVENT_FINISHED
+    ]
+    assert events[0]["authority"]["scope_digest"] == record.scope_digest
+    assert events[0]["authority"]["protected_inventory_digest"] == record.protected_inventory_digest
+    assert events[0]["process_intent"]["interpreter"] == "python3"
+    assert events[0]["requested_identity"]["sandbox_kind"] == "appcontainer"
+    assert events[1]["ppid"] > 0
+    assert events[1]["os_identity"]["is_appcontainer"] is True
+    assert events[1]["containment"]["breakaway_allowed"] is False
+    assert events[2]["closure"]["scope_state"] == "terminal"
+    assert events[2]["closure"]["process_tree_quiescent"] is True
+    assert events[2]["closure"]["sandbox_write_authority_present"] is False
 
 
 def test_scoped_powershell_preserves_unicode(tmp_path: Path) -> None:
@@ -200,7 +222,8 @@ def test_scoped_rejects_elevation_absolute_cwd_and_authority_env(tmp_path: Path)
         with pytest.raises(HandlerError):
             _run(handler, context, payload)
         current = store.read_scope(record.scope_id)
-        if name == "sudo":
+        if name in {"sudo", "cwd"}:
+            # Rejected before durable START/materialization; no authority was activated.
             assert current.state == "provisioned"
         else:
             assert current.state in {"terminal", "revoked"}
@@ -241,3 +264,35 @@ def test_operator_unrestricted_requires_explicit_opt_in(tmp_path: Path) -> None:
                 "content": "print('no')",
             },
         )
+
+
+def test_terminalization_failure_prevents_success_and_successful_finish(
+    tmp_path: Path, monkeypatch
+) -> None:
+    handler, context, store, _record, mutation, lineage, repo = _fixture(
+        tmp_path, attempt_id="terminalization-failure", interpreter="python3"
+    )
+
+    def fail_terminalize(self, scope_id, generation):
+        raise RuntimeError("injected closure read-back failure")
+
+    monkeypatch.setattr(WindowsMutationSandbox, "terminalize", fail_terminalize)
+    with pytest.raises(HandlerError, match="injected closure read-back failure"):
+        _run(
+            handler,
+            context,
+            {
+                "interpreter": "python3",
+                "content": "print('ran but must not be reported successful')",
+                "timeout": 30,
+                "mutation": mutation,
+                "lineage": lineage,
+                "repository": repo,
+            },
+        )
+
+    journal = MutationAuditJournal(store.root.parent, evidence_retention_days=7)
+    events = journal.read_events()
+    kinds = [event["event"] for event in events]
+    assert kinds == [EVENT_STARTED, EVENT_SPAWNED]
+    assert EVENT_FINISHED not in kinds

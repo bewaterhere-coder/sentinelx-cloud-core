@@ -15,6 +15,13 @@ from sentinelx_core.mutation_audit import (
     MutationAuditBinding,
     MutationAuditDurabilityError,
     MutationAuditJournal,
+    MutationAuthorityEvidence,
+    MutationContainmentEvidence,
+    MutationFinishClosureEvidence,
+    MutationOsIdentityEvidence,
+    MutationProcessIntent,
+    MutationSpawnEvidence,
+    RequestedMutationIdentity,
 )
 from sentinelx_core.request_context import MutationLineage, RequestContext
 
@@ -52,9 +59,80 @@ def _binding(*, job_id: str | None = None) -> MutationAuditBinding:
     )
 
 
+def _authority() -> MutationAuthorityEvidence:
+    return MutationAuthorityEvidence(
+        scope_digest="scope-digest",
+        exact_workspace_digest="workspace-digest",
+        protected_inventory_digest="protected-digest",
+        policy_digest="policy-digest",
+        repository_identity_digest="repository-digest",
+        semantic_identity_digest=_lineage().digest,
+    )
+
+
+def _intent() -> MutationProcessIntent:
+    return MutationProcessIntent(
+        interpreter="python3",
+        argv=(r"C:\Python\python.exe", r"C:\scope\script.py"),
+        executable_final_path=r"C:\Python\python.exe",
+        cwd_final_path=r"C:\scope",
+    )
+
+
+def _requested() -> RequestedMutationIdentity:
+    return RequestedMutationIdentity(
+        host_platform="windows",
+        host_user_sid="S-1-5-18",
+        sandbox_kind="appcontainer",
+        sandbox_profile="SentinelX.Mutation.fixture",
+        sandbox_identity="S-1-15-2-123",
+    )
+
+
+def _spawn_evidence() -> MutationSpawnEvidence:
+    return MutationSpawnEvidence(
+        pid=4242,
+        ppid=3131,
+        executable_final_path=_intent().executable_final_path,
+        cwd_final_path=_intent().cwd_final_path,
+        os_identity=MutationOsIdentityEvidence(
+            process_user_sid=_requested().host_user_sid,
+            appcontainer_sid=_requested().sandbox_identity,
+            is_appcontainer=True,
+        ),
+        containment=MutationContainmentEvidence(
+            job_binding="job-object-1",
+            contained=True,
+            breakaway_allowed=False,
+            active_process_count=1,
+        ),
+    )
+
+
+def _closure() -> MutationFinishClosureEvidence:
+    return MutationFinishClosureEvidence(
+        scope_state="terminal",
+        scope_digest=_authority().scope_digest,
+        protected_inventory_digest=_authority().protected_inventory_digest,
+        sandbox_identity=_requested().sandbox_identity,
+        job_binding="job-object-1",
+        root_pid=4242,
+        job_handle_closed=True,
+        job_active_process_count=0,
+        active_job_ids=(),
+        active_process_ids=(),
+        sandbox_write_authority_present=False,
+        process_tree_quiescent=True,
+        terminalized_at="2026-09-30T00:00:00Z",
+    )
+
+
 def _start(journal: MutationAuditJournal, *, job_id: str | None = None):
     evidence = journal.evidence.retain(b"print('hello')\n")
-    return journal.begin(_binding(job_id=job_id), evidence)
+    return journal.begin(
+        _binding(job_id=job_id), evidence, authority=_authority(),
+        process_intent=_intent(), requested_identity=_requested(),
+    )
 
 
 def test_request_transport_identity_is_separate_from_payload_lineage(tmp_path: Path):
@@ -76,6 +154,9 @@ def test_request_transport_identity_is_separate_from_payload_lineage(tmp_path: P
         scope_generation=4,
         workspace_id="workspace-1",
         unique_lease_key="lease-1",
+        authority=_authority(),
+        process_intent=_intent(),
+        requested_identity=_requested(),
     )
 
     event = journal.read_events(prepared.audit_start.operation_id)[0]
@@ -83,6 +164,10 @@ def test_request_transport_identity_is_separate_from_payload_lineage(tmp_path: P
     assert event["binding"]["opaque_ref"] == "opaque-authoritative"
     assert event["binding"]["lineage"]["run_id"] == "run-3"
     assert event["binding"]["job_id"] == "job-1"
+    assert event["authority"]["scope_digest"] == "scope-digest"
+    assert event["authority"]["protected_inventory_digest"] == "protected-digest"
+    assert event["process_intent"]["argv"] == list(_intent().argv)
+    assert event["requested_identity"]["sandbox_identity"] == _requested().sandbox_identity
 
 
 def test_forensic_script_is_retained_before_start_and_survives_cleanup(tmp_path: Path):
@@ -96,6 +181,9 @@ def test_forensic_script_is_retained_before_start_and_survives_cleanup(tmp_path:
         scope_generation=4,
         workspace_id="workspace-1",
         unique_lease_key="lease-1",
+        authority=_authority(),
+        process_intent=_intent(),
+        requested_identity=_requested(),
     )
 
     staging = tmp_path / "temporary-execution-staging"
@@ -136,6 +224,9 @@ def test_start_durability_failure_precedes_workspace_materialization_and_spawn(
             scope_generation=4,
             workspace_id="workspace-1",
             unique_lease_key="lease-1",
+            authority=_authority(),
+            process_intent=_intent(),
+            requested_identity=_requested(),
         )
 
     assert not workspace.exists()
@@ -163,9 +254,7 @@ def test_spawn_audit_failure_kills_suspended_child_and_never_resumes(
     with pytest.raises(MutationAuditDurabilityError):
         journal.commit_spawn_before_resume(
             start,
-            pid=4242,
-            job_binding="job-object-1",
-            sandbox_identity="appcontainer:sid-1",
+            _spawn_evidence(),
             terminate_suspended=lambda: calls.__setitem__("terminated", calls["terminated"] + 1),
             resume_suspended=lambda: calls.__setitem__("resumed", calls["resumed"] + 1),
         )
@@ -189,14 +278,18 @@ def test_successful_spawn_is_recorded_before_resume(tmp_path: Path):
     journal._durable_append = observe  # type: ignore[method-assign]
     journal.commit_spawn_before_resume(
         start,
-        pid=4242,
-        job_binding="job-object-1",
-        sandbox_identity="appcontainer:sid-1",
+        _spawn_evidence(),
         terminate_suspended=lambda: order.append("TERMINATED"),
         resume_suspended=lambda: order.append("RESUMED"),
     )
 
     assert order == [EVENT_SPAWNED, "RESUMED"]
+    spawned = journal.read_events(start.operation_id)[1]
+    assert spawned["ppid"] == 3131
+    assert spawned["executable_final_path"] == _intent().executable_final_path
+    assert spawned["cwd_final_path"] == _intent().cwd_final_path
+    assert spawned["os_identity"]["is_appcontainer"] is True
+    assert spawned["containment"]["contained"] is True
 
 
 def test_crash_after_start_does_not_invent_false_finish(tmp_path: Path):
@@ -214,13 +307,10 @@ def test_crash_after_start_does_not_invent_false_finish(tmp_path: Path):
 def test_full_lifecycle_preserves_one_binding_digest(tmp_path: Path):
     journal = MutationAuditJournal(tmp_path)
     start = _start(journal)
-    spawn = journal.record_spawn(
-        start,
-        pid=1234,
-        job_binding="job-object-1",
-        sandbox_identity="appcontainer:sid-1",
+    spawn = journal.record_spawn(start, _spawn_evidence())
+    finish_ref = journal.finish(
+        start, status="succeeded", closure=_closure(), returncode=0
     )
-    finish_ref = journal.finish(start, status="succeeded", returncode=0)
 
     events = journal.read_events(start.operation_id)
     assert [event["event"] for event in events] == [
@@ -233,6 +323,31 @@ def test_full_lifecycle_preserves_one_binding_digest(tmp_path: Path):
     assert events[2]["binding_digest"] == start.binding_digest
     assert spawn.operation_id == start.operation_id
     assert finish_ref.startswith(f"mutation-audit:{start.operation_id}:finish:")
+    assert events[2]["closure"]["scope_state"] == "terminal"
+    assert events[2]["closure"]["process_tree_quiescent"] is True
+
+
+def test_finish_rejects_unclosed_scope_without_fabricating_finish(tmp_path: Path):
+    journal = MutationAuditJournal(tmp_path)
+    start = _start(journal)
+    unclosed = MutationFinishClosureEvidence(
+        scope_state="revoked",
+        scope_digest=_authority().scope_digest,
+        protected_inventory_digest=_authority().protected_inventory_digest,
+        sandbox_identity=_requested().sandbox_identity,
+        job_binding="job-object-1",
+        root_pid=4242,
+        job_handle_closed=False,
+        job_active_process_count=1,
+        active_job_ids=("job-object-1",),
+        active_process_ids=("4242",),
+        sandbox_write_authority_present=True,
+        process_tree_quiescent=False,
+        terminalized_at="",
+    )
+    with pytest.raises(Exception, match="terminal scope"):
+        journal.finish(start, status="succeeded", closure=unclosed, returncode=0)
+    assert [event["event"] for event in journal.read_events(start.operation_id)] == [EVENT_STARTED]
 
 
 def test_materialization_uses_exact_retained_bytes(tmp_path: Path):
@@ -246,6 +361,9 @@ def test_materialization_uses_exact_retained_bytes(tmp_path: Path):
         scope_generation=4,
         workspace_id="workspace-1",
         unique_lease_key="lease-1",
+        authority=_authority(),
+        process_intent=_intent(),
+        requested_identity=_requested(),
     )
     workspace = tmp_path / "workspace"
     workspace.mkdir()

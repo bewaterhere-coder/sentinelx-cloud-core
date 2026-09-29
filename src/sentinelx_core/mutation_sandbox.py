@@ -100,6 +100,12 @@ def assert_audit_scope_binding(
         or binding.scope_generation != record.generation
         or binding.workspace_id != record.workspace_id
         or binding.unique_lease_key != record.unique_lease_key
+        or start.authority.scope_digest != record.scope_digest
+        or start.authority.exact_workspace_digest != record.exact_workspace_digest
+        or start.authority.protected_inventory_digest != record.protected_inventory_digest
+        or start.authority.policy_digest != record.policy_digest
+        or start.authority.repository_identity_digest != record.repository_identity_digest
+        or start.authority.semantic_identity_digest != record.semantic_identity_digest
     ):
         raise HostMutationSandboxBindingMismatch(
             "durable OPERATION_STARTED does not bind the exact current mutation scope"

@@ -64,6 +64,9 @@ from sentinelx_core.mutation_audit import (
     MutationAuditBinding,
     MutationAuditJournal,
     MutationAuditStart,
+    MutationAuthorityEvidence,
+    MutationProcessIntent,
+    RequestedMutationIdentity,
 )
 from sentinelx_core.policy import Policy
 from sentinelx_core.request_context import MutationLineage, RequestContext
@@ -339,6 +342,9 @@ def prepare_scoped_script_evidence(
     scope_generation: int,
     workspace_id: str,
     unique_lease_key: str,
+    authority: MutationAuthorityEvidence,
+    process_intent: MutationProcessIntent,
+    requested_identity: RequestedMutationIdentity,
 ) -> PreparedMutationScript:
     """Retain exact bytes and durably commit START before any materialization.
 
@@ -364,7 +370,13 @@ def prepare_scoped_script_evidence(
         unique_lease_key=unique_lease_key,
         job_id=payload.get("job_id") if isinstance(payload.get("job_id"), str) else None,
     )
-    start = audit.begin(binding, evidence)
+    start = audit.begin(
+        binding,
+        evidence,
+        authority=authority,
+        process_intent=process_intent,
+        requested_identity=requested_identity,
+    )
     return PreparedMutationScript(
         interpreter=interpreter,
         exact_bytes=exact_bytes,

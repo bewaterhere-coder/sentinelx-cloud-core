@@ -20,15 +20,27 @@ from sentinelx_core.handlers.script import (
     TIMEOUT_MAX,
     TIMEOUT_MIN,
     _decode_output,
-    make_script_run_handler as make_legacy_script_run_handler,
     prepare_scoped_script_evidence,
 )
-from sentinelx_core.mutation_audit import MutationAuditJournal, MutationAuditStart
+from sentinelx_core.handlers.script import (
+    make_script_run_handler as make_legacy_script_run_handler,
+)
+from sentinelx_core.mutation_audit import (
+    MutationAuditJournal,
+    MutationAuditStart,
+    MutationAuthorityEvidence,
+    MutationFinishClosureEvidence,
+    MutationProcessIntent,
+)
 from sentinelx_core.mutation_placement import RepositoryIdentity, SemanticIdentity
 from sentinelx_core.mutation_sandbox import build_mutation_sandbox
-from sentinelx_core.mutation_scope import MutationScopeStore
+from sentinelx_core.mutation_scope import MutationScopeRecord, MutationScopeStore
 from sentinelx_core.policy import Policy
 from sentinelx_core.request_context import MutationLineage, RequestContext, context_aware
+from sentinelx_core.windows_mutation_sandbox import (
+    final_executable_path,
+    requested_mutation_identity,
+)
 
 _AUTHORITY_ENV_PREFIXES = (
     "SENTINELX_",
@@ -143,7 +155,7 @@ def _scoped_environment(extra: dict[str, str], workspace: Path) -> dict[str, str
     return result
 
 
-def _cwd(workspace: Path, value: Any) -> Path:
+def _cwd(workspace: Path, value: Any, *, materialize: bool = True) -> Path:
     if value in (None, "", "."):
         return workspace
     if not isinstance(value, str):
@@ -159,7 +171,8 @@ def _cwd(workspace: Path, value: Any) -> Path:
         target.relative_to(workspace.resolve(strict=False))
     except ValueError as exc:
         raise HandlerError("HostMutationSandboxPathViolation", "scoped cwd escaped exact workspace") from exc
-    target.mkdir(parents=True, exist_ok=True)
+    if materialize:
+        target.mkdir(parents=True, exist_ok=True)
     return target
 
 
@@ -171,6 +184,8 @@ def _runner_argv(
     stdout_path: Path,
     stderr_path: Path,
     result_path: Path,
+    *,
+    materialize: bool = True,
 ) -> list[str]:
     """Create an in-sandbox runner that persists exit status before process close."""
     if interpreter == "bash":
@@ -183,8 +198,9 @@ def _runner_argv(
         if executable.name.lower() == "pythonw.exe":
             executable = executable.with_name("python.exe")
         runner = workspace / "sentinelx_runner.py"
-        runner.write_text(
-            "import contextlib, runpy, sys, traceback\n"
+        if materialize:
+            runner.write_text(
+                "import contextlib, runpy, sys, traceback\n"
             "target,out_path,err_path,result_path,*script_args=sys.argv[1:]\n"
             "sys.argv=[target,*script_args]\n"
             "code=0\n"
@@ -195,8 +211,8 @@ def _runner_argv(
             "    except BaseException: traceback.print_exc(); code=1\n"
             "open(result_path,'w',encoding='ascii').write(str(code))\n"
             "raise SystemExit(code)\n",
-            encoding="utf-8",
-        )
+                encoding="utf-8",
+            )
         return [
             str(executable), str(runner), str(script_path), str(stdout_path),
             str(stderr_path), str(result_path), *args,
@@ -206,8 +222,9 @@ def _runner_argv(
     if not executable:
         raise HandlerError("interpreter_missing", f"interpreter not found: {interpreter}")
     runner = workspace / "sentinelx_runner.ps1"
-    runner.write_text(
-        "param([string]$Target,[string]$Stdout,[string]$Stderr,[string]$Result,[Parameter(ValueFromRemainingArguments=$true)][string[]]$ScriptArgs)\n"
+    if materialize:
+        runner.write_text(
+            "param([string]$Target,[string]$Stdout,[string]$Stderr,[string]$Result,[Parameter(ValueFromRemainingArguments=$true)][string[]]$ScriptArgs)\n"
         "$ErrorActionPreference='Stop'\n"
         "$utf8=New-Object System.Text.UTF8Encoding($false)\n"
         "try {\n"
@@ -222,13 +239,53 @@ def _runner_argv(
         " [System.IO.File]::WriteAllText($Stderr,($_|Out-String),$utf8)\n"
         " [System.IO.File]::WriteAllText($Result,'1',[System.Text.Encoding]::ASCII); exit 1\n"
         "}\n",
-        encoding="utf-8-sig" if interpreter == "powershell" else "utf-8",
-    )
+            encoding="utf-8-sig" if interpreter == "powershell" else "utf-8",
+        )
     return [
         executable, "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
         "-File", str(runner), str(script_path), str(stdout_path), str(stderr_path),
         str(result_path), *args,
     ]
+
+
+def _authority_evidence(record: MutationScopeRecord) -> MutationAuthorityEvidence:
+    return MutationAuthorityEvidence(
+        scope_digest=record.scope_digest,
+        exact_workspace_digest=record.exact_workspace_digest,
+        protected_inventory_digest=record.protected_inventory_digest,
+        policy_digest=record.policy_digest,
+        repository_identity_digest=record.repository_identity_digest,
+        semantic_identity_digest=record.semantic_identity_digest,
+    )
+
+
+def _finish_closure(
+    record: MutationScopeRecord, process: Any = None
+) -> MutationFinishClosureEvidence:
+    job_binding = process.job_ref if process is not None else None
+    root_pid = process.pid if process is not None else None
+    job_handle_closed = process.job_handle_closed if process is not None else True
+    job_active_process_count = process.active_process_count if process is not None else 0
+    return MutationFinishClosureEvidence(
+        scope_state=record.state,
+        scope_digest=record.scope_digest,
+        protected_inventory_digest=record.protected_inventory_digest,
+        sandbox_identity=record.sandbox_identity,
+        job_binding=job_binding,
+        root_pid=root_pid,
+        job_handle_closed=job_handle_closed,
+        job_active_process_count=job_active_process_count,
+        active_job_ids=record.active_job_ids,
+        active_process_ids=record.active_process_ids,
+        sandbox_write_authority_present=record.sandbox_write_authority_present,
+        process_tree_quiescent=(
+            job_handle_closed
+            and job_active_process_count == 0
+            and not record.active_job_ids
+            and not record.active_process_ids
+        ),
+        terminalized_at=record.terminalized_at or "",
+    )
 
 
 async def _run_scoped(
@@ -269,10 +326,31 @@ async def _run_scoped(
     record = None
     finished = False
     terminalized = False
+    process = None
     try:
         record = store.revalidate_scope(
             scope_id, generation, mutation_policy, repository, semantic,
             provider_protected_roots=protected,
+        )
+        interpreter = payload.get("interpreter")
+        extensions = {"python3": "py", "powershell": "ps1", "pwsh": "ps1", "bash": "sh"}
+        if not isinstance(interpreter, str) or interpreter not in extensions:
+            raise HandlerError("invalid_payload", "unsupported scoped interpreter")
+        planned_workspace = Path(record.exact_workspace)
+        script_path = planned_workspace / f"script.{extensions[interpreter]}"
+        stdout_path = planned_workspace / "stdout.bin"
+        stderr_path = planned_workspace / "stderr.bin"
+        result_path = planned_workspace / "returncode.txt"
+        run_cwd = _cwd(planned_workspace, payload.get("cwd"), materialize=False)
+        planned_argv = _runner_argv(
+            interpreter, script_path, args, planned_workspace,
+            stdout_path, stderr_path, result_path, materialize=False,
+        )
+        process_intent = MutationProcessIntent(
+            interpreter=interpreter,
+            argv=tuple(planned_argv),
+            executable_final_path=final_executable_path(Path(planned_argv[0])),
+            cwd_final_path=str(run_cwd),
         )
         prepared = prepare_scoped_script_evidence(
             context=context,
@@ -283,6 +361,9 @@ async def _run_scoped(
             scope_generation=record.generation,
             workspace_id=record.workspace_id,
             unique_lease_key=record.unique_lease_key,
+            authority=_authority_evidence(record),
+            process_intent=process_intent,
+            requested_identity=requested_mutation_identity(record.unique_lease_key),
         )
         start = prepared.audit_start
         sandbox = build_mutation_sandbox(
@@ -293,20 +374,19 @@ async def _run_scoped(
             provider_protected_roots=protected,
         )
         activation = sandbox.activate(record, start)
-        extension = {"python3": "py", "powershell": "ps1", "pwsh": "ps1", "bash": "sh"}[prepared.interpreter]
-        script_path = activation.workspace / f"script.{extension}"
+        if activation.workspace != planned_workspace:
+            raise RuntimeError("activated workspace differs from sealed process intent")
         audit.evidence.materialize_verified(prepared.evidence, script_path)
         if hashlib.sha256(script_path.read_bytes()).hexdigest() != prepared.evidence.sha256:
             raise RuntimeError("materialized scoped script hash mismatch")
 
-        run_cwd = _cwd(activation.workspace, payload.get("cwd"))
-        stdout_path = activation.workspace / "stdout.bin"
-        stderr_path = activation.workspace / "stderr.bin"
-        result_path = activation.workspace / "returncode.txt"
+        run_cwd = _cwd(activation.workspace, payload.get("cwd"), materialize=True)
         argv = _runner_argv(
             prepared.interpreter, script_path, args, activation.workspace,
-            stdout_path, stderr_path, result_path,
+            stdout_path, stderr_path, result_path, materialize=True,
         )
+        if argv != planned_argv:
+            raise RuntimeError("materialized runner argv differs from sealed process intent")
         process = sandbox.spawn(
             activation,
             audit=audit,
@@ -318,10 +398,13 @@ async def _run_scoped(
         done = await asyncio.to_thread(process.wait, float(timeout))
         if not done:
             process.terminate()
-            audit.finish(start, status="timeout", returncode=-1, error_code="timeout")
-            finished = True
-            sandbox.terminalize(scope_id, generation)
+            terminal = sandbox.terminalize(scope_id, generation)
             terminalized = True
+            audit.finish(
+                start, status="timeout", closure=_finish_closure(terminal, process),
+                returncode=-1, error_code="timeout",
+            )
+            finished = True
             return {
                 "ok": False,
                 "interpreter": prepared.interpreter,
@@ -341,10 +424,13 @@ async def _run_scoped(
             # the trusted runner (observed with Windows PowerShell 5.1 under
             # AppContainer on some hosts).  This is availability, never a reason
             # to retry through unrestricted execution.
-            audit.finish(start, status="failed", error_code="HostMutationSandboxUnavailable")
-            finished = True
-            sandbox.terminalize(scope_id, generation)
+            terminal = sandbox.terminalize(scope_id, generation)
             terminalized = True
+            audit.finish(
+                start, status="failed", closure=_finish_closure(terminal, process),
+                error_code="HostMutationSandboxUnavailable",
+            )
+            finished = True
             raise HandlerError(
                 "HostMutationSandboxUnavailable",
                 f"{prepared.interpreter} could not initialize inside the required AppContainer",
@@ -357,10 +443,13 @@ async def _run_scoped(
         stdout = _decode_output(stdout_path.read_bytes() if stdout_path.exists() else b"").strip()
         stderr = _decode_output(stderr_path.read_bytes() if stderr_path.exists() else b"").strip()
         output = (stdout + "\n" + stderr).strip() or "No output"
-        audit.finish(start, status="succeeded" if returncode == 0 else "failed", returncode=returncode)
-        finished = True
         terminal = sandbox.terminalize(scope_id, generation)
         terminalized = True
+        audit.finish(
+            start, status="succeeded" if returncode == 0 else "failed",
+            closure=_finish_closure(terminal, process), returncode=returncode,
+        )
+        finished = True
         response: dict[str, Any] = {
             "ok": returncode == 0,
             "interpreter": prepared.interpreter,
@@ -380,24 +469,30 @@ async def _run_scoped(
             response["workdir"] = str(activation.workspace)
         return response
     except Exception as exc:
-        if start is not None and not finished:
-            try:
-                audit.finish(start, status="failed", error_code=str(getattr(exc, "code", type(exc).__name__)))
-                finished = True
-            except Exception:
-                pass
+        terminal = None
         if start is not None and not terminalized and record is not None:
             try:
                 if sandbox is not None:
-                    sandbox.terminalize(scope_id, generation)
+                    terminal = sandbox.terminalize(scope_id, generation)
                 else:
-                    store.terminalize_scope(
+                    terminal = store.terminalize_scope(
                         scope_id, generation, mutation_policy, repository, semantic,
                         provider_protected_roots=protected,
                     )
                 terminalized = True
-            except Exception:
-                pass
+            except (RuntimeError, OSError, ValueError):
+                # A failed closure read-back must leave START/SPAWN without a
+                # fabricated FINISH and the request remains externally failed.
+                terminal = None
+        if start is not None and not finished and terminal is not None:
+            try:
+                audit.finish(
+                    start, status="failed", closure=_finish_closure(terminal, process),
+                    error_code=str(getattr(exc, "code", type(exc).__name__)),
+                )
+                finished = True
+            except (RuntimeError, OSError, ValueError):
+                finished = False
         if isinstance(exc, HandlerError):
             raise
         raise HandlerError(str(getattr(exc, "code", "scoped_mutation_failed")), str(exc)) from exc

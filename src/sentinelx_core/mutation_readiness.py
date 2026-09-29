@@ -18,12 +18,22 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from sentinelx_core.mutation_audit import MutationAuditBinding, MutationAuditJournal
+from sentinelx_core.mutation_audit import (
+    MutationAuditBinding,
+    MutationAuditJournal,
+    MutationAuthorityEvidence,
+    MutationFinishClosureEvidence,
+    MutationProcessIntent,
+)
 from sentinelx_core.mutation_placement import RepositoryIdentity, SemanticIdentity
 from sentinelx_core.mutation_sandbox import build_mutation_sandbox
 from sentinelx_core.mutation_scope import MutationScopeStore
 from sentinelx_core.policy import MutationExecutionPolicy
 from sentinelx_core.request_context import MutationLineage, RequestContext
+from sentinelx_core.windows_mutation_sandbox import (
+    final_executable_path,
+    requested_mutation_identity,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -184,7 +194,29 @@ def _probe_once(
             workspace_id=record.workspace_id,
             unique_lease_key=record.unique_lease_key,
         )
-        start = audit.begin(binding, evidence)
+        python = Path(sys.executable)
+        if python.name.casefold() == "pythonw.exe":
+            python = python.with_name("python.exe")
+        planned_workspace = Path(record.exact_workspace)
+        script_path = planned_workspace / "readiness_probe.py"
+        intent = MutationProcessIntent(
+            interpreter="python3",
+            argv=(str(python), str(script_path)),
+            executable_final_path=final_executable_path(python),
+            cwd_final_path=str(planned_workspace),
+        )
+        authority = MutationAuthorityEvidence(
+            scope_digest=record.scope_digest,
+            exact_workspace_digest=record.exact_workspace_digest,
+            protected_inventory_digest=record.protected_inventory_digest,
+            policy_digest=record.policy_digest,
+            repository_identity_digest=record.repository_identity_digest,
+            semantic_identity_digest=record.semantic_identity_digest,
+        )
+        start = audit.begin(
+            binding, evidence, authority=authority, process_intent=intent,
+            requested_identity=requested_mutation_identity(record.unique_lease_key),
+        )
         checks["audit_durable_flush"] = True
 
         sandbox = build_mutation_sandbox(
@@ -196,12 +228,10 @@ def _probe_once(
         )
         activation = sandbox.activate(record, start)
         checks["appcontainer_acl"] = bool(activation.sandbox_identity)
-        script_path = activation.workspace / "readiness_probe.py"
+        if activation.workspace != planned_workspace:
+            raise RuntimeError("readiness workspace differs from sealed START intent")
         audit.evidence.materialize_verified(evidence, script_path)
 
-        python = Path(sys.executable)
-        if python.name.casefold() == "pythonw.exe":
-            python = python.with_name("python.exe")
         process = sandbox.spawn(
             activation,
             audit=audit,
@@ -219,13 +249,28 @@ def _probe_once(
         if marker.read_text(encoding="utf-8") != "ok":
             raise RuntimeError("sandbox runtime write/read-back self-check failed")
         checks["runtime_read_execute"] = True
-        audit.finish(start, status="succeeded", returncode=0)
+        terminal = sandbox.terminalize(record.scope_id, record.generation)
+        terminalized = True
+        closure = MutationFinishClosureEvidence(
+            scope_state=terminal.state,
+            scope_digest=terminal.scope_digest,
+            protected_inventory_digest=terminal.protected_inventory_digest,
+            sandbox_identity=terminal.sandbox_identity,
+            job_binding=process.job_ref,
+            root_pid=process.pid,
+            job_handle_closed=process.job_handle_closed,
+            job_active_process_count=process.active_process_count,
+            active_job_ids=terminal.active_job_ids,
+            active_process_ids=terminal.active_process_ids,
+            sandbox_write_authority_present=terminal.sandbox_write_authority_present,
+            process_tree_quiescent=not terminal.active_job_ids and not terminal.active_process_ids,
+            terminalized_at=terminal.terminalized_at or "",
+        )
+        audit.finish(start, status="succeeded", closure=closure, returncode=0)
         events = [event.get("event") for event in audit.read_events(start.operation_id)]
         if events != ["OPERATION_STARTED", "PROCESS_SPAWNED", "OPERATION_FINISHED"]:
             raise RuntimeError(f"unexpected readiness audit lifecycle: {events}")
 
-        terminal = sandbox.terminalize(record.scope_id, record.generation)
-        terminalized = True
         checks["terminal_non_active"] = terminal.state == "terminal"
         checks["residual_authority_absent"] = (
             not terminal.active_job_ids

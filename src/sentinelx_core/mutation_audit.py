@@ -203,12 +203,132 @@ class MutationAuditBinding:
 
 
 @dataclass(frozen=True)
+class MutationAuthorityEvidence:
+    scope_digest: str
+    exact_workspace_digest: str
+    protected_inventory_digest: str
+    policy_digest: str
+    repository_identity_digest: str
+    semantic_identity_digest: str
+
+    def audit_dict(self) -> dict[str, str]:
+        return {key: str(value) for key, value in vars(self).items()}
+
+
+@dataclass(frozen=True)
+class RequestedMutationIdentity:
+    host_platform: str
+    host_user_sid: str
+    sandbox_kind: str
+    sandbox_profile: str
+    sandbox_identity: str
+
+    def audit_dict(self) -> dict[str, str]:
+        return {key: str(value) for key, value in vars(self).items()}
+
+
+@dataclass(frozen=True)
+class MutationProcessIntent:
+    interpreter: str
+    argv: tuple[str, ...]
+    executable_final_path: str
+    cwd_final_path: str
+
+    def audit_dict(self) -> dict[str, Any]:
+        return {
+            "interpreter": self.interpreter,
+            "argv": list(self.argv),
+            "executable_final_path": self.executable_final_path,
+            "cwd_final_path": self.cwd_final_path,
+        }
+
+
+@dataclass(frozen=True)
+class MutationOsIdentityEvidence:
+    process_user_sid: str
+    appcontainer_sid: str
+    is_appcontainer: bool
+
+    def audit_dict(self) -> dict[str, Any]:
+        return {key: value for key, value in vars(self).items()}
+
+
+@dataclass(frozen=True)
+class MutationContainmentEvidence:
+    job_binding: str
+    contained: bool
+    breakaway_allowed: bool
+    active_process_count: int
+
+    def audit_dict(self) -> dict[str, Any]:
+        return {key: value for key, value in vars(self).items()}
+
+
+@dataclass(frozen=True)
+class MutationSpawnEvidence:
+    pid: int
+    ppid: int
+    executable_final_path: str
+    cwd_final_path: str
+    os_identity: MutationOsIdentityEvidence
+    containment: MutationContainmentEvidence
+
+    def audit_dict(self) -> dict[str, Any]:
+        return {
+            "pid": self.pid,
+            "ppid": self.ppid,
+            "executable_final_path": self.executable_final_path,
+            "cwd_final_path": self.cwd_final_path,
+            "os_identity": self.os_identity.audit_dict(),
+            "containment": self.containment.audit_dict(),
+        }
+
+
+@dataclass(frozen=True)
+class MutationFinishClosureEvidence:
+    scope_state: str
+    scope_digest: str
+    protected_inventory_digest: str
+    sandbox_identity: str | None
+    job_binding: str | None
+    root_pid: int | None
+    job_handle_closed: bool
+    job_active_process_count: int
+    active_job_ids: tuple[str, ...]
+    active_process_ids: tuple[str, ...]
+    sandbox_write_authority_present: bool
+    process_tree_quiescent: bool
+    terminalized_at: str
+
+    def audit_dict(self) -> dict[str, Any]:
+        return {
+            "scope_state": self.scope_state,
+            "scope_digest": self.scope_digest,
+            "protected_inventory_digest": self.protected_inventory_digest,
+            "sandbox_identity": self.sandbox_identity,
+            "job_binding": self.job_binding,
+            "root_pid": self.root_pid,
+            "job_handle_closed": self.job_handle_closed,
+            "job_active_process_count": self.job_active_process_count,
+            "active_job_ids": list(self.active_job_ids),
+            "active_process_ids": list(self.active_process_ids),
+            "sandbox_write_authority_present": self.sandbox_write_authority_present,
+            "process_tree_quiescent": self.process_tree_quiescent,
+            "terminalized_at": self.terminalized_at,
+        }
+
+
+@dataclass(frozen=True)
 class MutationAuditStart:
     operation_id: str
     event_ref: str
     binding: MutationAuditBinding
     binding_digest: str
     evidence: ForensicScriptEvidence
+    authority: MutationAuthorityEvidence
+    process_intent: MutationProcessIntent
+    requested_identity: RequestedMutationIdentity
+    start_evidence_digest: str
     started_at: str
 
     def background_identity(self) -> dict[str, Any]:
@@ -374,6 +494,9 @@ class MutationAuditJournal:
         binding: MutationAuditBinding,
         evidence: ForensicScriptEvidence,
         *,
+        authority: MutationAuthorityEvidence,
+        process_intent: MutationProcessIntent,
+        requested_identity: RequestedMutationIdentity,
         now: datetime | None = None,
     ) -> MutationAuditStart:
         now = now or _utcnow()
@@ -382,6 +505,12 @@ class MutationAuditJournal:
         self.evidence.read_verified(evidence)
         operation_id = f"mao_{secrets.token_urlsafe(18)}"
         event_ref = f"mutation-audit:{operation_id}:start"
+        start_evidence = {
+            "authority": authority.audit_dict(),
+            "process_intent": process_intent.audit_dict(),
+            "requested_identity": requested_identity.audit_dict(),
+        }
+        start_evidence_digest = _canonical_digest(start_evidence)
         event = {
             "version": JOURNAL_VERSION,
             "event": EVENT_STARTED,
@@ -391,6 +520,8 @@ class MutationAuditJournal:
             "binding": binding.audit_dict(),
             "binding_digest": binding.digest,
             "script_evidence": evidence.audit_dict(),
+            **start_evidence,
+            "start_evidence_digest": start_evidence_digest,
         }
         self._durable_append(event)
         return MutationAuditStart(
@@ -399,6 +530,10 @@ class MutationAuditJournal:
             binding=binding,
             binding_digest=binding.digest,
             evidence=evidence,
+            authority=authority,
+            process_intent=process_intent,
+            requested_identity=requested_identity,
+            start_evidence_digest=start_evidence_digest,
             started_at=_iso(now),
         )
 
@@ -407,21 +542,40 @@ class MutationAuditJournal:
             raise MutationAuditIdentityMismatch("mutation audit binding digest changed after START")
         if start.evidence.sha256 != _sha256(self.evidence.read_verified(start.evidence)):
             raise MutationAuditIdentityMismatch("forensic evidence changed after START")
+        current = {
+            "authority": start.authority.audit_dict(),
+            "process_intent": start.process_intent.audit_dict(),
+            "requested_identity": start.requested_identity.audit_dict(),
+        }
+        if _canonical_digest(current) != start.start_evidence_digest:
+            raise MutationAuditIdentityMismatch("sealed START evidence changed after durable commit")
 
     def record_spawn(
         self,
         start: MutationAuditStart,
+        evidence: MutationSpawnEvidence,
         *,
-        pid: int,
-        job_binding: str,
-        sandbox_identity: str | None = None,
         now: datetime | None = None,
     ) -> MutationAuditSpawn:
         self._assert_start_identity(start)
-        if pid <= 0:
-            raise ValueError("pid must be positive")
-        if not job_binding or not job_binding.strip():
+        if evidence.pid <= 0 or evidence.ppid <= 0:
+            raise ValueError("pid and ppid must be positive")
+        if not evidence.containment.job_binding.strip():
             raise ValueError("job_binding must be non-empty")
+        if not evidence.containment.contained or evidence.containment.breakaway_allowed:
+            raise MutationAuditIdentityMismatch("SPAWN containment read-back is not fail-closed")
+        if (
+            evidence.executable_final_path.casefold()
+            != start.process_intent.executable_final_path.casefold()
+            or evidence.cwd_final_path.casefold() != start.process_intent.cwd_final_path.casefold()
+        ):
+            raise MutationAuditIdentityMismatch("SPAWN final paths differ from sealed START intent")
+        if evidence.os_identity.process_user_sid != start.requested_identity.host_user_sid:
+            raise MutationAuditIdentityMismatch("SPAWN Host user identity differs from START")
+        if evidence.os_identity.appcontainer_sid != start.requested_identity.sandbox_identity:
+            raise MutationAuditIdentityMismatch("SPAWN AppContainer identity differs from START")
+        if not evidence.os_identity.is_appcontainer:
+            raise MutationAuditIdentityMismatch("SPAWN token is not an AppContainer token")
         now = now or _utcnow()
         event_ref = f"mutation-audit:{start.operation_id}:spawn"
         self._durable_append(
@@ -432,37 +586,28 @@ class MutationAuditJournal:
                 "operation_id": start.operation_id,
                 "timestamp": _iso(now),
                 "binding_digest": start.binding_digest,
-                "pid": pid,
-                "job_binding": job_binding,
-                "sandbox_identity": sandbox_identity,
+                **evidence.audit_dict(),
             }
         )
         return MutationAuditSpawn(
             operation_id=start.operation_id,
             event_ref=event_ref,
-            pid=pid,
-            job_binding=job_binding,
+            pid=evidence.pid,
+            job_binding=evidence.containment.job_binding,
             recorded_at=_iso(now),
         )
 
     def commit_spawn_before_resume(
         self,
         start: MutationAuditStart,
+        evidence: MutationSpawnEvidence,
         *,
-        pid: int,
-        job_binding: str,
-        sandbox_identity: str | None,
         terminate_suspended: Callable[[], None],
         resume_suspended: Callable[[], None],
     ) -> MutationAuditSpawn:
-        """Persist SPAWN before the first untrusted instruction can execute."""
+        """Persist authoritative suspended-process read-back before resume."""
         try:
-            spawn = self.record_spawn(
-                start,
-                pid=pid,
-                job_binding=job_binding,
-                sandbox_identity=sandbox_identity,
-            )
+            spawn = self.record_spawn(start, evidence)
         except Exception:
             terminate_suspended()
             raise
@@ -474,6 +619,7 @@ class MutationAuditJournal:
         start: MutationAuditStart,
         *,
         status: str,
+        closure: MutationFinishClosureEvidence,
         returncode: int | None = None,
         error_code: str | None = None,
         now: datetime | None = None,
@@ -481,6 +627,21 @@ class MutationAuditJournal:
         self._assert_start_identity(start)
         if status not in FINISH_STATES:
             raise ValueError(f"invalid mutation finish status: {status}")
+        if (
+            closure.scope_state != "terminal"
+            or closure.scope_digest != start.authority.scope_digest
+            or closure.protected_inventory_digest != start.authority.protected_inventory_digest
+            or not closure.job_handle_closed
+            or closure.job_active_process_count != 0
+            or closure.active_job_ids
+            or closure.active_process_ids
+            or closure.sandbox_write_authority_present
+            or not closure.process_tree_quiescent
+            or not closure.terminalized_at
+        ):
+            raise MutationAuditIdentityMismatch(
+                "FINISH requires authoritative terminal scope and process-tree closure read-back"
+            )
         now = now or _utcnow()
         event_ref = f"mutation-audit:{start.operation_id}:finish:{secrets.token_hex(4)}"
         self._durable_append(
@@ -494,6 +655,7 @@ class MutationAuditJournal:
                 "status": status,
                 "returncode": returncode,
                 "error_code": error_code,
+                "closure": closure.audit_dict(),
             }
         )
         return event_ref
