@@ -56,9 +56,11 @@ slices:
         - Terminalization state model forbids success while a competing non-terminal lease remains.
     checkpoint:
       required: true
-    state: pending
-    run_refs: []
-    completion_receipt_ref: null
+    state: completed
+    run_refs:
+      - github-commit:a0ffef8d62ed597c17c38cbc5b0c4dfb2ed87b58
+      - github-pr-comment:5888393829
+    completion_receipt_ref: github-pr-comment:5888393829
 
   - slice_id: S03
     objective: Implement durable mutation START/SPAWN/FINISH audit lineage and retained forensic script evidence.
