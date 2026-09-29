@@ -211,3 +211,37 @@ def revalidate_placement(
     if any(getattr(current, field) != getattr(expected, field) for field in sealed):
         raise HostMutationScopeBindingMismatch()
     return current
+
+
+def unique_mutation_lease_key(
+    *,
+    repository_digest: str,
+    semantic: SemanticIdentity,
+    placement_generation: int,
+    exact_workspace_digest: str,
+) -> str:
+    """Canonical S02 lease identity for one exact Run/Attempt[/Slice] placement.
+
+    Project/task remain sealed in the scope's semantic digest, while lease
+    uniqueness deliberately keys the execution identities required by the
+    reviewed contract: repository + run + attempt + optional slice + placement
+    generation + exact workspace digest.
+    """
+    values = semantic.canonical
+    run_id = values[2]
+    attempt_id = values[3]
+    slice_id = values[4]
+    if placement_generation <= 0:
+        raise ValueError("placement_generation must be positive")
+    if not repository_digest or not exact_workspace_digest:
+        raise ValueError("lease key requires repository and workspace digests")
+    return _digest(
+        {
+            "repository_identity_digest": repository_digest,
+            "run_id": run_id,
+            "attempt_id": attempt_id,
+            "slice_id": slice_id,
+            "placement_generation": placement_generation,
+            "exact_workspace_digest": exact_workspace_digest,
+        }
+    )
