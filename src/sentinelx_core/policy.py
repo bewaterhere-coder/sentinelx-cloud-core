@@ -112,6 +112,110 @@ class FileOpsPath:
             object.__setattr__(self, "access", "r")
 
 
+def _canonical_host_root(value: Any, field_name: str) -> Path:
+    """Normalize one host-authoritative absolute root without creating it."""
+    text = str(value or "").strip()
+    if not text:
+        raise ValueError(f"mutation_execution.{field_name} must not be empty")
+    root = Path(text).expanduser()
+    if not root.is_absolute():
+        raise ValueError(f"mutation_execution.{field_name} must be an absolute path")
+    try:
+        return root.resolve(strict=False)
+    except (OSError, RuntimeError) as exc:
+        raise ValueError(
+            f"mutation_execution.{field_name} cannot be canonicalized: {exc}"
+        ) from exc
+
+
+def _canonical_host_roots(value: Any, field_name: str) -> tuple[Path, ...]:
+    if value is None:
+        return ()
+    if isinstance(value, (str, bytes)) or not isinstance(value, (list, tuple)):
+        raise ValueError(f"mutation_execution.{field_name} must be a list of absolute paths")
+    roots = {_canonical_host_root(item, field_name) for item in value}
+    return tuple(sorted(roots, key=lambda item: str(item).casefold()))
+
+
+def _paths_overlap(left: Path, right: Path) -> bool:
+    return left == right or left.is_relative_to(right) or right.is_relative_to(left)
+
+
+@dataclass(frozen=True)
+class MutationExecutionPolicy:
+    """Provider-owned mutation execution policy introduced by SX-HMSA-001/S01."""
+
+    configured: bool = False
+    scoped_mutation_enabled: bool = False
+    workspace_root: Path | None = None
+    protected_roots: tuple[Path, ...] = ()
+    runtime_read_roots: tuple[Path, ...] = ()
+    scope_ttl_seconds: int = 3600
+    evidence_retention_days: int = 30
+    operator_unrestricted_enabled: bool = False
+
+    @property
+    def legacy_unrestricted_compat(self) -> bool:
+        """Historical unprofiled script_run compatibility, never a new capability."""
+        return not self.configured
+
+    @property
+    def scoped_runtime_ready(self) -> bool:
+        """S01 readiness seam; mandatory later-slice prerequisites are absent."""
+        return False
+
+    @classmethod
+    def from_block(cls, block: dict[str, Any] | None, *, configured: bool) -> "MutationExecutionPolicy":
+        if not configured:
+            return cls(configured=False)
+        if block is None:
+            block = {}
+        if not isinstance(block, dict):
+            raise ValueError("mutation_execution must be a mapping")
+
+        raw_workspace = block.get("workspace_root")
+        workspace_root = (
+            _canonical_host_root(raw_workspace, "workspace_root")
+            if raw_workspace not in (None, "")
+            else None
+        )
+        protected_roots = _canonical_host_roots(block.get("protected_roots"), "protected_roots")
+        runtime_read_roots = _canonical_host_roots(
+            block.get("runtime_read_roots"), "runtime_read_roots"
+        )
+
+        if workspace_root is not None:
+            for protected in protected_roots:
+                if _paths_overlap(workspace_root, protected):
+                    raise ValueError(
+                        "mutation_execution workspace_root overlaps protected_roots; "
+                        "scoped mutation placement would be ambiguous"
+                    )
+
+        try:
+            scope_ttl_seconds = int(block.get("scope_ttl_seconds", 3600))
+            evidence_retention_days = int(block.get("evidence_retention_days", 30))
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                "mutation_execution scope_ttl_seconds/evidence_retention_days must be integers"
+            ) from exc
+        if scope_ttl_seconds <= 0:
+            raise ValueError("mutation_execution.scope_ttl_seconds must be positive")
+        if evidence_retention_days <= 0:
+            raise ValueError("mutation_execution.evidence_retention_days must be positive")
+
+        return cls(
+            configured=True,
+            scoped_mutation_enabled=bool(block.get("scoped_mutation_enabled", False)),
+            workspace_root=workspace_root,
+            protected_roots=protected_roots,
+            runtime_read_roots=runtime_read_roots,
+            scope_ttl_seconds=scope_ttl_seconds,
+            evidence_retention_days=evidence_retention_days,
+            operator_unrestricted_enabled=bool(block.get("operator_unrestricted_enabled", False)),
+        )
+
+
 @dataclass(frozen=True)
 class LocalApiAction:
     """One permitted action on a local endpoint.
@@ -225,6 +329,11 @@ class Policy:
     authenticated_git_enabled: bool = False
     authenticated_git_allow_push: bool = False
     authenticated_git_timeout_seconds: int = 20
+
+    # Provider-owned host mutation policy. Absent block preserves only the
+    # historical unprofiled script_run behavior as internal compatibility;
+    # it never implies the new scoped mutation capabilities are ready.
+    mutation_execution: MutationExecutionPolicy = field(default_factory=MutationExecutionPolicy)
 
     # service name -> ServiceSpec
     services: dict[str, ServiceSpec] = field(default_factory=dict)
@@ -423,6 +532,7 @@ class Policy:
             "disabled_ops",
             "exec_strict",
             "authenticated_git",
+            "mutation_execution",
         }
         unknown = set(data.keys()) - KNOWN_KEYS - set(TYPO_HINTS.keys())
         if unknown:
@@ -441,6 +551,23 @@ class Policy:
         authenticated_git_block = data.get("authenticated_git", {}) or {}
         if not isinstance(authenticated_git_block, dict):
             raise ValueError("authenticated_git must be a mapping")
+
+        mutation_execution_present = "mutation_execution" in data
+        mutation_execution = MutationExecutionPolicy.from_block(
+            data.get("mutation_execution"),
+            configured=mutation_execution_present,
+        )
+        if not mutation_execution_present:
+            logger.warning(
+                "mutation_execution_legacy_unrestricted_compat",
+                extra={
+                    "detail": (
+                        "mutation_execution is absent; preserving historical unprofiled "
+                        "script_run behavior as legacy compatibility only. This does not "
+                        "satisfy scoped mutation or pre-execution audit capabilities."
+                    )
+                },
+            )
 
         services: dict[str, ServiceSpec] = {}
         for name, meta in (data.get("services") or {}).items():
@@ -704,6 +831,7 @@ class Policy:
             authenticated_git_timeout_seconds=max(
                 5, min(int(authenticated_git_block.get("timeout_seconds", 20)), 50)
             ),
+            mutation_execution=mutation_execution,
             services=services,
             local_apis=local_apis,
             locations=locations,

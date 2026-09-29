@@ -19,10 +19,11 @@ from typing import Any, Awaitable, Callable
 from sentinelx_protocol import RequestMessage
 
 from sentinelx_core import local_audit
+from sentinelx_core.request_context import RequestContext, accepts_request_context
 
 logger = logging.getLogger(__name__)
 
-Handler = Callable[[dict[str, Any]], Awaitable[dict[str, Any]]]
+Handler = Callable[..., Awaitable[dict[str, Any]]]
 
 
 def _nested_outcome(result: Any) -> tuple[bool | None, int | None]:
@@ -176,7 +177,11 @@ class Executor:
 
         try:
             start = time.perf_counter()
-            result = await handler(request.payload)
+            context = RequestContext.from_request(request)
+            if accepts_request_context(handler):
+                result = await handler(context, request.payload)
+            else:
+                result = await handler(request.payload)
             duration_ms = int((time.perf_counter() - start) * 1000)
             nested_ok, nested_returncode = _nested_outcome(result)
             local_audit.record(
