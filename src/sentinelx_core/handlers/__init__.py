@@ -42,7 +42,7 @@ from sentinelx_core.handlers.fsmutate import (
 )
 from sentinelx_core.handlers.project_snapshot import make_project_snapshot_handler
 from sentinelx_core.handlers.git_ops import make_git_handler
-from sentinelx_core.handlers.script import make_script_run_handler
+from sentinelx_core.handlers.scoped_script import make_profiled_script_run_handler
 from sentinelx_core.handlers.service import make_restart_handler, make_service_handler
 from sentinelx_core.handlers.upload import (
     make_upload_chunk_handler,
@@ -114,7 +114,7 @@ def build_registry(
         "exec": make_exec_handler(policy),
         "service": make_service_handler(policy),
         "restart": make_restart_handler(policy),
-        "script_run": make_script_run_handler(policy, upload_base),
+        "script_run": make_profiled_script_run_handler(policy, upload_base, config_path=config_path),
 
         # File editing
         "edit": make_edit_handler(policy, upload_base),
