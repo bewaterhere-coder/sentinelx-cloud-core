@@ -5,12 +5,24 @@
 ```yaml
 project_id: sentinelx-cloud-core
 task_id: SX-HMSA-001
-stage: plan_review
+stage: implementation
 base_branch: main
 task_branch: task/sx-host-mutation-sandbox-pre-execution-audit-lineage-provider-v1
 transport: github-pr
 requirement_status: ready
-plan_status: ready_for_review
+plan_status: approved
+plan_revision: 3
+plan_head: e0acae46662ee9792eafd91a30b25db8d7488919
+gates:
+  requirement_ready: true
+  plan_approved: true
+  acceptance_approved: false
+  completion_verified: false
+artifacts:
+  plan: docs/plans/SX-HMSA-001-host-mutation-sandbox-pre-execution-audit-lineage-provider-v1-plan.md
+  plan_review: docs/reviews/SX-HMSA-001-host-mutation-sandbox-pre-execution-audit-lineage-provider-v1-plan-review-r3.md
+  execution_slice_set: docs/execution/SX-HMSA-001-execution-slice-set.yaml
+next_expected_actor: implementer
 ```
 
 ## Requirement Source
@@ -123,7 +135,7 @@ Required guarantees:
 
 1. scoped mutation executes under a dedicated restricted mutation identity/token or an equivalent OS-enforced identity boundary;
 2. the identity can mutate only the exact admitted workspace and explicitly required staging/audit resources;
-3. parent directories, sibling workspaces, canonical repository checkouts, `D:\`, `D:\coco`, user project directories and unrelated Host locations remain non-writable/non-deletable;
+3. parent directories, sibling workspaces, canonical repository checkouts, `D:\\`, `D:\\coco`, user project directories and unrelated Host locations remain non-writable/non-deletable;
 4. child processes inherit the same or stricter authority;
 5. detached/background descendants cannot escape containment;
 6. use Windows Job Object or equivalent process-tree containment, including kill-on-close semantics and no privilege-expanding breakaway fallback;
@@ -275,7 +287,7 @@ The Windows verification fixture must attempt representative escapes from an adm
 - move/rename escape;
 - `git clean -fdx` or equivalent outside the admitted workspace.
 
-Fixture-owned protected sentinels representing `D:\coco`, a canonical repo, a personal project and a sibling workspace must survive unchanged.
+Fixture-owned protected sentinels representing `D:\\coco`, a canonical repo, a personal project and a sibling workspace must survive unchanged.
 
 ## Acceptance Criteria
 
