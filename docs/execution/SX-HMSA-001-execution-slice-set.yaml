@@ -129,9 +129,11 @@ slices:
         - Scoped mutation failure never falls back to operator_unrestricted or legacy_unrestricted_compat.
     checkpoint:
       required: true
-    state: pending
-    run_refs: []
-    completion_receipt_ref: null
+    state: completed
+    run_refs:
+      - github-commit:be3e0050c544ecf4661aae6334bf6334aa85e5ef
+      - github-pr-comment:5892342757
+    completion_receipt_ref: github-pr-comment:5892342757
 
   - slice_id: S06
     objective: Run the canonical destructive-escape regression, complete documentation/config semantics and produce release-readiness evidence.
