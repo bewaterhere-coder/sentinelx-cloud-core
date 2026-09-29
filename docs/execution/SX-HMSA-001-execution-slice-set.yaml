@@ -32,9 +32,11 @@ slices:
         - Unsupported or unhealthy hosts do not advertise host_mutation_sandbox_v1 or pre_execution_audit_lineage_v1.
     checkpoint:
       required: true
-    state: pending
-    run_refs: []
-    completion_receipt_ref: null
+    state: completed
+    run_refs:
+      - github-commit:75891c06b821be5f0d0ad3332db6123688cac7ed
+      - github-pr-comment:5887877762
+    completion_receipt_ref: github-pr-comment:5887877762
 
   - slice_id: S02
     objective: Implement the durable unique mutation-scope lease lifecycle and exact workspace authority indexes.
