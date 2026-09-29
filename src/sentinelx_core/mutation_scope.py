@@ -7,16 +7,17 @@ populate them.
 """
 from __future__ import annotations
 
-from contextlib import contextmanager
-from dataclasses import asdict, dataclass, replace
-from datetime import UTC, datetime, timedelta
 import hashlib
 import json
 import os
-from pathlib import Path
 import secrets
 import threading
-from typing import Any, Iterator, Sequence
+from collections.abc import Callable, Iterator, Sequence
+from contextlib import contextmanager
+from dataclasses import asdict, dataclass, replace
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
+from typing import Any
 
 from sentinelx_core.mutation_placement import (
     HostMutationScopeBindingMismatch,
@@ -25,12 +26,11 @@ from sentinelx_core.mutation_placement import (
     RepositoryIdentity,
     SemanticIdentity,
     placement_policy_digest,
-    revalidate_placement,
     resolve_placement,
+    revalidate_placement,
     unique_mutation_lease_key,
 )
 from sentinelx_core.policy import MutationExecutionPolicy
-
 
 STORE_VERSION = 1
 NON_TERMINAL_STATES = frozenset({"provisioned", "active"})
@@ -200,6 +200,16 @@ class MutationScopeRecord:
                 f"scope {record.scope_id} has invalid state {record.state!r}"
             )
         return record
+
+
+@dataclass(frozen=True)
+class MutationRuntimeClosure:
+    """Authoritative OS cleanup read-back consumed by terminalization."""
+
+    sandbox_identity: str | None
+    active_job_ids: tuple[str, ...] = ()
+    active_process_ids: tuple[str, ...] = ()
+    sandbox_write_authority_present: bool = False
 
 
 _LOCKS_GUARD = threading.Lock()
@@ -677,6 +687,139 @@ class MutationScopeStore:
                 self._durable_write_state(state)
             return validated
 
+    def reserve_sandbox_identity(
+        self,
+        scope_id: str,
+        generation: int,
+        sandbox_identity: str,
+    ) -> MutationScopeRecord:
+        """Durably reserve one sandbox SID before any workspace ACL broadening.
+
+        ``sandbox_write_authority_present`` is set pessimistically *before* the
+        OS ACL is changed. A crash between reservation and ACL installation can
+        therefore never make terminalization assume there is no residual SID.
+        """
+        if not isinstance(sandbox_identity, str) or not sandbox_identity.strip():
+            raise ValueError("sandbox_identity must be a non-empty string")
+        sandbox_identity = sandbox_identity.strip()
+        with _exclusive_file_lock(self._lock_path):
+            state = self._load_state()
+            record = self._record(state, scope_id)
+            if record.generation != generation or not record.current:
+                raise HostMutationScopeNotCurrent("scope generation/state is not current")
+            self._assert_index_binding(state, record, expected_lease=record.unique_lease_key)
+            self._assert_no_competing_nonterminal(state, record)
+            if record.sandbox_identity not in (None, sandbox_identity):
+                raise HostMutationScopeConflict(
+                    "scope is already reserved to a different sandbox identity"
+                )
+            updated = replace(
+                record,
+                state="active",
+                sandbox_identity=sandbox_identity,
+                sandbox_write_authority_present=True,
+            )
+            self._put_record(state, updated)
+            self._durable_write_state(state)
+            confirmed = self._record(self._load_state(), scope_id)
+            if (
+                confirmed.sandbox_identity != sandbox_identity
+                or not confirmed.sandbox_write_authority_present
+            ):
+                raise HostMutationScopeCorrupt("sandbox identity reservation read-back failed")
+            return confirmed
+
+    def bind_runtime_process(
+        self,
+        scope_id: str,
+        generation: int,
+        sandbox_identity: str,
+        *,
+        job_id: str,
+        process_id: int,
+    ) -> MutationScopeRecord:
+        """Durably bind the still-suspended Job/root process to the lease."""
+        if not job_id or process_id <= 0:
+            raise ValueError("job_id and positive process_id are required")
+        with _exclusive_file_lock(self._lock_path):
+            state = self._load_state()
+            record = self._record(state, scope_id)
+            if record.generation != generation or not record.current:
+                raise HostMutationScopeNotCurrent("scope generation/state is not current")
+            if (
+                record.sandbox_identity != sandbox_identity
+                or not record.sandbox_write_authority_present
+            ):
+                raise HostMutationScopeConflict("runtime process does not match active sandbox authority")
+            self._assert_index_binding(state, record, expected_lease=record.unique_lease_key)
+            self._assert_no_competing_nonterminal(state, record)
+            jobs = tuple(sorted(set(record.active_job_ids) | {str(job_id)}))
+            processes = tuple(sorted(set(record.active_process_ids) | {str(process_id)}))
+            updated = replace(record, active_job_ids=jobs, active_process_ids=processes)
+            self._put_record(state, updated)
+            self._durable_write_state(state)
+            return self._record(self._load_state(), scope_id)
+
+    def release_runtime_process(
+        self,
+        scope_id: str,
+        generation: int,
+        *,
+        job_id: str,
+        process_id: int,
+    ) -> MutationScopeRecord:
+        """Remove a Job/PID binding only after OS read-back proves it quiescent."""
+        with _exclusive_file_lock(self._lock_path):
+            state = self._load_state()
+            record = self._record(state, scope_id)
+            if record.generation != generation:
+                raise HostMutationScopeNotCurrent("scope generation is not current")
+            jobs = tuple(value for value in record.active_job_ids if value != str(job_id))
+            processes = tuple(
+                value for value in record.active_process_ids if value != str(process_id)
+            )
+            updated = replace(record, active_job_ids=jobs, active_process_ids=processes)
+            self._put_record(state, updated)
+            self._durable_write_state(state)
+            return self._record(self._load_state(), scope_id)
+
+    def clear_sandbox_write_authority(
+        self,
+        scope_id: str,
+        generation: int,
+        sandbox_identity: str,
+    ) -> MutationScopeRecord:
+        """Record ACL/profile cleanup after no Job/process binding remains."""
+        with _exclusive_file_lock(self._lock_path):
+            state = self._load_state()
+            record = self._record(state, scope_id)
+            if record.generation != generation:
+                raise HostMutationScopeNotCurrent("scope generation is not current")
+            if record.sandbox_identity != sandbox_identity:
+                raise HostMutationScopeConflict("sandbox cleanup identity mismatch")
+            if record.active_job_ids or record.active_process_ids:
+                raise HostMutationScopeStillActive(
+                    "cannot clear sandbox write authority while Job/process bindings remain"
+                )
+            updated = replace(record, sandbox_write_authority_present=False)
+            self._put_record(state, updated)
+            self._durable_write_state(state)
+            return self._record(self._load_state(), scope_id)
+
+    def revoke_scope(self, scope_id: str, generation: int) -> MutationScopeRecord:
+        """Fail closed after sandbox bootstrap failure; the Attempt cannot reactivate."""
+        with _exclusive_file_lock(self._lock_path):
+            state = self._load_state()
+            record = self._record(state, scope_id)
+            if record.generation != generation:
+                raise HostMutationScopeNotCurrent("scope generation is not current")
+            if record.state == "terminal":
+                return record
+            revoked = replace(record, state="revoked")
+            self._put_record(state, revoked)
+            self._durable_write_state(state)
+            return self._record(self._load_state(), scope_id)
+
     def terminalize_scope(
         self,
         scope_id: str,
@@ -686,25 +829,25 @@ class MutationScopeStore:
         semantic: SemanticIdentity,
         *,
         provider_protected_roots: Sequence[Path] = (),
+        runtime_cleanup: Callable[[MutationScopeRecord], MutationRuntimeClosure] | None = None,
         now: datetime | None = None,
     ) -> MutationScopeRecord:
-        """Close logical authority only when no competing/residual runtime authority remains."""
+        """Revoke admission, close OS authority, then durably mark terminal.
+
+        Runtime cleanup is deliberately two-phase. The lease is first persisted
+        as ``revoked`` under the authority lock, which prevents any new spawn.
+        Only then may OS cleanup run. A crash/failure during cleanup therefore
+        leaves a durable fail-closed revoked scope with residual authority still
+        recorded instead of publishing a false terminal success.
+        """
         now = now or _utcnow()
-        with _exclusive_file_lock(self._lock_path):
-            state = self._load_state()
-            record = self._record(state, scope_id)
+        cleanup_record: MutationScopeRecord | None = None
+
+        def validate_sealed_binding(state: dict[str, Any], record: MutationScopeRecord) -> str:
             if record.generation != generation:
                 raise HostMutationScopeNotCurrent("scope generation is not current")
             if record.state == "terminal":
                 raise HostMutationScopeNotCurrent("scope is already terminal")
-
-            # Advance Host-global placement generation if policy drifted, but
-            # terminalize the sealed OLD binding. Cleanup must remain possible
-            # precisely when ordinary mutation revalidation has gone stale.
-            _, generation_changed = self._placement_generation_state(state, policy)
-            if generation_changed:
-                self._durable_write_state(state)
-
             record.verify_digest()
             if record.repository_identity_digest != _digest(repository.canonical):
                 raise HostMutationScopeBindingMismatch("repository identity mismatch")
@@ -724,32 +867,120 @@ class MutationScopeStore:
                 or record.task_id != semantic.task_id.strip()
                 or record.run_id != semantic.run_id.strip()
                 or record.attempt_id != semantic.attempt_id.strip()
-                or (record.slice_id or "") != (semantic.slice_id.strip() if semantic.slice_id else "")
+                or (record.slice_id or "")
+                != (semantic.slice_id.strip() if semantic.slice_id else "")
             ):
                 raise HostMutationScopeBindingMismatch("semantic lineage mismatch")
-
             self._assert_index_binding(state, record, expected_lease=expected_lease)
             self._assert_no_competing_nonterminal(state, record)
-            if record.active_job_ids or record.active_process_ids:
-                raise HostMutationScopeStillActive(
-                    "bound Job/process authority remains; terminalization is forbidden"
-                )
-            if record.sandbox_write_authority_present:
-                raise HostMutationResidualAuthorityDetected(
-                    "sandbox write authority remains; terminalization is forbidden"
-                )
+            return expected_lease
 
-            terminal = replace(record, state="terminal", terminalized_at=_iso(now))
+        with _exclusive_file_lock(self._lock_path):
+            state = self._load_state()
+            record = self._record(state, scope_id)
+
+            # Advance Host-global placement generation if policy drifted, while
+            # cleaning the exact OLD sealed binding. Cleanup must remain possible
+            # even when normal mutation admission has become stale.
+            _, generation_changed = self._placement_generation_state(state, policy)
+            expected_lease = validate_sealed_binding(state, record)
+            if generation_changed:
+                self._durable_write_state(state)
+
+            has_runtime_authority = bool(
+                record.active_job_ids
+                or record.active_process_ids
+                or record.sandbox_write_authority_present
+            )
+            if has_runtime_authority:
+                if runtime_cleanup is None:
+                    if record.active_job_ids or record.active_process_ids:
+                        raise HostMutationScopeStillActive(
+                            "bound Job/process authority remains; terminalization requires OS cleanup"
+                        )
+                    raise HostMutationResidualAuthorityDetected(
+                        "sandbox write authority remains; terminalization requires OS cleanup"
+                    )
+                cleanup_record = replace(record, state="revoked")
+                self._put_record(state, cleanup_record)
+                self._durable_write_state(state)
+                persisted = self._record(self._load_state(), scope_id)
+                if persisted.state != "revoked":
+                    raise HostMutationScopeTerminalizationFailed(
+                        "pre-cleanup admission revocation did not persist"
+                    )
+                cleanup_record = persisted
+            else:
+                terminal = replace(record, state="terminal", terminalized_at=_iso(now))
+                self._put_record(state, terminal)
+                self._durable_write_state(state)
+                persisted = self._load_state()
+                confirmed = self._record(persisted, scope_id)
+                if confirmed.state != "terminal":
+                    raise HostMutationScopeTerminalizationFailed(
+                        "authoritative read-back did not observe terminal state"
+                    )
+                self._assert_index_binding(
+                    persisted, confirmed, expected_lease=expected_lease
+                )
+                return confirmed
+
+        assert cleanup_record is not None and runtime_cleanup is not None
+        closure = runtime_cleanup(cleanup_record)
+        if not isinstance(closure, MutationRuntimeClosure):
+            raise HostMutationScopeTerminalizationFailed(
+                "runtime cleanup did not return authoritative closure evidence"
+            )
+        if closure.sandbox_identity != cleanup_record.sandbox_identity:
+            raise HostMutationScopeTerminalizationFailed(
+                "runtime cleanup sandbox identity does not match sealed scope"
+            )
+        if closure.active_job_ids or closure.active_process_ids:
+            raise HostMutationScopeStillActive(
+                "runtime cleanup still reports active Job/process authority"
+            )
+        if closure.sandbox_write_authority_present:
+            raise HostMutationResidualAuthorityDetected(
+                "runtime cleanup still reports sandbox write authority"
+            )
+
+        with _exclusive_file_lock(self._lock_path):
+            state = self._load_state()
+            record = self._record(state, scope_id)
+            expected_lease = validate_sealed_binding(state, record)
+            if record.state != "revoked":
+                raise HostMutationScopeTerminalizationFailed(
+                    "scope changed state while OS cleanup was in progress"
+                )
+            if record.scope_digest != cleanup_record.scope_digest:
+                raise HostMutationScopeTerminalizationFailed(
+                    "sealed scope identity changed while OS cleanup was in progress"
+                )
+            terminal = replace(
+                record,
+                state="terminal",
+                active_job_ids=closure.active_job_ids,
+                active_process_ids=closure.active_process_ids,
+                sandbox_write_authority_present=closure.sandbox_write_authority_present,
+                terminalized_at=_iso(now),
+            )
             self._put_record(state, terminal)
             self._durable_write_state(state)
 
             persisted = self._load_state()
             confirmed = self._record(persisted, scope_id)
-            if confirmed.state != "terminal":
+            if (
+                confirmed.state != "terminal"
+                or confirmed.active_job_ids
+                or confirmed.active_process_ids
+                or confirmed.sandbox_write_authority_present
+            ):
                 raise HostMutationScopeTerminalizationFailed(
-                    "authoritative read-back did not observe terminal state"
+                    "authoritative read-back did not prove terminal residual-authority closure"
                 )
-            self._assert_index_binding(persisted, confirmed, expected_lease=confirmed.unique_lease_key)
+            self._assert_index_binding(
+                persisted, confirmed, expected_lease=expected_lease
+            )
             for other_id, raw in persisted["scopes"].items():
                 if other_id == confirmed.scope_id or not isinstance(raw, dict):
                     continue
