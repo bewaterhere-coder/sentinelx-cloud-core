@@ -5,7 +5,7 @@
 ```yaml
 project_id: sentinelx-cloud-core
 task_id: SX-HMSA-001
-stage: fixing
+stage: accepted
 base_branch: main
 task_branch: task/sx-host-mutation-sandbox-pre-execution-audit-lineage-provider-v1
 transport: github-pr
@@ -16,14 +16,14 @@ plan_head: e0acae46662ee9792eafd91a30b25db8d7488919
 gates:
   requirement_ready: true
   plan_approved: true
-  acceptance_approved: false
+  acceptance_approved: true
   completion_verified: false
 artifacts:
   plan: docs/plans/SX-HMSA-001-host-mutation-sandbox-pre-execution-audit-lineage-provider-v1-plan.md
   plan_review: docs/reviews/SX-HMSA-001-host-mutation-sandbox-pre-execution-audit-lineage-provider-v1-plan-review-r3.md
   execution_slice_set: docs/execution/SX-HMSA-001-execution-slice-set.yaml
-  acceptance: docs/reviews/SX-HMSA-001-host-mutation-sandbox-pre-execution-audit-lineage-provider-v1-acceptance-r1.md
-next_expected_actor: implementer
+  acceptance: docs/reviews/SX-HMSA-001-host-mutation-sandbox-pre-execution-audit-lineage-provider-v1-acceptance-r2.md
+next_expected_actor: completion_finalizer
 ```
 
 ## Requirement Source
