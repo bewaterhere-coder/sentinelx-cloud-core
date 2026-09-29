@@ -80,9 +80,11 @@ slices:
         - Crash/interruption may leave START without a false successful FINISH.
     checkpoint:
       required: true
-    state: pending
-    run_refs: []
-    completion_receipt_ref: null
+    state: completed
+    run_refs:
+      - github-commit:8fc6949c4584e31a18174071dd00c9e671a65b5d
+      - github-pr-comment:5888953180
+    completion_receipt_ref: github-pr-comment:5888953180
 
   - slice_id: S04
     objective: Implement Windows AppContainer, exact ACL, reparse-safe workspace validation and suspended Job containment.
