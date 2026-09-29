@@ -10,7 +10,7 @@ base_branch: main
 task_branch: task/sx-host-mutation-sandbox-pre-execution-audit-lineage-provider-v1
 transport: github-pr
 requirement_status: ready
-plan_status: revised_ready_for_review
+plan_status: ready_for_review
 ```
 
 ## Requirement Source
@@ -69,9 +69,7 @@ execution_profile = scoped_mutation
 operator_unrestricted = forbidden
 ```
 
-`operator_unrestricted` may exist for explicit local operator workflows, but it must not be advertised as satisfying `host_mutation_sandbox_v1`, must not be selected as fallback from scoped mutation, and must require explicit operator policy.
-
-Existing pre-V1 unprofiled `script_run` compatibility may be preserved for upgraded configs, but it must remain a distinct compatibility path that cannot satisfy or fallback for the new scoped capability.
+`operator_unrestricted` may exist for explicit local-operator workflows, but it must not be advertised as satisfying `host_mutation_sandbox_v1`, must not be selected as fallback from scoped mutation, and must require explicit operator policy.
 
 ## Host-Owned Mutation Scope Authority
 
@@ -114,8 +112,6 @@ Rules:
 4. `revalidate_scope` verifies current generation, lifecycle state, expiry/revocation, lineage, exact workspace placement and protected inventory before material mutation.
 5. Stale, unknown, caller-minted, cross-Attempt, wrong-workspace, expired, revoked or terminal scopes fail closed.
 6. `terminalize_scope` permanently moves the exact scope/generation to a non-active state and authoritative read-back must prove it is no longer `active` or `provisioned`.
-7. Provider-owned placement must be deterministically derived from canonical repository identity + semantic Run/Attempt[/Slice] identity under a Host-owned workspace-root policy; caller `cwd`, `workspace_root`, or broad `file_ops` rw entries cannot select placement.
-8. Placement policy generation/drift must be detected and stale placement authority must fail closed.
 
 ## Windows OS-Enforced Scoped Mutation
 
@@ -125,16 +121,15 @@ A conforming implementation must enforce the boundary below PowerShell/Python/sc
 
 Required guarantees:
 
-1. scoped mutation executes under a dedicated OS-enforced sandbox identity boundary;
-2. the identity can mutate only the exact admitted workspace and explicitly required provider-owned scratch resources;
+1. scoped mutation executes under a dedicated restricted mutation identity/token or an equivalent OS-enforced identity boundary;
+2. the identity can mutate only the exact admitted workspace and explicitly required staging/audit resources;
 3. parent directories, sibling workspaces, canonical repository checkouts, `D:\`, `D:\coco`, user project directories and unrelated Host locations remain non-writable/non-deletable;
 4. child processes inherit the same or stricter authority;
 5. detached/background descendants cannot escape containment;
 6. use Windows Job Object or equivalent process-tree containment, including kill-on-close semantics and no privilege-expanding breakaway fallback;
-7. the initial untrusted process must be placed into containment before its first instruction executes, using suspended creation + pre-resume Job assignment or a stronger equivalent mechanism;
-8. the exact workspace is created by the trusted provider broker after durable audit START; the sandbox identity never receives parent create-child authority merely to bootstrap its own workspace;
-9. a sandbox construction/verification failure prevents mutation rather than falling back to the SentinelX service identity;
-10. normal-user Git credentials are not injected into the mutation sandbox. Authenticated Git remains a separate structured capability/broker.
+7. timeout/cancel terminates the complete admitted process tree or returns a blocking containment failure;
+8. a sandbox construction/verification failure prevents mutation rather than falling back to the SentinelX service identity;
+9. normal-user Git credentials are not injected into the mutation sandbox. Authenticated Git remains a separate structured capability/broker.
 
 Linux/macOS may remain unavailable for `scoped_mutation` in V1, but they must fail closed rather than silently use unrestricted execution.
 
@@ -145,28 +140,14 @@ Material Host mutation must use a security-critical audit lifecycle:
 ```text
 REQUEST_RECEIVED
 → ADMISSION_VERIFIED
-→ OPERATION_STARTED   # durable before workspace materialization/spawn
+→ OPERATION_STARTED   # durable before spawn
 → PROCESS_SPAWNED
 → OPERATION_FINISHED
 ```
 
-`OPERATION_STARTED` must be flushed/durably committed before the trusted broker creates the execution workspace or any mutating process is created. If the write or durability verification fails, return a named audit failure and do not materialize the workspace or spawn.
+`OPERATION_STARTED` must be flushed/durably committed before the mutating process is created. If the write or durability verification fails, return a named audit failure and do not spawn.
 
 The existing best-effort local audit may remain for ordinary telemetry, but it cannot be the only audit path for scoped mutation.
-
-### Authoritative transport identity
-
-The provider must preserve these identities separately:
-
-```text
-request_id  = authoritative RequestMessage transport id
-opaque_ref  = authoritative optional RequestMessage correlation field
-lineage     = semantic project/task/run/attempt[/slice] intent verified against scope authority
-```
-
-`request_id` and `opaque_ref` must reach the pre-spawn handler through an executor-created immutable request context or equivalent. Payload fields cannot impersonate them.
-
-The same request/scope/lineage binding must survive into background jobs, SPAWN, FINISH and evidence references.
 
 ### START evidence
 
@@ -209,7 +190,7 @@ host:
   sandbox_identity:
 ```
 
-Missing semantic fields remain absent/null; they must never be invented.
+`request_id`, `opaque_ref` and semantic lineage are distinct identities. Missing semantic fields remain absent/null; they must never be invented.
 
 ### Durable script evidence
 
@@ -225,7 +206,7 @@ The forensic artifact must survive ordinary `script_job_*` cleanup and must not 
 
 ### Spawn evidence
 
-Record after OS process creation and containment installation, before untrusted execution is resumed where the platform supports suspended creation:
+Record after spawn:
 
 ```yaml
 request_id:
@@ -239,8 +220,6 @@ containment_id:
 started_at:
 ```
 
-If spawn evidence cannot be recorded while the child is still suspended, terminate it and do not resume.
-
 ### Finish evidence
 
 Record equivalent outcome/process-tree/read-back evidence. A crash may leave START without FINISH; it must never be backfilled as success.
@@ -252,8 +231,6 @@ Record equivalent outcome/process-tree/read-back evidence. A crash may leave STA
 3. Capability advertisement must reflect actual availability on the current Host. Do not advertise `host_mutation_sandbox_v1` when the OS sandbox provider cannot be constructed/verified.
 4. Background execution preserves request/scope/lineage/script identity across job polling and completion.
 5. Existing `opaque_ref` remains correlation evidence and does not replace structured lineage.
-6. Explicit scoped requests never fall back to legacy compatibility or operator-unrestricted execution.
-7. New configs must default explicit `operator_unrestricted` to disabled; upgraded old configs may preserve unprofiled legacy compatibility only as a separately classified non-capability path.
 
 ## Failure Semantics
 
@@ -306,27 +283,22 @@ V1 is accepted only when evidence proves all of the following:
 
 1. `host_mutation_sandbox_v1` and `pre_execution_audit_lineage_v1` are advertised only when their real provider prerequisites are available.
 2. `provision_scope`, `revalidate_scope`, and `terminalize_scope` use Host-owned authority; caller-minted authority is rejected.
-3. Canonical future workspace placement is derived only from Host policy + canonical repository/semantic identity; caller paths and broad `file_ops` rw roots cannot become placement authority.
-4. Placement generation/drift invalidates stale scope authority.
-5. Workspace materialization cannot occur before scope admission and durable audit START.
-6. A valid scoped mutation can write inside its exact workspace.
-7. The same script/process tree cannot write/delete outside the exact workspace.
-8. Windows child/detached processes cannot escape the sandbox/Job boundary.
-9. The first untrusted instruction cannot execute before Job containment is installed.
-10. Audit START is durably persisted before workspace materialization/spawn; forced audit failure proves neither occurs.
-11. START uses authoritative RequestMessage `request_id`/`opaque_ref`, separate verified semantic lineage, scope identity/digests, process intent and durable script evidence.
-12. Payload cannot spoof transport request identity.
-13. SPAWN includes PID/PPID, final executable/cwd identity, OS identity and containment identity.
-14. FINISH records terminal outcome/process-tree/read-back; forced crash may leave START without false FINISH.
-15. `cleanup=true` does not erase durable forensic script evidence.
-16. Scope terminalization targets the exact admitted scope/generation and read-back proves non-active state before successful completion.
-17. Missing/failed terminalization or active/provisioned read-back blocks success.
-18. `operator_unrestricted` is never fallback for scoped mutation and is not advertised as satisfying DevForge capabilities.
-19. Legacy unprofiled compatibility, when preserved for an upgraded old config, remains separately classified and cannot satisfy the new capabilities.
-20. Authenticated Git credential execution remains separate from mutation sandbox authority.
-21. Canonical incident regression proves all out-of-scope fixture sentinels survive.
-22. Existing relevant SentinelX regression tests remain passing; any platform-inapplicable test is explicitly classified rather than silently skipped as proof.
-23. Documentation/config examples describe opt-in unrestricted behavior, scoped mutation capability semantics, audit evidence, migration behavior and platform availability.
+3. Workspace materialization cannot occur before scope admission and durable audit START.
+4. A valid scoped mutation can write inside its exact workspace.
+5. The same script/process tree cannot write/delete outside the exact workspace.
+6. Windows child/detached processes cannot escape the sandbox/Job boundary.
+7. Audit START is durably persisted before spawn; forced audit failure proves no process starts.
+8. START includes request identity, semantic lineage, scope identity/digests, process intent and durable script evidence.
+9. SPAWN includes PID/PPID, final executable/cwd identity, OS identity and containment identity.
+10. FINISH records terminal outcome/process-tree/read-back; forced crash may leave START without false FINISH.
+11. `cleanup=true` does not erase durable forensic script evidence.
+12. Scope terminalization targets the exact admitted scope/generation and read-back proves non-active state before successful completion.
+13. Missing/failed terminalization or active/provisioned read-back blocks success.
+14. `operator_unrestricted` is never fallback for scoped mutation and is not advertised as satisfying DevForge capabilities.
+15. Authenticated Git credential execution remains separate from mutation sandbox authority.
+16. Canonical incident regression proves all out-of-scope fixture sentinels survive.
+17. Existing relevant SentinelX regression tests remain passing; any platform-inapplicable test is explicitly classified rather than silently skipped as proof.
+18. Documentation/config examples describe opt-in unrestricted behavior, scoped mutation capability semantics, audit evidence and platform availability.
 
 ## Non-Goals
 
