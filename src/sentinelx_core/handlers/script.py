@@ -53,12 +53,20 @@ import subprocess
 import sys
 import time
 import uuid
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 from sentinelx_core.executor import HandlerError
 from sentinelx_core.jobs import BACKGROUND_TIMEOUT_MAX
+from sentinelx_core.mutation_audit import (
+    ForensicScriptEvidence,
+    MutationAuditBinding,
+    MutationAuditJournal,
+    MutationAuditStart,
+)
 from sentinelx_core.policy import Policy
+from sentinelx_core.request_context import MutationLineage, RequestContext
 from sentinelx_core.staging import staging_root
 
 
@@ -283,6 +291,86 @@ def _decode_output(raw: bytes) -> str:
         except (UnicodeDecodeError, LookupError):
             pass
     return raw.decode("utf-8", errors="replace")
+
+
+@dataclass(frozen=True)
+class PreparedMutationScript:
+    """S03 output consumed by the later sandbox/spawn integration slices."""
+
+    interpreter: str
+    exact_bytes: bytes
+    evidence: ForensicScriptEvidence
+    audit_start: MutationAuditStart
+
+    @property
+    def mutation_identity(self) -> dict[str, Any]:
+        return self.audit_start.background_identity()
+
+
+def _scoped_script_bytes(content: str, interpreter: str) -> bytes:
+    """Deterministic bytes retained before START and materialized after it.
+
+    This is intentionally separate from the legacy text-write path. S05 will
+    use these exact retained bytes for scoped execution while leaving historical
+    script_run encoding/newline behavior untouched outside scoped mode.
+    """
+    if not isinstance(content, str) or not content.strip():
+        raise HandlerError("invalid_payload", "missing 'content'")
+    if interpreter not in ALLOWED_INTERPRETERS:
+        raise HandlerError(
+            "invalid_payload",
+            f"interpreter must be one of: {', '.join(ALLOWED_INTERPRETERS)}",
+        )
+    encoding = (
+        "utf-8-sig"
+        if sys.platform == "win32" and interpreter in _POWERSHELL_INTERPRETERS
+        else "utf-8"
+    )
+    return content.encode(encoding)
+
+
+def prepare_scoped_script_evidence(
+    *,
+    context: RequestContext,
+    payload: dict[str, Any],
+    lineage: MutationLineage,
+    audit: MutationAuditJournal,
+    scope_id: str,
+    scope_generation: int,
+    workspace_id: str,
+    unique_lease_key: str,
+) -> PreparedMutationScript:
+    """Retain exact bytes and durably commit START before any materialization.
+
+    No execution workspace is created here. That ordering is deliberate: if
+    ``audit.begin`` cannot durably flush OPERATION_STARTED, the caller receives
+    an exception before it has any reason to create a workspace or child.
+    """
+    interpreter = payload.get("interpreter")
+    content = payload.get("content")
+    if not isinstance(interpreter, str):
+        raise HandlerError("invalid_payload", "missing 'interpreter'")
+    if not isinstance(content, str):
+        raise HandlerError("invalid_payload", "missing 'content'")
+
+    exact_bytes = _scoped_script_bytes(content, interpreter)
+    evidence = audit.evidence.retain(exact_bytes)
+    binding = MutationAuditBinding.from_context(
+        context,
+        lineage,
+        scope_id=scope_id,
+        scope_generation=scope_generation,
+        workspace_id=workspace_id,
+        unique_lease_key=unique_lease_key,
+        job_id=payload.get("job_id") if isinstance(payload.get("job_id"), str) else None,
+    )
+    start = audit.begin(binding, evidence)
+    return PreparedMutationScript(
+        interpreter=interpreter,
+        exact_bytes=exact_bytes,
+        evidence=evidence,
+        audit_start=start,
+    )
 
 
 def make_script_run_handler(policy: Policy, upload_base: Path):
