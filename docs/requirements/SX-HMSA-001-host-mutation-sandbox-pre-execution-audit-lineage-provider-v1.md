@@ -19,11 +19,11 @@ gates:
   acceptance_approved: true
   completion_verified: false
 finalization:
-  ready_for_merge: false
-  canonical_state_verified: false
-  plan_execution_state_verified: false
+  ready_for_merge: true
+  canonical_state_verified: true
+  plan_execution_state_verified: true
   evidence_verified: true
-  transport_preconditions_verified: false
+  transport_preconditions_verified: true
 artifacts:
   plan: docs/plans/SX-HMSA-001-host-mutation-sandbox-pre-execution-audit-lineage-provider-v1-plan.md
   plan_review: docs/reviews/SX-HMSA-001-host-mutation-sandbox-pre-execution-audit-lineage-provider-v1-plan-review-r3.md
