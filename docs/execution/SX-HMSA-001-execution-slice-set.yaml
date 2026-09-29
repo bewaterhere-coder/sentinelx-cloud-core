@@ -105,9 +105,11 @@ slices:
         - Timeout/cancel and terminalization prove no residual Job/process or SID write authority remains.
     checkpoint:
       required: true
-    state: pending
-    run_refs: []
-    completion_receipt_ref: null
+    state: completed
+    run_refs:
+      - github-commit:3d8aeb10373c580c604cd7e437570c2b6e2aec3f
+      - github-pr-comment:5889972254
+    completion_receipt_ref: github-pr-comment:5889972254
 
   - slice_id: S05
     objective: Integrate scoped mutation into script execution while preserving legacy behavior and credential boundaries.
