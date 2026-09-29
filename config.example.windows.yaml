@@ -293,3 +293,18 @@ file_ops:
 # cross-platform default resolves oddly (C:\home\sentinelx\uploads); pin it
 # somewhere user-writable instead:
 upload_base: 'C:\Users\Public\sentinelx-uploads'
+
+# ============================================================================
+# Scoped mutation execution — Windows V1.
+# Disabled by default. To enable, choose a provider-owned workspace root and
+# immutable runtime roots. Capability advertisement remains false until the
+# AppContainer + exact ACL + Job + durable-audit runtime self-check succeeds.
+# ============================================================================
+# mutation_execution:
+#   scoped_mutation_enabled: false
+#   workspace_root: null  # e.g. 'D:\SentinelX\mutation-workspaces'
+#   protected_roots: []   # e.g. ['D:\coco\repos']
+#   runtime_read_roots: []  # e.g. ['C:\Python314']
+#   scope_ttl_seconds: 3600
+#   evidence_retention_days: 30
+#   operator_unrestricted_enabled: false

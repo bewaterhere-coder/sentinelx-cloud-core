@@ -189,6 +189,6 @@ so reviewers can decide whether they're acceptable for their threat model.
 ## Hall of fame
 
 Reporters who help improve the project's security are credited here (with
-profile consent) once a published advisory closes the issue.
+their permission) once a published advisory closes the issue.
 
 _(no public reports yet — the project is young; this section will grow)_
