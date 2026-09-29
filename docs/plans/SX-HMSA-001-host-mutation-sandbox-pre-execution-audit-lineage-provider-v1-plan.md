@@ -8,7 +8,8 @@ stage: plan_review
 requirement: docs/requirements/SX-HMSA-001-host-mutation-sandbox-pre-execution-audit-lineage-provider-v1.md
 transport: github-pr
 task_branch: task/sx-host-mutation-sandbox-pre-execution-audit-lineage-provider-v1
-plan_status: ready_for_review
+plan_status: revised_ready_for_review
+plan_revision: 2
 ```
 
 ## Objective
@@ -24,6 +25,18 @@ with Windows as the mandatory V1 OS-enforced platform and fail-closed behavior e
 
 The existing unrestricted/best-effort paths must not be relabeled as these capabilities.
 
+## Plan Review Remediation — Authoritative Decisions
+
+This revision closes the first Plan Review findings and supersedes any earlier ambiguous design choice in this plan.
+
+The following decisions are fixed for V1:
+
+1. **Workspace placement authority is Host/provider-owned.** SentinelX owns one explicit scoped-mutation workspace-root policy and a deterministic placement resolver. Caller `cwd`, `workspace_root`, `file_ops` rw paths, remembered paths, or arbitrary path strings are evidence only and cannot mint or select authority.
+2. **Windows V1 sandbox primitive is fixed to AppContainer + exact ACL + Job Object containment.** V1 does not fall back from AppContainer to a restricted service token, normal user token, LocalSystem, unrestricted PowerShell, or path-only checking.
+3. **The trusted SentinelX broker materializes the exact empty workspace only after durable `OPERATION_STARTED`.** The broker creates the directory, applies an exact scope-specific AppContainer ACL, validates it, creates the process suspended, assigns it to a no-breakaway kill-on-close Job Object, records spawn evidence, then resumes the first untrusted instruction.
+4. **Transport identity reaches the mutation handler through an immutable `RequestContext` built by `Executor` from `RequestMessage`.** Payload cannot supply or override authoritative `request_id` or `opaque_ref`.
+5. **Legacy unrestricted compatibility is isolated from the new execution profiles.** Old configs that do not contain a `mutation_execution` block retain historical unprofiled `script_run` compatibility, but that path is internally classified as `legacy_unrestricted_compat`, never advertises or satisfies `host_mutation_sandbox_v1`, and cannot be selected by a DevForge scoped request. New configs contain an explicit `mutation_execution` block with `operator_unrestricted_enabled: false`.
+
 ## Current Code Anchors
 
 Primary implementation seams:
@@ -38,64 +51,208 @@ src/sentinelx_core/jobs.py
 src/sentinelx_core/winspawn.py
 ```
 
-Likely supporting modules to add:
+Supporting modules to add:
 
 ```text
+src/sentinelx_core/request_context.py
+src/sentinelx_core/mutation_placement.py
 src/sentinelx_core/mutation_scope.py
 src/sentinelx_core/mutation_audit.py
 src/sentinelx_core/mutation_sandbox.py
 src/sentinelx_core/windows_mutation_sandbox.py
 ```
 
-Tests should stay under the repository's existing test layout and follow existing platform-gating conventions.
+Tests stay under the repository's existing test layout and follow existing platform-gating conventions.
 
 ## Architecture
 
-### 1. Separate ordinary telemetry from security audit
+### 1. Authoritative RequestContext seam
 
-Keep `local_audit.record()` compatible for existing ordinary operations.
+Current `Executor.dispatch()` passes only `request.payload` to a handler. That is insufficient for security audit because `request.id` and `request.opaque_ref` are transport-level values and must not be reconstructed from caller payload.
 
-Add a dedicated security-critical mutation audit writer with an API shaped around lifecycle records rather than one post-hoc row:
+Introduce an immutable executor-created context:
 
 ```python
-start = mutation_audit.begin(...)
-# begin() returns only after durable write + flush succeeds
-spawn = mutation_audit.record_spawn(start, ...)
-finish = mutation_audit.finish(start, ...)
+@dataclass(frozen=True)
+class RequestContext:
+    request_id: str
+    op: str
+    opaque_ref: str | None
+    received_at: datetime
 ```
 
-`begin()` must raise a named admission failure on write/durability failure. Scoped mutation catches that failure before any child process is created.
-
-Use append-only JSONL or an equivalent simple on-host journal in V1, but make durability explicit:
+Creation rule:
 
 ```text
-write complete row
-flush userspace buffer
-os.fsync(file descriptor)
-return durable reference
+RequestMessage
+→ Executor constructs RequestContext from RequestMessage fields
+→ handler invocation receives RequestContext + payload
 ```
 
-If directory creation/first artifact creation matters for crash durability, fsync the containing directory where the platform supports it. Windows implementation must use a platform-equivalent flush guarantee rather than silently skipping durability.
+The payload is never authoritative for:
 
-### 2. Persist forensic scripts separately from temporary staging
+```text
+request_id
+opaque_ref
+received_at
+op
+```
 
-Before START is committed:
+A payload containing fields with the same names is ignored for transport identity or rejected when the scoped schema forbids them.
 
-1. normalize the exact script bytes that will be executed;
-2. compute SHA-256;
-3. write the bytes to a restricted evidence store outside `script_job_*` cleanup;
-4. durably persist/verify the artifact;
-5. include only the hash + restricted artifact reference in START.
+To avoid a broad semantic rewrite of all existing handlers, standardize the registry around a context-aware invocation adapter:
 
-Normal `cleanup=true` may still remove the temporary workdir after execution.
+```python
+Handler = Callable[[RequestContext, dict[str, Any]], Awaitable[dict[str, Any]]]
+```
 
-Evidence retention must be bounded/configurable and must not expose secret content through normal capability responses.
+Existing payload-only handlers are wrapped by a compatibility adapter that deliberately discards `RequestContext`. New mutation-scope and scoped-script handlers consume it directly.
+
+Semantic lineage remains distinct:
+
+```text
+request_id   = transport identity from RequestMessage
+opaque_ref   = optional transport correlation from RequestMessage
+lineage      = semantic project/task/run/attempt[/slice] supplied as intent,
+               then independently verified against provider-owned scope state
+```
+
+No payload field may substitute for transport identity.
+
+Background work captures the exact `RequestContext` before scheduling and stores an immutable job binding containing:
+
+```text
+request_id
+opaque_ref
+scope_id + generation
+workspace_id
+semantic lineage digest
+script_sha256
+sandbox identity
+containment id when known
+```
+
+Completion events and audit FINISH reuse that binding; they must not reconstruct identity from a completion payload.
+
+### 2. Provider-owned canonical workspace placement authority
+
+#### 2.1 Host policy
+
+Add a Host-owned policy block:
+
+```yaml
+mutation_execution:
+  scoped_mutation_enabled: false
+  workspace_root: <absolute-host-owned-root>
+  protected_roots:
+    - <provider-owned-protected-root>
+  runtime_read_roots:
+    - <immutable-interpreter-or-runtime-root>
+  scope_ttl_seconds: 3600
+  evidence_retention_days: 30
+  operator_unrestricted_enabled: false
+```
+
+Security rules:
+
+- `workspace_root`, `protected_roots`, and `runtime_read_roots` come only from SentinelX Host configuration.
+- They are not derived from `file_ops` rw entries.
+- `file_ops` rw permission does not grant scoped-mutation placement authority.
+- Caller `cwd`, `workspace_root`, `allowed_write_root(s)`, `protected_roots`, or arbitrary path values are comparison evidence only.
+- Configuration load canonicalizes the roots and rejects overlap that would make the scoped workspace ambiguous or place it beneath a protected root.
+- The state/audit/evidence stores are provider control-plane roots and are never caller-selected mutation roots.
+
+#### 2.2 Deterministic placement resolver
+
+Placement is derived from canonical repository identity plus semantic Attempt identity:
+
+```text
+repository identity:
+  vcs + authority + path
+semantic identity:
+  project_id + task_id + run_id + attempt_id + optional slice_id
+Host placement policy:
+  workspace_root + placement_generation
+```
+
+Use stable canonical encoding and SHA-256 to derive bounded path-safe keys:
+
+```text
+repo_key    = short_digest(vcs, authority, path)
+attempt_key = short_digest(project_id, task_id, run_id, attempt_id, slice_id)
+future_workspace = workspace_root / repo_key / attempt_key
+```
+
+Human-readable labels may be stored in metadata but do not participate in authority or path construction.
+
+This means caller strings cannot inject `..`, alternate drive letters, UNC roots, sibling names, or arbitrary local paths into the authoritative future workspace.
+
+The resolver returns:
+
+```yaml
+placement:
+  placement_ref: <opaque-provider-ref>
+  generation: <positive-generation>
+  policy_digest: <sha256>
+  exact_future_workspace: <provider-derived-absolute-path>
+  exact_workspace_digest: <sha256>
+  repository_identity_digest: <sha256>
+  semantic_identity_digest: <sha256>
+  protected_inventory_digest: <sha256>
+```
+
+#### 2.3 Placement generation and drift
+
+SentinelX keeps provider-owned placement state:
+
+```text
+normalized placement policy digest
++ monotonically increasing placement_generation
+```
+
+On startup/reload:
+
+```text
+same normalized policy digest
+→ generation unchanged
+
+changed workspace root / protected roots / runtime read roots / placement rules
+→ generation increments and new policy digest is persisted
+```
+
+`provision_scope` seals placement generation + digest into the scope record.
+
+`revalidate_scope` re-runs placement resolution from the current Host policy and exact semantic/repository identity. Any mismatch in:
+
+```text
+placement generation
+policy digest
+exact future workspace
+protected inventory digest
+repository identity digest
+semantic identity digest
+```
+
+returns `HostMutationScopeBindingMismatch` before materialization or later mutation.
+
+A stale scope is never retargeted to a new path.
+
+#### 2.4 Protected inventory derivation
+
+Protected inventory is provider-derived and includes at minimum:
+
+- configured `protected_roots`;
+- the workspace root itself except the exact admitted descendant;
+- all existing sibling workspace entries visible under the derived repository/attempt parents;
+- provider state/audit/evidence roots unless explicitly read-only to the sandbox;
+- canonical repository roots configured as protected Host roots;
+- any parent path whose mutation could rename/delete the exact workspace or its siblings.
+
+The AppContainer receives no write ACE on these objects. Their normalized identities/digests are sealed into scope evidence.
 
 ### 3. Runtime-owned mutation scope store
 
-Add a provider-owned store independent of caller paths.
-
-Recommended V1 storage shape:
+Add a provider-owned store independent of caller paths:
 
 ```text
 <SentinelX state dir>/mutation-scopes/
@@ -107,18 +264,22 @@ Each record includes:
 ```text
 workspace_id
 scope_id + generation
-semantic lineage
-exact canonical future workspace path/ref + digest
+semantic lineage + digest
+repository identity + digest
+placement ref/generation/policy digest
+exact canonical future workspace + digest
 protected inventory digest
 allowed operation classes
 issued/expires timestamps
 state
 scope digest
+sandbox identity metadata when activated
+containment ids / active process bindings when present
 ```
 
-Writes use atomic replace + durable flush. The store is writable only by the SentinelX service identity/provider, not by the scoped mutation worker.
+Writes use atomic replace + durable flush. The store is broker-only: the AppContainer worker has no write access.
 
-Expose structured provider operations through the existing operation registry:
+Expose structured provider operations:
 
 ```text
 mutation_scope_provision
@@ -126,7 +287,7 @@ mutation_scope_revalidate
 mutation_scope_terminalize
 ```
 
-The external operation names may differ if repository conventions require, but capability metadata must map them unambiguously to:
+They map unambiguously to:
 
 ```text
 host_mutation_sandbox_v1.provision_scope
@@ -134,15 +295,163 @@ host_mutation_sandbox_v1.revalidate_scope
 host_mutation_sandbox_v1.terminalize_scope
 ```
 
-`provision_scope` receives semantic identity plus placement evidence, independently canonicalizes/revalidates placement against provider-owned policy, allocates opaque IDs, and seals authority.
+`provision_scope` inputs are limited to semantic/repository identity plus optional expected placement evidence. SentinelX independently resolves the authoritative placement and allocates opaque `workspace_id` and `scope_id`.
 
 `revalidate_scope` never broadens authority.
 
-`terminalize_scope` atomically moves the exact generation to terminal/revoked and returns authoritative read-back.
+`terminalize_scope` targets exact `scope_id + generation`, prevents new spawn, terminates any still-bound Job/process tree, revokes scope-specific workspace write authority, disposes the scope AppContainer profile when safe, moves the record to terminal/revoked, and returns authoritative non-active read-back.
 
-### 4. Explicit execution profiles
+Terminalization failure returns `HostMutationScopeTerminalizationFailed`; a read-back still showing `active` or `provisioned` returns `HostMutationScopeStillActive`. Neither may produce successful completion.
 
-Extend mutation/script execution admission with explicit semantics:
+### 4. Separate ordinary telemetry from security audit
+
+Keep `local_audit.record()` compatible for existing ordinary operations.
+
+Add a security-critical mutation audit journal:
+
+```python
+start = mutation_audit.begin(...)
+spawn = mutation_audit.record_spawn(start, ...)
+finish = mutation_audit.finish(start, ...)
+```
+
+`begin()` returns only after the START record is durably committed.
+
+V1 journal semantics:
+
+```text
+append complete JSON record
+flush userspace buffer
+FlushFileBuffers/os.fsync equivalent
+return durable record reference
+```
+
+Audit failure before untrusted execution is fail-closed.
+
+The required lifecycle is:
+
+```text
+REQUEST_RECEIVED
+→ ADMISSION_VERIFIED
+→ OPERATION_STARTED [durable]
+→ trusted workspace materialization / ACL preparation
+→ suspended sandbox process creation
+→ Job assignment
+→ PROCESS_SPAWNED evidence
+→ ResumeThread / first untrusted instruction
+→ OPERATION_FINISHED
+```
+
+This ordering is deliberate: the broker may perform security-control-plane materialization only after START, while untrusted code cannot execute until containment is fully installed.
+
+If `PROCESS_SPAWNED` evidence cannot be recorded after suspended process creation but before resume, the broker terminates the suspended process/Job and returns `HostMutationAuditSpawnEvidenceUnavailable`; it does not resume the child.
+
+### 5. Persist forensic scripts separately from temporary staging
+
+Before START is committed:
+
+1. normalize the exact script bytes that will later be materialized for execution;
+2. compute SHA-256;
+3. write those bytes to the restricted provider evidence store;
+4. durably persist/verify the artifact;
+5. record `script_sha256 + script_artifact_ref` in START.
+
+The future executable script path is deterministic under the exact workspace, for example a provider-owned `.sentinelx-exec` child beneath that workspace. START may record this intended final path before the directory exists.
+
+After START and trusted workspace materialization, the broker writes/copies the exact retained bytes into the final script path and verifies the hash again before process creation.
+
+The AppContainer gets no write access to the forensic evidence store. `cleanup=true` may remove ordinary execution staging but cannot remove the forensic artifact.
+
+### 6. Fixed Windows V1 sandbox primitive
+
+#### 6.1 Primitive choice
+
+Windows V1 uses:
+
+```text
+scope-specific AppContainer profile/SID
++ exact ACL grants on the admitted workspace
++ provider-owned read/execute grants only for required immutable runtime roots when necessary
++ no network capability by default
++ Windows Job Object with kill-on-close and no breakaway
++ suspended process creation and pre-resume Job assignment
+```
+
+There is **no V1 fallback** from this primitive to:
+
+```text
+LocalSystem execution
+interactive user execution
+CreateRestrictedToken-only execution
+ordinary user token
+PowerShell policy/string filtering
+path validation alone
+uncontained subprocess execution
+```
+
+If AppContainer construction, ACL verification, interpreter launch, or Job containment self-check fails, `host_mutation_sandbox_v1` is unavailable.
+
+#### 6.2 Trusted bootstrap sequence
+
+For the first materialization/spawn under a provisioned scope:
+
+```text
+1. Executor builds authoritative RequestContext.
+2. Scoped handler validates semantic lineage against scope authority.
+3. revalidate_scope confirms current placement/generation/protected inventory.
+4. Exact script evidence is retained and hashed in broker-only evidence storage.
+5. OPERATION_STARTED is durably committed.
+6. Trusted SentinelX broker creates ONLY the exact derived empty workspace path.
+7. Broker creates/loads the scope-specific AppContainer profile and SID.
+8. Broker disables inheritance on the exact workspace DACL and installs explicit scope ACLs.
+9. Broker verifies the AppContainer SID has required workspace rights and no write/delete/create-child rights on parent/sibling/protected objects.
+10. Broker materializes the exact script bytes inside the admitted workspace and verifies SHA-256.
+11. Broker creates a Job Object with kill-on-close; breakaway is not enabled.
+12. Broker creates the process suspended with AppContainer security capabilities, CREATE_SUSPENDED, EXTENDED_STARTUPINFO_PRESENT, CREATE_NO_WINDOW, and handle inheritance disabled.
+13. Broker assigns the still-suspended process to the Job Object.
+14. Broker verifies Job membership / sandbox identity and records PROCESS_SPAWNED evidence.
+15. Only after all checks succeed does Broker ResumeThread.
+16. Timeout/cancel closes/terminates the Job and verifies the root/children have exited.
+17. OPERATION_FINISHED records result/process-tree/scope read-back evidence.
+18. Lifecycle owner later invokes exact-scope terminalization; successful DevForge completion requires terminal non-active read-back.
+```
+
+If any step from 6 through 14 fails, no untrusted instruction is resumed. Any suspended process is terminated and the operation fails closed.
+
+#### 6.3 Exact filesystem authority
+
+The AppContainer SID receives write/modify rights only on:
+
+```text
+exact admitted workspace and descendants
+scope-specific provider scratch/profile storage if Windows requires it
+```
+
+Provider audit/evidence/scope stores remain broker-only.
+
+Required interpreter/runtime files are either already AppContainer-readable or receive **read/execute only** provider-owned grants on explicitly configured immutable `runtime_read_roots`. No write grant is permitted there.
+
+The scope-specific AppContainer SID receives no write/create-child/delete rights on the parent workspace tree, sibling workspaces, protected roots, canonical repositories, or arbitrary drive roots.
+
+Because the exact workspace child is created by the trusted broker, the sandbox identity never needs parent create-child authority to bootstrap itself.
+
+#### 6.4 Reparse points and path finalization
+
+Before ACL install, before script materialization, and immediately before spawn, the broker opens/validates the final workspace path using Windows final-path/reparse-aware APIs. The exact workspace must not resolve through a caller-controlled junction/symlink/reparse point.
+
+Creation uses no-follow/reparse-safe semantics where available. A reparse point inserted after provisioning or during execution causes admission/read-back failure rather than retargeting authority.
+
+#### 6.5 Process containment
+
+The Job Object must use kill-on-close semantics and must not set breakaway flags.
+
+The root process is created suspended and assigned before resume. Children inherit Job membership under normal Windows Job semantics; attempts to request breakaway are denied because the Job does not permit it.
+
+Background mode may keep the Job handle in provider-owned durable job state, but caller disconnect does not remove scope identity or audit lineage. Explicit cancel/timeout/terminalization terminates the Job tree.
+
+### 7. Execution profiles and legacy compatibility
+
+Public/new execution profiles:
 
 ```text
 read_only
@@ -150,141 +459,159 @@ scoped_mutation
 operator_unrestricted
 ```
 
-Do not infer `scoped_mutation` from a cwd/path.
-
-For `scoped_mutation`, require:
+Internal compatibility classification:
 
 ```text
-mutation_scope_ref
-scope generation
-structured lineage
-provider capability available
+legacy_unrestricted_compat
 ```
 
-Reject missing/stale/mismatched authority before script staging or spawn.
+Rules:
 
-Keep legacy unrestricted script behavior only behind explicit local operator policy. It must advertise separately and never satisfy `host_mutation_sandbox_v1`.
+#### New explicit profiles
 
-Suggested policy evolution:
+`scoped_mutation` requires:
+
+```text
+host_mutation_sandbox_v1 available
+mutation_scope_ref + current generation
+validated semantic lineage
+RequestContext from Executor
+```
+
+`operator_unrestricted` requires an explicit policy block:
 
 ```yaml
 mutation_execution:
-  operator_unrestricted_enabled: false   # safe default for new installs/config examples
-  scoped_mutation_enabled: true|false    # actual capability still depends on OS provider readiness
-  scope_ttl_seconds: ...
-  evidence_retention: ...
+  operator_unrestricted_enabled: true
 ```
 
-Backward compatibility handling must be explicit in tests and release notes; do not silently reinterpret an old config as scoped authority.
+It never satisfies `host_mutation_sandbox_v1` and cannot be a fallback from scoped mode.
 
-### 5. Windows OS sandbox provider
+#### Existing config migration
 
-Implement a dedicated `WindowsMutationSandboxProvider` behind a platform-neutral interface.
-
-Mandatory security properties, not implementation-detail names, are the acceptance boundary:
+Compatibility is determined structurally:
 
 ```text
-exact workspace mutation allowed
-outside-scope write/delete denied by OS
-child processes have same-or-less authority
-no detached/breakaway escape
-process tree kill-on-close/timeout
-no automatic user credential inheritance
+mutation_execution block absent
+→ preserve historical unprofiled script_run behavior as legacy_unrestricted_compat
+→ emit operator-visible migration/security warning
+→ do NOT advertise host_mutation_sandbox_v1 because of that path
+→ reject any request that explicitly asks for operator_unrestricted unless policy opts in
+→ scoped_mutation still requires full new provider readiness
+
+mutation_execution block present
+→ missing operator_unrestricted_enabled means false
+→ unprofiled legacy script behavior follows the explicit block's compatibility setting/defaults
 ```
 
-Preferred enforcement stack:
+New installer/config examples include the block explicitly with:
+
+```yaml
+mutation_execution:
+  operator_unrestricted_enabled: false
+  scoped_mutation_enabled: false
+```
+
+This preserves upgraded old-host behavior without treating omission as explicit authorization for the new unrestricted profile, while giving new configurations a safe explicit default.
+
+Tests must cover old-config omission, new-block omission, explicit true/false, unprofiled legacy requests, explicit operator requests, and scoped requests.
+
+### 8. Scoped script execution integration
+
+Refactor `handlers/script.py` into preparation and execution seams while preserving existing interpreter/Unicode/cwd/output behavior for legacy mode.
+
+Scoped path:
 
 ```text
-restricted dedicated mutation identity/token
-+ exact workspace/staging ACL admission
-+ low-privilege/restricted token semantics
-+ Windows Job Object containment
-+ kill-on-job-close
-+ no breakaway fallback
+RequestContext
+→ validate scoped payload schema
+→ scope revalidate
+→ prepare normalized script bytes/process intent
+→ persist forensic artifact
+→ durable START
+→ trusted workspace materialization + ACL
+→ suspended AppContainer spawn
+→ Job assignment
+→ SPAWN audit
+→ resume
+→ wait/timeout/cancel under containment
+→ FINISH audit
 ```
 
-If the implementation cannot prove exact boundary semantics with this stack, use a stronger Windows primitive (for example lowbox/AppContainer-equivalent containment) rather than weakening the requirement.
+Security rules:
 
-Important: a Job Object alone is process containment, not a filesystem authorization boundary. Likewise path checks alone are not a sandbox.
+- `cwd` for scoped mode must equal or be a provider-derived descendant allowed by the scope; caller cannot move execution outside the exact workspace.
+- `sudo`/elevation is forbidden in scoped mode.
+- environment cannot override scope identity, sandbox SID, evidence paths, audit paths, credential context, AppContainer attributes, Job identity, or placement.
+- user-scoped Git credentials are not injected. Authenticated Git stays in the separate structured Git executor/broker.
+- an explicit failure in scoped mode never falls back to legacy or operator-unrestricted execution.
 
-The provider must perform a self-check before advertising `host_mutation_sandbox_v1`. If the restricted identity/token, filesystem confinement or Job containment cannot be established, capability is unavailable.
+### 9. Capability advertisement
 
-### 6. Scoped process spawn seam
-
-Refactor `script.py` so argv/env/encoding behavior remains reusable, but actual spawn is delegated:
-
-```text
-prepare_script
-build_process_intent
-admit scope
-persist durable START
-sandbox.spawn(process_intent)
-persist SPAWN
-wait/timeout/cancel under containment
-persist FINISH
-terminalize/read-back when requested by lifecycle owner
-```
-
-Do not write START from `Executor.dispatch()` after handler return. The handler/provider must own pre-spawn audit because only it knows the exact process intent and sandbox identity before spawn.
-
-`Executor.dispatch()` may continue to write ordinary post-operation telemetry separately.
-
-Background jobs must preserve the same request/scope/lineage/evidence references in durable job state.
-
-### 7. Capability advertisement
-
-Extend hello/capabilities so the agent advertises:
+Advertise:
 
 ```text
 host_mutation_sandbox_v1
 pre_execution_audit_lineage_v1
 ```
 
-only when runtime self-check proves the required provider is available.
+only when runtime self-check proves all required provider components are ready.
 
-Do not advertise based merely on code presence or configuration text.
-
-Recommended provider readiness check:
+Readiness matrix:
 
 ```text
-policy allows scoped mutation
-+ authority store is secure/writable
-+ mutation audit store is secure/writable
-+ durable evidence store is secure/writable
-+ OS sandbox provider self-check passes
-+ required process containment primitive is available
+Windows
++ scoped_mutation_enabled
++ valid provider-owned workspace-root policy
++ placement state/generation store healthy
++ scope store secure/writable
++ mutation audit journal secure/writable + durable flush self-check
++ evidence store secure/writable
++ AppContainer APIs/profile self-check
++ exact ACL admission/read-back self-check
++ configured interpreter/runtime read access self-check
++ Job Object create/assign/kill-on-close self-check
++ suspended-create-before-resume self-check
+→ advertise both capabilities
 ```
 
-Linux/macOS V1 returns capability unavailable unless an equivalent provider is actually implemented and verified.
+Any failed prerequisite removes the capability evidence and returns the relevant fail-closed reason when scoped execution is requested.
+
+Linux/macOS V1 do not advertise `host_mutation_sandbox_v1` unless an equivalent provider is separately implemented and verified.
 
 ## Proposed Execution Slices
 
-These are proposed slices for Plan Review; review may refine boundaries before implementation.
+These slices are the durable execution set to compile if Plan Review approves.
 
-### Slice 1 — Provider contracts, policy and capability readiness
+### Slice 1 — RequestContext, policy migration, placement authority, capability truthfulness
 
 Implement:
 
-- execution-profile model;
-- policy/config parsing and safe defaults;
-- provider readiness/self-check abstraction;
-- capability advertisement rules;
-- failure-code model;
-- no legacy unrestricted path can claim scoped capability.
+- immutable `RequestContext` + legacy-handler adapter;
+- `mutation_execution` policy parsing and migration semantics;
+- canonical repository/semantic placement resolver;
+- placement generation/policy digest state;
+- provider readiness model;
+- capability advertisement matrix;
+- no legacy path can claim scoped capability.
 
 Verification:
 
-- unit matrix for Windows-ready/not-ready, Linux/macOS unavailable, policy disabled, missing secure stores;
-- capability names disappear when prerequisites are absent;
-- legacy script path remains distinguishable from scoped mutation.
+- payload cannot spoof `request_id`/`opaque_ref`;
+- old config with no block preserves only `legacy_unrestricted_compat`;
+- new block defaults operator-unrestricted false;
+- arbitrary `cwd/workspace_root/file_ops` path cannot select placement;
+- path traversal/drive/UNC input cannot affect canonical future workspace;
+- policy drift increments generation and invalidates stale placement evidence;
+- capability absent on unsupported/not-ready host.
 
 Checkpoint:
 
 ```text
-No OS mutation behavior changed yet; capability semantics cannot lie.
+Transport identity and workspace placement authority are provider-owned before scope state exists.
 ```
 
-### Slice 2 — Host-owned mutation scope authority lifecycle
+### Slice 2 — Host-owned mutation scope lifecycle
 
 Implement:
 
@@ -293,24 +620,24 @@ Implement:
 - `revalidate_scope`;
 - `terminalize_scope`;
 - generation/TTL/revocation/state handling;
-- lineage + exact placement binding;
-- digest/read-back receipts.
+- semantic/repository/placement/protected-inventory binding;
+- authoritative read-back receipts.
 
 Negative tests:
 
 - caller-minted scope;
 - stale generation;
 - cross-Run/Attempt/Slice;
-- wrong workspace;
+- wrong repository/workspace;
 - placement drift;
 - expired/revoked/terminal reuse;
 - terminalize wrong generation;
-- active-after-terminalization impossible.
+- active-after-terminalization blocked.
 
 Checkpoint:
 
 ```text
-Authority exists before filesystem materialization and cannot be minted from caller paths.
+Scope authority exists before filesystem materialization and cannot be minted from caller paths.
 ```
 
 ### Slice 3 — Durable mutation audit + forensic script evidence
@@ -320,87 +647,80 @@ Implement:
 - security audit journal;
 - durable `OPERATION_STARTED`;
 - retained script artifact + SHA-256;
-- SPAWN and FINISH rows;
-- structured request/opaque_ref/lineage identity;
+- SPAWN and FINISH records;
+- RequestContext + semantic-lineage separation;
 - crash/interruption semantics;
+- background identity binding;
 - retention/access control.
 
 Tests:
 
-- injected audit write failure => spawn callback never invoked;
-- fsync/flush failure => spawn never invoked;
+- injected START write/flush failure => workspace/process spawn callback never invoked;
+- SPAWN audit failure while child is suspended => child terminated, never resumed;
 - `cleanup=true` leaves forensic artifact;
 - forced crash leaves START without fabricated FINISH;
-- missing lineage when required fails before spawn;
-- background job retains same identity binding.
+- missing/mismatched lineage fails before spawn;
+- background job preserves original RequestContext/scope/script identity.
 
 Checkpoint:
 
 ```text
-No durable START => no process creation.
+No durable START => no workspace materialization or untrusted process execution.
 ```
 
-### Slice 4 — Windows sandbox identity + Job containment
+### Slice 4 — Windows AppContainer + ACL + suspended Job containment
 
 Implement:
 
-- restricted mutation identity/token provider;
-- exact workspace/staging ACL admission and cleanup/revocation semantics;
-- Job Object creation/configuration;
-- assign process before untrusted work can run;
-- no breakaway;
-- kill-on-close;
+- scope-specific AppContainer profile/SID lifecycle;
+- exact workspace broker creation after START;
+- protected/non-inherited workspace DACL;
+- read/execute-only runtime roots as needed;
+- reparse-safe final-path verification;
+- Job Object kill-on-close/no-breakaway;
+- suspended process creation + pre-resume Job assignment;
 - process-tree timeout/cancel;
-- sandbox identity/containment receipt.
+- sandbox/containment receipt;
+- terminalization cleanup/revocation.
 
 Use fixture-owned temporary roots only. Never test against real `D:\coco` or user repositories.
 
-Tests must prove:
+Tests prove:
 
 - write inside admitted workspace succeeds;
-- sibling/parent/protected fixture write and delete fail;
-- nested child attack fails;
-- detached/background attempt cannot outlive/escape containment;
-- junction/reparse escape fails;
-- unavailable/failed sandbox setup causes no child spawn.
+- parent/sibling/protected fixture create/write/delete fail;
+- child attack fails;
+- detached/background child cannot escape Job;
+- reparse/junction escape fails;
+- move/rename escape fails;
+- AppContainer/ACL/Job setup failure causes no resumed child;
+- terminalization revokes scope SID authority and leaves non-active read-back.
 
 Checkpoint:
 
 ```text
-Windows scoped mutation boundary is enforced by OS primitives, not text/path discipline.
+Windows scoped mutation boundary is enforced by AppContainer filesystem authority plus pre-resume Job containment.
 ```
 
 ### Slice 5 — Scoped script execution integration
 
-Refactor/integrate `handlers/script.py` without regressing its existing interpreter, Unicode, cwd, timeout and background semantics.
-
-For `scoped_mutation`:
-
-```text
-scope revalidate
-→ durable evidence + START
-→ OS-contained spawn
-→ SPAWN
-→ result/timeout/cancel
-→ FINISH
-```
-
-Keep operator-unrestricted behavior separate and explicit.
+Integrate the scoped provider with `handlers/script.py` while preserving legacy script behavior outside the new profile.
 
 Regression focus:
 
-- powershell / pwsh / python3 paths;
-- cwd behavior;
+- powershell / pwsh / python3 process-intent preparation;
 - Unicode behavior;
+- cwd descendant validation;
 - timeout process-tree behavior;
-- no sudo/elevation upgrade into scoped mode;
+- no sudo/elevation in scoped mode;
 - env cannot override authority/sandbox identity;
-- user-scoped Git credentials are not inherited by sandbox process.
+- normal-user Git credentials not inherited;
+- scoped failure never falls back to legacy/operator-unrestricted.
 
 Checkpoint:
 
 ```text
-Existing script ergonomics remain, but scoped mutation has a separate enforceable security path.
+Existing script ergonomics remain for legacy callers; scoped mutation is a distinct enforceable path.
 ```
 
 ### Slice 6 — Incident regression, docs and release readiness
@@ -411,66 +731,86 @@ Create canonical fixture:
 INCIDENT-20260927-D-ROOT-RECURSIVE-DELETE
 ```
 
-Within a temporary synthetic root, create:
+Inside a disposable synthetic root create:
 
 ```text
 root/
-  admitted-workspace/
-  sibling-workspace/MUST_SURVIVE
+  workspace-root/
+    admitted-workspace/
+    sibling-workspace/MUST_SURVIVE
   canonical-repo/MUST_SURVIVE
   personal-project/MUST_SURVIVE
   parent-sentinel/MUST_SURVIVE
 ```
 
-Run representative PowerShell/cmd/Python/.NET/Win32/reparse/move/git-clean attacks from the admitted scope and prove only the admitted workspace can change.
+Run representative escape attempts from the admitted AppContainer:
 
-Also update:
+- PowerShell recursive deletion outside scope;
+- `cmd.exe /c rmdir /s /q` outside scope;
+- Python `shutil.rmtree` outside scope;
+- .NET/Win32 deletion outside scope;
+- child PowerShell/cmd/Python mutation outside scope;
+- detached/background escape;
+- junction/symlink/reparse-point escape;
+- move/rename escape;
+- `git clean -fdx` or equivalent against a protected fixture.
+
+Prove all protected sentinels survive unchanged.
+
+Update:
 
 - README security/tool semantics;
 - Windows config example;
 - generic config example;
-- SECURITY/THREAT_MODEL if required by existing documentation ownership;
+- SECURITY/THREAT_MODEL as required;
 - CHANGELOG/release note entry.
 
 Checkpoint:
 
 ```text
-Provider evidence satisfies the consumer contract and the incident family is a permanent regression.
+Provider evidence satisfies the DevForge consumer contract and the incident family is a permanent regression.
 ```
 
 ## Verification Strategy
 
 ### Static / unit
 
-- policy and capability matrices;
+- RequestContext provenance/spoofing tests;
+- policy migration matrix;
+- placement resolver determinism and drift;
 - scope lifecycle state machine;
 - digest/identity binding;
 - audit record schema and ordering;
-- injected failure paths;
-- receipt identity matching.
+- injected audit failure paths;
+- receipt identity matching;
+- explicit no-fallback tests.
 
 ### Windows integration
 
-Must run on a real Windows host/provider environment capable of the same service mode used in production.
+Must run on a real Windows host/provider environment capable of the service mode used in production.
 
 Required proof includes:
 
 ```text
 service identity
-sandbox identity
-workspace ACL state
+AppContainer name/SID
+workspace final path + DACL read-back
+parent/sibling/protected DACL/access checks
 Job Object / containment identity
 root PID + child PIDs
+proof process was created suspended and assigned before resume
 START timestamp/ref
 SPAWN timestamp/ref
 FINISH timestamp/ref or intentional absence after crash
-terminal scope read-back
+scope terminal read-back
 protected fixture hashes/existence before and after
 ```
 
+A unit mock of AppContainer/Job APIs is not sufficient acceptance evidence for the Windows sandbox criterion.
+
 ### Existing regression suite
 
-Run targeted existing suites around:
+Run targeted suites around:
 
 ```text
 script_run
@@ -482,16 +822,18 @@ policy/capabilities
 user-scoped Git
 ```
 
-Then run the broad suite available on the target platform. Platform-incompatible collection failures must be identified separately; they are not evidence that this task passed.
+Then run the broad suite available on the target platform. Platform-incompatible collection failures must be classified separately and never reported as task PASS evidence.
 
 ## Safety Rules During Implementation
 
-1. Never use `D:\coco`, a real user project, canonical checkout or real protected directory as a destructive test target.
+1. Never use `D:\coco`, a real user project, canonical checkout, or real protected directory as a destructive test target.
 2. All destructive regression attacks run only inside disposable fixture roots created specifically for the test.
 3. No recursive delete fallback outside fixture-owned paths.
 4. Do not weaken existing file-op path canonicalization or Git credential boundaries to make scoped mutation work.
-5. Never mark `host_mutation_sandbox_v1` available until the real OS enforcement self-check passes.
-6. Provider unavailability is an acceptable fail-closed V1 outcome on unsupported hosts.
+5. Never mark `host_mutation_sandbox_v1` available until the real AppContainer + ACL + Job self-check passes.
+6. Provider unavailability is an acceptable fail-closed V1 outcome on unsupported/not-ready hosts.
+7. Do not implement a restricted-token/LocalSystem fallback if AppContainer readiness fails.
+8. Workspace materialization by the trusted broker is allowed only for the exact provider-derived future workspace after durable START.
 
 ## Completion Evidence
 
@@ -501,17 +843,30 @@ Implementation is a completion candidate only when it can return evidence equiva
 provider_capabilities:
   host_mutation_sandbox_v1: verified
   pre_execution_audit_lineage_v1: verified
+request_context:
+  request_id_source: RequestMessage
+  opaque_ref_source: RequestMessage
+  payload_spoofing_rejected: true
+placement:
+  authority: runtime_host_owned
+  generation_verified: true
+  exact_workspace_verified: true
+  caller_path_authority: false
 scope:
   producer: provision_scope
   revalidation: verified
   terminalization: verified_non_active
 audit:
-  started_before_spawn: true
+  started_before_workspace_materialization: true
+  started_before_untrusted_spawn: true
   request_lineage_verified: true
   script_evidence_retained: true
 process:
-  sandbox_identity_verified: true
+  sandbox_identity: appcontainer
+  workspace_acl_verified: true
+  suspended_before_job_assignment: true
   containment_verified: true
+  breakaway_allowed: false
 incident_regression:
   admitted_workspace_mutation: allowed
   out_of_scope_mutation: denied
