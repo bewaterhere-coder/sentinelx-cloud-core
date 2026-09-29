@@ -4,11 +4,14 @@
 
 ```yaml
 task_id: SX-HMSA-001
-stage: plan_review
+stage: accepted
 requirement: docs/requirements/SX-HMSA-001-host-mutation-sandbox-pre-execution-audit-lineage-provider-v1.md
 transport: github-pr
 task_branch: task/sx-host-mutation-sandbox-pre-execution-audit-lineage-provider-v1
-plan_status: revised_ready_for_review
+plan_status: approved
+execution_state: completed
+acceptance_approved: true
+completion_verified: false
 plan_revision: 3
 ```
 

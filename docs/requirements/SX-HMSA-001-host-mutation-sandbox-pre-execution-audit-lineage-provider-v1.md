@@ -18,12 +18,18 @@ gates:
   plan_approved: true
   acceptance_approved: true
   completion_verified: false
+finalization:
+  ready_for_merge: false
+  canonical_state_verified: false
+  plan_execution_state_verified: false
+  evidence_verified: true
+  transport_preconditions_verified: false
 artifacts:
   plan: docs/plans/SX-HMSA-001-host-mutation-sandbox-pre-execution-audit-lineage-provider-v1-plan.md
   plan_review: docs/reviews/SX-HMSA-001-host-mutation-sandbox-pre-execution-audit-lineage-provider-v1-plan-review-r3.md
   execution_slice_set: docs/execution/SX-HMSA-001-execution-slice-set.yaml
   acceptance: docs/reviews/SX-HMSA-001-host-mutation-sandbox-pre-execution-audit-lineage-provider-v1-acceptance-r2.md
-next_expected_actor: completion_finalizer
+next_expected_actor: integration_finalizer
 ```
 
 ## Requirement Source
