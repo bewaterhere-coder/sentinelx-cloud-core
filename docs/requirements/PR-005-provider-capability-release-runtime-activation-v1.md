@@ -7,13 +7,13 @@ project_id: sentinelx-cloud-core
 task_id: PR-005-provider-capability-release-runtime-activation-v1
 title: SentinelX Provider Capability Release & Runtime Activation V1
 development:
-  stage: plan_review
+  stage: implementation
   gates:
     requirement_ready: true
-    plan_approved: false
+    plan_approved: true
     acceptance_approved: false
     completion_verified: false
-  next_expected_actor: reviewer
+  next_expected_actor: implementer
 transport:
   type: github-pr
   pr_number: 5
@@ -21,6 +21,8 @@ transport:
   base_branch: main
 artifacts:
   plan: docs/plans/PR-005-provider-capability-release-runtime-activation-v1-plan.md
+  plan_review: docs/reviews/PR-005-provider-capability-release-runtime-activation-v1-plan-review-r1.md
+  execution_slice_set: docs/execution/PR-005-provider-capability-release-runtime-activation-v1-execution-slice-set.yaml
 related_tasks:
   - SX-HMSA-001
 ```
