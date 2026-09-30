@@ -5,9 +5,11 @@
 ```yaml
 task_id: PR-005-provider-capability-release-runtime-activation-v1
 plan_revision: 1
-status: ready_for_review
+status: approved
 base_revision: 732a8dbf292a798af55edbc0abbb2f2070a5a6f9
 requirement: docs/requirements/PR-005-provider-capability-release-runtime-activation-v1.md
+plan_review: docs/reviews/PR-005-provider-capability-release-runtime-activation-v1-plan-review-r1.md
+execution_slice_set: docs/execution/PR-005-provider-capability-release-runtime-activation-v1-execution-slice-set.yaml
 transport:
   type: github-pr
   pr_number: 5
@@ -236,12 +238,4 @@ Platform-inapplicable security tests must be explicitly classified; skipped test
 
 ## Plan Review Gate
 
-This Plan does **not** authorize implementation yet.
-
-Approval must verify in particular:
-
-- tag-derived versioning does not create a new release-truth conflict;
-- the local release executor is sufficient without CI;
-- exact-artifact installation is testable without hard-coded Windows paths;
-- SX-HMSA readiness remains the sole capability authority;
-- real publication remains a separately authorized external side effect.
+Plan Review r1 is **Approved** for plan revision 1. Implementation is authorized only through the compiled Execution Slice Set; real release publication remains a separately authorized external side effect.
