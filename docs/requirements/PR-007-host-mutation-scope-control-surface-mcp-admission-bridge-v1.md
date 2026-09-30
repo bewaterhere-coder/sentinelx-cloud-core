@@ -7,13 +7,13 @@ project_id: sentinelx-cloud-core
 task_id: PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1
 title: Host Mutation Scope Control Surface & MCP Admission Bridge V1
 development:
-  stage: plan_review
+  stage: plan_review_rejected
   gates:
     requirement_ready: true
     plan_approved: false
     acceptance_approved: false
     completion_verified: false
-  next_expected_actor: reviewer
+  next_expected_actor: planner
 transport:
   type: github-pr
   pr_number: 7
@@ -21,6 +21,7 @@ transport:
   base_branch: main
 artifacts:
   plan: docs/plans/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-plan.md
+  plan_review: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-plan-review-r1.md
 related_tasks:
   builds_on:
     - SX-HMSA-001
@@ -290,10 +291,23 @@ challenge_completed: true
 - **A12:** affected tests plus compile/import checks pass on the canonical Task transport; no material implementation is claimed without durable execution evidence.
 - **A13 / R14:** static/review verification finds no fixed host/path/version/credential identity in the authority model.
 
+## Plan Review R1
+
+Result: **Rejected**.
+
+Durable findings: `docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-plan-review-r1.md`.
+
+Required remediation:
+
+1. make the canonical scoped operation class an execution-time admission check consumed by `script_run scoped_mutation`, not merely persisted metadata;
+2. revise D4/S01 to reuse or safely extend the existing `MutationScopeStore.read_scope(scope_id)` seam with exact generation + repository + semantic binding and non-reactivating semantics.
+
 ## Requirement Decision
 
 ```text
 Requirement Ready: true
-Current Gate: Plan Review
+Plan Review: Rejected
+Current Gate: plan_review_rejected
+Plan Approved: false
 Implementation Authorized: false
 ```
