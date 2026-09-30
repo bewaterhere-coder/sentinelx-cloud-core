@@ -16,7 +16,7 @@ development:
   next_expected_actor: reviewer
 transport:
   type: github-pr
-  pr_number: null
+  pr_number: 6
   branch: task/sx-hmsa-002-runtime-independent-readiness-interpreter-capability-separation-v1
   base_branch: main
 artifacts:
