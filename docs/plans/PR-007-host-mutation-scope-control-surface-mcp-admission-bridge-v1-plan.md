@@ -4,11 +4,12 @@
 
 ```yaml
 task_id: PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1
-stage: plan_review
-plan_status: proposed
+stage: plan_review_rejected
+plan_status: rejected
 implementation_authorized: false
 plan_revision: 1
 requirement: docs/requirements/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1.md
+plan_review: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-plan-review-r1.md
 transport: github-pr
 pr_number: 7
 task_branch: task/host-mutation-scope-control-surface-mcp-admission-bridge-v1
@@ -391,12 +392,25 @@ Reviewer must specifically challenge:
 5. whether Acceptance properly blocks on live Hub relay failure;
 6. whether PR #5 creates any shared-surface conflict before implementation.
 
+## Plan Review R1 Result
+
+**Rejected.** Durable findings are recorded in:
+
+`docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-plan-review-r1.md`
+
+Blocking remediation required before another review:
+
+1. enforce the canonical scoped operation class at execution admission; `allowed_operation_classes` must be consumed by `script_run scoped_mutation`, not merely persisted by provisioning;
+2. revise D4/S01 to match current repository reality: `MutationScopeStore.read_scope(scope_id)` already exists and must be safely reused/extended with exact generation + repository + semantic binding rather than duplicating readback authority.
+
+No execution Slice Set is compiled for rejected Plan Revision 1.
+
 ## Gate
 
 ```text
 Plan Revision: 1
 Plan Approved: false
 Implementation Authorized: false
-Current Gate: plan_review
-Next Actor: reviewer
+Current Gate: plan_review_rejected
+Next Actor: planner
 ```
