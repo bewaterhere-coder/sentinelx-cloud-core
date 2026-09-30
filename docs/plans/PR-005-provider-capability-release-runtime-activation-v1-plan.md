@@ -6,6 +6,7 @@
 task_id: PR-005-provider-capability-release-runtime-activation-v1
 plan_revision: 1
 status: approved
+approved_plan_blob: 74f60053c9e5dd4702b28e6db4d600606b33d051
 base_revision: 732a8dbf292a798af55edbc0abbb2f2070a5a6f9
 requirement: docs/requirements/PR-005-provider-capability-release-runtime-activation-v1.md
 plan_review: docs/reviews/PR-005-provider-capability-release-runtime-activation-v1-plan-review-r1.md
