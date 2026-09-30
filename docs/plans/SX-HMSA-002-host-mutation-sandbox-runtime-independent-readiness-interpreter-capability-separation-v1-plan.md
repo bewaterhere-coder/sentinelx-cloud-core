@@ -8,7 +8,7 @@ stage: plan_review
 requirement: docs/requirements/SX-HMSA-002-host-mutation-sandbox-runtime-independent-readiness-interpreter-capability-separation-v1.md
 transport:
   type: github-pr
-  pr_number: null
+  pr_number: 6
   branch: task/sx-hmsa-002-runtime-independent-readiness-interpreter-capability-separation-v1
   base_branch: main
 plan_status: pending_review
