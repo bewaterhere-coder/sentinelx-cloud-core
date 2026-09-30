@@ -21,6 +21,7 @@ transport:
   base_branch: main
 artifacts:
   plan: docs/plans/PR-005-provider-capability-release-runtime-activation-v1-plan.md
+  approved_plan_blob: 74f60053c9e5dd4702b28e6db4d600606b33d051
   plan_review: docs/reviews/PR-005-provider-capability-release-runtime-activation-v1-plan-review-r1.md
   execution_slice_set: docs/execution/PR-005-provider-capability-release-runtime-activation-v1-execution-slice-set.yaml
 related_tasks:
