@@ -7,13 +7,13 @@ project_id: sentinelx-cloud-core
 task_id: PR-005-provider-capability-release-runtime-activation-v1
 title: SentinelX Provider Capability Release & Runtime Activation V1
 development:
-  stage: planning
+  stage: plan_review
   gates:
     requirement_ready: true
     plan_approved: false
     acceptance_approved: false
     completion_verified: false
-  next_expected_actor: orchestration
+  next_expected_actor: reviewer
 transport:
   type: github-pr
   pr_number: 5
@@ -27,72 +27,54 @@ related_tasks:
 
 ## Problem
 
-`SX-HMSA-001` implemented the provider-side security capabilities `host_mutation_sandbox_v1` and `pre_execution_audit_lineage_v1`, but the canonical SentinelX fork currently has no versioned release artifact path of its own and its package metadata still reports `0.21.1`. A running Windows agent can therefore remain on an older installed build even though the capability implementation is already merged.
+`SX-HMSA-001` implemented `host_mutation_sandbox_v1` and `pre_execution_audit_lineage_v1`, but the canonical fork still has no versioned release artifact path of its own and `pyproject.toml` still reports `0.21.1`. A running agent can therefore remain on an older installed build after the provider code is merged.
 
-The missing boundary is not another host-specific deployment patch. SentinelX needs a generic release and activation path so a capability-bearing canonical revision can be packaged, published, installed, and then truthfully activated according to the target host's runtime readiness.
+The missing boundary is generic release + runtime activation, not another host-specific deployment patch.
 
 ## Goal
 
-Provide a reusable SentinelX release boundary that can publish an exact canonical source revision as an installable versioned release without embedding a specific host, version number, installation path, workspace path, or machine identity in product code.
+Make an exact canonical SentinelX revision publishable as an installable, versioned release without embedding a specific host, version number, install directory, mutation workspace, protected-root inventory, Python path, or machine identity in product code.
 
-After a released build is installed, runtime capability advertisement must continue to be determined by the host's actual `mutation_execution` policy and readiness probe. Publication must not imply that a particular host has upgraded or that scoped mutation is ready.
+After installation, capability advertisement remains determined by the host's actual `mutation_execution` policy and real readiness probe. Publication never proves that any particular host upgraded or became runtime-ready.
 
 ## Required Behavior
 
 ### R1 — Versioned canonical release input
 
-A release invocation accepts a release version/ref as input and binds the produced artifacts to one exact canonical source revision.
-
-- The release version is supplied by the release invocation/tag/request; it is not hard-coded into host-specific logic.
-- The artifact exposes the same resolved version through SentinelX runtime version reporting.
-- Source revision and artifact identity are recoverable from release metadata/manifest or equivalent provenance.
-- Re-running the same release input must either be idempotent or fail clearly on an existing conflicting release; it must not silently replace a different artifact.
+- Release version/ref is invocation/tag input, not host-specific source truth.
+- Produced artifact reports the resolved release version through normal SentinelX package/runtime metadata.
+- Release provenance binds the artifact to one exact canonical source revision.
+- Same-version repeat is idempotent or rejects a conflicting artifact; it never silently replaces different bytes.
 
 ### R2 — Installable release artifact
 
-The release path produces at least one installable SentinelX agent artifact from the canonical repository, plus integrity evidence sufficient to verify what was built.
+- Produce at least one installable agent artifact plus integrity evidence.
+- GitHub Release + wheel and/or wheel bundle is sufficient for V1; PyPI is not required.
+- CI may invoke the path, but GitHub Actions/CI is not a semantic prerequisite: a host-local/manual release executor must be sufficient.
 
-A GitHub Release with a Python wheel and/or wheel bundle is an acceptable V1 distribution channel. PyPI publication is not required.
+### R3 — Generic exact-version install/upgrade
 
-The release path must be usable without GitHub Actions/CI being a semantic prerequisite. CI may validate the same path, but a host-local/manual release executor must be sufficient.
-
-### R3 — Generic install/upgrade consumption
-
-A Windows installation can consume an exact released artifact/version rather than requiring `@main` as the only upgrade source.
-
-The mechanism must not assume a specific hostname, `C:\ProgramData\SentinelX`, `D:\coco`, a fixed virtualenv, or any other machine-specific path as canonical product truth. Existing installer/configured installation locations may be discovered or supplied at execution time.
-
-The release mechanism must not silently mutate a host as part of package publication. Release availability and host upgrade state are separate facts.
+- Windows can consume an exact released artifact/version rather than depending on `@main` as the only upgrade source.
+- Installation/venv/service locations are discovered or supplied at execution time; no fixed hostname, `C:\ProgramData\SentinelX`, `D:\coco`, venv, or workspace path is canonical authority.
+- Publishing a release does not silently mutate or upgrade a connected host.
 
 ### R4 — Readiness-gated runtime activation
 
-Installing the capability-bearing release makes the provider implementation available, but capability advertisement remains fail-closed and runtime-derived.
+Installing a capability-bearing release makes the provider implementation available, but availability remains fail-closed and runtime-derived:
 
-For `host_mutation_sandbox_v1` and `pre_execution_audit_lineage_v1`:
-
-- capability availability is computed from real runtime readiness, not the package version alone;
-- missing/disabled `mutation_execution` policy, invalid roots, missing Windows sandbox prerequisites, audit failure, ACL/Job failure, or readiness-probe failure keep the capability unavailable with diagnostic evidence;
-- a host with valid host-resolved policy and passing readiness advertises both capabilities;
-- `pre_execution_audit_lineage_v1` remains bound to the same verified readiness boundary as `host_mutation_sandbox_v1`;
-- Linux/macOS do not gain false scoped-mutation availability in V1.
+- package version alone never enables `host_mutation_sandbox_v1` or `pre_execution_audit_lineage_v1`;
+- missing/disabled policy, invalid roots, missing Windows sandbox prerequisites, audit/ACL/Job failure, or readiness-probe failure keeps both unavailable with diagnostic evidence;
+- a host with valid host-resolved policy and passing readiness may advertise both capabilities;
+- `pre_execution_audit_lineage_v1` remains bound to the same readiness boundary as `host_mutation_sandbox_v1`;
+- Linux/macOS remain unavailable for scoped mutation in V1.
 
 ### R5 — No hard-coded deployment identity
 
-The implementation must not embed any of the following as release/activation authority:
+Release/activation authority must not depend on a fixed host ID/hostname, release version, installation directory, mutation workspace root, protected-root inventory, Python executable, or virtualenv path. Portable defaults may exist only when overrideable/discoverable; host-specific roots remain host runtime/configuration state.
 
-- a specific SentinelX host ID or hostname;
-- the current development machine;
-- a fixed release version;
-- a fixed installation directory;
-- a fixed mutation workspace root;
-- a fixed protected-root inventory;
-- a fixed Python executable or virtualenv path.
+### R6 — Observable lifecycle boundaries
 
-Defaults may exist only when they are portable platform defaults and remain overrideable/discoverable. Host-specific roots and policy remain host configuration/runtime state.
-
-### R6 — Release/activation observability
-
-The system exposes enough evidence to distinguish these states:
+Evidence must distinguish:
 
 ```text
 source_implemented
@@ -102,31 +84,20 @@ release_installed_on_host
 runtime_capability_ready
 ```
 
-No state may be inferred from a later state that has not been verified. In particular:
+Merged source is not released; released is not installed; installed is not runtime-ready.
 
-- merged source does not mean released;
-- released does not mean installed on a host;
-- installed does not mean readiness passed;
-- package version does not authorize capability advertisement.
+## Compatibility / Non-Goals
 
-## Compatibility
-
-- Preserve existing SentinelX read-only and structured operation behavior.
-- Preserve the existing fail-closed mutation readiness probe introduced by `SX-HMSA-001`.
-- Existing installs that continue to update from source may remain supported for compatibility, but the documented/canonical release path must support exact versioned artifacts.
-- Do not introduce automatic background updates.
-- Do not make `operator_unrestricted` a fallback for scoped mutation.
-
-## Non-Goals
-
-- Hard-coding or auto-enrolling the current `Cherie_li` host.
-- Forcing every connected host to upgrade when a release is published.
-- Making scoped mutation enabled by default on hosts lacking an explicit valid policy.
-- Adding Linux/macOS scoped-mutation enforcement in V1.
-- Replacing the SentinelX hub.
-- Requiring PyPI as the release channel.
-- Requiring GitHub Actions/CI for release completion.
-- Redesigning the already accepted SX-HMSA-001 sandbox/audit semantics.
+- Preserve existing read-only/structured SentinelX behavior and SX-HMSA fail-closed readiness semantics.
+- Source-based updating may remain as a compatibility/development path, but normal release documentation must support immutable exact artifacts.
+- No automatic background updates.
+- No `operator_unrestricted` fallback for scoped mutation.
+- Do not hard-code or auto-enroll `Cherie_li` or any other host.
+- Do not force all hosts to upgrade on publish.
+- Do not enable scoped mutation by default without explicit valid policy.
+- Do not add Linux/macOS scoped-mutation enforcement in V1.
+- Do not require PyPI or CI.
+- Do not redesign the accepted SX-HMSA sandbox/audit model.
 
 ## Requirement Readiness Evidence
 
@@ -134,11 +105,11 @@ No state may be inferred from a later state that has not been verified. In parti
 depth: deep
 behavior_examples:
   - id: R1-example
-    sequence: "Maintainer selects version V and canonical commit C -> release build emits artifact A -> A reports V and provenance binds A to C."
+    sequence: "Maintainer selects version V and canonical commit C -> release emits artifact A -> A reports V and release provenance binds A to C."
   - id: R3-example
-    sequence: "A Windows operator selects released version V -> installer/upgrader consumes the exact release artifact -> SentinelX restarts from that installed build without depending on @main."
+    sequence: "Windows operator selects released version V -> upgrader installs the exact artifact -> runtime no longer depends on moving @main for that installation."
   - id: R4-example
-    sequence: "Installed release contains SX-HMSA provider code, but mutation policy is disabled -> capabilities reports both mutation features unavailable; enabling valid host-resolved policy and passing the readiness probe makes them available."
+    sequence: "Installed release contains SX-HMSA code, but mutation policy is disabled -> both capabilities remain unavailable; valid host-resolved policy plus successful readiness makes them available."
 invariants:
   - release_version_is_input_not_machine_constant
   - release_artifact_is_bound_to_exact_source_revision
@@ -149,36 +120,36 @@ invariants:
   - no_ci_dependency_for_release_semantics
 assumptions:
   - statement: "GitHub Release plus wheel/wheel-bundle is sufficient as the first canonical distribution channel."
-    validation: "Build, integrity-check, and install the artifact from an exact release fixture without using @main."
-  - statement: "Existing SX-HMSA runtime readiness is the correct activation authority and should be reused rather than replaced by a version gate."
-    validation: "Capability tests cover disabled policy, failed readiness, and successful Windows readiness paths."
+    validation: "Build, integrity-check, and install an exact artifact without using @main."
+  - statement: "Existing SX-HMSA runtime readiness remains activation authority rather than a version gate."
+    validation: "Capability tests cover disabled policy, failed readiness, and successful Windows readiness."
 material_questions: []
 disconfirming_cases:
-  - "A published artifact cannot be installed without resolving the moving main branch."
-  - "Changing the release version requires editing a host-specific path or source constant outside the release input."
-  - "An installed capability-bearing package advertises scoped mutation while the readiness probe is unavailable or failing."
-  - "Release success is reported as proof that a particular host upgraded."
+  - "A published artifact cannot be installed without resolving moving main."
+  - "Changing release version requires editing host-specific source/path constants."
+  - "Installed package advertises scoped mutation while readiness is unavailable or failing."
+  - "Release success is represented as proof that a specific host upgraded."
 challenge_completed: true
 ```
 
 ## Acceptance Criteria
 
-- **A1 / R1:** Given an explicit release version/ref and canonical source commit, the release build produces artifacts whose runtime package version and provenance match those inputs; no host-specific source edit is required.
-- **A2 / R2:** A clean environment can build the versioned installable artifact and verify its checksum/integrity metadata without requiring CI.
-- **A3 / R2,R3:** A clean Windows-compatible installation fixture can install/upgrade from the exact produced release artifact or bundle without fetching `@main` as the package source.
-- **A4 / R4:** With the released package installed but scoped mutation disabled/unconfigured, runtime capability evidence remains unavailable and explains why.
-- **A5 / R4:** With valid Windows host-resolved mutation policy and real readiness prerequisites, the runtime probe can advertise both `host_mutation_sandbox_v1` and `pre_execution_audit_lineage_v1`; failing prerequisites remain fail-closed.
-- **A6 / R5:** Tests or static verification prove release/activation code contains no dependency on a fixed host ID/hostname, fixed version, fixed installation path, or fixed mutation workspace path.
-- **A7 / R6:** Release evidence distinguishes build/publish state from host-install/runtime-readiness state and never treats one as proof of another.
-- **A8:** Existing relevant SX-HMSA regression/security tests remain passing, including readiness advertisement behavior.
-- **A9:** Documentation defines the versioned release path, exact-artifact install/upgrade path, activation/readiness semantics, and the continued optional `@main` compatibility path if retained.
+- **A1 / R1:** explicit version/ref + canonical commit produce artifacts whose package/runtime version and provenance match, without host-specific source edits.
+- **A2 / R2:** clean environment builds an installable artifact and verifies checksums/integrity without CI.
+- **A3 / R2,R3:** Windows-compatible clean fixture installs/upgrades from the exact artifact/bundle without fetching `@main` as package source.
+- **A4 / R4:** installed release with scoped mutation disabled/unconfigured reports both mutation features unavailable with reason/check evidence.
+- **A5 / R4:** valid Windows host-resolved policy + real readiness can advertise both features; failing prerequisites stay fail-closed.
+- **A6 / R5:** tests/static verification prove release/activation authority contains no fixed host ID/hostname, version, install path, or mutation workspace path.
+- **A7 / R6:** release evidence separates build/publish/install/readiness states.
+- **A8:** relevant SX-HMSA security/regression tests remain passing, including readiness advertisement behavior.
+- **A9:** documentation defines versioned release, exact-artifact install/upgrade, activation/readiness semantics, and any retained source-update compatibility path.
 
 ## Regression Surface
 
 - package version resolution (`pyproject.toml`, `AGENT_VERSION`, build metadata);
-- release packaging and GitHub Release artifact shape;
-- Windows install/update documentation and bundle consumption;
+- release packaging/GitHub Release asset shape;
+- Windows update/install documentation;
 - `capabilities` execution feature reporting;
-- `mutation_execution` policy parsing and readiness probing;
-- existing source-based update playbook;
+- `mutation_execution` policy and readiness probing;
+- source-based update playbook;
 - security boundary preventing false capability advertisement.
