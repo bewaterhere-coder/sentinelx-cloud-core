@@ -1,0 +1,85 @@
+schema_version: "1.0"
+kind: devforge_execution_slice_set
+identity:
+  task_id: PR-005-provider-capability-release-runtime-activation-v1
+  slice_set_id: PR-005-provider-capability-release-runtime-activation-v1-plan-r1
+plan:
+  ref: docs/plans/PR-005-provider-capability-release-runtime-activation-v1-plan.md
+  revision: 1
+  blob: 74f60053c9e5dd4702b28e6db4d600606b33d051
+review:
+  ref: docs/reviews/PR-005-provider-capability-release-runtime-activation-v1-plan-review-r1.md
+  decision: Approved
+slices:
+  - slice_id: S01
+    objective: Implement release-derived package versioning and the host-local build/verify executor with immutable provenance and artifact hashing.
+    depends_on: []
+    scope:
+      refs:
+        - pyproject.toml
+        - tools/release.py
+        - tests/test_release.py
+        - tests/test_release_install.py
+    verification:
+      required:
+        - tag/version/ref mismatch fails closed
+        - wheel metadata reports requested release version
+        - isolated install reads back matching AGENT_VERSION
+        - manifest binds exact source revision and SHA-256 artifact digest
+    checkpoint:
+      required: true
+    state: pending
+    run_refs: []
+    completion_receipt_ref: null
+
+  - slice_id: S02
+    objective: Implement exact-artifact release consumption and publication planning/idempotency without binding to a host, install path, CI, or automatic deployment.
+    depends_on: [S01]
+    scope:
+      refs:
+        - tools/release.py
+        - README.md
+        - config.example.windows.yaml
+        - existing update_sentinelx_code playbook or equivalent operator update entrypoint
+        - optional thin .github/workflows/release.yml adapter
+    verification:
+      required:
+        - exact release install path does not depend on moving @main
+        - publish dry-run is deterministic
+        - conflicting same-version artifact identity is rejected
+        - publishing does not mutate or auto-upgrade any connected host
+        - release tooling contains no fixed host/install/workspace/version authority
+    checkpoint:
+      required: true
+    state: pending
+    run_refs: []
+    completion_receipt_ref: null
+
+  - slice_id: S03
+    objective: Preserve and verify readiness-gated runtime activation, security regressions, lifecycle evidence boundaries, and release/operator documentation.
+    depends_on: [S02]
+    scope:
+      refs:
+        - src/sentinelx_core/handlers/basic.py
+        - src/sentinelx_core/mutation_readiness.py
+        - tests/test_capabilities_*
+        - tests/test_mutation_*
+        - tests/test_scoped_script_execution.py
+        - tests/test_windows_mutation_sandbox.py
+        - tests/test_incident_20260927_d_root_recursive_delete.py
+        - README.md
+        - config.example.windows.yaml
+    verification:
+      required:
+        - disabled or invalid policy keeps both SX-HMSA capabilities unavailable
+        - failing prerequisite remains fail-closed with diagnostic evidence
+        - valid Windows readiness can advertise both capabilities using dynamic roots
+        - Linux/macOS remain unavailable for scoped mutation V1
+        - package version alone never enables mutation capabilities
+        - evidence distinguishes built, published, installed and runtime-ready states
+        - relevant SX-HMSA regression suite remains green
+    checkpoint:
+      required: true
+    state: pending
+    run_refs: []
+    completion_receipt_ref: null
