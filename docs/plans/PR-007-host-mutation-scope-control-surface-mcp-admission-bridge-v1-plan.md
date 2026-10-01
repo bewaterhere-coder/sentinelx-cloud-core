@@ -4,12 +4,14 @@
 
 ```yaml
 task_id: PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1
-stage: plan_review
-plan_status: revised_pending_review
-implementation_authorized: false
+stage: implementation
+plan_status: approved
+implementation_authorized: true
 plan_revision: 2
 requirement: docs/requirements/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1.md
 prior_plan_review: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-plan-review-r1.md
+plan_review: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-plan-review-r2.md
+execution_slice_set: docs/execution/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-slices.yaml
 transport: github-pr
 pr_number: 7
 task_branch: task/host-mutation-scope-control-surface-mcp-admission-bridge-v1
@@ -480,9 +482,10 @@ This remediation changes only the Plan. It does not authorize implementation and
 
 ```text
 Plan Revision: 2
-Plan Approved: false
-Implementation Authorized: false
-Current Gate: plan_review
-Next Actor: plan_reviewer
-Canonical Next Action: #开发评审 PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1
+Plan Review R2: Approved
+Plan Approved: true
+Implementation Authorized: true
+Current Gate: implementation
+Next Actor: implementer
+Canonical Next Action: #开发执行 PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1
 ```

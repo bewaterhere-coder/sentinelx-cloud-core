@@ -7,15 +7,15 @@ project_id: sentinelx-cloud-core
 task_id: PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1
 title: Host Mutation Scope Control Surface & MCP Admission Bridge V1
 development:
-  stage: plan_review
+  stage: implementation
   gates:
     requirement_ready: true
-    plan_approved: false
+    plan_approved: true
     acceptance_approved: false
     completion_verified: false
-  next_expected_actor: plan_reviewer
+  next_expected_actor: implementer
   continuation_checkpoint:
-    ref: docs/checkpoints/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-plan-remediation-r2-20261002.yaml
+    ref: docs/checkpoints/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-plan-review-r2-approved-20261002.yaml
 transport:
   type: github-pr
   pr_number: 7
@@ -23,7 +23,8 @@ transport:
   base_branch: main
 artifacts:
   plan: docs/plans/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-plan.md
-  plan_review: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-plan-review-r1.md
+  plan_review: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-plan-review-r2.md
+  execution_slice_set: docs/execution/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-slices.yaml
 related_tasks:
   builds_on:
     - SX-HMSA-001
@@ -311,9 +312,9 @@ Required remediation:
 ```text
 Requirement Ready: true
 Plan Revision: 2
-Plan Remediation: completed
-Current Gate: plan_review
-Plan Approved: false
-Implementation Authorized: false
-Next Actor: plan_reviewer
+Plan Review R2: Approved
+Current Gate: implementation
+Plan Approved: true
+Implementation Authorized: true
+Next Actor: implementer
 ```
