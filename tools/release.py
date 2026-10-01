@@ -26,7 +26,7 @@ import zipfile
 MANIFEST_SCHEMA = "sentinelx.release.v1"
 TOOL_VERSION = "1"
 PACKAGE_NAME = "sentinelx-cloud-core"
-VERSION_RE = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+(?:[A-Za-z0-9._+-]*)?$")
+VERSION_RE = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
 
 
 class ReleaseError(RuntimeError):
@@ -150,7 +150,10 @@ def _build_wheel(repo: Path, source_commit: str) -> Path:
         wheels = sorted(wheel_dir.glob("*.whl"))
         if len(wheels) != 1:
             raise ReleaseError(f"expected exactly one wheel, found {len(wheels)}")
-        staged = Path(tempfile.mkstemp(prefix="sentinelx-release-wheel-", suffix=".whl")[1])
+        fd, staged_name = tempfile.mkstemp(prefix="sentinelx-release-wheel-", suffix=".whl")
+        os.close(fd)
+        staged = Path(staged_name)
+        staged.unlink()
         shutil.copy2(wheels[0], staged)
         return staged
     finally:
@@ -183,6 +186,9 @@ def build_release(repo: Path, version: str, output: Path, ref: str | None = None
     identity = resolve_release_identity(repo, version, ref)
     output = output.resolve()
     output.mkdir(parents=True, exist_ok=True)
+    manifest_path = output / "release-manifest.json"
+    if manifest_path.exists():
+        raise ReleaseError(f"release manifest already exists: {manifest_path}")
     staged_wheel = _build_wheel(repo.resolve(), identity["source_commit"])
     try:
         verification = _verify_wheel(staged_wheel, identity["version"])
@@ -206,10 +212,16 @@ def build_release(repo: Path, version: str, output: Path, ref: str | None = None
         },
         "verification": {**verification, "passed": True},
     }
-    manifest_path = output / "release-manifest.json"
-    if manifest_path.exists():
-        raise ReleaseError(f"release manifest already exists: {manifest_path}")
-    manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    manifest_tmp = output / ".release-manifest.json.tmp"
+    try:
+        manifest_tmp.write_text(
+            json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
+        manifest_tmp.replace(manifest_path)
+    except Exception:
+        destination.unlink(missing_ok=True)
+        manifest_tmp.unlink(missing_ok=True)
+        raise
     return manifest_path
 
 
@@ -227,6 +239,8 @@ def verify_manifest(manifest_path: Path, repo: Path | None = None) -> dict[str, 
     artifact = manifest.get("artifact")
     if not isinstance(artifact, dict) or not isinstance(artifact.get("filename"), str):
         raise ReleaseError("manifest artifact is invalid")
+    if Path(artifact["filename"]).name != artifact["filename"]:
+        raise ReleaseError("manifest artifact filename must be a basename")
     wheel = manifest_path.parent / artifact["filename"]
     if not wheel.is_file():
         raise ReleaseError(f"manifest artifact is missing: {wheel}")

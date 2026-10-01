@@ -41,10 +41,9 @@ packages = ["src/sentinelx_core"]
 
 [tool.hatch.version]
 source = "vcs"
-
-[tool.hatch.version.raw-options]
-# Source checkouts without release tags may still be installed for development.
-fallback_version = "0.0.0+dev"
+tag-pattern = "^v(?P<version>.*)$"
+# Untagged source archives may still be installed for development only.
+fallback-version = "0.0.0+dev"
 
 [tool.hatch.metadata]
 # We pin sentinelx-cloud-protocol to a git tag during dev. Once it's on PyPI
