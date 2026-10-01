@@ -401,6 +401,15 @@ not prove mutation readiness. `host_mutation_sandbox_v1` and
 `pre_execution_audit_lineage_v1` remain available only when the host policy and
 runtime self-check pass; Linux/macOS remain unavailable for scoped mutation V1.
 
+The Agent operation `mutation_scope` exposes the bounded provider-owned scope lifecycle
+(`provision`, `revalidate`, `inspect`, `terminalize`) through the normal operation
+registry. Its presence in `ops_supported` means only that this Agent can dispatch the
+operation; it does **not** prove scoped mutation readiness. Callers must separately
+inspect `execution_features.host_mutation_sandbox_v1`. Operators may disable
+`mutation_scope` through `disabled_ops`, which removes both advertisement and dispatch.
+V1 relies on the existing generic Hub operation relay and does not claim or require a
+dedicated public MCP tool for this lifecycle operation.
+
 ## Local development
 
 ```bash
