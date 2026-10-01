@@ -4,13 +4,14 @@
 
 ```yaml
 task_id: PR-009-mcp-development-execution-projection-dynamic-tool-contract-v1
-stage: plan_review
+stage: plan_review_rejected
 requirement: docs/requirements/PR-009-mcp-development-execution-projection-dynamic-tool-contract-v1.md
 transport: github-pr
 pr_number: 9
 task_branch: task/mcp-development-execution-projection-dynamic-tool-contract-v1
-plan_status: pending_review
+plan_status: rejected
 plan_revision: 1
+plan_review: docs/reviews/PR-009-mcp-development-execution-projection-dynamic-tool-contract-v1-plan-review-r1.md
 implementation_authorized: false
 acceptance_approved: false
 completion_verified: false
