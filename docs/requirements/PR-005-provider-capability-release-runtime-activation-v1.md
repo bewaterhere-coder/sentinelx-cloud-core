@@ -7,15 +7,15 @@ project_id: sentinelx-cloud-core
 task_id: PR-005-provider-capability-release-runtime-activation-v1
 title: SentinelX Provider Capability Release & Runtime Activation V1
 development:
-  stage: implementation
+  stage: acceptance
   gates:
     requirement_ready: true
     plan_approved: true
     acceptance_approved: false
     completion_verified: false
-  next_expected_actor: implementer
+  next_expected_actor: acceptance_reviewer
   continuation_checkpoint:
-    ref: docs/checkpoints/PR-005-provider-capability-release-runtime-activation-v1-s02-completed-20261001.yaml
+    ref: docs/checkpoints/PR-005-provider-capability-release-runtime-activation-v1-s03-completed-20261001.yaml
 transport:
   type: github-pr
   pr_number: 5
