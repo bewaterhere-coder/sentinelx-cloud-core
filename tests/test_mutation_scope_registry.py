@@ -19,7 +19,10 @@ def test_capabilities_derive_mutation_scope_from_registry_without_claiming_readi
     registry = build_registry(policy=Policy.empty())
     capabilities = _call(registry["capabilities"], {})
 
+    assert capabilities["ops_supported"] == sorted(registry)
     assert "mutation_scope" in capabilities["ops_supported"]
+    summary = _call(registry["capabilities"], {"detail": "summary"})
+    assert set(summary["ops_supported"]) == set(registry)
     readiness = capabilities["execution_features"]["host_mutation_sandbox_v1"]
     assert readiness["available"] is False
 
