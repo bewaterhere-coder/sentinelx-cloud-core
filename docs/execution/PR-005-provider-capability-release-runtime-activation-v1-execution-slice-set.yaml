@@ -32,6 +32,7 @@ slices:
     run_refs:
       - github-commit:370c1e7
       - github-commit:076c559
+      - github-commit:56ef6d8
       - checkpoint:docs/checkpoints/PR-005-provider-capability-release-runtime-activation-v1-s01-verification-blocked-20261001.yaml
     completion_receipt_ref: null
 
