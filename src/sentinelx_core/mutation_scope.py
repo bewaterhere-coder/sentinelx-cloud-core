@@ -35,6 +35,7 @@ from sentinelx_core.policy import MutationExecutionPolicy
 STORE_VERSION = 1
 NON_TERMINAL_STATES = frozenset({"provisioned", "active"})
 TERMINAL_STATES = frozenset({"terminal", "revoked", "expired"})
+SCOPED_SCRIPT_OPERATION_CLASS = "scoped_script"
 
 
 class HostMutationScopeError(RuntimeError):
@@ -51,6 +52,10 @@ class HostMutationScopeNotCurrent(HostMutationScopeError):
 
 class HostMutationScopeCorrupt(HostMutationScopeError):
     code = "HostMutationScopeCorrupt"
+
+
+class HostMutationScopeOperationNotAllowed(HostMutationScopeError):
+    code = "HostMutationScopeOperationNotAllowed"
 
 
 class HostMutationScopeTerminalizationFailed(HostMutationScopeError):
@@ -687,6 +692,37 @@ class MutationScopeStore:
                 self._durable_write_state(state)
             return validated
 
+    def revalidate_scope_for_operation(
+        self,
+        scope_id: str,
+        generation: int,
+        policy: MutationExecutionPolicy,
+        repository: RepositoryIdentity,
+        semantic: SemanticIdentity,
+        *,
+        required_operation_class: str,
+        provider_protected_roots: Sequence[Path] = (),
+        now: datetime | None = None,
+    ) -> MutationScopeRecord:
+        """Revalidate exact authority and require one provider-owned operation class."""
+        operation_class = str(required_operation_class).strip()
+        if not operation_class:
+            raise ValueError("required_operation_class must be a non-empty string")
+        record = self.revalidate_scope(
+            scope_id,
+            generation,
+            policy,
+            repository,
+            semantic,
+            provider_protected_roots=provider_protected_roots,
+            now=now,
+        )
+        if operation_class not in record.allowed_operation_classes:
+            raise HostMutationScopeOperationNotAllowed(
+                f"scope {scope_id} does not authorize operation class {operation_class!r}"
+            )
+        return record
+
     def reserve_sandbox_identity(
         self,
         scope_id: str,
@@ -998,3 +1034,33 @@ class MutationScopeStore:
         """Read authoritative state without changing lifecycle state."""
         with _exclusive_file_lock(self._lock_path):
             return self._record(self._load_state(), scope_id)
+
+    def read_bound_scope(
+        self,
+        scope_id: str,
+        generation: int,
+        repository: RepositoryIdentity,
+        semantic: SemanticIdentity,
+    ) -> MutationScopeRecord:
+        """Read exact current/terminal authority without mutating lifecycle state."""
+        with _exclusive_file_lock(self._lock_path):
+            record = self._record(self._load_state(), scope_id)
+            if record.generation != generation:
+                raise HostMutationScopeNotCurrent("scope generation is not current")
+            if record.repository_identity_digest != _digest(repository.canonical):
+                raise HostMutationScopeBindingMismatch("repository identity mismatch")
+            if record.semantic_identity_digest != _digest(semantic.canonical):
+                raise HostMutationScopeBindingMismatch("semantic identity mismatch")
+            if (
+                record.project_id != semantic.project_id.strip()
+                or record.task_id != semantic.task_id.strip()
+                or record.run_id != semantic.run_id.strip()
+                or record.attempt_id != semantic.attempt_id.strip()
+                or (record.slice_id or "")
+                != (semantic.slice_id.strip() if semantic.slice_id else "")
+            ):
+                raise HostMutationScopeBindingMismatch("semantic lineage mismatch")
+            expected_attempt = _attempt_key(record.repository_identity_digest, semantic)
+            if record.attempt_key != expected_attempt:
+                raise HostMutationScopeBindingMismatch("Attempt identity mismatch")
+            return record

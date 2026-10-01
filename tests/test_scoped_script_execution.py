@@ -25,7 +25,13 @@ from sentinelx_core.windows_mutation_sandbox import WindowsMutationSandbox
 pytestmark = pytest.mark.skipif(sys.platform != "win32", reason="Windows scoped mutation only")
 
 
-def _fixture(tmp_path: Path, *, attempt_id: str, interpreter: str = "python3"):
+def _fixture(
+    tmp_path: Path,
+    *,
+    attempt_id: str,
+    interpreter: str = "python3",
+    operation_classes: tuple[str, ...] = ("scoped_script",),
+):
     workspace_root = tmp_path / "workspaces"
     state_root = tmp_path / "provider-state"
     upload_base = tmp_path / "uploads"
@@ -67,7 +73,7 @@ def _fixture(tmp_path: Path, *, attempt_id: str, interpreter: str = "python3"):
         mutation_policy,
         repository,
         semantic,
-        allowed_operation_classes=("workspace_materialize", "scoped_mutation"),
+        allowed_operation_classes=operation_classes,
         provider_protected_roots=(state_root.resolve(),),
     )
     handler = make_profiled_script_run_handler(
@@ -296,3 +302,32 @@ def test_terminalization_failure_prevents_success_and_successful_finish(
     kinds = [event["event"] for event in events]
     assert kinds == [EVENT_STARTED, EVENT_SPAWNED]
     assert EVENT_FINISHED not in kinds
+
+
+def test_scoped_requires_durable_operation_class_before_audit_or_materialization(
+    tmp_path: Path,
+) -> None:
+    handler, context, store, record, mutation, lineage, repo = _fixture(
+        tmp_path,
+        attempt_id="operation-class-denied",
+        interpreter="python3",
+        operation_classes=("different_operation",),
+    )
+    with pytest.raises(HandlerError) as exc_info:
+        _run(
+            handler,
+            context,
+            {
+                "interpreter": "python3",
+                "content": "print('must not run')",
+                "timeout": 30,
+                "mutation": mutation,
+                "lineage": lineage,
+                "repository": repo,
+            },
+        )
+    assert exc_info.value.code == "HostMutationScopeOperationNotAllowed"
+    assert store.read_scope(record.scope_id).state == "provisioned"
+    assert not Path(record.exact_workspace).exists()
+    events = MutationAuditJournal(store.root.parent, evidence_retention_days=7).read_events()
+    assert events == []
