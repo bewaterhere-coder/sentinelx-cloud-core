@@ -13,9 +13,9 @@ development:
     plan_approved: true
     acceptance_approved: false
     completion_verified: false
-  next_expected_actor: operator
+  next_expected_actor: implementer
   continuation_checkpoint:
-    ref: docs/checkpoints/PR-005-provider-capability-release-runtime-activation-v1-s01-verification-blocked-20261001.yaml
+    ref: docs/checkpoints/PR-005-provider-capability-release-runtime-activation-v1-s01-completed-20261001.yaml
 transport:
   type: github-pr
   pr_number: 5
