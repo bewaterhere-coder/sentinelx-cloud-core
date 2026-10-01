@@ -1,0 +1,43 @@
+schema: devforge.checkpoint.v1
+project_id: sentinelx-cloud-core
+task_id: PR-008-provider-execution-profile-tool-surface-alignment-v1
+stage: acceptance
+state: blocked
+acceptance_round: 3
+finding_class: external_blocker
+blocker_codes:
+  - HubToolProjectionRequired
+  - ProviderScopeAdmissionRequired
+canonical_pr: 8
+branch: task/provider-execution-profile-tool-surface-alignment-v1
+evaluated_product_head: 3c6245bffd45bf0fa8b7db4fc47d002e8cfeed9c
+live_candidate:
+  commit: 0badec02738af83c7e93101a72c18311858abf30
+  agent_version: 0.24.1.dev21+g0badec027
+  contains_main: f7e878f3497582547e5d52cd33b060cae18d2e84
+  contains_pr008: 3c6245bffd45bf0fa8b7db4fc47d002e8cfeed9c
+live_evidence:
+  script_run_execution_profile_advertised: true
+  script_run_execution_profile_available: true
+  scoped_mutation_readiness_available: true
+  scoped_mutation_readiness_verified: true
+  model_facing_schema_has_execution_profile: false
+  model_facing_schema_has_mutation: false
+  model_facing_schema_has_lineage: false
+  model_facing_schema_has_repository: false
+  unprofiled_script_run_result: execution_profile_required
+  direct_exec_python_result: command_not_allowed
+resolved_since_r2:
+  pr008_known_build_activation: true
+  direct_python_denial_boundary: true
+external_dependencies:
+  hub_tool_projection: required
+  pr007_scope_admission: plan_review_rejected
+next_expected_actor: dependency_owner
+ordered_unblockers:
+  - project_execution_profile_fields_through_hub_mcp
+  - repair_review_implement_pr007_scope_admission
+  - run_harmless_scoped_end_to_end_proof
+  - reconfirm_direct_python_denial_and_runtime_readiness
+acceptance_approved: false
+completion_verified: false
