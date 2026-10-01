@@ -6,7 +6,7 @@ source_command: "#开发执行 PR-007-host-mutation-scope-control-surface-mcp-ad
 active_slice_id: S04
 slice_state: verification_blocked
 implementation:
-  implementation_head: 6e8b563a817c4128da11cfdedd3559936d56eca3
+  implementation_head: b3890c2
   changed_surfaces:
     - tests/test_scoped_script_execution.py
     - tests/test_incident_20260927_d_root_recursive_delete.py
@@ -20,15 +20,21 @@ verification:
     staged_diff_review: passed
   dynamic:
     result: blocked
-    operator_run:
-      result: "7 failed, 6 passed, 1 skipped, 1 warning in 2.31s"
-      interpreter: C:\ProgramData\SentinelX\.venv\Scripts\python.exe
-      basetemp: user-local TEMP
-      shared_failure: HostMutationSandboxAclViolation
-      acl_target: C:\ProgramData\SentinelX\.venv\Scripts
-      observed_error: "icacls failed: access denied"
-      classification: operator_elevation_required
-    reason: normal operator token cannot grant the AppContainer SID read ACL required to execute the real Windows sandbox matrix against the ProgramData SentinelX runtime
+    elevated_operator_run:
+      result: "6 failed, 7 passed, 1 skipped, 1 warning in 32.82s"
+      interpreter: C:/ProgramData/SentinelX/.venv/Scripts/python.exe
+      basetemp: elevated-user TEMP
+      acl_precondition: passed
+      shared_failure: incomplete_test_runtime_read_roots
+      observed_python_failure: "python3 could not initialize inside the required AppContainer"
+      observed_self_check_failure: "SELF_CHECK_OK was not materialized"
+      classification: test_fixture_runtime_closure_incomplete
+    fixture_repair:
+      commit: b3890c2
+      runtime_roots: "sys.prefix + sys.base_prefix"
+      production_policy_alignment: "C:/ProgramData/SentinelX/.venv + C:/Python314"
+      rerun_required: true
+    reason: elevated execution proved ACL preparation works; the remaining failures came from the test fixture granting only the venv Scripts directory instead of the full venv and base Python runtime closure
   required_matrix:
     - provider-issued scoped_script scope composes with execution_profile=scoped_mutation
     - operation-class admission remains before audit/materialization
@@ -40,7 +46,7 @@ verification:
     - no unrestricted fallback
 boundary:
   disposition: blocked
-  reason: S04WindowsSandboxMatrixRequiresElevatedOperatorAclPreparation
+  reason: S04WindowsSandboxMatrixRerunRequiredAfterFixtureRuntimeClosureRepair
   implementation_landed: true
   slice_completed: false
 continuation:
