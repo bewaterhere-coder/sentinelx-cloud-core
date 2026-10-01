@@ -7,15 +7,15 @@ project_id: sentinelx-cloud-core
 task_id: PR-008-provider-execution-profile-tool-surface-alignment-v1
 title: SentinelX Provider Execution Profile Tool Surface Alignment V1
 development:
-  stage: implementation
+  stage: acceptance
   gates:
     requirement_ready: true
     plan_approved: true
     acceptance_approved: false
     completion_verified: false
-  next_expected_actor: implementer
+  next_expected_actor: reviewer
   continuation_checkpoint:
-    ref: docs/checkpoints/PR-008-provider-execution-profile-tool-surface-alignment-v1-s01-completed-20261001.yaml
+    ref: docs/checkpoints/PR-008-provider-execution-profile-tool-surface-alignment-v1-s02-completed-20261001.yaml
 transport:
   type: github-pr
   pr_number: 8
@@ -25,6 +25,7 @@ artifacts:
   plan: docs/plans/PR-008-provider-execution-profile-tool-surface-alignment-v1-plan.md
   plan_review: docs/reviews/PR-008-provider-execution-profile-tool-surface-alignment-v1-plan-review-r1.md
   execution_slice_set: docs/execution/PR-008-provider-execution-profile-tool-surface-alignment-v1-slices.yaml
+  execution_profile_contract: docs/provider-execution-profile-tool-surface-v1.md
 related_tasks:
   builds_on:
     - SX-HMSA-001
