@@ -1,0 +1,58 @@
+schema_version: "1.0"
+kind: devforge_continuation_checkpoint
+checkpoint_id: PR-008-acceptance-r1-external-blocked
+subject:
+  repository: github.com/bewaterhere-coder/sentinelx-cloud-core
+  task_id: PR-008-provider-execution-profile-tool-surface-alignment-v1
+lineage:
+  requirement_ref: docs/requirements/PR-008-provider-execution-profile-tool-surface-alignment-v1.md
+  plan_ref: docs/plans/PR-008-provider-execution-profile-tool-surface-alignment-v1-plan.md
+  plan_revision: 1
+  acceptance_ref: docs/reviews/PR-008-provider-execution-profile-tool-surface-alignment-v1-acceptance-r1.md
+  slice_set_ref: docs/execution/PR-008-provider-execution-profile-tool-surface-alignment-v1-slices.yaml
+execution:
+  stage: acceptance
+  source_command: "#开发验收 PR-008-provider-execution-profile-tool-surface-alignment-v1"
+  evaluated_product_head: 26696e0151d782dd3ac69112233329c9d4e71044
+transport:
+  repository: github.com/bewaterhere-coder/sentinelx-cloud-core
+  transport_ref: github-pr:8@task/provider-execution-profile-tool-surface-alignment-v1
+boundary:
+  disposition: blocked
+  reason: ExternalAcceptanceBlocker
+  finding_class: external_blocker
+continuation:
+  mode: resolve_dependency
+  next_action_hint: "#开发执行 PR-005-provider-capability-release-runtime-activation-v1"
+evidence:
+  live_host:
+    hostname: Cherie_li
+    agent_version: 0.21.1
+    pr008_feature_advertised: false
+    host_mutation_sandbox_v1_verified: true
+    pre_execution_audit_lineage_v1_verified: true
+  model_facing_schema:
+    sentinel_script_run_required_fields_present: false
+    missing:
+      - execution_profile
+      - mutation
+      - lineage
+      - repository
+    verdict_after_known_build: recheck_required
+  dependencies:
+    pr005:
+      state: implementation
+      implementation_complete: false
+    pr007:
+      state: plan_review_rejected
+      implementation_authorized: false
+  outstanding_verification_refs:
+    - known-agent-build-containing-pr008
+    - post-activation-model-facing-schema-projection
+    - provider-owned-scope-admission
+    - harmless-profiled-script-execution-and-terminal-closure
+    - direct-exec-boundary-on-known-pr008-build
+freshness:
+  generated_at: "2026-10-01T22:07:44+08:00"
+  evaluated_product_head: 26696e0151d782dd3ac69112233329c9d4e71044
+supersedes: docs/checkpoints/PR-008-provider-execution-profile-tool-surface-alignment-v1-s02-completed-20261001.yaml
