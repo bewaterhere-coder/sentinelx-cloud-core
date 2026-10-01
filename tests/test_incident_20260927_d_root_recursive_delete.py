@@ -13,6 +13,7 @@ import pytest
 
 from sentinelx_core.executor import HandlerError
 from sentinelx_core.handlers.basic import make_capabilities_handler
+from sentinelx_core.handlers.mutation_scope import make_mutation_scope_handler
 from sentinelx_core.handlers.scoped_script import make_profiled_script_run_handler
 from sentinelx_core.mutation_placement import RepositoryIdentity, SemanticIdentity
 from sentinelx_core.mutation_readiness import probe_mutation_runtime
@@ -119,13 +120,41 @@ def _scoped_case(layout, name: str, interpreter: str, content: str, *, delay: fl
         slice_id="S06",
     )
     store = MutationScopeStore(layout["state_root"])
-    record = store.provision_scope(
-        policy.mutation_execution,
-        repository,
-        semantic,
-        allowed_operation_classes=("workspace_materialize", "scoped_mutation"),
-        provider_protected_roots=(layout["state_root"].resolve(),),
+    repository_payload = {
+        "vcs": repository.vcs,
+        "authority": repository.authority,
+        "path": repository.path,
+    }
+    lineage_payload = {
+        "project_id": semantic.project_id,
+        "task_id": semantic.task_id,
+        "run_id": semantic.run_id,
+        "attempt_id": semantic.attempt_id,
+        "slice_id": semantic.slice_id,
+    }
+    lifecycle = make_mutation_scope_handler(
+        policy,
+        layout["upload_base"],
+        mutation_state_root=layout["state_root"],
     )
+    lifecycle_context = RequestContext(
+        request_id=f"s06-scope-{name}",
+        op="mutation_scope",
+        opaque_ref=INCIDENT,
+        received_at=datetime.now(UTC),
+    )
+    provisioned = asyncio.run(
+        lifecycle(
+            lifecycle_context,
+            {
+                "action": "provision",
+                "purpose": "scoped_script",
+                "repository": repository_payload,
+                "lineage": lineage_payload,
+            },
+        )
+    )
+    scope = provisioned["scope"]
     handler = make_profiled_script_run_handler(
         policy,
         layout["upload_base"],
@@ -144,20 +173,10 @@ def _scoped_case(layout, name: str, interpreter: str, content: str, *, delay: fl
         "cleanup": False,
         "mutation": {
             "execution_profile": "scoped_mutation",
-            "scope_ref": {"scope_id": record.scope_id, "generation": record.generation},
+            "scope_ref": {"scope_id": scope["scope_id"], "generation": scope["generation"]},
         },
-        "lineage": {
-            "project_id": semantic.project_id,
-            "task_id": semantic.task_id,
-            "run_id": semantic.run_id,
-            "attempt_id": semantic.attempt_id,
-            "slice_id": semantic.slice_id,
-        },
-        "repository": {
-            "vcs": repository.vcs,
-            "authority": repository.authority,
-            "path": repository.path,
-        },
+        "lineage": lineage_payload,
+        "repository": repository_payload,
     }
     try:
         result = asyncio.run(handler(context, payload))
@@ -172,8 +191,20 @@ def _scoped_case(layout, name: str, interpreter: str, content: str, *, delay: fl
     if delay:
         time.sleep(delay)
     _assert_protected(layout)
-    current = store.read_scope(record.scope_id)
-    assert current.state in {"terminal", "revoked"}
+    inspected = asyncio.run(
+        lifecycle(
+            lifecycle_context,
+            {
+                "action": "inspect",
+                "scope_ref": {"scope_id": scope["scope_id"], "generation": scope["generation"]},
+                "repository": repository_payload,
+                "lineage": lineage_payload,
+            },
+        )
+    )
+    assert inspected["scope"]["state"] in {"terminal", "revoked"}
+    current = store.read_scope(scope["scope_id"])
+    assert inspected["scope"]["scope_digest"] == current.scope_digest
     assert not current.active_job_ids
     assert not current.active_process_ids
     assert not current.sandbox_write_authority_present
