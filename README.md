@@ -385,6 +385,22 @@ The release itself never upgrades a host automatically. **Source mode** remains 
 compatibility/development path and must use an explicit source ref; moving `@main`
 is not versioned-release evidence.
 
+Release/runtime evidence uses distinct lifecycle states and must not collapse them:
+
+```text
+source_implemented
+release_artifact_built
+release_published
+release_installed_on_host
+runtime_capability_ready
+```
+
+A later state requires its own evidence. In particular, publishing does not prove
+installation, installation does not prove service restart, and package version does
+not prove mutation readiness. `host_mutation_sandbox_v1` and
+`pre_execution_audit_lineage_v1` remain available only when the host policy and
+runtime self-check pass; Linux/macOS remain unavailable for scoped mutation V1.
+
 ## Local development
 
 ```bash
