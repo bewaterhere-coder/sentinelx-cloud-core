@@ -6,25 +6,38 @@ source_command: "#开发执行 PR-007-host-mutation-scope-control-surface-mcp-ad
 active_slice_id: S03
 slice_state: verification_blocked
 implementation:
-  implementation_head: 4c2c2f391712d92fb555bee5632dae7abd31277a
+  implementation_head: e05819b8b231bd67bbcfd1d5c5be9bc31a55205c
   primary_commit: f22b2c80fc3670b4148ab28ae96a4789cf819cc4
+  registry_verification_commit: 4c2c2f391712d92fb555bee5632dae7abd31277a
+  transport_literal_repair_commit: e05819b8b231bd67bbcfd1d5c5be9bc31a55205c
   changed_surfaces:
     - src/sentinelx_core/handlers/__init__.py
     - src/sentinelx_core/handlers/basic.py
+    - src/sentinelx_core/client.py
     - README.md
     - tests/test_mutation_scope_registry.py
   registry_source_of_truth_preserved: true
   dedicated_hub_mcp_tool_claimed: false
+transport_contract:
+  observed_problem: sentinelx_protocol.RequestMessage.op uses a fixed Literal and rejected mutation_scope before Executor.dispatch
+  upstream_protocol_main_contains_mutation_scope: false
+  repair: protocol validates every request field using a known placeholder op; the bounded original op name is then restored for registry-based dispatch
+  authority_after_repair: Agent registry remains the operation support source of truth
+  unknown_operation_behavior: Executor returns unsupported_op
 verification:
   static:
     python_compile: passed
     git_diff_check: passed
     staged_diff_review: passed
+  operator_first_run:
+    aggregate: "5 passed, 1 failed, 1 warning"
+    failure: test_executor_returns_unsupported_op_when_mutation_scope_is_disabled
+    cause: protocol OpType literal rejected mutation_scope before dispatch
+    disposition: repaired_in_transport_literal_repair_commit
   dynamic:
     result: blocked
-    attempted_command: pytest -q tests/test_mutation_scope_registry.py
-    observed_error: command_not_allowed
-    reason: pytest remains intentionally absent from SentinelX direct-command allowlist
+    reason: repaired S03 focused suite requires operator-shell rerun
+    expected_after_repair: "7 passed"
   required_focused_evidence:
     - mutation_scope is registered and dispatchable through normal registry
     - capabilities ops_supported exactly derives registry truth
@@ -32,10 +45,11 @@ verification:
     - help explains readiness boundary
     - disabled_ops removes mutation_scope from registry advertisement and help
     - disabled mutation_scope dispatch returns unsupported_op
+    - unknown future wire op reaches Executor and returns unsupported_op
     - no dedicated Hub MCP tool identity is claimed
 boundary:
   disposition: blocked
-  reason: S03DynamicVerificationRequiresOperatorShell
+  reason: S03FocusedRerunRequiredAfterProtocolLiteralRepair
   implementation_landed: true
   slice_completed: false
 continuation:
