@@ -8,6 +8,7 @@ review_target: plan
 plan_revision: 1
 result: Rejected
 reviewed_task_head: 7499b56fed68772969f062b3b188484fb91c9a6e
+review_persisted_head: 20ecc7a32a139c6ca40c7b17906a9ba8243de217
 runtime:
   devforge_version: v2.29.0
   devforge_revision: c0266c113e4e6b8f2b90d9246af153a617e9d301
