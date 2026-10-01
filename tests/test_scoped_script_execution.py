@@ -33,7 +33,13 @@ def _fixture(tmp_path: Path, *, attempt_id: str, interpreter: str = "python3"):
     for path in (workspace_root, state_root, upload_base, protected):
         path.mkdir(parents=True, exist_ok=True)
 
-    runtime_roots = {Path(sys.executable).resolve().parent}
+    # A venv's python.exe is only a launcher; the stdlib/runtime still lives
+    # under sys.base_prefix. AppContainer therefore needs read authority to
+    # both the venv executable directory and the base Python runtime.
+    runtime_roots = {
+        Path(sys.executable).resolve().parent,
+        Path(sys.base_prefix).resolve(),
+    }
     if interpreter == "pwsh":
         executable = shutil.which("pwsh")
         if executable:
