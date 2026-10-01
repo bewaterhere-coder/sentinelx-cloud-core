@@ -28,25 +28,33 @@ verification:
       shared_runtime_behavior: spawned processes time out instead of completing under interactive Administrator identity
       readiness_failure: "RuntimeError: readiness probe process timed out"
       classification: interactive_operator_identity_not_provider_equivalent
-    live_provider_self_check:
+    system_fixture_run:
+      result: "1 failed, 1 warning in 21.71s"
+      task_result: 1
+      identity: LocalSystem
+      executable: C:/ProgramData/SentinelX/.venv/Scripts/python.exe
+      prefix: C:/ProgramData/SentinelX/.venv
+      base_prefix: C:/Python314
+      failure: "RuntimeError: readiness probe process timed out"
+      classification: provider_identity_alone_does_not_explain_timeout
+    cached_capability_observation:
       agent_version: 0.24.1.dev21+g0badec027
       available: true
       verified: true
-      runtime_read_execute: true
-      job_no_breakaway: true
-      suspended_spawn_audit_before_resume: true
-      terminal_non_active: true
-      residual_authority_absent: true
-      reason: real Windows AppContainer/ACL/Job/audit/scope self-check passed in SentinelX service context
+      caveat: probe_mutation_runtime success is cached for the life of the agent process when force is false, so this is not fresh S04 evidence
+    path_acl_comparison:
+      production_workspace_root: D:/SentinelX/mutation-workspaces
+      verification_root: D:/SentinelX/verification-temp
+      parent_acl_material_difference_observed: false
     next_verification:
       identity: LocalSystem
       harness: D:/coco/workspaces/pr007-s04-system-verify.ps1
       runner: D:/coco/workspaces/pr007-s04-system-verify.py
-      phases:
-        - provider-context readiness self-check
-        - full S04 security matrix only after readiness passes
+      phase_0: fresh production config readiness with force=true against C:/ProgramData/SentinelX/state and D:/SentinelX/mutation-workspaces
+      phase_1: fixture readiness only if production readiness passes
+      phase_2: full S04 security matrix only if both readiness probes pass
       rerun_required: true
-    reason: interactive Administrator pytest is not equivalent to the SentinelX LocalSystem provider identity; fresh matrix evidence must run under the provider-equivalent SYSTEM identity
+    reason: SYSTEM fixture readiness still times out; the next deterministic split is fresh force=true readiness using the exact production mutation policy and workspace root
   required_matrix:
     - provider-issued scoped_script scope composes with execution_profile=scoped_mutation
     - operation-class admission remains before audit/materialization
@@ -58,7 +66,7 @@ verification:
     - no unrestricted fallback
 boundary:
   disposition: blocked
-  reason: S04WindowsSandboxMatrixRequiresProviderEquivalentSystemIdentity
+  reason: S04WindowsSandboxMatrixRequiresFreshProductionPolicyProbe
   implementation_landed: true
   slice_completed: false
 continuation:
