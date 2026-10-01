@@ -14,6 +14,8 @@ development:
     acceptance_approved: false
     completion_verified: false
   next_expected_actor: implementer
+  continuation_checkpoint:
+    ref: docs/checkpoints/PR-008-provider-execution-profile-tool-surface-alignment-v1-s01-blocked-20261001.yaml
 transport:
   type: github-pr
   pr_number: 8
