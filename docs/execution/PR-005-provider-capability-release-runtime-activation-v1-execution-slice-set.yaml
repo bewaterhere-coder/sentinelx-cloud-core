@@ -89,6 +89,9 @@ slices:
         - relevant SX-HMSA regression suite remains green
     checkpoint:
       required: true
-    state: pending
-    run_refs: []
-    completion_receipt_ref: null
+    state: completed
+    run_refs:
+      - github-commit:72c0a42d994073023779e5744edeb453bad48ea9
+      - checkpoint:docs/checkpoints/PR-005-provider-capability-release-runtime-activation-v1-s03-completed-20261001.yaml
+      - github-pr-comment:5934602805
+    completion_receipt_ref: github-pr-comment:5934602805
