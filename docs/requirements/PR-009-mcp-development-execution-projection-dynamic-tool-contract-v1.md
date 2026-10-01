@@ -7,13 +7,18 @@ project_id: sentinelx-cloud-core
 task_id: PR-009-mcp-development-execution-projection-dynamic-tool-contract-v1
 title: SentinelX MCP Development Execution Projection & Dynamic Tool Contract V1
 development:
-  stage: plan_review
+  stage: plan_review_rejected
   gates:
     requirement_ready: true
     plan_approved: false
     acceptance_approved: false
     completion_verified: false
-  next_expected_actor: reviewer
+  latest_plan_review: rejected_round_1
+  blocking_findings:
+    - F1-current-task-p0-dependencies-conflict-with-proposed-implementation-entry
+    - F2-no-authorized-production-hub-projection-implementation-target
+    - F3-active-pr007-pr008-dependencies-are-not-stable-implementation-inputs
+  next_expected_actor: planner
 transport:
   type: github-pr
   pr_number: 9
@@ -21,6 +26,7 @@ transport:
   base_branch: main
 artifacts:
   plan: docs/plans/PR-009-mcp-development-execution-projection-dynamic-tool-contract-v1-plan.md
+  plan_review: docs/reviews/PR-009-mcp-development-execution-projection-dynamic-tool-contract-v1-plan-review-r1.md
 related_tasks:
   builds_on:
     - PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1
