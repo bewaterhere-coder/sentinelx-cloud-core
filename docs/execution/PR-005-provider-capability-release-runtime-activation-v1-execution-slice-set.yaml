@@ -57,9 +57,12 @@ slices:
         - release tooling contains no fixed host/install/workspace/version authority
     checkpoint:
       required: true
-    state: pending
-    run_refs: []
-    completion_receipt_ref: null
+    state: completed
+    run_refs:
+      - github-commit:dcf6abe
+      - checkpoint:docs/checkpoints/PR-005-provider-capability-release-runtime-activation-v1-s02-completed-20261001.yaml
+      - github-pr-comment:5934287234
+    completion_receipt_ref: github-pr-comment:5934287234
 
   - slice_id: S03
     objective: Preserve and verify readiness-gated runtime activation, security regressions, lifecycle evidence boundaries, and release/operator documentation.
