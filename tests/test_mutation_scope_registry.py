@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 
+from sentinelx_core.client import _parse_agent_message
 from sentinelx_core.handlers import build_registry
 from sentinelx_core.policy import Policy
 
@@ -50,17 +51,40 @@ def test_disabled_mutation_scope_is_unadvertised_and_hidden_from_help() -> None:
 
 def test_executor_returns_unsupported_op_when_mutation_scope_is_disabled(tmp_path) -> None:
     from sentinelx_core.executor import Executor
-    from sentinelx_protocol import RequestMessage
 
     config = tmp_path / "config.yaml"
     config.write_text("allowed_commands: []\ndisabled_ops: [mutation_scope]\n", encoding="utf-8")
     executor = Executor(config_path=config)
 
-    result = asyncio.run(
-        executor.dispatch(
-            RequestMessage(id="s03-disabled", op="mutation_scope", payload={"action": "inspect"})
-        )
+    request = _parse_agent_message(
+        {
+            "type": "request",
+            "id": "s03-disabled",
+            "op": "mutation_scope",
+            "payload": {"action": "inspect"},
+        }
     )
+    result = asyncio.run(executor.dispatch(request))
+    assert result["ok"] is False
+    assert result["error"]["code"] == "unsupported_op"
+
+
+def test_unknown_wire_op_reaches_executor_and_returns_unsupported_op(tmp_path) -> None:
+    from sentinelx_core.executor import Executor
+
+    config = tmp_path / "config.yaml"
+    config.write_text("allowed_commands: []\n", encoding="utf-8")
+    executor = Executor(config_path=config)
+    request = _parse_agent_message(
+        {
+            "type": "request",
+            "id": "s03-future-op",
+            "op": "future_registry_operation",
+            "payload": {},
+        }
+    )
+
+    result = asyncio.run(executor.dispatch(request))
     assert result["ok"] is False
     assert result["error"]["code"] == "unsupported_op"
 
