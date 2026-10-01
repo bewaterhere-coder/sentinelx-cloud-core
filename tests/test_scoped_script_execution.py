@@ -40,7 +40,10 @@ def _fixture(
     for path in (workspace_root, state_root, upload_base, protected):
         path.mkdir(parents=True, exist_ok=True)
 
-    runtime_roots = {Path(sys.executable).resolve().parent}
+    runtime_roots = {
+        Path(sys.prefix).resolve(),
+        Path(sys.base_prefix).resolve(),
+    }
     if interpreter == "pwsh":
         executable = shutil.which("pwsh")
         if executable:

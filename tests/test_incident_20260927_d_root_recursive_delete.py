@@ -70,13 +70,16 @@ def _layout(tmp_path: Path):
     assert git, "canonical git-clean regression requires git on the Windows validation host"
     subprocess.run([git, "init", "-q", str(canonical_repo)], check=True)
 
-    runtime_root = Path(sys.executable).resolve().parent
+    runtime_roots = (
+        Path(sys.prefix).resolve(),
+        Path(sys.base_prefix).resolve(),
+    )
     mutation_policy = MutationExecutionPolicy(
         configured=True,
         scoped_mutation_enabled=True,
         workspace_root=workspace_root,
         protected_roots=(canonical_repo, personal_project, parent_sentinel),
-        runtime_read_roots=(runtime_root,),
+        runtime_read_roots=runtime_roots,
         scope_ttl_seconds=600,
         evidence_retention_days=7,
         operator_unrestricted_enabled=False,
