@@ -1,10 +1,10 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling>=1.25", "hatch-vcs>=0.4"]
 build-backend = "hatchling.build"
 
 [project]
 name = "sentinelx-cloud-core"
-version = "0.21.1"
+dynamic = ["version"]
 description = "SentinelX agent: connects a Linux server to sentinelx-cloud-hub via WebSocket"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -25,6 +25,8 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+    "hatchling>=1.25",
+    "hatch-vcs>=0.4",
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
     "ruff>=0.4",
@@ -36,6 +38,13 @@ sentinelx-pensa-safe-edit = "sentinelx_core.vendored.pensa_safe_edit:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/sentinelx_core"]
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.version.raw-options]
+# Source checkouts without release tags may still be installed for development.
+fallback_version = "0.0.0+dev"
 
 [tool.hatch.metadata]
 # We pin sentinelx-cloud-protocol to a git tag during dev. Once it's on PyPI
