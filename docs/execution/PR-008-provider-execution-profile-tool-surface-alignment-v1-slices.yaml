@@ -33,9 +33,9 @@ slices:
         - no implementation change adds Python to allowed_commands or introduces exec/shell/PowerShell wrapper fallback.
     checkpoint:
       required: true
-    state: pending
+    state: completed
     run_refs: []
-    completion_receipt_ref: null
+    completion_receipt_ref: github-pr-comment:5932666723
 
   - slice_id: S02
     objective: Freeze the public provider contract, complete focused and broad regression evidence, and prepare the exact external Acceptance probe without claiming production Hub alignment.
@@ -57,6 +57,6 @@ slices:
         - PR-007 current accepted scope contract is re-read before finalizing advertised authority-field metadata; material dependency drift fails closed rather than freezing stale shape.
     checkpoint:
       required: true
-    state: completed
+    state: pending
     run_refs: []
-    completion_receipt_ref: github-pr-comment:5932666723
+    completion_receipt_ref: null
