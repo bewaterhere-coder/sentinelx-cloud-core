@@ -56,12 +56,9 @@ slices:
     next_on_pass: S02
 
   - id: S02
-
     title: Lifecycle handler and provider-owned purpose mapping
-
-    status: verification_blocked
-
-    checkpoint_ref: docs/checkpoints/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-s02-verification-blocked-20261002.yaml
+    status: completed
+    checkpoint_ref: docs/checkpoints/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-s02-completed-20261002.yaml
     objective: Expose bounded mutation_scope lifecycle actions over the existing store without transferring authority to the caller.
     primary_surfaces:
       - src/sentinelx_core/handlers/mutation_scope.py
