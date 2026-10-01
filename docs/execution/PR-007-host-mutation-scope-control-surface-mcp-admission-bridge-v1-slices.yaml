@@ -106,7 +106,8 @@ slices:
 
   - id: S04
     title: Scoped execution composition and security regressions
-    status: pending
+    status: verification_blocked
+    checkpoint_ref: docs/checkpoints/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-s04-verification-blocked-20261002.yaml
     objective: Prove lifecycle-issued authority composes with the existing scoped executor without weakening AppContainer/audit/Job containment.
     primary_surfaces:
       - tests/test_scoped_script_execution.py

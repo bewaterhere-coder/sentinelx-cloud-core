@@ -1,0 +1,50 @@
+schema: devforge.continuation-checkpoint.v1
+project_id: sentinelx-cloud-core
+task_id: PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1
+stage: implementation
+source_command: "#开发执行 PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1"
+active_slice_id: S04
+slice_state: verification_blocked
+implementation:
+  implementation_head: 6e8b563a817c4128da11cfdedd3559936d56eca3
+  changed_surfaces:
+    - tests/test_scoped_script_execution.py
+    - tests/test_incident_20260927_d_root_recursive_delete.py
+  provider_issued_scope_composition: true
+  bound_terminal_inspect_regression: true
+  incident_fixture_uses_provider_lifecycle: true
+verification:
+  static:
+    python_compile: passed
+    git_diff_check: passed
+    staged_diff_review: passed
+  dynamic:
+    result: blocked
+    attempted_command: pytest -q tests/test_scoped_script_execution.py tests/test_incident_20260927_d_root_recursive_delete.py
+    observed_error: command_not_allowed
+    reason: pytest remains intentionally absent from SentinelX direct-command allowlist
+  required_matrix:
+    - provider-issued scoped_script scope composes with execution_profile=scoped_mutation
+    - operation-class admission remains before audit/materialization
+    - repository and semantic lineage mismatch fail before materialization
+    - success timeout and nonzero failure terminalize authority
+    - audit START SPAWN FINISH ordering remains authoritative
+    - Windows AppContainer and Job containment remain enforced
+    - INCIDENT-20260927-D-ROOT-RECURSIVE-DELETE protected sentinels survive actual admitted scoped execution
+    - no unrestricted fallback
+boundary:
+  disposition: blocked
+  reason: S04WindowsSandboxMatrixRequiresOperatorPytest
+  implementation_landed: true
+  slice_completed: false
+continuation:
+  mode: verify_current_slice
+  next_slice_id: S04
+  next_expected_actor: implementer
+  next_action_hint: "#开发执行 PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1"
+invariants:
+  direct_python_allowlist_not_changed: true
+  pytest_allowlist_not_added: true
+  script_run_bypass_not_used: true
+  operator_unrestricted_not_used: true
+  s05_not_started: true
