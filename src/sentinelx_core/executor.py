@@ -71,9 +71,19 @@ class Executor:
     # long as it says it can take it.
     PROTOCOL_FEATURES = ("opaque_ref",)
 
+    # Operation-payload features are also advertised in the hello capability
+    # list, but unlike PROTOCOL_FEATURES they are NOT top-level RequestMessage
+    # fields. Keep the categories separate so the pinned wire-model regression
+    # remains meaningful while payload-level contracts can still be versioned.
+    OPERATION_FEATURES = ("script_run_execution_profile_v1",)
+
     def capability_names(self) -> list[str]:
-        """Names of supported ops plus protocol features, for `hello`."""
-        return list(self._get_handlers().keys()) + list(self.PROTOCOL_FEATURES)
+        """Names of supported ops plus versioned protocol/payload features."""
+        return (
+            list(self._get_handlers().keys())
+            + list(self.PROTOCOL_FEATURES)
+            + list(self.OPERATION_FEATURES)
+        )
 
     def config_summary(self) -> dict[str, int]:
         """Policy counts for the hello's ConfigSummary — aggregates only.

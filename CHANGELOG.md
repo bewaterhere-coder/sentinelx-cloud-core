@@ -3,6 +3,22 @@
 Notable changes to `sentinelx-cloud-core`. Human-readable, date-stamped
 entries; releases before 0.3.0 predate this file — see the git history.
 
+## Unreleased - Provider execution-profile tool surface contract - 2026-10-01
+
+- Advertise `script_run_execution_profile_v1` as an Agent operation-payload
+  capability without misclassifying it as a new top-level wire-protocol field.
+- Full capabilities now describe the `scoped_mutation` profile input contract,
+  separate field support from Host readiness, and report `operator_unrestricted`
+  only when existing Host policy explicitly opts in.
+- Configured mutation execution keeps failing closed on an unprofiled request
+  with `execution_profile_required`, now with bounded machine-readable contract
+  details for adapters/operators.
+- Document the hard Hub boundary: Agent advertisement does not prove the
+  closed-source model-facing `sentinel_script_run` schema has projected
+  `execution_profile`, `mutation`, `lineage`, and `repository`.
+- No direct Python allowlist expansion, wrapper fallback, alternate scope
+  authority, or default unrestricted execution is introduced.
+
 ## 0.21.1 - Windows user-scoped Git execution capability V1 - 2026-09-26
 
 - Port the operator-approved Windows user-scoped Git runner onto the 0.21.x baseline.

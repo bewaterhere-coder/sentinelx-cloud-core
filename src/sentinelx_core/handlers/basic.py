@@ -21,6 +21,58 @@ from sentinelx_core.mutation_readiness import MutationRuntimeReadiness, probe_mu
 from sentinelx_core.policy import Policy
 
 
+_SCOPED_SCRIPT_REQUIRED_INPUT = [
+    "mutation.scope_ref.scope_id",
+    "mutation.scope_ref.generation",
+    "lineage.project_id",
+    "lineage.task_id",
+    "lineage.run_id",
+    "lineage.attempt_id",
+    "lineage.slice_id?",
+    "repository.vcs",
+    "repository.authority",
+    "repository.path",
+]
+
+
+def _script_run_execution_profile_feature(
+    policy: Policy,
+    mutation_feature: dict[str, Any],
+) -> dict[str, Any]:
+    """Describe profiled script inputs without granting execution authority."""
+    supported_profiles = ["scoped_mutation"]
+    if policy.mutation_execution.operator_unrestricted_enabled:
+        supported_profiles.append("operator_unrestricted")
+
+    return {
+        "available": True,
+        "feature": "script_run_execution_profile_v1",
+        "operation": "script_run",
+        "profile_argument": "execution_profile",
+        "profile_argument_required_when_mutation_execution_configured": bool(
+            policy.mutation_execution.configured
+        ),
+        "supported_profiles": supported_profiles,
+        "scoped_mutation_required_input": list(_SCOPED_SCRIPT_REQUIRED_INPUT),
+        "profile_readiness": {
+            "scoped_mutation": mutation_feature,
+            "operator_unrestricted": {
+                "available": bool(policy.mutation_execution.operator_unrestricted_enabled),
+                "requires_explicit_host_policy_opt_in": True,
+                "safe_fallback": False,
+            },
+        },
+        "authority": {
+            "provider_scope_required_for_scoped_mutation": True,
+            "caller_selected_workspace_authority": False,
+        },
+        "hub_projection": {
+            "external": True,
+            "agent_advertisement_does_not_prove_model_facing_schema": True,
+        },
+    }
+
+
 async def handle_ping(payload: dict[str, Any]) -> dict[str, Any]:
     return {"pong": True, "agent_version": AGENT_VERSION}
 
@@ -207,6 +259,9 @@ def make_capabilities_handler(
             # otherwise reads as protection that was never applied.
             "disabled_ops": sorted(policy.disabled_ops),
             "execution_features": {
+                "host_runtime.script_run_execution_profile_v1": (
+                    _script_run_execution_profile_feature(policy, mutation_feature)
+                ),
                 "host_runtime.git_execution_context_v1": {
                     "available": bool(
                         policy.authenticated_git_enabled and platform.system() == "Windows"

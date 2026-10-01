@@ -1,0 +1,62 @@
+schema_version: "1.0"
+kind: devforge_execution_slice_set
+
+identity:
+  task_id: PR-008-provider-execution-profile-tool-surface-alignment-v1
+  slice_set_id: PR-008-plan-r1-a97db1e3b7e9b0d5
+
+plan:
+  ref: docs/plans/PR-008-provider-execution-profile-tool-surface-alignment-v1-plan.md
+  revision: 1
+  blob: a97db1e3b7e9b0d5696790babd4790b503e4b20f
+  reviewed_head: 30fab805295ebf53111d96d33bb30a3709fdbf3d
+
+slices:
+  - slice_id: S01
+    objective: Implement Agent-side execution-profile feature advertisement, bounded capability contract metadata, and fail-closed missing-profile diagnostics without altering the canonical scoped executor or direct command allowlist.
+    depends_on: []
+    scope:
+      refs:
+        - src/sentinelx_core/executor.py
+        - src/sentinelx_core/handlers/basic.py
+        - src/sentinelx_core/handlers/scoped_script.py
+        - tests/test_scoped_script_execution.py
+        - tests/
+    verification:
+      required:
+        - capability_names advertises script_run_execution_profile_v1 without removing or renaming unrelated operations.
+        - full capabilities exposes host_runtime.script_run_execution_profile_v1 with profile_argument, bounded supported-profile metadata, scoped required-input shape, and readiness separated from field support.
+        - operator_unrestricted is reported as enabled only when existing Host policy explicitly enables it and is never recommended as fallback.
+        - configured mutation_execution with missing profile remains execution_profile_required and returns bounded diagnostic metadata only.
+        - unknown profiles remain rejected and legacy unprofiled script_run remains unchanged when mutation_execution is absent.
+        - existing scoped_mutation continues to require provider-owned mutation scope, lineage, and repository identity.
+        - no implementation change adds Python to allowed_commands or introduces exec/shell/PowerShell wrapper fallback.
+    checkpoint:
+      required: true
+    state: completed
+    run_refs: []
+    completion_receipt_ref: github-pr-comment:5932666723
+
+  - slice_id: S02
+    objective: Freeze the public provider contract, complete focused and broad regression evidence, and prepare the exact external Acceptance probe without claiming production Hub alignment.
+    depends_on: [S01]
+    scope:
+      refs:
+        - README.md
+        - docs/
+        - CHANGELOG.md
+        - tests/
+    verification:
+      required:
+        - public documentation distinguishes Agent field support from Host readiness and production Hub/MCP projection.
+        - documented scoped input contract includes execution_profile, mutation scope reference, lineage, and repository identity semantics.
+        - mixed-fleet behavior and the script_run_execution_profile_v1 feature token are documented without claiming old Agents support new fields.
+        - repository regression coverage passes to the extent supported by the implementation host, with any pre-existing platform limitation recorded exactly.
+        - Acceptance probe is defined to inspect the actual ChatGPT/MCP sentinel_script_run schema and requires execution_profile, mutation, lineage, and repository.
+        - implementation evidence explicitly stops short of end-to-end completion until a known build is activated and live Hub/ChatGPT evidence exists.
+        - PR-007 current accepted scope contract is re-read before finalizing advertised authority-field metadata; material dependency drift fails closed rather than freezing stale shape.
+    checkpoint:
+      required: true
+    state: completed
+    run_refs: []
+    completion_receipt_ref: github-pr-comment:5932990506
