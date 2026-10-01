@@ -13,9 +13,9 @@ development:
     plan_approved: true
     acceptance_approved: false
     completion_verified: false
-  next_expected_actor: reviewer
+  next_expected_actor: dependency_owner
   continuation_checkpoint:
-    ref: docs/checkpoints/PR-008-provider-execution-profile-tool-surface-alignment-v1-s02-completed-20261001.yaml
+    ref: docs/checkpoints/PR-008-provider-execution-profile-tool-surface-alignment-v1-acceptance-blocked-20261001.yaml
 transport:
   type: github-pr
   pr_number: 8
@@ -26,6 +26,7 @@ artifacts:
   plan_review: docs/reviews/PR-008-provider-execution-profile-tool-surface-alignment-v1-plan-review-r1.md
   execution_slice_set: docs/execution/PR-008-provider-execution-profile-tool-surface-alignment-v1-slices.yaml
   execution_profile_contract: docs/provider-execution-profile-tool-surface-v1.md
+  acceptance_review: docs/reviews/PR-008-provider-execution-profile-tool-surface-alignment-v1-acceptance-r1.md
 related_tasks:
   builds_on:
     - SX-HMSA-001
