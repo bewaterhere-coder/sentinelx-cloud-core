@@ -1,0 +1,34 @@
+schema_version: "1.0"
+kind: devforge_continuation_checkpoint
+identity:
+  task_id: PR-005-provider-capability-release-runtime-activation-v1
+  checkpoint_id: PR-005-completion-r1-verified
+execution:
+  stage: done
+  source_command: "#开发完成 PR-005-provider-capability-release-runtime-activation-v1"
+boundary:
+  disposition: completed
+  reason: CompletionR1Verified
+evidence:
+  accepted_implementation_head: 0c33d6c46fe92161e58a0b65786fb9f97da28dd9
+  pre_completion_head: 25fa0a67c13f819cffee8d4df35a659143094a2b
+  acceptance_review_ref: docs/reviews/PR-005-provider-capability-release-runtime-activation-v1-acceptance-r1.md
+  completion_review_ref: docs/reviews/PR-005-provider-capability-release-runtime-activation-v1-completion-r1.md
+  acceptance_receipt: github-pr-comment:5934800196
+  slice_completion_receipts:
+    - github-pr-comment:5933950162
+    - github-pr-comment:5934287234
+    - github-pr-comment:5934602805
+  verification:
+    release_focused: "6 passed"
+    activation_boundary: "24 passed"
+    sx_hmsa_core: "32 passed, 1 skipped"
+    windows_incident_readiness: "2 passed in 168.24s"
+continuation:
+  mode: terminal
+  next_expected_actor: none
+notes:
+  - Task completion closes the development lifecycle and permits PR merge.
+  - Completion does not claim a GitHub Release was published.
+  - Completion does not claim any connected Host installed the artifact or restarted.
+  - release_published, release_installed_on_host and runtime_capability_ready remain separate evidence states.

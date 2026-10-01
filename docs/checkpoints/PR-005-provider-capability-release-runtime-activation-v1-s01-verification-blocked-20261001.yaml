@@ -1,0 +1,63 @@
+schema_version: "1.0"
+kind: devforge_continuation_checkpoint
+checkpoint_id: PR-005-S01-56ef6d8-verification-rerun
+subject:
+  repository: github.com/bewaterhere-coder/sentinelx-cloud-core
+  task_id: PR-005-provider-capability-release-runtime-activation-v1
+lineage:
+  requirement_ref: docs/requirements/PR-005-provider-capability-release-runtime-activation-v1.md
+  plan_ref: docs/plans/PR-005-provider-capability-release-runtime-activation-v1-plan.md
+  plan_revision: 1
+  slice_set_ref: docs/execution/PR-005-provider-capability-release-runtime-activation-v1-execution-slice-set.yaml
+execution:
+  stage: implementation
+  source_command: "#开发执行 PR-005-provider-capability-release-runtime-activation-v1"
+  active_slice_id: S01
+  implementation_head: 56ef6d86f7e6
+transport:
+  repository: github.com/bewaterhere-coder/sentinelx-cloud-core
+  transport_ref: github-pr:5@task/provider-capability-release-runtime-activation-v1
+boundary:
+  disposition: blocked
+  reason: S01VerificationRerunRequired
+continuation:
+  mode: verify_current_slice
+  next_action_hint: "#开发执行 PR-005-provider-capability-release-runtime-activation-v1"
+evidence:
+  implementation_refs:
+    - github-commit:370c1e7
+    - github-commit:076c559
+    - github-commit:56ef6d8
+  static_validation:
+    python_compile:
+      - tools/release.py
+      - tests/test_release.py
+      - tests/test_release_install.py
+    toml_parse:
+      - pyproject.toml
+    git_diff_check: passed
+  dynamic_verification_history:
+    - attempt: 1
+      result: environment_blocked
+      evidence: pytest tmp_path failed under user TEMP ACL
+    - attempt: 2
+      result: repair_required
+      summary: "5 passed, 1 failed"
+      failure: "pip rejected randomly renamed staged wheel as Invalid wheel filename"
+      repair: "Preserve the original valid wheel filename inside an isolated temporary directory"
+      repair_commit: 56ef6d8
+  host_execution_constraints:
+    direct_python_allowed: false
+    profiled_script_run_surface_available: false
+    local_api_test_endpoint_available: false
+  outstanding_verification:
+    command: pytest -q --basetemp <workspace-temp> tests/test_release.py tests/test_release_install.py
+    required_claims:
+      - tag/version/ref mismatch fails closed
+      - wheel metadata reports requested release version
+      - isolated install reads back matching AGENT_VERSION
+      - manifest binds exact source revision and SHA-256 artifact digest
+freshness:
+  generated_at: "2026-10-01T22:45:00+08:00"
+  implementation_head: 56ef6d86f7e6
+supersedes: PR-005-S01-076c559-verification-blocked
