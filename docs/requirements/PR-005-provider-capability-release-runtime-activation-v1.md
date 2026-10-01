@@ -15,7 +15,7 @@ development:
     completion_verified: false
   next_expected_actor: implementer
   continuation_checkpoint:
-    ref: docs/checkpoints/PR-005-provider-capability-release-runtime-activation-v1-s01-completed-20261001.yaml
+    ref: docs/checkpoints/PR-005-provider-capability-release-runtime-activation-v1-s02-completed-20261001.yaml
 transport:
   type: github-pr
   pr_number: 5
