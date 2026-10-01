@@ -14,7 +14,7 @@ import dataclasses
 import pytest
 
 from sentinelx_core.handlers import build_registry
-from sentinelx_core.policy import Policy
+from sentinelx_core.policy import MutationExecutionPolicy, Policy
 
 
 def _policy(**kw) -> Policy:
@@ -65,3 +65,47 @@ async def test_strict_mode_is_visible_without_reading_config_yaml():
 async def test_the_list_is_sorted_for_a_stable_diff():
     caps = await _caps(_policy(disabled_ops=frozenset({"git", "exec", "edit"})))
     assert caps["disabled_ops"] == ["edit", "exec", "git"]
+
+
+async def test_profiled_script_contract_is_machine_readable_without_claiming_readiness():
+    caps = await _caps(_policy())
+    feature = caps["execution_features"]["host_runtime.script_run_execution_profile_v1"]
+
+    assert feature["available"] is True
+    assert feature["operation"] == "script_run"
+    assert feature["profile_argument"] == "execution_profile"
+    assert feature["supported_profiles"] == ["scoped_mutation"]
+    assert feature["scoped_mutation_required_input"] == [
+        "mutation.scope_ref.scope_id",
+        "mutation.scope_ref.generation",
+        "lineage.project_id",
+        "lineage.task_id",
+        "lineage.run_id",
+        "lineage.attempt_id",
+        "lineage.slice_id?",
+        "repository.vcs",
+        "repository.authority",
+        "repository.path",
+    ]
+    assert "available" in feature["profile_readiness"]["scoped_mutation"]
+    assert feature["hub_projection"]["external"] is True
+
+
+async def test_operator_unrestricted_is_advertised_only_after_explicit_policy_opt_in():
+    off = await _caps(_policy(mutation_execution=MutationExecutionPolicy(configured=True)))
+    on = await _caps(
+        _policy(
+            mutation_execution=MutationExecutionPolicy(
+                configured=True,
+                operator_unrestricted_enabled=True,
+            )
+        )
+    )
+
+    off_feature = off["execution_features"]["host_runtime.script_run_execution_profile_v1"]
+    on_feature = on["execution_features"]["host_runtime.script_run_execution_profile_v1"]
+    assert "operator_unrestricted" not in off_feature["supported_profiles"]
+    assert "operator_unrestricted" in on_feature["supported_profiles"]
+    assert off_feature["profile_readiness"]["operator_unrestricted"]["available"] is False
+    assert on_feature["profile_readiness"]["operator_unrestricted"]["available"] is True
+    assert on_feature["profile_readiness"]["operator_unrestricted"]["safe_fallback"] is False

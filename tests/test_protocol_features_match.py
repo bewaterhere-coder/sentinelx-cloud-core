@@ -36,6 +36,16 @@ def test_every_advertised_feature_exists_in_the_pinned_protocol():
     )
 
 
+def test_script_run_profile_payload_feature_is_advertised_without_claiming_a_wire_field(tmp_path):
+    executor = Executor(tmp_path / "unused-config.yaml")
+    executor._handlers = {"ping": object()}  # type: ignore[assignment]
+
+    assert "script_run_execution_profile_v1" in executor.capability_names()
+    assert "script_run_execution_profile_v1" in Executor.OPERATION_FEATURES
+    assert "script_run_execution_profile_v1" not in Executor.PROTOCOL_FEATURES
+    assert "script_run_execution_profile_v1" not in RequestMessage.model_fields
+
+
 def test_opaque_ref_specifically_is_receivable():
     """The one that broke; named so a regression says what it is."""
     assert "opaque_ref" in RequestMessage.model_fields

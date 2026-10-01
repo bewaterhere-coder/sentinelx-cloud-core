@@ -544,9 +544,17 @@ def make_profiled_script_run_handler(
         if execution_profile is not None:
             raise HandlerError("invalid_payload", f"unsupported execution_profile: {execution_profile}")
         if policy.mutation_execution.configured:
+            supported_profiles = ["scoped_mutation"]
+            if policy.mutation_execution.operator_unrestricted_enabled:
+                supported_profiles.append("operator_unrestricted")
             raise HandlerError(
                 "execution_profile_required",
                 "configured mutation_execution requires an explicit execution_profile",
+                details={
+                    "required_argument": "execution_profile",
+                    "feature": "script_run_execution_profile_v1",
+                    "supported_profiles": supported_profiles,
+                },
             )
         return await legacy(payload)
 
