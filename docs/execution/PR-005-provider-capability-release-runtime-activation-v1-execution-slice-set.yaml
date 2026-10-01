@@ -29,7 +29,10 @@ slices:
     checkpoint:
       required: true
     state: pending
-    run_refs: []
+    run_refs:
+      - github-commit:370c1e7
+      - github-commit:076c559
+      - checkpoint:docs/checkpoints/PR-005-provider-capability-release-runtime-activation-v1-s01-verification-blocked-20261001.yaml
     completion_receipt_ref: null
 
   - slice_id: S02
