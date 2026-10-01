@@ -20,21 +20,33 @@ verification:
     staged_diff_review: passed
   dynamic:
     result: blocked
-    elevated_operator_run:
-      result: "6 failed, 7 passed, 1 skipped, 1 warning in 32.82s"
+    interactive_administrator_run:
+      result: "5 failed, 8 passed, 1 skipped, 1 warning in 183.59s"
       interpreter: C:/ProgramData/SentinelX/.venv/Scripts/python.exe
-      basetemp: elevated-user TEMP
+      fixture_runtime_roots: "sys.prefix + sys.base_prefix"
       acl_precondition: passed
-      shared_failure: incomplete_test_runtime_read_roots
-      observed_python_failure: "python3 could not initialize inside the required AppContainer"
-      observed_self_check_failure: "SELF_CHECK_OK was not materialized"
-      classification: test_fixture_runtime_closure_incomplete
-    fixture_repair:
-      commit: b3890c2
-      runtime_roots: "sys.prefix + sys.base_prefix"
-      production_policy_alignment: "C:/ProgramData/SentinelX/.venv + C:/Python314"
+      shared_runtime_behavior: spawned processes time out instead of completing under interactive Administrator identity
+      readiness_failure: "RuntimeError: readiness probe process timed out"
+      classification: interactive_operator_identity_not_provider_equivalent
+    live_provider_self_check:
+      agent_version: 0.24.1.dev21+g0badec027
+      available: true
+      verified: true
+      runtime_read_execute: true
+      job_no_breakaway: true
+      suspended_spawn_audit_before_resume: true
+      terminal_non_active: true
+      residual_authority_absent: true
+      reason: real Windows AppContainer/ACL/Job/audit/scope self-check passed in SentinelX service context
+    next_verification:
+      identity: LocalSystem
+      harness: D:/coco/workspaces/pr007-s04-system-verify.ps1
+      runner: D:/coco/workspaces/pr007-s04-system-verify.py
+      phases:
+        - provider-context readiness self-check
+        - full S04 security matrix only after readiness passes
       rerun_required: true
-    reason: elevated execution proved ACL preparation works; the remaining failures came from the test fixture granting only the venv Scripts directory instead of the full venv and base Python runtime closure
+    reason: interactive Administrator pytest is not equivalent to the SentinelX LocalSystem provider identity; fresh matrix evidence must run under the provider-equivalent SYSTEM identity
   required_matrix:
     - provider-issued scoped_script scope composes with execution_profile=scoped_mutation
     - operation-class admission remains before audit/materialization
@@ -46,7 +58,7 @@ verification:
     - no unrestricted fallback
 boundary:
   disposition: blocked
-  reason: S04WindowsSandboxMatrixRerunRequiredAfterFixtureRuntimeClosureRepair
+  reason: S04WindowsSandboxMatrixRequiresProviderEquivalentSystemIdentity
   implementation_landed: true
   slice_completed: false
 continuation:
