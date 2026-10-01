@@ -351,6 +351,40 @@ adversaries, trust boundaries, per-threat mitigations) and
 [`SECURITY.md`](./SECURITY.md) (vulnerability reporting + disclosure
 policy).
 
+## Versioned releases and exact-artifact upgrades
+
+Normal provider releases are built from an exact `vX.Y.Z` tag. The repository-owned
+release executor verifies wheel metadata, performs an isolated install smoke test,
+computes SHA-256 evidence, and writes `release-manifest.json` bound to the exact
+source commit.
+
+```bash
+python tools/release.py build --version X.Y.Z --ref vX.Y.Z --output <release-dir>
+python tools/release.py verify --manifest <release-dir>/release-manifest.json --repository-root .
+```
+
+Publication and installation are deliberately split from planning. These commands
+emit deterministic machine-readable intent and perform no GitHub publication,
+package installation, service restart, or connected-host mutation:
+
+```bash
+python tools/release.py publish-plan --manifest <release-dir>/release-manifest.json --repository owner/repo
+python tools/release.py install-plan --manifest <release-dir>/release-manifest.json --python <target-python>
+```
+
+`publish-plan` returns `action=create` for a new release. Supplying a previously
+observed release identity with `--existing-release <json>` returns `action=noop`
+only when the tag, source commit, artifact names, sizes, and SHA-256 digests are
+identical; a same-version conflict fails closed. Real GitHub Release publication
+is a separate operator-authorized side effect.
+
+For Windows upgrades, **release mode** is the normal path: verify the published
+manifest/digest, install the exact wheel named by that manifest into the selected
+Python environment, restart the service explicitly, then read capabilities back.
+The release itself never upgrades a host automatically. **Source mode** remains a
+compatibility/development path and must use an explicit source ref; moving `@main`
+is not versioned-release evidence.
+
 ## Local development
 
 ```bash

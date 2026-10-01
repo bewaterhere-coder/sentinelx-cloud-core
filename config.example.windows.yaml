@@ -174,37 +174,45 @@ playbooks:
     - 'Agent logs are in C:\ProgramData\SentinelX\logs\ : sentinelx-service.err.log (stderr), .out.log
       (stdout), .wrapper.log (WinSW).'
   update_sentinelx_code:
-    description: Update the SentinelX agent on this Windows host to the latest commit on main. Handles AGENT
-      CODE only.
-    when: User asks to update / upgrade / pull the latest agent (e.g. "update sentinelx", "is there a new
-      version?", "pull the latest").
+    description: Upgrade the SentinelX agent on this Windows host. Normal upgrades consume an exact released
+      wheel verified against its release manifest; explicit source refs remain a compatibility/development mode.
+    when: User asks to update / upgrade SentinelX, install a specific provider release, or deliberately reinstall
+      from a source ref.
     steps:
     - 'Note the current version: call sentinel_capabilities and read the ''version'' field.'
-    - 'Reinstall from git into the venv (Windows installs the agent as a pip package, NOT a git checkout):
-      run in a powershell script_run: C:\ProgramData\SentinelX\.venv\Scripts\python.exe -m pip install --upgrade
-      --force-reinstall "sentinelx-cloud-core @ git+https://github.com/bewaterhere-coder/sentinelx-cloud-core.git@main".
-      This also pulls the pinned sentinelx-cloud-protocol. git must be on PATH so pip can fetch the git
-      dependencies.'
-    - 'Load the new code with a self-restart: sentinel_service action=restart service=sentinelx. A detached
-      WMI helper does the stop+start of the WinSW service; the WS session drops (read_loop_ended) and the
-      agent reconnects on its own. Wait a few seconds, then continue.'
-    - Verify with sentinel_capabilities that the agent responds and the version reflects the update. If
-      capabilities errors out, the new build may have a startup bug - check C:\ProgramData\SentinelX\logs\sentinelx-service.err.log.
-    - (Optional) Mention that config.example.windows.yaml may ship new playbooks/services/commands not yet
-      in C:\ProgramData\SentinelX\config.yaml; adopting them is a separate, manual step (there is no auto-merge).
+    - 'Choose the mode explicitly. Use release mode for normal upgrades. Use source mode only when the operator
+      explicitly supplies a source ref or asks for a development/source install. Publishing a release never selects
+      or upgrades this host automatically.'
+    - 'Release mode: obtain the exact release-manifest.json and wheel for the selected version. The target Python
+      executable, manifest path, and wheel path are runtime/operator inputs; they are not canonical fixed paths.
+      Verify that the manifest reports state=built and verification.passed=true, then compute the wheel SHA-256
+      (Get-FileHash <wheel> -Algorithm SHA256) and require an exact match with manifest artifact.sha256. Also require
+      the manifest artifact filename/size to match the selected wheel. Fail closed on any mismatch.'
+    - 'Release mode install: invoke the selected Python environment directly: <target-python> -m pip install
+      --upgrade --force-reinstall <exact-wheel>. The package source is the verified wheel named by the manifest;
+      do not resolve or substitute @main, a branch, or another moving source ref.'
+    - 'Source mode: require an explicit <source-ref> and reinstall from
+      "sentinelx-cloud-core @ git+https://github.com/bewaterhere-coder/sentinelx-cloud-core.git@<source-ref>".
+      @main is allowed only when the operator explicitly requests that development path, and it is never evidence
+      that a versioned release was installed.'
+    - 'Load the new code with a self-restart: sentinel_service action=restart service=sentinelx. The WS session
+      drops and the agent reconnects. Restart is separate from artifact installation and must occur only after the
+      install step succeeds.'
+    - 'Verify with sentinel_capabilities that the agent responds and report the installed version separately from
+      runtime capability readiness. Package version alone does not enable host_mutation_sandbox_v1 or
+      pre_execution_audit_lineage_v1.'
+    - '(Optional) Mention that config.example.windows.yaml may ship new playbooks/services/commands not yet adopted
+      into the host config; adopting them is a separate manual step with no auto-merge.'
     requires:
-    - git on PATH (pip fetches sentinelx-cloud-core and sentinelx-cloud-protocol from GitHub over git+https).
-    - The venv at C:\ProgramData\SentinelX\.venv and outbound network to github.com.
-    - '''sentinelx'' declared in services (default Windows config) for the self-restart.'
+    - Release mode requires an exact wheel plus release manifest/digest evidence and a caller-selected target Python.
+    - Source mode additionally requires git on PATH and outbound access to the selected source repository/ref.
+    - '''sentinelx'' declared in services (default Windows config) for the explicit self-restart.'
     notes:
-    - Unlike the Linux install (a git checkout under /opt), Windows installs the agent as a pip package
-      inside C:\ProgramData\SentinelX\.venv. There is no local git repo to 'git pull' - reinstalling with
-      --force-reinstall from git is the update path (mirrors the macOS uv approach).
-    - The reinstall updates files on disk but does NOT restart the running agent by itself; the explicit
-      sentinel_service restart is what loads the new code into memory.
-    - The service runs via WinSW (service key 'sentinelx', label SentinelX). Restarting it needs no admin
-      - requires_sudo is false because a detached helper performs the stop+start.
-    - Updates are user-driven - there is intentionally no auto-update.
+    - Release publication, release installation, service restart, and runtime readiness are four distinct lifecycle
+      states. None implies the next.
+    - There is intentionally no auto-update and no publish-to-host coupling.
+    - Conventional Windows installation paths may be discovered at runtime, but they are examples rather than
+      release authority.
   network_debug:
     description: Windows network diagnostics - interfaces, routes, listening ports, DNS, reachability.
     when: 'User reports network issues or asks what is listening on a port. Triggers: "internet not working",

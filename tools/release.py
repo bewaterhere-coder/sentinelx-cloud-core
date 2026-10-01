@@ -24,9 +24,12 @@ import zipfile
 
 
 MANIFEST_SCHEMA = "sentinelx.release.v1"
+INSTALL_PLAN_SCHEMA = "sentinelx.install-plan.v1"
+PUBLISH_PLAN_SCHEMA = "sentinelx.publish-plan.v1"
 TOOL_VERSION = "1"
 PACKAGE_NAME = "sentinelx-cloud-core"
 VERSION_RE = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
+REPOSITORY_RE = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
 
 
 class ReleaseError(RuntimeError):
@@ -223,12 +226,16 @@ def build_release(repo: Path, version: str, output: Path, ref: str | None = None
     return manifest_path
 
 
-def verify_manifest(manifest_path: Path, repo: Path | None = None) -> dict[str, object]:
+def _load_manifest_artifact(
+    manifest_path: Path,
+) -> tuple[dict[str, object], Path, str, str]:
     manifest_path = manifest_path.resolve()
     try:
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         raise ReleaseError(f"cannot read release manifest: {manifest_path}") from exc
+    if not isinstance(manifest, dict):
+        raise ReleaseError("release manifest must be a JSON object")
     if manifest.get("schema") != MANIFEST_SCHEMA:
         raise ReleaseError("unsupported release manifest schema")
     version = _normalized_version(str(manifest.get("version", "")))
@@ -247,12 +254,122 @@ def verify_manifest(manifest_path: Path, repo: Path | None = None) -> dict[str, 
         raise ReleaseError("release artifact SHA-256 mismatch")
     if wheel.stat().st_size != artifact.get("size"):
         raise ReleaseError("release artifact size mismatch")
+    if manifest.get("state") != "built":
+        raise ReleaseError("manifest state is not built")
+    verification_record = manifest.get("verification")
+    if not isinstance(verification_record, dict) or verification_record.get("passed") is not True:
+        raise ReleaseError("manifest verification is not passed")
+    source_commit = manifest.get("source_commit")
+    if not isinstance(source_commit, str) or not source_commit:
+        raise ReleaseError("manifest source commit is invalid")
+    return manifest, wheel, version, actual_hash
+
+
+def verify_manifest(manifest_path: Path, repo: Path | None = None) -> dict[str, object]:
+    manifest, wheel, version, actual_hash = _load_manifest_artifact(manifest_path)
     verification = _verify_wheel(wheel, version)
     if repo is not None:
         identity = resolve_release_identity(repo, version, str(manifest.get("requested_ref") or ""))
         if identity["source_commit"] != manifest.get("source_commit"):
             raise ReleaseError("manifest source commit does not match repository release identity")
     return {"ok": True, "version": version, "sha256": actual_hash, **verification}
+
+
+def install_plan(manifest_path: Path, python_executable: str) -> dict[str, object]:
+    manifest, wheel, version, actual_hash = _load_manifest_artifact(manifest_path)
+    if not python_executable.strip():
+        raise ReleaseError("python executable must be supplied by the operator")
+    return {
+        "schema": INSTALL_PLAN_SCHEMA,
+        "state": "planned",
+        "version": version,
+        "source_commit": manifest["source_commit"],
+        "artifact": {
+            "path": str(wheel),
+            "filename": wheel.name,
+            "sha256": actual_hash,
+            "size": wheel.stat().st_size,
+        },
+        "argv": [
+            python_executable,
+            "-m",
+            "pip",
+            "install",
+            "--upgrade",
+            "--force-reinstall",
+            str(wheel),
+        ],
+        "requires_restart": True,
+        "mutates_host": False,
+        "notes": "This plan does not execute pip or restart a service.",
+    }
+
+
+def _publish_identity(manifest_path: Path) -> dict[str, object]:
+    manifest_path = manifest_path.resolve()
+    manifest, wheel, version, actual_hash = _load_manifest_artifact(manifest_path)
+    return {
+        "tag": f"v{version}",
+        "target_commitish": manifest["source_commit"],
+        "assets": [
+            {
+                "filename": wheel.name,
+                "sha256": actual_hash,
+                "size": wheel.stat().st_size,
+            },
+            {
+                "filename": manifest_path.name,
+                "sha256": _sha256(manifest_path),
+                "size": manifest_path.stat().st_size,
+            },
+        ],
+    }
+
+
+def publication_plan(
+    manifest_path: Path,
+    repository: str,
+    existing_release: dict[str, object] | None = None,
+) -> dict[str, object]:
+    if not REPOSITORY_RE.fullmatch(repository):
+        raise ReleaseError("repository must be in owner/name form")
+    identity = _publish_identity(manifest_path)
+    action = "create"
+    if existing_release is not None:
+        release_record = existing_release.get("release")
+        if isinstance(release_record, dict):
+            existing_tag = release_record.get("tag")
+            existing_target = release_record.get("target_commitish")
+        else:
+            existing_tag = existing_release.get("tag") or existing_release.get("tag_name")
+            existing_target = existing_release.get("target_commitish")
+        comparable = {
+            "tag": existing_tag,
+            "target_commitish": existing_target,
+            "assets": existing_release.get("assets"),
+        }
+        if comparable != identity:
+            raise ReleaseError("conflicting same-version release identity")
+        action = "noop"
+    return {
+        "schema": PUBLISH_PLAN_SCHEMA,
+        "state": "planned",
+        "action": action,
+        "repository": repository,
+        "release": {
+            "tag": identity["tag"],
+            "target_commitish": identity["target_commitish"],
+            "name": f"{PACKAGE_NAME} {identity['tag']}",
+            "draft": False,
+            "prerelease": False,
+        },
+        "assets": identity["assets"],
+        "side_effects": {
+            "publishes_release": False,
+            "installs_on_host": False,
+            "restarts_service": False,
+        },
+    }
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -266,6 +383,13 @@ def _parser() -> argparse.ArgumentParser:
     verify = sub.add_parser("verify", help="re-verify one built release manifest")
     verify.add_argument("--manifest", required=True, type=Path)
     verify.add_argument("--repository-root", type=Path)
+    install = sub.add_parser("install-plan", help="emit an exact-artifact install plan without executing it")
+    install.add_argument("--manifest", required=True, type=Path)
+    install.add_argument("--python", required=True, dest="python_executable")
+    publish = sub.add_parser("publish-plan", help="emit deterministic publication intent without publishing")
+    publish.add_argument("--manifest", required=True, type=Path)
+    publish.add_argument("--repository", required=True)
+    publish.add_argument("--existing-release", type=Path)
     return parser
 
 
@@ -275,8 +399,22 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "build":
             path = build_release(args.repository_root, args.version, args.output, args.ref)
             print(path)
-        else:
+        elif args.command == "verify":
             result = verify_manifest(args.manifest, args.repository_root)
+            print(json.dumps(result, sort_keys=True))
+        elif args.command == "install-plan":
+            result = install_plan(args.manifest, args.python_executable)
+            print(json.dumps(result, sort_keys=True))
+        else:
+            existing = None
+            if args.existing_release is not None:
+                try:
+                    existing = json.loads(args.existing_release.read_text(encoding="utf-8"))
+                except (OSError, json.JSONDecodeError) as exc:
+                    raise ReleaseError("cannot read existing release identity") from exc
+                if not isinstance(existing, dict):
+                    raise ReleaseError("existing release identity must be a JSON object")
+            result = publication_plan(args.manifest, args.repository, existing)
             print(json.dumps(result, sort_keys=True))
     except ReleaseError as exc:
         print(f"release_error: {exc}", file=sys.stderr)
