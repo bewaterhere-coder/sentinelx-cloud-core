@@ -4,14 +4,16 @@
 
 ```yaml
 task_id: PR-008-provider-execution-profile-tool-surface-alignment-v1
-stage: plan_review
+stage: implementation
 requirement: docs/requirements/PR-008-provider-execution-profile-tool-surface-alignment-v1.md
 transport: github-pr
 pr_number: 8
 task_branch: task/provider-execution-profile-tool-surface-alignment-v1
-plan_status: review_required
+plan_status: approved
 plan_revision: 1
-implementation_authorized: false
+plan_review: docs/reviews/PR-008-provider-execution-profile-tool-surface-alignment-v1-plan-review-r1.md
+execution_slice_set: docs/execution/PR-008-provider-execution-profile-tool-surface-alignment-v1-slices.yaml
+implementation_authorized: true
 acceptance_approved: false
 completion_verified: false
 ```
