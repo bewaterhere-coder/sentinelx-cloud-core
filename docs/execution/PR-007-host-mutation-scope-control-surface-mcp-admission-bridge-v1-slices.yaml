@@ -32,8 +32,8 @@ invariants:
 slices:
   - id: S01
     title: Authority admission and exact bound readback
-    status: verification_blocked
-    checkpoint_ref: docs/checkpoints/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-s01-verification-blocked-20261002.yaml
+    status: completed
+    checkpoint_ref: docs/checkpoints/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-s01-completed-20261002.yaml
     objective: Strengthen the canonical scope authority so scoped script execution consumes durable operation-class authorization and external inspect can perform exact non-reactivating bound readback.
     primary_surfaces:
       - src/sentinelx_core/mutation_scope.py
