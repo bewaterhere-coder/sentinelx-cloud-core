@@ -7,13 +7,15 @@ project_id: sentinelx-cloud-core
 task_id: PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1
 title: Host Mutation Scope Control Surface & MCP Admission Bridge V1
 development:
-  stage: plan_review_rejected
+  stage: plan_review
   gates:
     requirement_ready: true
     plan_approved: false
     acceptance_approved: false
     completion_verified: false
-  next_expected_actor: planner
+  next_expected_actor: plan_reviewer
+  continuation_checkpoint:
+    ref: docs/checkpoints/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-plan-remediation-r2-20261002.yaml
 transport:
   type: github-pr
   pr_number: 7
@@ -26,6 +28,8 @@ related_tasks:
   builds_on:
     - SX-HMSA-001
   active_related:
+    - PR-008-provider-execution-profile-tool-surface-alignment-v1
+  completed_related:
     - PR-005-provider-capability-release-runtime-activation-v1
 ```
 
@@ -306,8 +310,10 @@ Required remediation:
 
 ```text
 Requirement Ready: true
-Plan Review: Rejected
-Current Gate: plan_review_rejected
+Plan Revision: 2
+Plan Remediation: completed
+Current Gate: plan_review
 Plan Approved: false
 Implementation Authorized: false
+Next Actor: plan_reviewer
 ```
