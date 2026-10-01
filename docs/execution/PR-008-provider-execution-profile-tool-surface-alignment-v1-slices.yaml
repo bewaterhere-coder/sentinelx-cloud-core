@@ -57,6 +57,6 @@ slices:
         - PR-007 current accepted scope contract is re-read before finalizing advertised authority-field metadata; material dependency drift fails closed rather than freezing stale shape.
     checkpoint:
       required: true
-    state: pending
+    state: completed
     run_refs: []
-    completion_receipt_ref: null
+    completion_receipt_ref: github-pr-comment:5932990506
