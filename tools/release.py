@@ -150,10 +150,8 @@ def _build_wheel(repo: Path, source_commit: str) -> Path:
         wheels = sorted(wheel_dir.glob("*.whl"))
         if len(wheels) != 1:
             raise ReleaseError(f"expected exactly one wheel, found {len(wheels)}")
-        fd, staged_name = tempfile.mkstemp(prefix="sentinelx-release-wheel-", suffix=".whl")
-        os.close(fd)
-        staged = Path(staged_name)
-        staged.unlink()
+        staged_dir = Path(tempfile.mkdtemp(prefix="sentinelx-release-wheel-"))
+        staged = staged_dir / wheels[0].name
         shutil.copy2(wheels[0], staged)
         return staged
     finally:
