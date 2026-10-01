@@ -15,7 +15,7 @@ development:
     completion_verified: false
   next_expected_actor: implementer
   continuation_checkpoint:
-    ref: docs/checkpoints/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-s03-verification-blocked-20261002.yaml
+    ref: docs/checkpoints/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-s03-completed-20261002.yaml
 transport:
   type: github-pr
   pr_number: 7
