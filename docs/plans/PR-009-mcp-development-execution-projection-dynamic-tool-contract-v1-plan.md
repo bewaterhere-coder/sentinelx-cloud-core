@@ -17,6 +17,18 @@ acceptance_approved: false
 completion_verified: false
 ```
 
+## Rejected Findings
+
+Plan Review R1 rejected this revision on:
+
+- `F1-current-task-p0-dependencies-conflict-with-proposed-implementation-entry`;
+- `F2-no-authorized-production-hub-projection-implementation-target`;
+- `F3-active-pr007-pr008-dependencies-are-not-stable-implementation-inputs`.
+
+Canonical remediation input:
+
+`docs/reviews/PR-009-mcp-development-execution-projection-dynamic-tool-contract-v1-plan-review-r1.md`
+
 ## Planning Decision
 
 Do not reimplement Host mutation scope or profiled script execution. PR-009 is an integration/projection task with three distinct truth boundaries:
