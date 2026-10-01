@@ -1,0 +1,52 @@
+schema: devforge.continuation-checkpoint.v1
+project_id: sentinelx-cloud-core
+task_id: PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1
+stage: implementation
+source_command: "#开发执行 PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1"
+active_slice_id: S03
+slice_state: verification_blocked
+implementation:
+  implementation_head: 4c2c2f391712d92fb555bee5632dae7abd31277a
+  primary_commit: f22b2c80fc3670b4148ab28ae96a4789cf819cc4
+  changed_surfaces:
+    - src/sentinelx_core/handlers/__init__.py
+    - src/sentinelx_core/handlers/basic.py
+    - README.md
+    - tests/test_mutation_scope_registry.py
+  registry_source_of_truth_preserved: true
+  dedicated_hub_mcp_tool_claimed: false
+verification:
+  static:
+    python_compile: passed
+    git_diff_check: passed
+    staged_diff_review: passed
+  dynamic:
+    result: blocked
+    attempted_command: pytest -q tests/test_mutation_scope_registry.py
+    observed_error: command_not_allowed
+    reason: pytest remains intentionally absent from SentinelX direct-command allowlist
+  required_focused_evidence:
+    - mutation_scope is registered and dispatchable through normal registry
+    - capabilities ops_supported exactly derives registry truth
+    - dispatchability remains distinct from host_mutation_sandbox_v1 readiness
+    - help explains readiness boundary
+    - disabled_ops removes mutation_scope from registry advertisement and help
+    - disabled mutation_scope dispatch returns unsupported_op
+    - no dedicated Hub MCP tool identity is claimed
+boundary:
+  disposition: blocked
+  reason: S03DynamicVerificationRequiresOperatorShell
+  implementation_landed: true
+  slice_completed: false
+continuation:
+  mode: verify_current_slice
+  next_slice_id: S03
+  next_expected_actor: implementer
+  next_action_hint: "#开发执行 PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1"
+invariants:
+  direct_python_allowlist_not_changed: true
+  pytest_allowlist_not_added: true
+  script_run_bypass_not_used: true
+  wrapper_fallback_not_used: true
+  operator_unrestricted_not_used: true
+  s04_not_started: true
