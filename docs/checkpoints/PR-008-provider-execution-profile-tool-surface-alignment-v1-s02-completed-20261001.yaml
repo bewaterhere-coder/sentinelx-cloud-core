@@ -1,0 +1,56 @@
+schema_version: "1.0"
+kind: devforge_continuation_checkpoint
+checkpoint_id: PR-008-S02-0608d4d-completed
+subject:
+  repository: github.com/bewaterhere-coder/sentinelx-cloud-core
+  task_id: PR-008-provider-execution-profile-tool-surface-alignment-v1
+lineage:
+  requirement_ref: docs/requirements/PR-008-provider-execution-profile-tool-surface-alignment-v1.md
+  requirement_revision: e52862b6e2c764ec6fed9361fea80b3e34bbc080
+  plan_ref: docs/plans/PR-008-provider-execution-profile-tool-surface-alignment-v1-plan.md
+  plan_revision: 1
+  slice_set_ref: docs/execution/PR-008-provider-execution-profile-tool-surface-alignment-v1-slices.yaml
+execution:
+  stage: acceptance
+  source_command: "#开发执行 PR-008-provider-execution-profile-tool-surface-alignment-v1"
+  source_capability: null
+  window_id: null
+  active_slice_id: S02
+  active_run_id: null
+  active_attempt_id: null
+  latest_finalization_ref: null
+authority:
+  authorization_ref: null
+orchestration:
+  plan_review_loop_ref: null
+  active_loop_step_key: null
+  slice_progression_ref: null
+  active_slice_step_key: null
+transport:
+  repository: github.com/bewaterhere-coder/sentinelx-cloud-core
+  transport_ref: github-pr:8@task/provider-execution-profile-tool-surface-alignment-v1
+boundary:
+  disposition: command_completed
+  reason: S02ImplementationCompleteAcceptancePending
+continuation:
+  mode: resolve_next_command
+  next_action_hint: "#开发验收 PR-008-provider-execution-profile-tool-surface-alignment-v1"
+evidence:
+  verified_side_effect_refs:
+    - github-commit:0608d4d
+    - github-pr-comment:5932990506
+  latest_receipt_refs:
+    - github-pr-comment:5932990506
+  outstanding_verification_refs:
+    - production-hub-model-facing-schema-projection
+    - provider-owned-scope-admission-pr007-or-equivalent
+    - known-agent-runtime-activation-pr005-or-equivalent
+freshness:
+  source_digests:
+    requirement_blob: e52862b6e2c764ec6fed9361fea80b3e34bbc080
+    implementation_commit: 0608d4d
+    s01_focused_verification: pytest-18-passed-0.31s
+    s02_dependency_refresh_pr007_head: ea5b1729da9d5ad00f889e3189034121325b83b9
+    s02_dependency_refresh_pr005_head: ed752c4f9b84e539b48e6703aabf956d1898bfff
+  generated_at: "2026-10-01T21:59:19+08:00"
+supersedes: docs/checkpoints/PR-008-provider-execution-profile-tool-surface-alignment-v1-s01-completed-20261001.yaml

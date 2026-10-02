@@ -146,6 +146,34 @@ legacy full responses. A Hub that wants compact-first behavior should map its
 compact help/capabilities branches to the narrow selectors rather than changing
 the agent's legacy empty-payload semantics.
 
+### Profiled `script_run` contract
+
+Agents that advertise `script_run_execution_profile_v1` understand an explicit
+execution-profile payload contract for `script_run`. Full capabilities expose
+`host_runtime.script_run_execution_profile_v1`, including the required
+`scoped_mutation` authority/binding fields and current Host readiness separately.
+
+A scoped request must be able to carry, semantically:
+
+```text
+execution_profile = scoped_mutation
+mutation.scope_ref.scope_id
+mutation.scope_ref.generation
+lineage.project_id / task_id / run_id / attempt_id [/ slice_id]
+repository.vcs / authority / path
+```
+
+The mutation scope is provider-issued; callers do not choose a workspace or mint
+scope authority. Advertising these fields does **not** prove the closed-source
+Hub has projected them into the model-facing `sentinel_script_run` schema, and
+it does not prove the current Host is ready to execute them. `operator_unrestricted`
+is never a safe fallback, and this feature does not add Python to the direct
+`exec` allowlist.
+
+See [`docs/provider-execution-profile-tool-surface-v1.md`](docs/provider-execution-profile-tool-surface-v1.md)
+for the exact contract, mixed-fleet rules, dependency boundaries, and the
+production Acceptance probe.
+
 `sentinel_read`, `sentinel_list`, and `sentinel_search` are **read-only
 filesystem primitives**. `sentinel_edit` and the mutating primitives
 (`sentinel_move`, `sentinel_copy`, `sentinel_delete`, `sentinel_chmod`,

@@ -1,0 +1,40 @@
+schema: devforge.checkpoint.v1
+project_id: sentinelx-cloud-core
+task_id: PR-008-provider-execution-profile-tool-surface-alignment-v1
+stage: acceptance
+state: blocked
+acceptance_round: 2
+finding_class: protected_boundary
+canonical_pr: 8
+branch: task/provider-execution-profile-tool-surface-alignment-v1
+evaluated_product_head: 7a3da6ce9204535fa54624b0f33bf1f5a5feb73d
+live_evidence:
+  agent_version: 0.24.0
+  host_mutation_sandbox_v1: verified
+  pre_execution_audit_lineage_v1: verified
+  pr008_feature_token_advertised: false
+  pr008_execution_feature_advertised: false
+  model_facing_schema_has_execution_profile: false
+  model_facing_schema_has_mutation: false
+  model_facing_schema_has_lineage: false
+  model_facing_schema_has_repository: false
+  unprofiled_script_run_result: execution_profile_required
+  direct_exec_python:
+    allowed: true
+    probe: python --version
+    result: Python 3.14.7
+    classification: protected_boundary
+external_dependencies:
+  pr005_release_runtime_path: resolved
+  pr008_known_build_activation: pending
+  pr007_scope_admission: plan_review_rejected
+  hub_projection_verdict: pending_known_pr008_agent
+next_expected_actor: dependency_owner
+ordered_unblockers:
+  - restore_direct_python_denial_boundary
+  - activate_known_pr008_capable_agent_build
+  - recheck_live_hub_tool_projection
+  - repair_review_implement_pr007_scope_admission
+  - run_harmless_scoped_end_to_end_proof
+acceptance_approved: false
+completion_verified: false
