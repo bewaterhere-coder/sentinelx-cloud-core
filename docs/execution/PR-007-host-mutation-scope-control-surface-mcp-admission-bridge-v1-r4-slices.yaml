@@ -93,7 +93,8 @@ slices:
 
   - id: S07
     title: execute_scoped adapter, bounded projection and no-fallback regressions
-    status: pending
+    status: completed
+    checkpoint_ref: docs/checkpoints/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-s07-completed-20261002.yaml
     objective: Expose bounded scoped execution through devforge_runtime while reusing the existing profiled scoped executor and preventing provider-private path/debug leakage or policy bypass.
     primary_surfaces:
       - builtin devforge_runtime provider/handler
