@@ -1,0 +1,65 @@
+schema: devforge.continuation-checkpoint.v1
+project_id: sentinelx-cloud-core
+task_id: PR-010-canonical-repository-mutation-firewall-v1
+stage: implementation
+source_command: "#开发执行 PR-010-canonical-repository-mutation-firewall-v1"
+active_slice_id: S01
+slice_state: verification_blocked
+implementation:
+  implementation_head: 62b9fba588fac58161c909e8622278d791c07a92
+  canonical_main: f7e878f3497582547e5d52cd33b060cae18d2e84
+  pr007_head_observed: 8f1962496902eb0946519c545c1b1b8a2427901b
+  pr008_head_observed: f7594c468d764ad85c0dc508ad47f009c89793c1
+  dependency_overlap: false
+  changed_surfaces:
+    - src/sentinelx_core/policy.py
+    - src/sentinelx_core/canonical_repository_firewall.py
+    - tests/test_canonical_repository_firewall.py
+verification:
+  static:
+    python_compile:
+      result: passed
+      mechanism: sentinel_edit python validator dry-run
+      files:
+        - src/sentinelx_core/policy.py
+        - src/sentinelx_core/canonical_repository_firewall.py
+        - tests/test_canonical_repository_firewall.py
+    execution_workspace_clean: true
+    canonical_checkout_mutated: false
+  dynamic:
+    result: blocked
+    attempted_command: pytest tests/test_canonical_repository_firewall.py -q
+    observed_error: execution_profile_required
+    classification: external_verification_channel_unavailable
+    evidence:
+      required_argument: execution_profile
+      feature: script_run_execution_profile_v1
+      supported_profiles:
+        - scoped_mutation
+    note: current model-facing script_run tool cannot express the required execution_profile argument; this is an external tool-projection limitation, not a PR-010 Core implementation defect
+  repository_ci:
+    exact_head_statuses_present: false
+    exact_head_workflow_runs_present: false
+    existing_ci_runs_focused_pytest: false
+project_scope_boundary:
+  sentinelx_cloud_core_is_only_mutation_target: true
+  hub_is_third_party_closed_source: true
+  hub_mutation_or_deployment_in_scope: false
+  hub_fix_required_for_pr010_s01: false
+boundary:
+  disposition: verification_blocked
+  reason: S01FocusedDynamicVerificationUnavailable
+  implementation_landed: true
+  slice_completed: false
+continuation:
+  mode: reenter_current_command
+  next_slice_id: S01
+  next_expected_actor: implementer_or_verifier
+  next_action_hint: "#开发执行 PR-010-canonical-repository-mutation-firewall-v1"
+invariants:
+  no_receipt_no_completion_claim: true
+  local_canonical_checkout_not_modified: true
+  unrestricted_fallback_not_used: true
+  permission_expansion_not_used: true
+  hub_modification_not_attempted: true
+  s02_not_started: true
