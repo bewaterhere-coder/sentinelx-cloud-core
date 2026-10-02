@@ -7,20 +7,25 @@ project_id: sentinelx-cloud-core
 task_id: PR-009-mcp-development-execution-projection-dynamic-tool-contract-v1
 title: SentinelX MCP Development Execution Projection & Dynamic Tool Contract V1
 development:
-  stage: plan_review
+  stage: plan_review_rejected
   gates:
     requirement_ready: true
     plan_approved: false
     acceptance_approved: false
     completion_verified: false
-  latest_plan_review: rejected_round_1
+  latest_plan_review: rejected_round_2
   plan_revision: 2
-  plan_remediation: revision_2_persisted
+  review_disposition: external_blocker
   unresolved_current_task_p0_dependencies:
     - HubProjectionWriteOrDeploymentSurface
     - ProviderScopeAdmission
-    - AgentExecutionProfileContract
-  next_expected_actor: reviewer
+  verified_dependency_bindings:
+    AgentExecutionProfileContract:
+      pr: 8
+      head: f7594c468d764ad85c0dc508ad47f009c89793c1
+      contract_blob: 792a6e585c5bb516e9f4e8733f5ce7f3b1d6350e
+      drift_invalidation: required
+  next_expected_actor: dependency_owner
 transport:
   type: github-pr
   pr_number: 9
@@ -29,6 +34,7 @@ transport:
 artifacts:
   plan: docs/plans/PR-009-mcp-development-execution-projection-dynamic-tool-contract-v1-plan.md
   prior_plan_review: docs/reviews/PR-009-mcp-development-execution-projection-dynamic-tool-contract-v1-plan-review-r1.md
+  plan_review: docs/reviews/PR-009-mcp-development-execution-projection-dynamic-tool-contract-v1-plan-review-r2.md
 related_tasks:
   builds_on:
     - PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1
