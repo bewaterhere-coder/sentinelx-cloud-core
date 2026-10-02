@@ -4,10 +4,11 @@
 
 ```yaml
 task_id: PR-010-canonical-repository-mutation-firewall-v1
-stage: plan_review
-plan_status: proposed
+stage: plan_review_rejected
+plan_status: rejected
 plan_revision: 1
 requirement: docs/requirements/PR-010-canonical-repository-mutation-firewall-v1.md
+plan_review: docs/reviews/PR-010-canonical-repository-mutation-firewall-v1-plan-review-r1.md
 transport: github-pr
 pr_number: 10
 task_branch: task/canonical-repository-mutation-firewall-v1
@@ -17,6 +18,12 @@ implementation_authorized: false
 execution_slice_set: null
 acceptance_approved: false
 completion_verified: false
+review_r1:
+  result: Rejected
+  classification: plan_local
+  findings:
+    - ProviderWideCoverageRegistrationFailClosedMechanism
+    - DependencyReadbackOrderingBeforeOverlapMutation
 ```
 
 This plan deliberately does **not** compile executable Slices before Plan Review. `#开发执行` remains unauthorized until the Plan is approved and a durable Execution Slice Set is materialized.
