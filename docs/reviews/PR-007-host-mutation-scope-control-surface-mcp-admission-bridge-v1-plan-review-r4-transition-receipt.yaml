@@ -13,9 +13,9 @@ evidence_refs:
 review_decision: approved
 requirement_revision: 2
 plan_revision: 4
-plan_digest: "git-blob-sha1:eddd4ee39d80bb81560c9fac2e4fe73111c4d874"
+plan_digest: "git-blob-sha1:02d5e16ca18f385cafbbe11c04b5f8d2c64ea7af"
 plan_review_digest: "git-blob-sha1:ba9475db43ca48cf15604a355f28b814936a00b4"
-slice_set_digest: "git-blob-sha1:4002d6dbfc6f6b5062cfd909bb430448b31b910d"
+slice_set_digest: "git-blob-sha1:3aca52e26402a2fe73f3a04bf61fac3c500b434d"
 task_before_digest: "git-blob-sha1:cf150bb0ff69aa7677c7dd9e96066ad85ea238c7"
 task_after_digest: "git-blob-sha1:1291d8c6e78f60137f975390e9ce8f21e9cf35b4"
 semantic_after_state_digest: 38c6ac22ee861b666e4edacf1e7abe48aa7a1780213b41d9de60fd67e9c2044d
