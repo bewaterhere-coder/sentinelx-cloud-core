@@ -27,7 +27,7 @@ def test_effect_accounting_is_bound_to_effective_dispatch_keys() -> None:
     assert effects.registration("file_export_init").exposure.value == "internal"
     assert effects.firewall_readiness.ready is False
     assert any(reason.startswith("exec:") for reason in effects.firewall_readiness.reasons)
-    assert any(reason.startswith("script_run:") for reason in effects.firewall_readiness.reasons)
+    assert any(reason.startswith("script_run") for reason in effects.firewall_readiness.reasons)
 
 
 def test_future_unclassified_model_facing_operation_fails_readiness() -> None:
@@ -51,7 +51,7 @@ def test_disabled_operation_is_removed_before_effect_accounting() -> None:
 
     assert "script_run" not in dispatch
     assert effects.registration("script_run") is None
-    assert not any(reason.startswith("script_run:") for reason in effects.firewall_readiness.reasons)
+    assert not any(reason.startswith("script_run") for reason in effects.firewall_readiness.reasons)
 
 
 def test_git_selector_effects_are_bounded_and_unknown_fails_closed() -> None:
