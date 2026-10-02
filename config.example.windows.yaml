@@ -316,3 +316,18 @@ upload_base: 'C:\Users\Public\sentinelx-uploads'
 #   scope_ttl_seconds: 3600
 #   evidence_retention_days: 30
 #   operator_unrestricted_enabled: false
+#
+#   # Canonical-repository mutation firewall. This is independent from the
+#   # broad file_ops rw allowlist: a path may be writable by file_ops and still
+#   # be protected here because it is the Host-owned canonical source checkout.
+#   # Inventory is operator/Host configuration; caller-supplied repository role,
+#   # branch, cwd, or "canonical_sync" claims never override it.
+#   canonical_repository_firewall_enabled: false
+#   canonical_repositories: []
+#   # Example entry:
+#   # - root: 'D:\coco\repos\bewaterhere-coder\sentinelx-cloud-core'
+#   #   repository:
+#   #     vcs: git
+#   #     authority: github.com
+#   #     path: bewaterhere-coder/sentinelx-cloud-core
+#   #   canonical_branch: main

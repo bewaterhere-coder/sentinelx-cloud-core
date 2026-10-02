@@ -142,7 +142,25 @@ vector, mitigation, and residual risk.
 | **Mitigation** | `executor.py` rejects anything not in `allowed_commands` (prefix match against tokenized command). `subprocess.run` is called with `shell=False` and an argv list, so shell metacharacters in args are not interpreted. |
 | **Residual risk** | If the operator allowlists `bash` or `sh -c`, the allowlist no longer constrains anything. The defense relies on the operator having a sane allowlist. |
 
-### 4.2 — Path traversal in upload / edit / mutation target
+### 4.2 — Canonical source checkout confused with an execution workspace
+
+| | |
+|---|---|
+| **STRIDE category** | Tampering / Elevation of Privilege |
+| **Attacker** | A1, A2 |
+| **Vector** | Use a broad writable parent, a same-repository identity, or caller-controlled labels such as `repository_role=execution_workspace` / `canonical_sync=true` to make a canonical source checkout look like an admitted mutation workspace. A process-producing operation may also try to reach the checkout indirectly through a child/background process. |
+| **Severity** | Critical when a canonical checkout contains unrelated source/assets or is used as trusted release/development input. |
+| **Mitigation** | When `canonical_repository_mutation_firewall_v1` is enabled, Core classifies concrete targets against a Host/operator-owned canonical repository inventory. Exact roots, descendants, and destructive ancestor targets are blocked before material side effects. Caller-supplied repository identity, branch, cwd, role labels, or sync claims are not classification authority. Provider-wide readiness is fail-closed if an effective top-level or mixed operation lacks known repository effect/physical coverage. Scoped process mutation must compose the existing Host scope/sandbox/audit authority; unknown or unrestricted process paths cannot coexist with firewall readiness. |
+| **Read compatibility** | Canonical `read` / `list` / `search`, status/introspection, and Git diff remain read-only and usable when separately admitted by normal policy. |
+| **Residual risk** | The firewall is opt-in Host policy and protects configured inventory. Hosts that disable it retain legacy behavior. A local attacker able to rewrite agent configuration remains A3/out-of-scope. Hub/MCP field or capability projection gaps are external transport limitations and are not treated as proof that Core admission may be weakened. |
+
+The firewall is intentionally independent from the `file_ops` `r`/`rw` model:
+a broad `rw` declaration is not evidence that canonical source is an execution
+workspace. Conversely, a same-repository execution workspace outside the
+canonical inventory is not rejected merely for sharing repository identity;
+normal mutation scope, sandbox, path, and operation controls still apply.
+
+### 4.3 — Path traversal in upload / edit / mutation target
 
 | | |
 |---|---|
@@ -151,9 +169,9 @@ vector, mitigation, and residual risk.
 | **Vector** | `upload_file` with `target_path="../../../etc/passwd"`, or `edit`/`move`/`copy`/`delete`/`chmod`/`chown` with a `path` (or `src`/`dst`) that escapes the allowlist via `..` or a planted symlink |
 | **Severity** | Critical (arbitrary write/destroy as `sentinelx`, then `sudo` if applicable) |
 | **Mitigation** | Two layers. (1) `executor_engine.py::safe_path_under()` resolves the candidate path against the upload base, walks symlinks, and rejects escapes — applied to upload handlers. (2) The unified r/rw path model: `Policy.resolve_path()` canonicalizes symlinks *before* the prefix check and is called with `need_write=True` by every mutating op. `edit` (both `handle_edit` and `edit_upload_complete`) and the five destructive ops (`move`/`copy`/`delete`/`chmod`/`chown`) all funnel every path argument through it; for `move`/`copy` BOTH `src` and `dst` are checked independently, so a copy cannot exfiltrate to an unlisted destination. A path that is only `access: r` (not `rw`), outside the allowlist, or that resolves outside it, is rejected with `path_not_allowed`. Tests: `test_handlers_upload.py::test_upload_file_rejects_path_traversal`, `test_policy.py` (traversal/symlink-escape/prefix-not-substring), `test_handlers_edit.py` (edit path-enforce), `test_handlers_fsmutate.py` (traversal escape defeated, dst-outside-rw refused, src-in-readonly refused). |
-| **Residual risk** | TOCTOU: if the operator's `upload_base` itself is a symlink an attacker can swap, the check could be bypassed. We don't defend against attackers with prior write access (see §4.7). The rw model is only as good as the operator's `file_ops.paths` — see §5.1. |
+| **Residual risk** | TOCTOU: if the operator's `upload_base` itself is a symlink an attacker can swap, the check could be bypassed. We don't defend against attackers with prior write access (see §4.8). The rw model is only as good as the operator's `file_ops.paths` — see §5.1. |
 
-### 4.2.1 — The `sudo` carve-out on `edit` (deliberate, scoped)
+### 4.3.1 — The `sudo` carve-out on `edit` (deliberate, scoped)
 
 | | |
 |---|---|
@@ -162,9 +180,9 @@ vector, mitigation, and residual risk.
 | **The choice** | `edit`/`edit_upload_complete` with `sudo=true` are NOT gated by the rw allowlist. The path is still canonicalized (symlink/`..` defeated, same as everything else) but the rw *verdict* is not enforced. Non-sudo edits remain fully rw-gated. |
 | **Why** | The agent's own policy lives in a root-owned file (`/etc/sentinelx/config.yaml`). The supported, documented way an operator administers that policy *through the agent* is the `add_allowed_read_path` / `add_allowed_command` playbooks, which call `sentinel_edit` with `sudo=true` (the installer's sudoers fragment, locked to the `pensa-safe-edit` binary, authorizes exactly this). Gating sudo edits *also* by rw would require the operator to declare their own config file as an `rw` path — which would itself be a far worse foot-gun: it would put a policy-rewrite primitive inside the default rw surface. The carve-out keeps policy administration working *without* ever making the policy file part of the rw model. |
 | **Why this is not a new hole** | A sudo edit was *already* bounded by a separate, operator-controlled trust boundary before the unified model existed: the sudoers fragment. The pre-refactor `edit` did **no** path validation at all and relied entirely on "filesystem permissions + sudo policy". The carve-out preserves exactly that legacy boundary for the sudo path only — it does not widen it. A2 attempting `edit sudo=true` is constrained by what the sudoers fragment permits the `pensa-safe-edit` binary to touch, exactly as before. A2 attempting `edit` **without** sudo on an unprivileged path is still rejected with `path_not_allowed` (regression-guarded by `test_edit_nonsudo_still_rejected_outside_allowlist`). |
-| **Residual risk** | If the operator's sudoers fragment is overly broad (e.g. allows `pensa-safe-edit` on `/` as root), A2 can use `edit sudo=true` to write anywhere — but such a sudoers was already a full compromise vector independent of this model (see §4.7, §5.1). The mitigation is the installer shipping a tight sudoers, and operators not widening it. Tests: `test_handlers_edit.py::{test_edit_sudo_bypasses_rw_gate_outside_allowlist, test_edit_nonsudo_still_rejected_outside_allowlist, test_edit_sudo_still_canonicalizes_path}`. |
+| **Residual risk** | If the operator's sudoers fragment is overly broad (e.g. allows `pensa-safe-edit` on `/` as root), A2 can use `edit sudo=true` to write anywhere — but such a sudoers was already a full compromise vector independent of this model (see §4.8, §5.1). The mitigation is the installer shipping a tight sudoers, and operators not widening it. Tests: `test_handlers_edit.py::{test_edit_sudo_bypasses_rw_gate_outside_allowlist, test_edit_nonsudo_still_rejected_outside_allowlist, test_edit_sudo_still_canonicalizes_path}`. |
 
-### 4.3 — SSRF via `file_url`
+### 4.4 — SSRF via `file_url`
 
 | | |
 |---|---|
@@ -175,7 +193,7 @@ vector, mitigation, and residual risk.
 | **Mitigation** | Layered, in `handlers/upload.py::_validate_fetch_url`: <br>1. https-only scheme. <br>2. Hostname must be in `security.trusted_fetch_hosts` allowlist (default empty). <br>3. Resolved IP must pass `_is_safe_ip()` — rejects loopback, RFC1918, link-local, multicast, reserved. <br>4. Redirects disabled via `_NoRedirectHandler`. <br>5. Default timeout reduced to 15s. <br>Tests cover each bypass attempt. |
 | **Residual risk** | DNS rebinding between the validation lookup and urllib's lookup is theoretically possible; in practice it requires the attacker to also be in `trusted_fetch_hosts`, which already requires operator opt-in. |
 
-### 4.4 — Unauthorized service control
+### 4.5 — Unauthorized service control
 
 | | |
 |---|---|
@@ -186,7 +204,7 @@ vector, mitigation, and residual risk.
 | **Mitigation** | `services:` block in `config.yaml` is an allowlist not just of unit names but of which **actions** are permitted per unit. Stopping `sshd` is impossible unless the operator listed it. The agent's `service` handler (in `handlers/service.py`) checks both the unit and the action against the spec. |
 | **Residual risk** | Operator misconfiguration. Default starter config doesn't include `sshd`. |
 
-### 4.5 — Identity replay / forgery
+### 4.6 — Identity replay / forgery
 
 | | |
 |---|---|
@@ -197,7 +215,7 @@ vector, mitigation, and residual risk.
 | **Mitigation** | `identity.json` is signed by the hub at enrollment. Agent presents it on connect, hub validates. File permissions: owned by `sentinelx`, mode 0600. Stolen identity = compromised host (see A3 — out of scope). On compromise: revoke from hub admin panel, re-enroll. |
 | **Residual risk** | No automatic revocation if the host goes silent — operator must notice. |
 
-### 4.6 — Information disclosure via error messages
+### 4.7 — Information disclosure via error messages
 
 | | |
 |---|---|
@@ -208,7 +226,7 @@ vector, mitigation, and residual risk.
 | **Mitigation** | `executor.py::HandlerError` is the only exception type that reaches the wire. Other exceptions are caught and logged locally; the wire-level response is a generic `internal_error` with a short, sanitized message. Stack traces stay in `/var/log/sentinelx/core.log` on the host only. |
 | **Residual risk** | Some `HandlerError` messages do include path fragments (e.g., `"file exists: /var/lib/sentinelx/uploads/foo"`). This is an intentional UX trade-off and considered low severity given how `upload_base` is structured. |
 
-### 4.7 — Local privilege escalation via the agent
+### 4.8 — Local privilege escalation via the agent
 
 | | |
 |---|---|
