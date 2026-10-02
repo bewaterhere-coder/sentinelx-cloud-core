@@ -169,6 +169,131 @@ class OperationRegistry(dict[str, Handler]):
         return OperationRegistryReadiness(ready=not reasons, reasons=tuple(reasons))
 
 
+def _script_run_profile(payload: dict[str, Any]) -> tuple[str | None, str | None]:
+    """Resolve the bounded script_run profile without treating strings as proof."""
+    mutation = payload.get("mutation")
+    nested = mutation.get("execution_profile") if isinstance(mutation, dict) else None
+    direct = payload.get("execution_profile")
+    if nested is not None and direct is not None and nested != direct:
+        return None, "conflicting_execution_profile"
+    value = nested if nested is not None else direct
+    if value is None:
+        return None, None
+    if not isinstance(value, str) or not value.strip():
+        return None, "invalid_execution_profile"
+    return value.strip(), None
+
+
+def make_script_run_effect_classifier(policy: Any) -> SuboperationClassifier:
+    """Classify only physical process dispositions already enforced by Core."""
+    mutation_policy = policy.mutation_execution
+
+    def classify(payload: dict[str, Any]) -> OperationEffectResolution:
+        profile, error = _script_run_profile(payload)
+        if error is not None:
+            return OperationEffectResolution(
+                RepositoryEffect.UNKNOWN,
+                FirewallCoverage.UNPROVEN,
+                selector="script_run/profile",
+                reason=error,
+            )
+        if profile == "scoped_mutation":
+            if mutation_policy.configured and mutation_policy.scoped_mutation_enabled:
+                return OperationEffectResolution(
+                    RepositoryEffect.PROCESS_MUTATION,
+                    FirewallCoverage.PROVEN,
+                    selector="scoped_mutation",
+                )
+            return OperationEffectResolution(
+                RepositoryEffect.UNKNOWN,
+                FirewallCoverage.UNPROVEN,
+                selector="scoped_mutation",
+                reason="scoped_mutation_profile_unavailable",
+            )
+        if profile == "operator_unrestricted":
+            if mutation_policy.configured and mutation_policy.operator_unrestricted_enabled:
+                return OperationEffectResolution(
+                    RepositoryEffect.PROCESS_MUTATION,
+                    FirewallCoverage.UNPROVEN,
+                    selector="operator_unrestricted",
+                    reason="operator_unrestricted_process_uncontained",
+                )
+            return OperationEffectResolution(
+                RepositoryEffect.UNKNOWN,
+                FirewallCoverage.UNPROVEN,
+                selector="operator_unrestricted",
+                reason="operator_unrestricted_disabled",
+            )
+        if profile is None:
+            if mutation_policy.configured:
+                return OperationEffectResolution(
+                    RepositoryEffect.UNKNOWN,
+                    FirewallCoverage.UNPROVEN,
+                    selector="missing",
+                    reason="execution_profile_required",
+                )
+            return OperationEffectResolution(
+                RepositoryEffect.PROCESS_MUTATION,
+                FirewallCoverage.UNPROVEN,
+                selector="legacy_unprofiled",
+                reason="legacy_unprofiled_process_uncontained",
+            )
+        return OperationEffectResolution(
+            RepositoryEffect.UNKNOWN,
+            FirewallCoverage.UNPROVEN,
+            selector=profile,
+            reason="unknown_script_run_execution_profile",
+        )
+
+    return classify
+
+
+def make_script_run_effect_inventory(policy: Any) -> EffectInventory:
+    """Enumerate effective script_run process paths from provider policy."""
+    mutation_policy = policy.mutation_execution
+
+    def inventory() -> tuple[OperationEffectResolution, ...]:
+        if not mutation_policy.configured:
+            return (
+                OperationEffectResolution(
+                    RepositoryEffect.PROCESS_MUTATION,
+                    FirewallCoverage.UNPROVEN,
+                    selector="legacy_unprofiled",
+                    reason="legacy_unprofiled_process_uncontained",
+                ),
+            )
+        effects: list[OperationEffectResolution] = []
+        if mutation_policy.scoped_mutation_enabled:
+            effects.append(
+                OperationEffectResolution(
+                    RepositoryEffect.PROCESS_MUTATION,
+                    FirewallCoverage.PROVEN,
+                    selector="scoped_mutation",
+                )
+            )
+        if mutation_policy.operator_unrestricted_enabled:
+            effects.append(
+                OperationEffectResolution(
+                    RepositoryEffect.PROCESS_MUTATION,
+                    FirewallCoverage.UNPROVEN,
+                    selector="operator_unrestricted",
+                    reason="operator_unrestricted_process_uncontained",
+                )
+            )
+        if not effects:
+            effects.append(
+                OperationEffectResolution(
+                    RepositoryEffect.UNKNOWN,
+                    FirewallCoverage.UNPROVEN,
+                    selector="no_effective_profile",
+                    reason="script_run_process_profile_unavailable",
+                )
+            )
+        return tuple(effects)
+
+    return inventory
+
+
 _GIT_EFFECTS: dict[str, OperationEffectResolution] = {
     "diff": OperationEffectResolution(RepositoryEffect.READ_ONLY, selector="diff"),
     "ls_remote": OperationEffectResolution(RepositoryEffect.READ_ONLY, selector="ls_remote"),
@@ -440,12 +565,28 @@ def build_effect_registry(
                 repository_effect=RepositoryEffect.STRUCTURED_MUTATION,
                 firewall_coverage=FirewallCoverage.PROVEN,
             )
-        elif name in {"exec", "script_run"}:
+        elif name == "exec":
+            # Generic exec has no physical repository exclusion boundary. It
+            # remains available for compatibility, but its presence prevents
+            # provider-wide firewall readiness from becoming true.
             registry.register(
                 name,
                 handler,
                 repository_effect=RepositoryEffect.PROCESS_MUTATION,
                 firewall_coverage=FirewallCoverage.UNPROVEN,
+            )
+        elif name == "script_run":
+            # script_run is mixed by execution profile. Only the existing
+            # scoped_mutation path has physical sandbox/audit containment;
+            # legacy and operator-unrestricted paths remain fail-closed for
+            # provider-wide readiness.
+            registry.register(
+                name,
+                handler,
+                repository_effect=RepositoryEffect.MIXED,
+                firewall_coverage=FirewallCoverage.UNPROVEN,
+                classifier=make_script_run_effect_classifier(policy),
+                inventory=make_script_run_effect_inventory(policy),
             )
         elif name == "git":
             registry.register(
