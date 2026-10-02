@@ -282,8 +282,11 @@ The Plan/implementation must explicitly disconfirm the following failure modes:
 requirement_artifact_bundle: not_required
 ui_semantic_resolution: not_applicable
 visual_fidelity: not_applicable
-current_task_p0_dependencies:
-  - exact PR-007/equivalent admission before R7/AC9 end-to-end integration
+current_task_p0_dependencies: []
+integration_dependency:
+  - exact PR-007/equivalent admission required before R7/AC9 end-to-end integration and AC12 downstream proof
 ```
+
+Core policy/capsule/sandbox implementation can be reviewed and executed independently on `main` reality. The PR-007 dependency gates only the `devforge_runtime` integration and cross-repository downstream proof; it is not a blanket implementation blocker for earlier core slices.
 
 There is no user-facing UI requirement. Security/readiness diagnostics are evidence surfaces, not product UI.
