@@ -7,16 +7,18 @@ project_id: sentinelx-cloud-core
 task_id: PR-010-canonical-repository-mutation-firewall-v1
 title: SentinelX Provider Canonical Repository Mutation Firewall V1
 development:
-  stage: plan_review
+  stage: implementation
   gates:
     requirement_ready: true
-    plan_approved: false
+    plan_approved: true
     acceptance_approved: false
     completion_verified: false
-  latest_plan_review: rejected_round_1
+  latest_plan_review: approved_round_2
   plan_revision: 2
-  remediation_status: revision_2_ready_for_review
-  next_expected_actor: reviewer
+  implementation_authorized: true
+  next_expected_actor: implementer
+  continuation_checkpoint:
+    ref: docs/checkpoints/PR-010-canonical-repository-mutation-firewall-v1-plan-review-r2-approved-20261002.yaml
 transport:
   type: github-pr
   pr_number: 10
@@ -25,7 +27,10 @@ transport:
 artifacts:
   plan: docs/plans/PR-010-canonical-repository-mutation-firewall-v1-plan.md
   prior_plan_review: docs/reviews/PR-010-canonical-repository-mutation-firewall-v1-plan-review-r1.md
+  plan_review: docs/reviews/PR-010-canonical-repository-mutation-firewall-v1-plan-review-r2.md
   remediation_checkpoint: docs/checkpoints/PR-010-canonical-repository-mutation-firewall-v1-plan-remediation-r2-20261002.yaml
+  approval_checkpoint: docs/checkpoints/PR-010-canonical-repository-mutation-firewall-v1-plan-review-r2-approved-20261002.yaml
+  execution_slice_set: docs/execution/PR-010-canonical-repository-mutation-firewall-v1-slices.yaml
 related_tasks:
   - PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1
   - PR-008-provider-execution-profile-tool-surface-alignment-v1
