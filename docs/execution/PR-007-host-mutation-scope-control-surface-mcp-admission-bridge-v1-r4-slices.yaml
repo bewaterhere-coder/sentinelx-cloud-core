@@ -58,7 +58,8 @@ invariants:
 slices:
   - id: S06
     title: Built-in devforge_runtime endpoint and lifecycle composition
-    status: pending
+    status: completed
+    checkpoint_ref: docs/checkpoints/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-s06-completed-20261002.yaml
     objective: Add a bounded Agent-owned built-in endpoint behind the existing local_api envelope, sharing the existing mutation-scope lifecycle authority while preserving external local_api and disabled_ops semantics.
     primary_surfaces:
       - src/sentinelx_core/handlers/local_api.py
