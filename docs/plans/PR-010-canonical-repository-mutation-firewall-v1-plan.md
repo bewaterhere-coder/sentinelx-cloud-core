@@ -1,89 +1,137 @@
-# PR-010 — SentinelX Provider Canonical Repository Mutation Firewall V1 — Plan
+# PR-010 — SentinelX Provider Canonical Repository Mutation Firewall V1 — Plan Revision 3
 
 ## Plan State
 
 ```yaml
 task_id: PR-010-canonical-repository-mutation-firewall-v1
-stage: implementation
-plan_status: approved
-plan_revision: 2
+stage: plan_review
+plan_status: ready_for_review
+plan_revision: 3
+requirement_revision: 2
 requirement: docs/requirements/PR-010-canonical-repository-mutation-firewall-v1.md
-prior_plan_review: docs/reviews/PR-010-canonical-repository-mutation-firewall-v1-plan-review-r1.md
-plan_review: docs/reviews/PR-010-canonical-repository-mutation-firewall-v1-plan-review-r2.md
+requirement_change_impact: docs/reviews/PR-010-canonical-repository-mutation-firewall-v1-requirement-r2-invalidation.md
+historical_plan_review:
+  - docs/reviews/PR-010-canonical-repository-mutation-firewall-v1-plan-review-r1.md
+  - docs/reviews/PR-010-canonical-repository-mutation-firewall-v1-plan-review-r2.md
+historical_approval_checkpoint: docs/checkpoints/PR-010-canonical-repository-mutation-firewall-v1-plan-review-r2-approved-20261002.yaml
 transport: github-pr
 pr_number: 10
 task_branch: task/canonical-repository-mutation-firewall-v1
 base_branch: main
 planning_baseline_main: f7e878f3497582547e5d52cd33b060cae18d2e84
-implementation_authorized: true
+implementation_authorized: false
 execution_slice_set: docs/execution/PR-010-canonical-repository-mutation-firewall-v1-slices.yaml
 acceptance_approved: false
 completion_verified: false
-remediation_r2:
-  addressed_findings:
-    - ProviderWideCoverageRegistrationFailClosedMechanism
-    - DependencyReadbackOrderingBeforeOverlapMutation
-  requirement_semantics_changed: false
 ```
 
-Plan Revision 2 remediates the two plan-local findings from Review R1 and is **Approved** by Plan Review R2. Implementation is authorized only through the durable Execution Slice Set; one manual `#开发执行` invocation may complete at most one Slice.
+Plan Revision 3 is required because Requirement Revision 2 materially changes the verification and Acceptance authority. Plan Revision 2 and its approval remain historical evidence but are not current implementation authority.
 
 ## Current Verified Reality
 
-### Canonical repository
+### Canonical repository and transport
 
 - project: `sentinelx-cloud-core`;
-- canonical remote `main`: `f7e878f3497582547e5d52cd33b060cae18d2e84` at remediation/review time;
-- local canonical checkout is not an implementation target because it was observed dirty/out-of-date during task creation;
-- Task artifacts remain on the existing GitHub PR transport.
+- canonical remote `main`: `f7e878f3497582547e5d52cd33b060cae18d2e84` at replanning time;
+- Task transport remains PR #10 on `task/canonical-repository-mutation-firewall-v1`;
+- canonical `main` is not an implementation mutation target.
 
-### Active dependency heads at remediation time
+### Immutable external Hub boundary
 
-These are observations, not durable implementation authority:
+`mcp.sentinelx.app` is a third-party closed-source transport boundary and is not modifiable by this project.
 
-```yaml
-pr_007:
-  head: 4b8bfd897b2e614bdb30fa85bcc400ee01c2469b
-  state: implementation
-  note: moving branch; S05 verification remains active
-pr_008:
-  head: f7594c468d764ad85c0dc508ad47f009c89793c1
-  state: acceptance
-  note: external Hub projection blocker remains
+PR-010 therefore cannot require:
+
+```text
+Hub source changes
+Hub MCP schema changes
+Hub dynamic tool support
+Hub execution_profile projection
+Hub capability-field rendering
+Hub deployment/activation
 ```
 
-Review R2 observed PR-007 had already moved again to `d7dd47d1ad253e62c8c8ad5b194c9f94cfc536d3`, confirming that planning/review-time SHAs are evidence only. Any later movement invalidates those observations for an overlapping implementation Slice and triggers fresh readback before mutation.
+Those may be recorded as external integration limitations only. Core-owned security and verification must remain complete without them.
+
+### Retained S01 implementation
+
+Already-landed S01 code is preserved:
+
+```text
+src/sentinelx_core/policy.py
+src/sentinelx_core/canonical_repository_firewall.py
+tests/test_canonical_repository_firewall.py
+```
+
+Historical implementation head: `62b9fba588fac58161c909e8622278d791c07a92`.
+
+The previous dynamic attempt was blocked by a model-facing tool lacking `execution_profile`; Requirement Revision 2 supersedes that as a PR-010 blocker.
+
+The current Core-owned S01 blocker remains:
+
+```text
+sentinelx_core.mutation_placement.RepositoryIdentity
+vs
+sentinelx_core.policy._canonical_repository_identity
+```
+
+The second normalizer creates parallel semantics and strips explicit authority ports, so S01 must compose one shared provider identity primitive before it can complete.
 
 ### Existing security primitives to compose
 
 1. `Policy.resolve_path(..., need_write=True)` canonicalizes paths and enforces `file_ops rw` for structured mutation.
-2. `MutationExecutionPolicy` already owns `workspace_root`, `protected_roots`, `runtime_read_roots`, scoped-mutation enablement and related readiness inputs.
-3. `edit` and destructive filesystem handlers already centralize path resolution before mutation.
-4. structured Git `apply_patch` already uses the same `file_ops rw` substrate.
-5. scoped mutation / audit / sandbox work exists from SX-HMSA and continues in PR-007/PR-008.
-6. `handlers.build_registry()` is the runtime source of truth for dispatchable operations, and `capabilities.ops_supported` is already derived from that registry rather than a separate hand-maintained list.
+2. `MutationExecutionPolicy` owns `workspace_root`, `protected_roots`, `runtime_read_roots`, scoped-mutation enablement and related readiness inputs.
+3. `sentinelx_core.mutation_placement.RepositoryIdentity` already defines provider repository identity semantics.
+4. edit/destructive filesystem handlers centralize path resolution before mutation.
+5. structured Git `apply_patch` uses the structured write substrate.
+6. scoped mutation / audit / sandbox paths remain provider-owned Core authority.
+7. `handlers.build_registry()` is the runtime source of dispatchable operations; effective operation exposure must remain derived from that authoritative registration path.
+8. SentinelX Core already owns hello/capability/protocol construction even when the third-party Hub later chooses what to render.
 
-### Gap to close
+## Design Decisions
 
-The existing primitives do not form a provider-wide canonical-repository exclusion boundary:
+### D0 — Core-only security and verification authority
+
+The canonical firewall is an Agent/Core boundary, not an MCP/Hub boundary.
+
+Required shape:
 
 ```text
-file_ops rw                    = operator write allowlist
-protected_roots                = scoped-mutation protection input
-canonical repository firewall = missing provider-wide deny role
+existing transport input
+        ↓
+SentinelX Agent operation dispatch
+        ↓
+Core operation-effect classification
+        ↓
+canonical repository firewall / process disposition
+        ↓
+existing operation-specific authority
+        ↓
+material side effect
 ```
 
-`exec` and legacy `script_run` are especially important because arbitrary child processes cannot be proven safe by parsing path-looking substrings from command/script text.
+Verification is performed through Core unit/integration/protocol evidence and required physical Windows regression evidence. Hub projection is never required to prove the security property.
 
-A second gap identified by Review R1 is coverage accounting: an operation registry containing only `op -> handler` cannot prove that every future model-facing repository mutator is covered by the firewall.
+### D1 — One repository identity semantic
 
-## Design Decision
+Refactor S01 so canonical repository inventory consumes the existing `RepositoryIdentity` primitive directly or through one extracted shared normalizer used by both mutation placement and canonical inventory.
 
-### D1 — Separate canonical inventory from generic protected roots
+Constraints:
 
-Add a Host-owned canonical repository inventory to mutation policy rather than reusing `protected_roots` as a second meaning.
+- no circular import from `policy.py` to `mutation_placement.py` may be introduced if it creates a dependency cycle;
+- a small provider-neutral shared module is acceptable if both call sites use it;
+- authority host/port semantics must be explicit and tested rather than silently truncated;
+- credentials remain excluded;
+- `.git` suffix/path normalization remains deterministic;
+- traversal/invalid repository paths fail closed.
 
-Proposed portable shape (final field names may be normalized during implementation, semantics may not):
+This repair is the first implementation work after Plan Review approval.
+
+### D2 — Separate canonical inventory from generic protected roots
+
+Keep canonical repository inventory as Host/operator authority under mutation policy rather than overloading `protected_roots`.
+
+Portable shape remains equivalent to:
 
 ```yaml
 mutation_execution:
@@ -97,83 +145,52 @@ mutation_execution:
       canonical_branch: main
 ```
 
-Properties:
+Invalid/ambiguous entries make readiness false. Execution workspaces remain separate roots and are not inferred canonical merely from matching repository identity.
 
-- config is Host/operator authority, not caller payload authority;
-- root is canonicalized at policy load;
-- repository identity is normalized independently of transport URL/credentials;
-- invalid/ambiguous entries make firewall readiness false;
-- execution workspaces are separate roots and are not inferred canonical by repository identity alone;
-- no DevForge-specific path or owner is compiled into SentinelX.
+### D3 — One reusable firewall module
 
-The existing `protected_roots` remains what it already means for sandbox/scoped-mutation policy.
+`src/sentinelx_core/canonical_repository_firewall.py` remains the central provider-owned seam for:
 
-### D2 — One reusable firewall module
+- canonical inventory readiness;
+- normalized path intersection classification;
+- write-target admission;
+- process-class disposition inputs;
+- bounded diagnostics;
+- capability readiness components.
 
-Introduce one provider-owned module, tentatively:
+Handlers do not invent per-operation canonical-role logic.
 
-```text
-src/sentinelx_core/canonical_repository_firewall.py
-```
+### D4 — Structured mutators get exact target admission
 
-Responsibilities:
+For explicit target paths:
 
 ```text
-canonical inventory normalization/readiness
-path intersection classification
-write-target admission
-generic-process disposition
-structured diagnostic evidence
-capability readiness summary
-```
-
-Handlers consume this module; handlers do not each invent canonical-role logic.
-
-### D3 — Structured mutators get exact target admission
-
-For operations with explicit target paths, enforcement occurs after normal path canonicalization but before backup, staging-finalization, patch application, permission change or child mutation.
-
-Expected order:
-
-```text
-existing operation validation
-→ canonicalize/resolve concrete target
+existing validation / canonical path resolution
 → canonical firewall admission
-→ existing file_ops/scope/operation authority
+→ existing file_ops/scope/operation authorization
 → first material side effect
 ```
 
-When existing `file_ops` resolution is itself the canonicalization seam, the firewall may consume that already-resolved path rather than resolving twice.
+The block must precede backup creation, staging finalization, patch application, overwrite/delete, chmod/chown, or equivalent side effect.
 
-### D4 — Generic process surfaces fail closed in V1
+### D5 — Generic process surfaces are Core fail-closed
 
-V1 will **not** claim that parsing shell/script content proves physical non-mutation.
+PR-010 does not require the Hub to send `execution_profile` or expose a new tool.
 
-When canonical firewall mode is enabled and the provider advertises `canonical_repository_mutation_firewall_v1`:
+Core operation registration and handler state determine whether a process-producing operation has a proven physical disposition.
 
-```text
-generic/unprofiled exec capable of arbitrary filesystem mutation
-legacy/unprofiled script_run
-operator_unrestricted process fallback
-```
+When firewall-ready mode is enabled:
 
-must not remain an unrestricted path around canonical protection.
+- constrained/scoped execution may continue only through existing verified scope/sandbox/audit authority;
+- arbitrary unprofiled execution with no physical canonical exclusion is blocked, or makes readiness false;
+- legacy compatibility may remain only while firewall capability is unavailable;
+- shell/script/path string parsing is not accepted as physical proof;
+- background descendants, timeout and nonzero paths remain inside the disposition;
+- `operator_unrestricted` and allowlist expansion are forbidden fallbacks.
 
-Preferred V1 disposition:
+### D6 — Authoritative operation-effect registration is fail-closed
 
-- process mutation requiring writes uses the existing profiled/scoped mutation path with sandbox/audit/scope authority;
-- generic process execution that cannot be physically constrained against canonical roots is blocked under firewall-ready mode with a stable diagnostic;
-- hosts that choose legacy generic process compatibility may keep it, but then firewall readiness/capability advertisement remains false.
-
-This is an opt-in security boundary; default legacy hosts are not silently migrated into a stricter behavior merely by upgrading.
-
-A future OS-enforced generic-process mode may restore broader `exec` compatibility, but it is not required to satisfy V1.
-
-### D5 — Authoritative operation-effect registration is fail-closed
-
-Review R1 F1 is closed by making repository-effect classification part of the same authoritative operation registration path that defines dispatch and `ops_supported`.
-
-The implementation must replace or wrap bare `op -> handler` registration with equivalent metadata carrying at least:
+Extend or wrap the existing authoritative operation registration with metadata equivalent to:
 
 ```text
 handler
@@ -188,362 +205,206 @@ firewall_coverage:
   required | not_applicable
 ```
 
-Exact Python type names are implementation detail; the invariants are not.
+Invariants:
 
-Rules:
+1. dispatchability and `ops_supported` remain derived from the same authoritative registry;
+2. missing/unknown effect on an effective model-facing operation makes firewall readiness false;
+3. required-but-unproven coverage makes readiness false;
+4. internal-only operations are explicit;
+5. disabled operations are removed before final readiness computation;
+6. mixed Git selectors are explicitly classified.
 
-1. Dispatchability and `ops_supported` continue to derive from the authoritative registry; no second hand-maintained operation list becomes canonical.
-2. A model-facing operation with `repository_effect=unknown`, missing effect metadata, or required-but-unproven firewall coverage makes `canonical_repository_mutation_firewall_v1` readiness **false**.
-3. A new model-facing operation therefore fails closed for provider-wide firewall advertisement until its repository effect is explicitly classified and, when required, its enforcement is registered/proven.
-4. Internal-only transport operations are explicitly marked `internal_only`; they are not silently treated as model-facing and do not become an unreviewed capability bypass.
-5. Read-only operations are explicitly distinguishable from mutation operations and need no mutation firewall handler merely to satisfy coverage accounting.
-6. Mixed operations such as structured Git must classify the mutation selector(s) rather than allowing the presence of a read-only selector to exempt the whole operation.
-7. `disabled_ops` removal is applied before final readiness computation so an unavailable operation is not counted as exposed; readiness evidence records the effective registry surface.
+### D7 — PR-007/PR-008 overlap is exact-readback driven
 
-Required invariant:
+Before any Slice mutates an overlapping Core seam, re-read exact current PR-007/PR-008 heads, changed-file sets, relevant contracts/artifacts, and current stage/disposition.
 
-```text
-new model-facing op registered
-AND repository effect missing/unknown
-→ firewall readiness false
-→ canonical_repository_mutation_firewall_v1 not advertised
-```
-
-This composes with the existing registry design instead of reintroducing the historical hand-maintained drift problem.
-
-### D6 — Dependency reconciliation is an entry gate before first overlapping mutation
-
-Review R1 F2 is closed by moving active-branch reconciliation out of S04 and making it a pre-mutation admission rule for every Slice.
-
-Before any Slice mutates a file overlapping PR-007/PR-008 semantics, execution must re-read:
+Known overlap family includes:
 
 ```text
-exact latest dependency head
-changed-file set
-relevant immutable contract/artifact revision
-current dependency stage/disposition
+src/sentinelx_core/client.py
+src/sentinelx_core/handlers/__init__.py
+src/sentinelx_core/handlers/basic.py
+src/sentinelx_core/handlers/scoped_script.py
+src/sentinelx_core/mutation_scope.py
+src/sentinelx_core/executor.py
+capability / hello / protocol-feature code
 ```
 
-and persist a no-loss composition decision for the current Slice.
+Material semantic conflict is a Decision Boundary before product mutation.
 
-Current known overlap family includes:
+PR-009 is not a semantic blocking dependency. It is consulted only if an exact future changed-file readback demonstrates a direct code overlap requiring conflict reconciliation.
+
+### D8 — Core Capability Readiness + Existing Transport Projection
+
+S04 computes and verifies capability readiness entirely within SentinelX Core.
+
+Required positive path:
 
 ```text
-client.py
-handlers/__init__.py
-handlers/basic.py
-handlers/scoped_script.py
-mutation_scope.py / mutation-scope handlers
-executor.py
-capability/protocol feature projection code
+valid canonical inventory
++ complete effective operation-effect classification
++ structured mutator coverage
++ process physical disposition
++ no unrestricted bypass
+→ Core readiness true
+→ existing Core hello/capability/protocol structure contains canonical_repository_mutation_firewall_v1
 ```
 
-Rules:
+Required negative paths remove/unavailable the capability.
 
-- S01/S02 may proceed without dependency reconciliation only while their exact mutation set does not overlap a live dependency surface.
-- S02 must run the gate before modifying `handlers/__init__.py` while PR-007 overlaps that registry seam.
-- S03 **must** run this gate before touching `scoped_script` or any equivalent profiled-execution seam.
-- S04 runs the same gate again if dependency state has moved or its mutation set overlaps capability/projection files.
-- A moving dependency branch is evidence, not authority; stale planning-time SHAs cannot authorize transplantation.
-- A material semantic conflict stops at a Decision Boundary; no silent overwrite, branch-state copying, or lossy rebase is allowed.
+Existing transport may relay that structure. Hub-native dynamic schema/tool generation or UI/model rendering is outside PR-010 and cannot block S04 or Acceptance.
+
+## Verification Strategy
+
+### Core-owned required verification
+
+Use, in order of scope:
+
+1. focused unit tests for the modified primitive/module;
+2. focused handler/registry integration tests;
+3. Core protocol/hello/capability construction/readback tests;
+4. affected repository security/regression suite;
+5. exact-head CI when available;
+6. Windows physical process/incident evidence required by the contract.
+
+A Core-owned verification channel that is genuinely unavailable may block a Slice if no equivalent required evidence can be produced.
+
+### External non-blocking diagnostics
+
+Do not gate PR-010 on:
+
+- Hub `execution_profile` projection;
+- Hub dynamic tool schema;
+- Hub capability rendering;
+- production Hub deployment/readback.
+
+Record these separately if observed.
 
 ## Implementation Slices After Plan Approval
 
-### S01 — Canonical inventory + core admission seam
+### S01 — Retained inventory implementation repair + Core revalidation
 
-**Entry admission**
+**State entering Plan Review:** implementation retained, incomplete, revalidation required.
 
-- compute intended changed-file set before mutation;
-- if any intended file overlaps the current PR-007/PR-008 overlap family, execute D6 first; otherwise record `dependency_overlap=false` for the Slice.
+**Scope after approval:**
 
-**Scope**
+- preserve existing canonical inventory/firewall implementation;
+- eliminate the parallel repository identity normalizer by composing the existing `RepositoryIdentity` semantic through a safe shared seam;
+- test authority/port, credential stripping, `.git`, traversal, invalid identity and same-repository-workspace cases;
+- rerun focused S01 unit tests through a Core-owned verification channel;
+- retain prior static evidence only as history, not as final completion proof.
 
-- extend policy parsing with canonical repository inventory and enablement;
-- normalize repository identity without credentials;
-- canonicalize roots and reject invalid/ambiguous overlap states;
-- implement central classifier/admission module;
-- expose deterministic readiness diagnostics without advertising capability yet.
-
-**Primary files**
-
-- `src/sentinelx_core/policy.py`;
-- new `src/sentinelx_core/canonical_repository_firewall.py`;
-- focused unit tests;
-- configuration example fixture(s).
-
-**Verification**
-
-- traversal/symlink normalization;
-- broad parent `file_ops rw` does not change canonical classification;
-- canonical root vs same-repository execution workspace remains distinguishable;
-- duplicate/conflicting inventory fails closed;
-- caller payload cannot create/remove inventory authority.
-
-**Stop condition**
-
-Core classifier and readiness tests pass; no handler mutation behavior is changed yet.
+**Stop condition:** one repository identity semantic is proven and focused Core-owned S01 verification passes. No handler mutation coverage is claimed yet.
 
 ### S02 — Authoritative operation-effect registry + structured mutation integration
 
-**Entry admission**
+**Entry:** exact PR-007/PR-008 overlap reconciliation before touching registry/overlap surfaces.
 
-Compute exact changed-file set and run D6 before the first overlapping mutation.
+**Scope:**
 
-**Scope**
+- add fail-closed operation-effect metadata to the authoritative dispatch registration;
+- integrate central admission into edit/edit-upload, fsmutate, move/copy/delete/chmod/chown, structured Git `apply_patch`, upload/finalization, and every equivalent currently effective structured mutator discovered from the registry;
+- classify internal-only and read-only operations explicitly.
 
-1. Extend the authoritative operation registry with D5 metadata and fail-closed coverage accounting.
-2. Keep dispatch and `ops_supported` derived from this same registry.
-3. Integrate the central admission seam into explicit-path mutators:
-   - edit + edit-upload completion;
-   - move/copy/delete/chmod/chown;
-   - structured Git `apply_patch`;
-   - upload/finalization paths where host files are materialized;
-   - any currently registered equivalent structured write primitive discovered from the authoritative registry.
-4. Explicitly classify internal-only transfer operations and read-only operations.
+**Stop condition:** unknown/uncovered effective mutators make readiness false; all structured canonical writes block before any side effect; non-canonical paths retain existing behavior.
 
-**Security ordering**
+### S03 — Core process mutation fail-closed boundary
 
-Firewall block must occur before:
+**Entry:** exact PR-007/PR-008 reconciliation before touching scoped-script/basic/client/mutation-scope/executor or equivalent process seams.
 
-```text
-backup creation
-partial overwrite/delete
-patch application
-metadata mutation
-final file materialization
-```
+**Scope:**
 
-**Verification**
+- identify every effective process-producing operation from authoritative registration;
+- enforce Core-owned process disposition independent of Hub parameter availability;
+- preserve scoped/sandbox/audit authority without duplicating it;
+- block or mark readiness unavailable for unconstrained process paths;
+- freeze direct, redirection, Python/PowerShell, spawned-child/background mutation regressions.
 
-- newly registered model-facing op with missing/unknown effect metadata => firewall readiness false;
-- required-but-uncovered mutator => firewall readiness false;
-- internal-only op is distinguishable from model-facing exposure;
-- disabled op is removed before effective-surface readiness computation;
-- exact canonical root and descendants blocked;
-- non-canonical `rw` path still follows existing behavior;
-- no `.bak.*` artifact on blocked edit/delete;
-- move/copy endpoint matrix correct;
-- structured Git read operations unaffected.
+**Stop condition:** no effective generic/child-process canonical mutation bypass exists while provider-wide readiness can be true.
 
-### S03 — Process mutation fail-closed boundary
+### S04 — Core Capability Readiness + Existing Transport Projection
 
-**Hard entry gate**
+**Entry:** exact overlap reconciliation if capability/hello/protocol seams overlap moving PR-007/PR-008 state.
 
-Before touching `handlers/scoped_script.py`, `handlers/basic.py`, `client.py`, mutation-scope code, `executor.py`, or an equivalent overlap surface, execute D6 against the exact current PR-007/PR-008 heads. The planning/review-time heads are not sufficient.
+**Scope:**
 
-**Scope**
+- compose readiness from inventory + effective operation registry + structured coverage + process disposition;
+- expose capability through existing SentinelX Core hello/capability/protocol structures;
+- add bounded reason codes/diagnostics;
+- preserve PR-007/PR-008 semantics;
+- do not modify, require changes to, deploy, or validate production Hub rendering.
 
-- use authoritative D5 registration metadata to identify all exposed process-producing operations (`exec`, script paths, background descendants and equivalents);
-- add a single process admission policy tied to firewall readiness;
-- block legacy/unprofiled arbitrary mutation process paths when firewall-ready mode is enabled unless physical canonical exclusion is independently proven;
-- preserve profiled/scoped mutation path and its existing sandbox/audit/scope requirements;
-- ensure timeout/nonzero/background child paths do not escape the process boundary.
+**Verification:**
 
-**Non-goal**
+- one unknown exposed op => Core capability unavailable;
+- one uncovered mutator => unavailable;
+- policy disabled => unavailable while legacy behavior remains;
+- valid Windows complete-coverage fixture => Core capability present;
+- Core protocol/hello readback confirms the field;
+- missing Hub projection, if separately observed, is diagnostic only.
 
-No shell/script text parser may be treated as the security proof.
+**Stop condition:** partial Core coverage cannot mechanically advertise the capability, and complete Core coverage is visible in existing Core-owned protocol output.
 
-**Verification**
+### S05 — Incident regression, affected security suite and documentation
 
-- `git switch`, redirection, Python/PowerShell file write and spawned-child canonical writes cannot bypass;
-- `operator_unrestricted` is not fallback;
-- legacy compatibility remains available only with firewall capability unavailable;
-- scoped execution in a valid execution workspace remains governed by existing sandbox/audit authority;
-- unclassified process operation makes firewall readiness false.
+**Scope:**
 
-### S04 — Capability readiness + projection composition
-
-**Entry admission**
-
-Run D6 again whenever PR-007/PR-008 state moved after the last recorded reconciliation or this Slice touches an overlapping capability/projection file.
-
-**Scope**
-
-- compose final readiness probe from Host inventory, D5 effective operation registry, structured coverage and process disposition;
-- advertise `canonical_repository_mutation_firewall_v1` only on complete provider-wide coverage;
-- add bounded diagnostics/reason codes;
-- integrate with current capability/hello projection without weakening PR-007/PR-008 semantics;
-- update protocol-feature tests as required.
-
-**Verification**
-
-- one exposed unknown/unclassified op => capability absent/unavailable;
-- one required uncovered mutator => capability absent/unavailable;
-- policy disabled => capability unavailable without breaking legacy host;
-- valid Windows configuration + complete effective-surface coverage => advertised;
-- Linux/macOS remain unavailable unless equivalent physical enforcement is proven.
-
-### S05 — Incident regression, security suite, docs
-
-**Scope**
-
-Freeze the real incident family and complete documentation.
+Freeze the real incident family and document the final operator/security boundary.
 
 Required regression matrix:
 
 1. broad parent `rw` + canonical edit -> blocked;
 2. canonical delete/edit -> blocked before backup;
 3. canonical structured Git patch -> blocked;
-4. generic process `git switch`/write -> blocked under firewall-ready mode;
+4. generic process switch/write -> blocked under firewall-ready mode;
 5. indirect/background child canonical write -> blocked;
 6. unknown inventory/target -> fail closed;
 7. canonical read/list/search/status/diff -> allowed;
-8. same-repository execution workspace scoped write -> allowed by firewall then evaluated by existing authorities;
-9. fake `canonical_sync` claim on generic tool -> no bypass;
-10. capability advertisement removed whenever one required enforcement component is unavailable;
-11. newly registered model-facing op with unknown effect class -> capability unavailable;
-12. internal-only transport op does not silently become model-facing coverage evidence.
+8. same-repository non-canonical execution workspace -> passes firewall then existing authorities decide;
+9. fake `canonical_sync` claim -> no bypass;
+10. unknown/unclassified operation -> readiness unavailable;
+11. internal-only transport op -> not silently counted as model-facing evidence;
+12. Hub projection omission -> documented external limitation only, no PR-010 failure.
 
-Documentation:
+Documentation covers inventory configuration, identity semantics, readiness/error behavior, platform support, `file_ops` vs `protected_roots` vs canonical firewall vs scoped sandbox, authoritative operation registration, process compatibility, and immutable Hub boundary.
 
-- README / config examples;
-- SECURITY / THREAT_MODEL where boundary semantics belong;
-- distinction among `file_ops`, `protected_roots`, canonical repository firewall and scoped mutation sandbox;
-- authoritative operation-effect registration and fail-closed extension rule;
-- migration/compatibility behavior for generic process tools.
+**Stop condition:** Core/local implementation has durable required evidence and is ready for `#开发验收`; no merge, release, production Host activation, or Hub activation is implied.
 
 ## Implementation-Ready Admission Gate
 
-Plan approval requires reviewers to confirm all of the following:
+Plan Review must confirm:
 
-### P0-A — Inventory authority is distinct and sufficient
+### P0-A — Requirement Revision 2 lineage
 
-The proposed Host-owned canonical inventory is accepted as provider authority and must not overload `protected_roots` or caller-supplied repository paths.
+Review is explicitly against Requirement Revision 2 and this Plan Revision 3; Plan R2 approval is not reused.
 
-### P0-B — Process-surface semantics are acceptable
+### P0-B — Repository identity reuse
 
-Review R2 accepts the V1 compatibility trade-off:
+S01 repair uses one provider repository identity semantic without introducing a circular dependency or second identity model.
 
-> A host cannot advertise provider-wide canonical firewall protection while also retaining an arbitrary unprofiled process mutation path that has no physical canonical exclusion.
+### P0-C — Core process semantics
 
-The implementation may choose a stronger OS-enforced mechanism instead, but it may not weaken this invariant.
+A host cannot advertise provider-wide firewall protection while retaining an effective arbitrary process mutation path with no physical canonical exclusion. Hub parameter availability is irrelevant to this invariant.
 
-### P0-C — Active dependency overlap is exact-readback driven before mutation
+### P0-D — Coverage registration fail-closed
 
-No Slice may mutate an overlapping PR-007/PR-008 seam until D6 has re-read the exact current dependency heads/contracts and recorded a no-loss composition decision. This applies before S02/S03 overlap mutation, not only during S04.
+The authoritative dispatch/effective-exposure path is also the coverage accounting source; future unknown mutators remove readiness automatically.
 
-### P0-D — Provider-wide coverage extension is fail-closed by construction
+### P0-E — Immutable Hub boundary
 
-The authoritative operation registration path must carry enough effect/exposure metadata that:
+No Slice requires Hub source/schema/deployment/tool/capability rendering mutation or production Hub readback.
 
-```text
-new model-facing op + missing/unknown repository effect
-→ firewall readiness false
-```
+### P0-F — Exact dependency readback
 
-A separate best-effort firewall list is insufficient.
+PR-007/PR-008 overlaps are reconciled before first overlapping mutation. PR-009 is non-blocking unless a future exact file overlap requires code conflict handling only.
 
-### Admission result
+## Post-Review Transition
 
-```text
-P0-A accepted
-AND P0-B accepted
-AND P0-C accepted
-AND P0-D accepted
-→ Plan Approved / Implementation Ready
-```
+If Plan Revision 3 is approved, compile/authorize the Revision 3 Slice Set and resume at **S01 retained implementation repair + Core revalidation**.
 
-## Verification Strategy
-
-### Unit/security tests
-
-Add focused tests for:
-
-- policy inventory parsing/normalization;
-- canonical path classifier;
-- authoritative operation effect/exposure registration;
-- unknown/unclassified-op fail-closed readiness;
-- each structured mutation operation;
-- process admission modes;
-- readiness/capability advertisement;
-- platform support/fail-closed behavior.
-
-### Regression suite
-
-Run all affected existing suites, especially:
-
-```text
-handler registry/capabilities tests
-file/edit/fsmutate tests
-git operation tests
-script/exec tests
-mutation scope/sandbox/readiness tests
-capability policy/protocol feature tests
-SX-HMSA incident/security tests
-```
-
-### Dependency-drift evidence
-
-For every Slice touching an overlap seam, persist equivalent evidence:
+Until then:
 
 ```yaml
-dependency_reconciliation:
-  pr_007_head: <exact current sha>
-  pr_008_head: <exact current sha>
-  changed_files_read: true
-  relevant_contracts_read: true
-  intended_slice_files: [...]
-  overlap: [...]
-  composition_disposition: no_loss | decision_required
+implementation_authorized: false
+current_gate: plan_review
 ```
-
-### Windows evidence
-
-Before Acceptance Approved, run the incident matrix on a Windows candidate build with a fixture containing:
-
-```text
-broad rw parent
-canonical checkout root
-same-repository non-canonical execution workspace
-scoped mutation readiness where applicable
-```
-
-No production-host upgrade is implied by candidate verification.
-
-## Acceptance Mapping
-
-| Requirement | Plan evidence |
-|---|---|
-| R1 | S01 inventory + policy tests |
-| R2 | S01 central admission module |
-| R3 | S02 structured mutation matrix |
-| R4 | S02 Git matrix |
-| R5 | S03 process fail-closed boundary |
-| R6 | S03 scoped/legacy/background tests + D6 composition gate |
-| R7 | D5 + S02/S04 authoritative coverage readiness tests |
-| R8 | S02/S03 no generic canonical exception |
-| R9 | S01 classifier + S03 scoped workspace evidence |
-| R10 | S05 Windows incident + extension-regression matrix |
-
-## Review R1 Remediation Traceability
-
-| Review finding | Revision 2 disposition |
-|---|---|
-| F1 — no fail-closed operation classification source of truth | Closed by D5, P0-D, S02 and S04: operation exposure/effect classification is part of the authoritative dispatch registry; unknown model-facing operations invalidate firewall readiness by default. |
-| F2 — dependency readback scheduled after possible overlapping mutation | Closed by D6, P0-C and per-Slice entry gates: exact dependency readback happens before the first overlapping mutation, including before S02 registry overlap and S03 scoped/capability seams. |
-
-## Risks and Controls
-
-### Risk — over-blocking normal SentinelX administration
-
-Control: firewall mode is explicit/readiness-gated; legacy hosts do not automatically advertise the capability. V1 favors fail-closed correctness over pretending arbitrary process execution is physically isolated.
-
-### Risk — duplicated meanings for `protected_roots`
-
-Control: new canonical inventory has one purpose; existing sandbox protected roots keep their current semantics.
-
-### Risk — moving PR-007/PR-008 implementation conflict
-
-Control: D6 is a per-Slice pre-mutation gate. A live dependency change invalidates stale overlap evidence before product-code mutation, not after it.
-
-### Risk — capability advertised on partial or future-unclassified coverage
-
-Control: readiness derives from the authoritative effective operation registry. Missing/unknown effect metadata or required-but-uncovered mutation invalidates the provider-wide capability by default.
-
-### Risk — blocked operation leaves side effects
-
-Control: target admission precedes backups, staging finalization, process spawn and material mutation; tests assert absence of backup/partial artifacts.
-
-## Plan Review Result
-
-Plan Revision 2 is approved. Implementation must follow the compiled Execution Slice Set and stop after each bounded Slice.

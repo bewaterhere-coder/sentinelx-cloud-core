@@ -1,116 +1,151 @@
 # PR-010 — SentinelX Provider Canonical Repository Mutation Firewall V1
 
-## State
+## State — Requirement Revision 2
 
 ```yaml
 project_id: sentinelx-cloud-core
 task_id: PR-010-canonical-repository-mutation-firewall-v1
 title: SentinelX Provider Canonical Repository Mutation Firewall V1
+requirement_revision: 2
 development:
-  stage: implementation
+  stage: plan_review
   gates:
     requirement_ready: true
-    plan_approved: true
+    plan_approved: false
     acceptance_approved: false
     completion_verified: false
-  latest_plan_review: approved_round_2
-  plan_revision: 2
-  implementation_authorized: true
-  next_expected_actor: implementer
-  continuation_checkpoint:
-    ref: docs/checkpoints/PR-010-canonical-repository-mutation-firewall-v1-plan-review-r2-approved-20261002.yaml
+  plan_revision: 3
+  implementation_authorized: false
+  next_expected_actor: reviewer
 transport:
   type: github-pr
   pr_number: 10
   branch: task/canonical-repository-mutation-firewall-v1
   base_branch: main
 artifacts:
+  requirement_change_impact: docs/reviews/PR-010-canonical-repository-mutation-firewall-v1-requirement-r2-invalidation.md
   plan: docs/plans/PR-010-canonical-repository-mutation-firewall-v1-plan.md
-  prior_plan_review: docs/reviews/PR-010-canonical-repository-mutation-firewall-v1-plan-review-r1.md
-  plan_review: docs/reviews/PR-010-canonical-repository-mutation-firewall-v1-plan-review-r2.md
-  remediation_checkpoint: docs/checkpoints/PR-010-canonical-repository-mutation-firewall-v1-plan-remediation-r2-20261002.yaml
-  approval_checkpoint: docs/checkpoints/PR-010-canonical-repository-mutation-firewall-v1-plan-review-r2-approved-20261002.yaml
   execution_slice_set: docs/execution/PR-010-canonical-repository-mutation-firewall-v1-slices.yaml
 related_tasks:
-  - PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1
-  - PR-008-provider-execution-profile-tool-surface-alignment-v1
-  - PR-009-mcp-development-execution-projection-dynamic-tool-contract-v1
+  overlap_dependencies:
+    - PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1
+    - PR-008-provider-execution-profile-tool-surface-alignment-v1
+  independent_non_blocking:
+    - PR-009-mcp-development-execution-projection-dynamic-tool-contract-v1
 external_contract:
   repository: bewaterhere-coder/DevForge
-  ref: 7c28d0dc2b6dc98ad23ac9bf1e2ea3c5b68c6372
+  ref: 9e0ec1aae06690840d8946d39460e7cb28ef36d1
   path: system/canonical-repository-host-mutation-firewall-contract.md
   required_capability: canonical_repository_mutation_firewall_v1
 ```
 
+## Requirement Revision 2 Change
+
+Production `mcp.sentinelx.app` is an **immutable third-party closed-source transport boundary** for this Task.
+
+PR-010 owns only surfaces implemented and controlled by `sentinelx-cloud-core` / the SentinelX Agent. The Task MUST NOT require, imply, or claim any Hub source, schema, deployment, routing, tool-generation, or capability-projection change.
+
+Missing Hub exposure of `execution_profile`, a dynamic tool, a capability field, or any other MCP projection is an **external integration limitation**, not an implementation, verification, Acceptance, or completion blocker for PR-010 when equivalent Core-owned verification is available.
+
+The security property must hold at the Agent/Core mutation boundary regardless of which existing transport delivered the request.
+
+Required verification authority is therefore:
+
+```text
+sentinelx-cloud-core unit evidence
++ SentinelX Core integration evidence
++ Core protocol / hello / capability readback where applicable
++ Windows physical-mutation regression evidence where required
+```
+
+The following is explicitly **not** required evidence:
+
+```text
+Hub source/schema mutation
+Hub deployment
+Hub-native dynamic tool generation
+Hub-native execution_profile projection
+Hub UI/model-facing capability rendering
+```
+
+Existing Hub transport may carry requests and responses unchanged, but it owns no canonical-repository protection authority and is not a completion dependency.
+
 ## Problem
 
-SentinelX already has two strong but incomplete security layers:
+SentinelX already has strong but incomplete security layers:
 
 1. `file_ops` canonicalizes paths and requires explicit `rw` access for structured filesystem/Git mutation;
 2. `mutation_execution` owns scoped-mutation placement, `protected_roots`, sandbox readiness and audit lineage.
 
-Those layers do **not** currently prove the DevForge provider contract that a canonical source checkout is physically non-mutable through every model-facing Host mutation surface.
+Those layers do **not** by themselves prove the DevForge provider contract that a canonical source checkout is physically non-mutable through every Agent/Core mutation surface.
 
-Current `main` reality shows the gap:
+Current failure class:
 
-- `MutationExecutionPolicy.protected_roots` exists, but it is scoped-mutation policy rather than a provider-wide canonical-repository inventory;
-- `edit`, destructive filesystem operations and structured Git patch mutation admit writes primarily through `file_ops rw`;
-- `exec` admits an allowlisted command and then runs a shell without a canonical-repository target firewall;
-- legacy/unprofiled `script_run` is intentionally more powerful than `exec` and is not bounded by `allowed_commands`;
-- upload/edit-upload paths are mutation surfaces and must not become an alternate write path;
-- a broad OS/file allowlist such as `D:\coco = rw` can therefore coexist with a canonical checkout under that tree and still permit a bypass around DevForge semantic checkout-role admission.
-
-The result is the exact failure class observed in the DevForge canonical-repository incident: a higher-level workflow can be correct while a lower-level Host mutation primitive can still physically change the canonical checkout.
+- broad `file_ops rw` can include a canonical checkout;
+- structured edits and Git mutation can otherwise reach that checkout;
+- generic `exec` / script processes can mutate indirectly through child processes;
+- higher-level workflow correctness does not protect against a lower-level Host mutation primitive;
+- transport/projection details must not become the security boundary.
 
 ## Goal
 
-Implement a provider-owned, provider-wide canonical repository mutation firewall that satisfies the DevForge consumer contract `canonical_repository_mutation_firewall_v1` without hard-coding DevForge, a host name, a repository path, or one caller/runtime.
+Implement a provider-owned, provider-wide canonical repository mutation firewall in `sentinelx-cloud-core` that satisfies `canonical_repository_mutation_firewall_v1` without hard-coding DevForge, a specific host, a repository path, a GitHub owner, or a transport implementation.
 
-For every model-facing SentinelX operation capable of materially changing a repository checkout, the provider must either:
+For every SentinelX Agent/Core operation capable of materially changing a repository checkout, the provider must either:
 
 - prove the target does not intersect a Host-authoritative canonical repository root and continue through the operation's existing authorization boundary; or
 - reject before material mutation with stable fail-closed evidence.
 
-Capability advertisement is allowed only when coverage is complete for the provider's exposed mutation surface.
+Capability readiness is true only when complete Core mutation-surface coverage is proven.
 
 ## Ownership Boundary
 
-SentinelX owns:
+SentinelX Core owns:
 
 - Host-authoritative canonical repository inventory and target classification;
 - provider-wide mutation admission before handler/process mutation;
-- OS-enforced containment where target inference alone cannot prove safety;
-- capability readiness/advertisement and diagnostic evidence;
-- regression tests proving no model-facing mutator bypasses the boundary.
+- physical process containment or fail-closed process admission;
+- capability readiness computation;
+- Core protocol/hello capability output through existing transport structures;
+- regression tests and diagnostics proving no Agent/Core mutator bypasses the boundary.
 
-DevForge owns the consumer semantics and expected capability/error contract. This Task MUST NOT modify DevForge or claim that a DevForge release is completed.
+DevForge owns:
 
-The Hub/MCP projection may carry operations to SentinelX, but MUST NOT mint or remove canonical repository protection authority.
+- the consumer semantics and expected capability/error contract;
+- no SentinelX implementation surface.
+
+The third-party Hub owns transport behavior only. It MUST NOT mint, remove, weaken, or be required to prove canonical repository protection authority.
 
 ## Required Behavior
 
 ### R1 — Host-owned canonical repository inventory
 
-Introduce or derive an explicit Host-authoritative inventory that can distinguish canonical repository roots from generic protected roots and ordinary writable project/workspace roots.
+Introduce or derive an explicit Host-authoritative inventory distinct from generic protected roots and ordinary writable project/workspace roots.
 
-The inventory must bind at least:
+Each inventory entry binds at least:
 
 ```text
 canonical root
-repository identity (vcs + authority + path, when available)
+repository identity (vcs + authority + path)
 canonical branch / source-role metadata when applicable
 inventory provenance / readiness evidence
 ```
 
 Rules:
 
-- caller payload path, cwd, environment variables, branch name, chat memory and model assertions are evidence only;
+- caller payload path, cwd, environment variables, branch name, chat/model assertions, and transport fields are evidence only;
 - `file_ops rw` never removes canonical protection;
-- generic `mutation_execution.protected_roots` MUST NOT be reinterpreted as canonical repository identity if doing so would also block unrelated execution workspaces;
-- path classification must canonicalize traversal/symlinks before intersection testing;
+- `protected_roots` MUST NOT be reinterpreted as canonical repository identity when doing so would also block valid execution workspaces;
+- path classification canonicalizes traversal/symlinks before intersection testing;
 - inability to classify safely is fail-closed for material mutation.
 
-### R2 — Stable provider-level admission API
+### R2 — Reuse the existing repository identity primitive
+
+Canonical inventory MUST compose the existing `sentinelx_core.mutation_placement.RepositoryIdentity` semantics, or one explicitly shared primitive extracted from it, rather than maintain a second incompatible repository identity model.
+
+The existing S01 implementation in `policy._canonical_repository_identity` is not accepted as final while it diverges from `RepositoryIdentity`, including authority/port behavior. Repository identity normalization must have one provider semantic source.
+
+### R3 — Stable provider-level admission API
 
 Create one reusable firewall/classifier seam consumed by every relevant mutation handler rather than duplicating ad-hoc checks.
 
@@ -122,9 +157,9 @@ CanonicalRepositoryMutationBlocked
 HostCanonicalMutationFirewallIndeterminate
 ```
 
-The canonical-block result must occur before the first material mutation or child process that could mutate the protected checkout.
+Canonical block or indeterminate failure must occur before the first material mutation or child process capable of mutation.
 
-### R3 — Structured file/edit/upload coverage
+### R4 — Structured file/edit/upload coverage
 
 Provider enforcement must cover all structured filesystem write paths, including at least:
 
@@ -136,94 +171,145 @@ copy destination / overwrite paths
 delete
 chmod
 chown
-upload finalization paths that can materialize outside staging
-future equivalent file-write operations
+upload finalization paths that materialize host files
+future equivalent structured write operations
 ```
 
-For move/copy, every material endpoint must be classified with correct read/write semantics. Backup creation must not create `.bak.*` artifacts inside or adjacent to a canonical repository when the original mutation is blocked.
+For move/copy, every material endpoint must be classified with correct read/write semantics. Blocking an edit/delete must not create `.bak.*`, staging, or partial-write side effects in or adjacent to a canonical repository.
 
-### R4 — Structured Git coverage
+### R5 — Structured Git coverage
 
 All structured Git mutation paths must consume the firewall, including `apply_patch` and any future checkout/ref/worktree mutation added to the structured Git operation.
 
-Read-only Git operations remain available.
+Read-only Git operations remain available. A generic Git operation cannot self-identify as `canonical_sync` to bypass the firewall.
 
-A generic Git operation must not self-identify as `canonical_sync` to bypass the firewall.
+### R6 — Core-owned process fail-closed coverage
 
-### R5 — `exec` / shell process coverage
+`exec`, legacy/unprofiled `script_run`, profiled/scoped script execution, background descendants, timeout paths, and nonzero paths are mutation-capable and must be accounted for by Core.
 
-`exec` is mutation-capable even when its command prefix is allowlisted. The firewall must therefore provide **physical** canonical-write exclusion for commands/process trees that cannot be safely proven read-only by structured target arguments.
+V1 MUST NOT treat shell/script/path-string parsing as physical security proof.
 
-V1 MUST NOT claim provider-wide capability based only on shell-string/path heuristics. If the provider cannot guarantee that an admitted `exec` process and descendants cannot mutate a canonical repository, capability readiness stays unavailable or that execution class is blocked under firewall mode.
+If SentinelX Core cannot guarantee that an admitted process tree cannot mutate a canonical checkout, then while firewall-ready mode is enabled it MUST either:
 
-### R6 — legacy and profiled `script_run` coverage
+- route the operation through an existing physically constrained scoped execution path whose boundary is proven; or
+- block that process class fail-closed; or
+- keep firewall readiness false.
 
-Unprofiled/legacy `script_run`, profiled/scoped mutation execution, background children, and timeout/nonzero paths must preserve canonical exclusion.
+This decision is Core-owned. It MUST NOT depend on the Hub exposing an `execution_profile` argument or a different MCP tool schema.
 
-Scoped execution may reuse existing sandbox/protected-root mechanisms where they prove the same physical boundary, but `canonical_repository_mutation_firewall_v1` remains a distinct readiness claim from `host_mutation_sandbox_v1` and `pre_execution_audit_lineage_v1`.
+No `operator_unrestricted`, legacy unrestricted fallback, command allowlist expansion, or caller-minted authority may bypass canonical protection while the firewall capability is advertised.
 
-No `operator_unrestricted` or legacy compatibility path may bypass canonical protection while the firewall capability is advertised.
+### R7 — Authoritative operation-effect registration
 
-### R7 — Capability readiness and advertisement
+Coverage accounting must derive from the same authoritative Core operation registration used for dispatch / effective operation exposure, not from a parallel hand-maintained firewall list.
 
-Advertise:
+Every effective model-facing operation must have explicit repository-effect semantics equivalent to:
 
 ```text
-canonical_repository_mutation_firewall_v1
+read_only
+structured_mutation
+process_mutation
+non_repository_mutation
+unknown
 ```
 
-only when SentinelX can prove provider-wide coverage for every currently exposed model-facing mutation surface capable of targeting repository paths.
+Rules:
 
-If one relevant mutator is unprotected, readiness is false and the capability must not be advertised as verified.
+- missing/unknown effect metadata makes firewall readiness false;
+- required-but-unproven firewall coverage makes readiness false;
+- internal-only transport operations are explicitly distinguishable from model-facing operations;
+- disabled operations are removed before final effective-surface readiness computation;
+- mixed operations such as structured Git classify mutation selectors explicitly.
 
-Diagnostics must identify uncovered operation classes without exposing sensitive host paths unnecessarily.
+### R8 — Core capability readiness + existing transport output
 
-### R8 — Canonical source exceptions remain dedicated
+`canonical_repository_mutation_firewall_v1` may be advertised by SentinelX Core only when:
+
+- canonical inventory is valid;
+- every effective Core mutator is classified;
+- every required structured mutation path is covered;
+- every process-producing path has a proven physical disposition;
+- no unrestricted bypass is active.
+
+The positive/negative readiness decision must be verifiable through Core-owned unit/integration/protocol evidence.
+
+Existing hello/capability/protocol structures may carry this readiness through the existing transport. Hub-native rendering or projection of the field is not required for PR-010 Acceptance.
+
+### R9 — Canonical source exceptions remain dedicated
 
 Generic file/Git/shell/script tools receive no canonical mutation exception.
 
-If SentinelX later supports structured canonical source mechanics, they must be dedicated operations with independent exact repository/branch verification. V1 does not require implementing `canonical_sync`; read/readback may remain available through existing read-only operations.
+If SentinelX later supports structured canonical source mechanics, they must be dedicated operations with independent exact repository/branch verification. V1 does not implement a generic `canonical_sync` escape hatch.
 
-### R9 — Execution workspace remains mutable under existing authority
+### R10 — Execution workspace remains mutable under existing authority
 
-The firewall must not turn the repository's admitted execution workspace into a canonical root merely because both belong to the same repository identity.
+The firewall must not turn an admitted execution workspace into a canonical root merely because both correspond to the same repository identity.
 
 Passing the firewall is exclusion evidence only. Existing scope, audit, sandbox, `file_ops`, Git, execution-profile and transport authorization still apply.
 
-### R10 — Incident regression and fail-closed semantics
+### R11 — Incident regression and immutable-Hub semantics
 
-Freeze at minimum these cases:
+Freeze at minimum:
 
 ```text
 canonical main + generic file edit             -> BLOCK
 canonical main + backup-producing edit/delete -> BLOCK with no backup side effect
 canonical main + structured git apply_patch    -> BLOCK
-canonical main + generic git switch via exec   -> BLOCK
+canonical main + generic process write/switch  -> BLOCK under firewall-ready mode
 canonical main + script child/background write -> BLOCK
 unknown/indeterminate target classification    -> FAIL CLOSED
-execution workspace + valid scoped mutation    -> PASS existing boundaries
+execution workspace + valid scoped mutation    -> PASS firewall, then existing authorities
 read/list/search/status/diff on canonical      -> PASS
 broad parent file_ops rw                       -> DOES NOT OVERRIDE
 caller claims canonical_sync on generic op     -> BLOCK
+Hub lacks execution_profile projection         -> EXTERNAL LIMITATION, NOT PR-010 BLOCKER
+Hub lacks capability-field rendering           -> EXTERNAL LIMITATION, NOT PR-010 BLOCKER
 ```
 
 ## Compatibility / Non-Goals
 
-- Do not hard-code `D:\coco`, DevForge, `Cherie_li`, a GitHub owner, or a particular canonical checkout.
+- Do not modify or require modifications to `mcp.sentinelx.app` Hub source, schema, deployment or tool projection.
+- Do not hard-code `D:\\coco`, DevForge, `Cherie_li`, a GitHub owner, or a particular canonical checkout.
 - Do not replace `file_ops`; the firewall is an additional denial boundary.
 - Do not create a second mutation-scope store, audit journal, sandbox executor or repository identity model when an existing SentinelX primitive can be composed.
-- Do not make `protected_roots` so broad that valid execution workspaces become unusable.
+- Do not broaden `protected_roots` so valid execution workspaces become unusable.
 - Do not weaken `host_mutation_sandbox_v1`, `pre_execution_audit_lineage_v1`, PR-007 scope admission or PR-008 profiled execution semantics.
-- Do not claim production Hub changes.
 - Do not auto-expand filesystem permissions or command allowlists.
-- Do not implement a generic `canonical_sync` escape hatch in V1.
-- Linux/macOS may remain capability-unavailable if equivalent physical enforcement cannot be proven in V1; unsupported platforms must fail closed rather than advertise partial coverage.
+- Do not implement generic `canonical_sync` in V1.
+- Linux/macOS may remain capability-unavailable if equivalent physical enforcement is not proven in V1; unsupported platforms fail closed rather than advertise partial coverage.
+- PR-009 is related independent work only and is not a PR-010 implementation, verification, Acceptance, or completion dependency.
 
 ## Active-Branch Compatibility Constraint
 
-PR-007 and PR-008 currently modify mutation-scope / scoped-script / capability-advertisement seams. Before implementation touches an overlapping file (`client.py`, `handlers/basic.py`, `handlers/scoped_script.py`, `mutation_scope.py` or equivalent), the exact latest dependency head and semantic contract must be re-read.
+PR-007 and PR-008 modify mutation-scope / scoped-script / capability-advertisement seams. Before a Slice touches an overlapping file (`client.py`, `handlers/basic.py`, `handlers/scoped_script.py`, `mutation_scope.py`, registry/protocol/capability code, or equivalent), it must re-read the exact latest dependency head, changed-file set, relevant contract, and stage/disposition.
 
-A moving branch is not implicit implementation authority. Rebase/merge strategy is decided only after plan approval and exact dependency readback.
+A moving branch is evidence, not implementation authority. Material semantic conflict stops before product mutation.
+
+PR-009 is excluded from this overlap admission gate unless a future exact changed-file readback proves a direct code conflict; its Hub projection objective is never a semantic completion dependency.
+
+## Retained S01 Implementation and Current Blocker
+
+Requirement Revision 2 preserves the already-landed S01 source changes as implementation evidence. They are not rolled back or replayed.
+
+Retained implementation surfaces:
+
+```text
+src/sentinelx_core/policy.py
+src/sentinelx_core/canonical_repository_firewall.py
+tests/test_canonical_repository_firewall.py
+```
+
+The previous Hub/tool-projection dynamic verification failure is superseded as a blocker.
+
+The current true S01 blocker is:
+
+```text
+existing primitive: sentinelx_core.mutation_placement.RepositoryIdentity
+parallel S01 normalizer: sentinelx_core.policy._canonical_repository_identity
+required resolution: reuse/share one repository identity semantic and revalidate S01
+```
+
+S01 remains incomplete until that consistency issue is resolved and Core-owned verification passes.
 
 ## Requirement Readiness Evidence
 
@@ -231,47 +317,55 @@ A moving branch is not implicit implementation authority. Rebase/merge strategy 
 depth: deep
 behavior_examples:
   - id: canonical-file-write
-    sequence: "operator config exposes a broad parent as file_ops rw -> edit targets a canonical checkout descendant -> firewall blocks before edit/backup"
+    sequence: "operator config exposes a broad parent as file_ops rw -> edit targets a canonical checkout descendant -> Core firewall blocks before edit/backup"
   - id: canonical-process-write
-    sequence: "allowlisted exec or script attempts to write canonical file through a child process -> physical enforcement blocks the write; no semantic string-parser bypass is accepted"
+    sequence: "a process-producing Core operation attempts direct or child-process canonical mutation -> Core physical disposition blocks it or firewall readiness remains false"
   - id: workspace-write
     sequence: "same repository has a non-canonical execution workspace -> valid scoped mutation passes firewall and remains governed by existing scope/sandbox/audit authority"
+  - id: immutable-hub
+    sequence: "Hub does not project execution_profile/capability field -> Core unit/integration/protocol verification remains sufficient -> PR-010 is not blocked by Hub"
 invariants:
   - canonical_repository_protection_is_provider_owned
+  - hub_is_transport_not_security_authority
   - file_ops_rw_never_overrides_canonical_role
-  - every_model_facing_repository_mutator_is_covered_before_capability_advertisement
+  - repository_identity_semantics_have_one_provider_source
+  - every_effective_core_repository_mutator_is_covered_before_capability_advertisement
   - indeterminate_target_or_process_coverage_fails_closed
   - generic_tools_cannot_self_declare_canonical_sync
   - execution_workspace_passage_does_not_grant_mutation_authority
-  - provider_capability_is_distinct_from_scoped_mutation_capabilities
+  - external_hub_projection_limitations_are_non_blocking_for_pr010
 material_questions: []
 disconfirming_cases:
-  - "one exposed mutation operation can still alter a canonical descendant while capability is advertised"
+  - "one effective SentinelX Core mutation operation can alter a canonical descendant while the capability is advertised"
   - "protection depends on parsing shell/script text and misses an indirect child-process write"
-  - "broad protected-root configuration blocks normal execution workspaces rather than identifying canonical checkouts"
-  - "blocking a canonical delete/edit still leaves a .bak or partial mutation"
+  - "RepositoryIdentity and canonical inventory normalize the same repository differently"
+  - "PR-010 cannot be accepted solely because the third-party Hub omits execution_profile or a capability field despite complete Core-owned evidence"
 challenge_completed: true
 ```
 
 ## Acceptance Criteria
 
 - **A1 / R1:** canonical inventory is Host-authoritative, canonicalized and distinguishable from generic protected/workspace roots.
-- **A2 / R2:** one reusable provider firewall seam returns stable allow/block/indeterminate dispositions before mutation.
-- **A3 / R3,R4:** structured edit/file/upload/Git mutation surfaces have direct regression coverage and no canonical backup/partial-write side effects.
-- **A4 / R5,R6:** process-based mutation (`exec`, script, background/child) has OS-enforced or equivalently physical canonical exclusion; string heuristics alone are insufficient.
-- **A5 / R7:** capability advertisement is true only when the complete exposed mutation surface is covered and readiness is proven.
-- **A6 / R8,R9:** canonical read-only operations remain usable; execution-workspace mutation still works only under existing authority.
-- **A7 / R10:** the full incident matrix passes on Windows, including broad-parent-`rw`, indirect child write and indeterminate classification.
-- **A8:** current SentinelX security/regression suite remains passing; no unrestricted fallback or permission expansion is introduced.
-- **A9:** provider documentation explains inventory configuration/discovery, readiness, error semantics, platform support and the distinction from scoped mutation sandboxing.
+- **A2 / R2:** canonical inventory reuses/shared-composes `RepositoryIdentity`; no second incompatible repository identity model remains.
+- **A3 / R3:** one reusable provider firewall seam returns stable allow/block/indeterminate dispositions before mutation.
+- **A4 / R4,R5:** structured edit/file/upload/Git mutation surfaces have direct regressions and no canonical backup/partial-write side effects.
+- **A5 / R6:** process mutation has Core-owned physical exclusion or fail-closed disposition; shell/string heuristics and missing Hub arguments are not the proof.
+- **A6 / R7,R8:** capability readiness is true only on complete effective Core mutation-surface coverage and is verified through Core-owned evidence.
+- **A7 / R9,R10:** canonical read-only operations remain usable; execution-workspace mutation remains subject to existing authority after firewall passage.
+- **A8 / R11:** full Windows incident matrix passes, including broad-parent-`rw`, indirect child writes and indeterminate classification.
+- **A9:** affected SentinelX security/regression suites pass; no unrestricted fallback, permission expansion, duplicate executor/store/audit authority, or Hub modification is introduced.
+- **A10:** documentation explains inventory, readiness, errors, platform support, repository-identity reuse, distinction from scoped sandboxing, and immutable third-party Hub boundary.
 
 ## Regression Surface
 
-- `src/sentinelx_core/policy.py` — Host-owned inventory/config parsing and canonicalization;
+- `src/sentinelx_core/policy.py` — Host-owned inventory/config parsing;
+- `src/sentinelx_core/mutation_placement.py` — shared `RepositoryIdentity` semantics;
+- `src/sentinelx_core/canonical_repository_firewall.py` — central admission/readiness;
 - structured mutation handlers: edit, fsmutate, upload/finalization, structured Git;
 - process mutation handlers: exec and script/scoped-script paths;
-- capability/readiness advertisement and client hello projection;
+- authoritative operation registration and effective exposure accounting;
+- Core capability/readiness + hello/protocol output;
 - mutation scope/sandbox interaction;
 - Windows process-tree/AppContainer/ACL behavior;
 - configuration examples, README/security/threat-model documentation;
-- active PR-007/PR-008 overlap and drift reconciliation.
+- PR-007/PR-008 overlap and drift reconciliation.
