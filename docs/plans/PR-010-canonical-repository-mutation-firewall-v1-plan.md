@@ -4,18 +4,19 @@
 
 ```yaml
 task_id: PR-010-canonical-repository-mutation-firewall-v1
-stage: plan_review
-plan_status: proposed
+stage: implementation
+plan_status: approved
 plan_revision: 2
 requirement: docs/requirements/PR-010-canonical-repository-mutation-firewall-v1.md
 prior_plan_review: docs/reviews/PR-010-canonical-repository-mutation-firewall-v1-plan-review-r1.md
+plan_review: docs/reviews/PR-010-canonical-repository-mutation-firewall-v1-plan-review-r2.md
 transport: github-pr
 pr_number: 10
 task_branch: task/canonical-repository-mutation-firewall-v1
 base_branch: main
 planning_baseline_main: f7e878f3497582547e5d52cd33b060cae18d2e84
-implementation_authorized: false
-execution_slice_set: null
+implementation_authorized: true
+execution_slice_set: docs/execution/PR-010-canonical-repository-mutation-firewall-v1-slices.yaml
 acceptance_approved: false
 completion_verified: false
 remediation_r2:
@@ -25,14 +26,14 @@ remediation_r2:
   requirement_semantics_changed: false
 ```
 
-Plan Revision 2 remediates the two plan-local findings from Review R1. It does **not** self-approve, compile an Execution Slice Set, or authorize `#开发执行`.
+Plan Revision 2 remediates the two plan-local findings from Review R1 and is **Approved** by Plan Review R2. Implementation is authorized only through the durable Execution Slice Set; one manual `#开发执行` invocation may complete at most one Slice.
 
 ## Current Verified Reality
 
 ### Canonical repository
 
 - project: `sentinelx-cloud-core`;
-- canonical remote `main`: `f7e878f3497582547e5d52cd33b060cae18d2e84` at remediation time;
+- canonical remote `main`: `f7e878f3497582547e5d52cd33b060cae18d2e84` at remediation/review time;
 - local canonical checkout is not an implementation target because it was observed dirty/out-of-date during task creation;
 - Task artifacts remain on the existing GitHub PR transport.
 
@@ -51,7 +52,7 @@ pr_008:
   note: external Hub projection blocker remains
 ```
 
-Any later movement invalidates these observations for an overlapping implementation Slice and triggers fresh readback before mutation.
+Review R2 observed PR-007 had already moved again to `d7dd47d1ad253e62c8c8ad5b194c9f94cfc536d3`, confirming that planning/review-time SHAs are evidence only. Any later movement invalidates those observations for an overlapping implementation Slice and triggers fresh readback before mutation.
 
 ### Existing security primitives to compose
 
@@ -229,15 +230,18 @@ Current known overlap family includes:
 
 ```text
 client.py
+handlers/__init__.py
 handlers/basic.py
 handlers/scoped_script.py
 mutation_scope.py / mutation-scope handlers
+executor.py
 capability/protocol feature projection code
 ```
 
 Rules:
 
 - S01/S02 may proceed without dependency reconciliation only while their exact mutation set does not overlap a live dependency surface.
+- S02 must run the gate before modifying `handlers/__init__.py` while PR-007 overlaps that registry seam.
 - S03 **must** run this gate before touching `scoped_script` or any equivalent profiled-execution seam.
 - S04 runs the same gate again if dependency state has moved or its mutation set overlaps capability/projection files.
 - A moving dependency branch is evidence, not authority; stale planning-time SHAs cannot authorize transplantation.
@@ -325,7 +329,7 @@ final file materialization
 
 **Hard entry gate**
 
-Before touching `handlers/scoped_script.py`, `handlers/basic.py`, `client.py`, mutation-scope code, or an equivalent overlap surface, execute D6 against the exact current PR-007/PR-008 heads. The planning-time heads are not sufficient.
+Before touching `handlers/scoped_script.py`, `handlers/basic.py`, `client.py`, mutation-scope code, `executor.py`, or an equivalent overlap surface, execute D6 against the exact current PR-007/PR-008 heads. The planning/review-time heads are not sufficient.
 
 **Scope**
 
@@ -404,19 +408,19 @@ Plan approval requires reviewers to confirm all of the following:
 
 ### P0-A — Inventory authority is distinct and sufficient
 
-The proposed Host-owned canonical inventory must be accepted as provider authority and must not overload `protected_roots` or caller-supplied repository paths.
+The proposed Host-owned canonical inventory is accepted as provider authority and must not overload `protected_roots` or caller-supplied repository paths.
 
 ### P0-B — Process-surface semantics are acceptable
 
-Review must explicitly accept the V1 compatibility trade-off:
+Review R2 accepts the V1 compatibility trade-off:
 
 > A host cannot advertise provider-wide canonical firewall protection while also retaining an arbitrary unprofiled process mutation path that has no physical canonical exclusion.
 
-The approved Plan may choose a stronger OS-enforced mechanism instead, but it may not weaken this invariant.
+The implementation may choose a stronger OS-enforced mechanism instead, but it may not weaken this invariant.
 
 ### P0-C — Active dependency overlap is exact-readback driven before mutation
 
-No Slice may mutate an overlapping PR-007/PR-008 seam until D6 has re-read the exact current dependency heads/contracts and recorded a no-loss composition decision. This applies before S03, not only during S04.
+No Slice may mutate an overlapping PR-007/PR-008 seam until D6 has re-read the exact current dependency heads/contracts and recorded a no-loss composition decision. This applies before S02/S03 overlap mutation, not only during S04.
 
 ### P0-D — Provider-wide coverage extension is fail-closed by construction
 
@@ -437,9 +441,6 @@ AND P0-B accepted
 AND P0-C accepted
 AND P0-D accepted
 → Plan Approved / Implementation Ready
-
-otherwise
-→ Plan Review Rejected or DecisionRequired
 ```
 
 ## Verification Strategy
@@ -519,7 +520,7 @@ No production-host upgrade is implied by candidate verification.
 | Review finding | Revision 2 disposition |
 |---|---|
 | F1 — no fail-closed operation classification source of truth | Closed by D5, P0-D, S02 and S04: operation exposure/effect classification is part of the authoritative dispatch registry; unknown model-facing operations invalidate firewall readiness by default. |
-| F2 — dependency readback scheduled after possible overlapping mutation | Closed by D6, P0-C and per-Slice entry gates: exact dependency readback happens before the first overlapping mutation, including before S03 touches scoped/capability seams. |
+| F2 — dependency readback scheduled after possible overlapping mutation | Closed by D6, P0-C and per-Slice entry gates: exact dependency readback happens before the first overlapping mutation, including before S02 registry overlap and S03 scoped/capability seams. |
 
 ## Risks and Controls
 
@@ -543,11 +544,6 @@ Control: readiness derives from the authoritative effective operation registry. 
 
 Control: target admission precedes backups, staging finalization, process spawn and material mutation; tests assert absence of backup/partial artifacts.
 
-## Plan Review Target
+## Plan Review Result
 
-Review Revision 2 should verify four questions:
-
-1. Does the Host-owned canonical inventory have enough authority and separation from generic `protected_roots`?
-2. Is fail-closing arbitrary generic process mutation the correct V1 security trade-off until an OS-enforced generic process mode exists?
-3. Does authoritative operation-effect registration make future model-facing mutators fail closed for firewall advertisement by default?
-4. Does dependency reconciliation now occur before the first possible overlapping mutation rather than after it?
+Plan Revision 2 is approved. Implementation must follow the compiled Execution Slice Set and stop after each bounded Slice.
