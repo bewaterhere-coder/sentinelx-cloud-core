@@ -5,15 +5,17 @@
 ```yaml
 task_id: PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1
 requirement_revision: 2
-stage: accepted
+stage: done
 plan_status: approved
 implementation_authorized: true
 finalization:
-  ready_for_merge: true
+  ready_for_merge: false
   canonical_state_verified: true
   plan_execution_state_verified: true
   evidence_verified: true
   transport_preconditions_verified: true
+  integration_verified: true
+  integration_ref: 26fe28bd5e2317d31e09d2055b191447c3f7ed37
 plan_revision: 4
 requirement: docs/requirements/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1.md
 requirement_change_invalidation: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-requirement-r2-invalidation.md
@@ -23,6 +25,9 @@ current_acceptance_review: docs/reviews/PR-007-host-mutation-scope-control-surfa
 
 current_acceptance_transition_receipt: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-acceptance-r3-transition-receipt.yaml
 current_completion_finalization: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-completion-finalization-r1.yaml
+current_integration_receipt: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-integration-receipt-r1.yaml
+current_completion_review: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-completion-r1.md
+current_completion_checkpoint: docs/checkpoints/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-completed-20261003.yaml
 current_acceptance_repair_checkpoint: docs/checkpoints/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-acceptance-r2-repair-completed-20261003.yaml
 current_acceptance_repair_transition_receipt: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-acceptance-r2-repair-transition-receipt.yaml
 execution_slice_set: docs/execution/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-r4-slices.yaml
@@ -555,11 +560,12 @@ Plan Revision 4: Approved
 Plan Approved: true
 Execution Slice Set: docs/execution/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-r4-slices.yaml
 Implementation Authorized: true
-Current Gate: accepted
+Current Gate: done
 Acceptance Approved: true
-Ready For Merge: true
-Completion Verified: false
-Next Actor: integration
+Integration Verified: true
+Completion Verified: true
+Ready For Merge: false
+Next Actor: none
 ```
 
-Implementation and Acceptance are complete. Merge remains pending verified finalization and integration receipt; no `done` claim is made before integration.
+Implementation, Acceptance, merge finalization, and integration are complete. The Task is terminal; no further development action is pending under PR-007.
