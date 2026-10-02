@@ -14,7 +14,13 @@ development:
     plan_approved: true
     acceptance_approved: true
     completion_verified: false
-  next_expected_actor: finalizer
+  finalization:
+    ready_for_merge: true
+    canonical_state_verified: true
+    plan_execution_state_verified: true
+    evidence_verified: true
+    transport_preconditions_verified: true
+  next_expected_actor: integration
 transport:
   type: github-pr
   pr_number: 7
@@ -29,6 +35,7 @@ artifacts:
   acceptance_transition_receipt: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-acceptance-r3-transition-receipt.yaml
   acceptance_repair_checkpoint: docs/checkpoints/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-acceptance-r2-repair-completed-20261003.yaml
   acceptance_repair_transition_receipt: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-acceptance-r2-repair-transition-receipt.yaml
+  completion_finalization: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-completion-finalization-r1.yaml
 historical_artifacts:
   prior_plan_review: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-plan-review-r3.md
   prior_execution_slice_set: docs/execution/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-slices.yaml
@@ -370,6 +377,7 @@ Implementation Authorized: true
 Acceptance Approved: true
 
 Completion Verified: false
+Ready For Merge: true
 
-Next Actor: finalizer
+Next Actor: integration
 ```
