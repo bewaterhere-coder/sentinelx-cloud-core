@@ -8,13 +8,13 @@ task_id: PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1
 title: Host Mutation Scope Control Surface & MCP Admission Bridge V1
 requirement_revision: 2
 development:
-  stage: acceptance
+  stage: accepted
   gates:
     requirement_ready: true
     plan_approved: true
-    acceptance_approved: false
+    acceptance_approved: true
     completion_verified: false
-  next_expected_actor: verifier
+  next_expected_actor: finalizer
 transport:
   type: github-pr
   pr_number: 7
@@ -25,14 +25,16 @@ artifacts:
   plan_review: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-plan-review-r4.md
   execution_slice_set: docs/execution/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-r4-slices.yaml
   requirement_change_invalidation: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-requirement-r2-invalidation.md
-  acceptance_review: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-acceptance-r2.md
-  acceptance_transition_receipt: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-acceptance-r2-transition-receipt.yaml
+  acceptance_review: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-acceptance-r3.md
+  acceptance_transition_receipt: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-acceptance-r3-transition-receipt.yaml
   acceptance_repair_checkpoint: docs/checkpoints/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-acceptance-r2-repair-completed-20261003.yaml
   acceptance_repair_transition_receipt: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-acceptance-r2-repair-transition-receipt.yaml
 historical_artifacts:
   prior_plan_review: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-plan-review-r3.md
   prior_execution_slice_set: docs/execution/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-slices.yaml
   prior_acceptance: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-acceptance-r1.md
+
+  prior_acceptance_r2: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-acceptance-r2.md
 related_tasks:
   builds_on:
     - SX-HMSA-001
@@ -362,8 +364,12 @@ Current Plan Revision: 4
 Prior Plan Review R3: Rejected / remediated by Revision 4
 Current Plan Review R4: Approved
 Current Execution Slice Set: docs/execution/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-r4-slices.yaml
-Current Gate: acceptance
+Current Gate: accepted
 Plan Approved: true
 Implementation Authorized: true
-Next Actor: verifier
+Acceptance Approved: true
+
+Completion Verified: false
+
+Next Actor: finalizer
 ```
