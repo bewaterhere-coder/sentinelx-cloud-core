@@ -5,7 +5,7 @@
 ```yaml
 task_id: PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1
 requirement_revision: 2
-stage: implementation
+stage: fixing
 plan_status: approved
 implementation_authorized: true
 plan_revision: 4
@@ -13,6 +13,7 @@ requirement: docs/requirements/PR-007-host-mutation-scope-control-surface-mcp-ad
 requirement_change_invalidation: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-requirement-r2-invalidation.md
 prior_plan_review: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-plan-review-r3.md
 current_plan_review: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-plan-review-r4.md
+current_acceptance_review: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-acceptance-r2.md
 execution_slice_set: docs/execution/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-r4-slices.yaml
 transport: github-pr
 pr_number: 7
