@@ -8,7 +8,7 @@ source_command: "#开发执行 PR-010-canonical-repository-mutation-firewall-v1"
 canonical_main: f7e878f3497582547e5d52cd33b060cae18d2e84
 task_head_at_entry: 49b1635f0da5159bec9601f506e9fcec9ef220d2
 execution_workspace:
-  path: D:\\coco\\workspaces\\bewaterhere-coder\\sentinelx-cloud-core\\PR-010-S02
+  path: D:\\coco\\workspaces\\bewaterhere-coder\\sentinelx-cloud-core\\PR-010-S02-r2
   branch: task/canonical-repository-mutation-firewall-v1
   clean_at_entry: true
   canonical_checkout_used_for_mutation: false
@@ -26,7 +26,8 @@ intended_product_files:
 dependencies:
   pr007:
     task_id: PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1
-    head: 6d7a3847025b06ef2e5e537c34b943db80280434
+    head: d1c14d7ed14e63b895a8fcb7348214611ccb53d8
+    advanced_since_initial_entry_by: 2
     stage: implementation
     current_state: S06_completed_S07_pending
     exact_overlap:
@@ -35,8 +36,10 @@ dependencies:
       - src/sentinelx_core/local_api.py
     observed_semantics:
       - PR-007 owns builtin devforge_runtime lifecycle composition and RequestContext-aware local_api transport
-      - PR-007 S07 remains owner of execute_scoped adapter wiring
-      - current builtin provider exposes action schemas but no repository-effect metadata contract
+      - PR-007 current head now wires execute_scoped through make_devforge_execute_scoped_adapter
+      - PR-007 S07 remains owner of scoped execution authority and bounded result projection
+      - the new overlap changes handlers/__init__.py but does not introduce a repository-effect metadata contract
+      - PR-010 S02 must not overwrite or transplant PR-007 registry wiring
   pr008:
     task_id: PR-008-provider-execution-profile-tool-surface-alignment-v1
     head: f7594c468d764ad85c0dc508ad47f009c89793c1
@@ -52,7 +55,10 @@ no_loss_composition:
     - configured_external_local_api_action_effect_is_unknown_without_valid_bounded_operator_metadata
     - no_request_context_scope_store_sandbox_executor_or_audit_authority_is_created_by_s02
     - pr007_s07_remains_owner_of_execute_scoped_adapter
-    - handlers_local_api_and_local_api_are_read_only_overlap_inputs_for_this_slice_unless_a_new_decision_boundary_is_reached
+    - handlers_local_api_and_local_api_remain_read_only_overlap_inputs_for_this_slice
+    - handlers_init_is_now_a_material_overlap_and_must_not_be_mutated_by_s02
+    - operation_effect_accounting_must_bind_to_effective_registry_keys_without_rewriting_pr007_dispatch_composition
 material_conflict: false
+fresh_overlap_reconciliation: passed_after_pr007_s07_wiring_readback
 entry_gate: passed
 next_action: implement_S02_only
