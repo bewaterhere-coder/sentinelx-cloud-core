@@ -147,7 +147,10 @@ slices:
 
   - id: S02
     title: Authoritative op/suboperation effect registry and structured mutation integration
-    status: planned_not_authorized
+    status: completed
+    slice_completed: true
+    completion_checkpoint: docs/checkpoints/PR-010-canonical-repository-mutation-firewall-v1-s02-completed-r4-20261003.yaml
+    verified_implementation_head: a7978ff29c47e1831dfd835ae840d0ce91ce5987
     objective: Extend authoritative Core registration into fail-closed top-level and nested-effect coverage truth and wire explicit-path mutators through central admission before side effects.
     entry_gate:
       - S01 completed under Requirement Revision 2
@@ -195,11 +198,19 @@ slices:
       - move/copy endpoint matrix preserves correct read/write semantics
       - structured Git read behavior remains available
     completion_rule: authoritative top-level and nested-effect accounting fails closed and structured mutator regressions pass without a parallel firewall operation list
+    completion_evidence:
+      focused_windows_run: 37036508080
+      ci_run: 37036507745
+      macos_run: 37036508020
+      exact_product_head: a7978ff29c47e1831dfd835ae840d0ce91ce5987
+      pr007_stable_head: 0af330cd85a258c2b5d7316993f09ecb4e249bb8
+      resume_reconciliation: docs/checkpoints/PR-010-canonical-repository-mutation-firewall-v1-s02-resume-reconciliation-20261003.yaml
+      result: success
     next_on_pass: S03
 
   - id: S03
     title: Core process and mixed-operation mutation fail-closed boundary
-    status: planned_not_authorized
+    status: pending
     objective: Ensure effective exec/script/background and process-producing nested operations cannot bypass canonical exclusion while Core readiness is true.
     entry_gate:
       - S02 completed
