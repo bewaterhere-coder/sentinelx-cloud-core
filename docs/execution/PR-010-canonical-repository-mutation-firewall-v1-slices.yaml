@@ -1,0 +1,212 @@
+schema: devforge.execution-slice-set.v1
+project_id: sentinelx-cloud-core
+task_id: PR-010-canonical-repository-mutation-firewall-v1
+plan_revision: 2
+plan_review: docs/reviews/PR-010-canonical-repository-mutation-firewall-v1-plan-review-r2.md
+implementation_authorized: true
+execution_mode: incremental
+one_manual_invocation_max_slices: 1
+planning_baseline_main: f7e878f3497582547e5d52cd33b060cae18d2e84
+reviewed_task_head: bb4eadab487bdd56ff16f317a8296177787c2b82
+entry_reconciliation:
+  mode: per_slice_before_product_mutation
+  dependency_sources:
+    - PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1
+    - PR-008-provider-execution-profile-tool-surface-alignment-v1
+  required_reads_on_overlap:
+    - exact latest dependency head
+    - current changed-file set
+    - relevant immutable contract/artifact revision
+    - current dependency stage/disposition
+  overlap_family:
+    - src/sentinelx_core/client.py
+    - src/sentinelx_core/handlers/__init__.py
+    - src/sentinelx_core/handlers/basic.py
+    - src/sentinelx_core/handlers/mutation_scope.py
+    - src/sentinelx_core/handlers/scoped_script.py
+    - src/sentinelx_core/mutation_scope.py
+    - src/sentinelx_core/executor.py
+    - equivalent capability/protocol-feature projection seams
+  decision_boundary:
+    condition: dependency movement materially changes a seam the current slice intends to mutate or invalidates reviewed assumptions
+    action: stop before product-code mutation and persist a no-loss composition decision before resuming
+  stale_sha_authority: forbidden
+invariants:
+  - canonical_repository_inventory_is_host_owned
+  - file_ops_rw_never_overrides_canonical_repository_role
+  - protected_roots_do_not_double_as_canonical_repository_identity
+  - one_provider_firewall_classifier_is_reused_by_relevant_mutators
+  - structured_mutation_is_blocked_before_backup_or_material_side_effect
+  - generic_process_string_parsing_is_not_physical_security_proof
+  - arbitrary_unprofiled_process_mutation_cannot_coexist_with_advertised_provider_wide_firewall_without_physical_exclusion
+  - authoritative_operation_registration_is_dispatch_and_coverage_truth
+  - unknown_model_facing_operation_effect_invalidates_firewall_readiness
+  - required_uncovered_mutator_invalidates_firewall_readiness
+  - internal_only_ops_are_explicitly_distinct_from_model_facing_ops
+  - disabled_ops_are_removed_before_effective_surface_readiness_accounting
+  - generic_tools_cannot_self_declare_canonical_sync
+  - execution_workspace_firewall_passage_is_not_mutation_authority
+  - no_unrestricted_or_permission_expansion_fallback
+  - dependency_overlap_is_reconciled_before_first_overlapping_mutation
+slices:
+  - id: S01
+    title: Canonical inventory and central admission seam
+    status: not_started
+    objective: Add Host-authoritative canonical repository inventory and one reusable provider-level classifier/admission seam without changing handler mutation behavior yet.
+    entry_gate:
+      - compute exact intended changed-file set
+      - if any intended file overlaps active PR-007/PR-008 surfaces, perform entry_reconciliation before mutation; otherwise persist dependency_overlap=false
+      - canonical main must be re-read before implementation mutation
+    primary_surfaces:
+      - src/sentinelx_core/policy.py
+      - src/sentinelx_core/canonical_repository_firewall.py
+      - focused policy/firewall tests
+      - configuration fixtures
+    required_behavior:
+      - explicit firewall enablement and canonical repository inventory are Host/operator authority
+      - canonical roots are normalized/canonicalized and repository identity excludes credentials
+      - invalid duplicate/conflicting/ambiguous inventory makes readiness false
+      - execution workspaces are not inferred canonical solely from repository identity
+      - central dispositions cover allowed non-canonical target, canonical block and indeterminate fail-closed
+      - broad parent file_ops rw does not alter canonical classification
+    verification:
+      - traversal and symlink normalization cases
+      - duplicate/conflicting inventory failure cases
+      - canonical root versus same-repository execution workspace cases
+      - caller payload cannot create/remove canonical inventory authority
+      - indeterminate classification fails closed for material mutation
+    completion_rule: focused S01 tests pass and no handler is yet allowed to advertise firewall readiness from code presence alone
+    next_on_pass: S02
+
+  - id: S02
+    title: Authoritative operation-effect registry and structured mutation integration
+    status: not_started
+    objective: Extend the dispatch registry into the fail-closed provider-wide coverage source of truth and wire explicit-path mutators through the central firewall before material side effects.
+    entry_gate:
+      - compute exact intended changed-file set
+      - run entry_reconciliation before mutating handlers/__init__.py or any current dependency-overlap surface
+      - persist observed dependency heads and no-loss composition decision for this Slice
+    primary_surfaces:
+      - src/sentinelx_core/handlers/__init__.py
+      - src/sentinelx_core/handlers/edit.py
+      - src/sentinelx_core/handlers/fsmutate.py
+      - src/sentinelx_core/handlers/git_ops.py
+      - src/sentinelx_core/handlers/upload.py
+      - registry/capability coverage tests
+      - structured mutation firewall tests
+    required_behavior:
+      - authoritative registration carries handler plus exposure/repository-effect/firewall-coverage semantics or equivalent fail-closed metadata
+      - dispatch and ops_supported remain derived from the same authoritative registry
+      - new model-facing op with missing/unknown repository effect makes firewall readiness false
+      - required-but-unproven firewall coverage makes readiness false
+      - internal-only operations are explicitly distinguishable from model-facing operations
+      - read-only operations are explicitly distinguishable from mutators
+      - mixed structured Git mutation selectors cannot hide behind read-only selectors
+      - disabled_ops removal precedes effective-surface readiness accounting
+      - edit/edit-upload/fsmutate/git apply_patch/upload finalization consume central admission before backup, overwrite, delete, patch, metadata change or final materialization
+    verification:
+      - unknown/unclassified model-facing op => readiness false
+      - required uncovered mutator => readiness false
+      - internal-only op does not count as model-facing firewall evidence
+      - disabled op is absent from effective exposed-surface accounting
+      - canonical exact-root/descendant writes block before side effect
+      - no .bak artifact on blocked edit/delete
+      - move/copy endpoint matrix preserves correct read/write semantics
+      - structured Git diff/read behavior remains available
+    completion_rule: authoritative coverage accounting and all structured mutator regressions pass without a parallel hand-maintained firewall operation list
+    next_on_pass: S03
+
+  - id: S03
+    title: Process mutation fail-closed boundary
+    status: not_started
+    objective: Ensure exec/script/background process surfaces cannot bypass canonical exclusion while provider-wide firewall readiness is claimed.
+    entry_gate:
+      - mandatory entry_reconciliation against exact current PR-007 and PR-008 state before touching scoped_script/basic/client/mutation-scope/executor or equivalent overlap seams
+      - planning/review-time dependency SHAs are evidence only and cannot authorize mutation
+      - stop on material semantic conflict before product-code mutation
+    primary_surfaces:
+      - src/sentinelx_core/handlers/exec.py
+      - src/sentinelx_core/handlers/scoped_script.py
+      - process/background execution admission seams
+      - relevant sandbox/mutation-scope composition tests
+    required_behavior:
+      - authoritative registry identifies exposed process-producing operation classes
+      - arbitrary unprofiled process execution with no physical canonical exclusion cannot remain available while firewall capability is advertised
+      - legacy compatibility may remain only with firewall readiness/capability unavailable
+      - profiled/scoped mutation reuses existing scope/sandbox/audit authority and does not gain new caller authority
+      - shell/script text or path heuristics are never the physical security proof
+      - background children, timeout and nonzero paths preserve canonical exclusion
+      - operator_unrestricted is not a fallback
+    verification:
+      - generic git switch attempt cannot mutate canonical checkout under firewall-ready mode
+      - shell redirection cannot mutate canonical checkout
+      - Python/PowerShell direct and spawned-child canonical writes cannot bypass
+      - unclassified process op invalidates readiness
+      - scoped execution workspace mutation passes firewall exclusion then remains subject to existing authority/sandbox/audit gates
+    completion_rule: process regression matrix proves no generic or child-process canonical mutation bypass while provider-wide firewall readiness is possible
+    next_on_pass: S04
+
+  - id: S04
+    title: Capability readiness and projection composition
+    status: not_started
+    objective: Compose final provider-wide readiness/advertisement from canonical inventory, authoritative effective operation surface, structured coverage and process disposition without weakening PR-007/PR-008 semantics.
+    entry_gate:
+      - re-run entry_reconciliation if either dependency moved since the last recorded reconciliation or this Slice touches an overlap surface
+      - read current capability/hello/protocol feature contracts before mutation
+    primary_surfaces:
+      - capability/readiness projection code
+      - src/sentinelx_core/handlers/basic.py as required
+      - src/sentinelx_core/client.py as required
+      - protocol-feature/capability tests
+    required_behavior:
+      - advertise canonical_repository_mutation_firewall_v1 only when policy/inventory valid and every effective exposed mutator has proven coverage/disposition
+      - exposed unknown/unclassified op removes capability
+      - exposed required-but-uncovered mutator removes capability
+      - policy disabled leaves legacy host behavior intact but firewall capability unavailable
+      - scoped-mutation readiness remains independent from firewall readiness
+      - Linux/macOS remain capability-unavailable unless equivalent physical exclusion is actually proven
+      - diagnostics identify uncovered operation classes without leaking unnecessary sensitive paths
+    verification:
+      - one unknown exposed op => capability absent
+      - one uncovered mutator => capability absent
+      - valid Windows complete-coverage fixture => capability advertised
+      - policy disabled => capability unavailable with legacy compatibility preserved
+      - PR-007/PR-008 existing capability semantics are not lost
+    completion_rule: capability advertisement is mechanically impossible on partial effective-surface coverage
+    next_on_pass: S05
+
+  - id: S05
+    title: Incident regression security suite and documentation
+    status: not_started
+    objective: Freeze the real canonical-checkout incident family, run affected security regressions on Windows candidate evidence, and document operator/configuration semantics.
+    entry_gate:
+      - re-read canonical main and dependency state if implementation drifted since S04
+      - no production Host upgrade is implied by candidate verification
+    primary_surfaces:
+      - incident regression tests
+      - structured mutation security tests
+      - process/background security tests
+      - README/configuration documentation
+      - SECURITY/THREAT_MODEL or equivalent boundary documentation
+    required_behavior:
+      - broad parent rw plus canonical edit blocks
+      - canonical delete/edit blocks before backup creation
+      - structured Git patch against canonical blocks
+      - generic process git switch/write blocks under firewall-ready mode
+      - indirect/background child canonical write blocks
+      - unknown inventory/target classification fails closed
+      - canonical read/list/search/status/diff remains usable
+      - same-repository non-canonical execution workspace can pass firewall then is evaluated by existing scoped authorities
+      - fake canonical_sync claim on generic tool cannot bypass
+      - new model-facing op with unknown effect removes capability readiness
+      - internal-only transport op does not silently become model-facing coverage evidence
+    verification:
+      - full affected unit/security/regression suites
+      - Windows fixture with broad rw parent + canonical checkout + separate same-repository execution workspace
+      - explicit absence of .bak/partial material side effects on blocked mutations
+      - capability readiness negative/positive matrices
+    completion_rule: repository-local implementation is verified with durable evidence and ready for #开发验收; no production activation or merge is claimed
+terminal_transition:
+  when_all_slices_complete: acceptance
+  acceptance_requires_windows_incident_evidence: true
+  acceptance_requires_provider_wide_coverage_evidence: true
