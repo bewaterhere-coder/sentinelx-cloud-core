@@ -4,11 +4,12 @@
 
 ```yaml
 task_id: PR-009-mcp-development-execution-projection-dynamic-tool-contract-v1
-stage: plan_review
-plan_status: revised_pending_review
+stage: plan_review_rejected
+plan_status: rejected
 plan_revision: 2
 requirement: docs/requirements/PR-009-mcp-development-execution-projection-dynamic-tool-contract-v1.md
 prior_plan_review: docs/reviews/PR-009-mcp-development-execution-projection-dynamic-tool-contract-v1-plan-review-r1.md
+plan_review: docs/reviews/PR-009-mcp-development-execution-projection-dynamic-tool-contract-v1-plan-review-r2.md
 transport: github-pr
 pr_number: 9
 task_branch: task/mcp-development-execution-projection-dynamic-tool-contract-v1
@@ -18,47 +19,54 @@ implementation_authorized: false
 execution_slice_set: null
 acceptance_approved: false
 completion_verified: false
+review_r2:
+  result: Rejected
+  classification: external_blocker
+  unresolved:
+    - HubImplementationBinding
+    - ProviderScopeAdmission
+  verified:
+    - AgentExecutionProfileContractExactBinding
 ```
 
-Plan Revision 2 remediates the Plan-local inconsistencies identified in Review R1 without changing the canonical Requirement semantics. It deliberately does **not** pretend that the production Hub is writable or that active PR-007 / PR-008 dependencies have become completed merely because this Plan was revised.
+Plan Revision 2 remediates the Plan-local inconsistencies identified in Review R1 without changing the canonical Requirement semantics. Review R2 confirms those Plan-local corrections are sound, but the Plan is not Implementation Ready because P0-A `HubImplementationBinding` and P0-B `ProviderScopeAdmission` remain unresolved external admission conditions.
 
 No implementation Slice is executable, no Execution Slice Set may be compiled, and no implementation handoff is valid until all current-task P0 admission conditions below are independently resolved and read back.
 
 ## Current Verified Reality
 
-Planning was refreshed against the current observable environment.
-
 ### SentinelX repository / transport reality
 
 - Canonical SentinelX project repository remains `bewaterhere-coder/sentinelx-cloud-core`.
 - PR-009 transport remains Draft PR #9 on `task/mcp-development-execution-projection-dynamic-tool-contract-v1`.
-- Connected GitHub repository discovery exposes `sentinelx-cloud-core` but no writable production Hub repository.
-- Read-only listing of the registered local repository root `D:\coco\repos` shows `bewaterhere-coder\sentinelx-cloud-core` but no separately materialized Hub repository under that root.
-- Current SentinelX model-facing capabilities expose Host/local operations but no authorized Hub MCP projection mutation or deployment operation.
+- Connected GitHub repository discovery exposes no writable production Hub/MCP implementation repository for the `mcp.sentinelx.app` projection owner.
+- Current SentinelX model-facing capabilities expose Host/local/Git/integration operations but no authorized Hub MCP projection mutation or deployment operation.
+- No independently verified Hub repository, provider configuration target, control-plane API, deployment authority, or deployment receipt is currently bound to PR-009.
 
 These observations establish only the currently available implementation surface. They do not prove that no Hub source exists elsewhere; they do prove that PR-009 currently has no verified writable/deployable Hub target it can lawfully mutate.
 
 ### PR-007 dependency reality
 
-Current observed PR #7:
+Latest Review R2 readback observed:
 
 ```yaml
 pr: 7
-head: acf64e62b72d72e5bd7fdb6070d7904f881b3360
+head: c75cb818fef178dd834888b5edb51a56e031cd20
 stage: implementation
 s01: completed
 s02: completed
 s03: completed
 s04: implementation_landed_verification_blocked
+s05: not_started
 acceptance_approved: false
 completion_verified: false
 ```
 
-PR-007 therefore remains moving provider-scope admission work. PR-009 may inspect it but must not treat its moving branch as final authority.
+PR-007 therefore remains moving provider-scope admission work. Revision 2 had previously observed head `acf64e62...`; the branch advancing to `c75cb818...` confirms that moving branch state is not stable implementation authority.
 
 ### PR-008 dependency reality
 
-Current observed PR #8:
+Review R2 revalidated the exact immutable Agent contract binding:
 
 ```yaml
 pr: 8
@@ -67,26 +75,23 @@ stage: acceptance
 acceptance: blocked_external
 acceptance_approved: false
 completion_verified: false
+contract:
+  path: docs/provider-execution-profile-tool-surface-v1.md
+  blob_sha: 792a6e585c5bb516e9f4e8733f5ce7f3b1d6350e
+  feature: script_run_execution_profile_v1
 ```
 
-PR-008's Agent-owned execution-profile contract is available at the immutable revision above. The exact public contract artifact at that revision is:
-
-```text
-docs/provider-execution-profile-tool-surface-v1.md
-blob_sha = 792a6e585c5bb516e9f4e8733f5ce7f3b1d6350e
-```
-
-PR-009 may use this immutable revision as planning evidence for Agent payload semantics. Any later PR-008 change affecting that contract invalidates the corresponding PR-009 projection assumptions and requires revalidation before implementation.
-
-This immutable binding breaks the circular assumption that PR-008 must first complete an Acceptance which itself depends on the Hub projection being fixed. It does **not** mark PR-008 completed and does not remove the Requirement's current P0 state by itself.
+P0-C remains a valid exact implementation input binding. Any later PR-008 change affecting that contract invalidates the corresponding PR-009 projection assumptions and requires revalidation before implementation.
 
 ## Remediation Traceability
 
-| Review R1 finding | Revision 2 remediation |
+| Review finding | Plan disposition |
 |---|---|
-| F1 — current-task P0 dependencies conflict with proposed implementation entry | Remove all pre-P0 executable work. D1/D2 contract/fixture work is no longer an implementation exception. No Slice Set is compiled and no Slice becomes executable until the exact current-task P0 admission conditions are resolved. |
-| F2 — no authorized production Hub projection implementation target | Add an explicit `HubImplementationBinding` admission contract. Plan approval/implementation is forbidden until a concrete writable/deployable Hub-owned target, mutation interface, authority, deployment path, and readback evidence are bound. Repository docs/fixtures cannot substitute for that target. |
-| F3 — PR-007 / PR-008 are active moving dependencies | Add immutable dependency-binding and drift-invalidation rules. PR-008 planning semantics are pinned to exact head/blob evidence; PR-007 must reach verified provider-scope admission (or equivalent exact verified revision) before Implementation Ready. Any dependency drift invalidates affected assumptions. |
+| R1 F1 — current-task P0 dependencies conflicted with proposed implementation entry | Remediated in Revision 2: no pre-P0 executable work; no Slice Set compiled before P0 closure. |
+| R1 F2 — no authorized production Hub projection implementation target | Plan-local structure remediated by explicit `HubImplementationBinding`; external binding itself remains unresolved and blocks approval. |
+| R1 F3 — PR-007 / PR-008 were moving dependencies | PR-008 is immutably pinned and verified; PR-007 remains moving/unverified and therefore still blocks P0-B. |
+| R2 F1 — Hub implementation surface still absent | External blocker; no further Plan wording can satisfy it. |
+| R2 F2 — Provider-scope admission not stable/verified | External dependency; requires exact verified PR-007/equivalent revision + receipt. |
 
 ## Implementation-Ready Admission Gate
 
@@ -129,7 +134,7 @@ Invalid evidence includes:
 - an assumed hidden repository;
 - conversation memory or a guessed deployment path.
 
-Until this binding exists and is read back, `HubProjectionWriteOrDeploymentSurface` remains unresolved and implementation is forbidden.
+Current status: **unresolved**.
 
 ### P0-B — ProviderScopeAdmission stable evidence
 
@@ -144,11 +149,13 @@ terminalize
 
 with exact repository + semantic lineage binding, no caller-minted workspace authority, and no unrestricted fallback.
 
-For PR-007 specifically, a moving implementation branch with verification still blocked is not sufficient P0 closure evidence. The accepted evidence must identify the exact revision that PR-009 consumes and the verification/receipt proving the required provider-owned scope path.
+A moving implementation branch with verification blocked is not sufficient closure evidence.
+
+Current status: **unresolved**.
 
 ### P0-C — AgentExecutionProfileContract exact binding
 
-PR-009 currently pins planning semantics to:
+Current verified exact binding:
 
 ```text
 PR-008 head = f7594c468d764ad85c0dc508ad47f009c89793c1
@@ -156,7 +163,7 @@ contract blob = 792a6e585c5bb516e9f4e8733f5ce7f3b1d6350e
 feature token = script_run_execution_profile_v1
 ```
 
-Before Plan approval, the reviewer must verify that this exact contract remains a valid immutable implementation input or replace it with a newer exact verified revision. If the relevant PR-008 contract changes, the old binding is stale and PR-009 must re-evaluate its projection contract before implementation.
+Current status: **verified exact binding** subject to drift invalidation.
 
 ### Admission invariant
 
@@ -170,11 +177,7 @@ otherwise
 → remain orchestration-side; implementation forbidden
 ```
 
-This preserves the canonical Requirement's current-task P0 semantics rather than silently reclassifying them.
-
 ## Target Architecture After Admission
-
-Once the admission gate is satisfied, PR-009 implements one composition rather than a second execution system:
 
 ```text
 ChatGPT model-facing tool schema
@@ -192,20 +195,11 @@ existing scoped_mutation executor
 AppContainer + audit + terminalization
 ```
 
-## Design
+## Design After Admission
 
 ### D1 — Canonical projection contract
 
-After P0 admission, freeze one versioned, machine-checkable projection contract describing the mapping a compatible Hub must expose for the exact target Agent.
-
-Repository-owned artifacts may include:
-
-```text
-docs/mcp-development-execution-projection-v1.md
-tests/fixtures/mcp_development_execution_projection_v1.json
-```
-
-Required model-facing semantics:
+Freeze one versioned, machine-checkable projection contract for the exact target Agent. Required model-facing semantics:
 
 ```text
 execution_profile
@@ -221,11 +215,7 @@ repository.authority
 repository.path
 ```
 
-The contract references rather than redefines PR-007 scope authority and PR-008 profile semantics.
-
 ### D2 — Projection conformance evaluator
-
-Add a pure conformance evaluator/test surface that can classify a normalized client-visible schema against D1.
 
 Required cases:
 
@@ -237,21 +227,13 @@ Required cases:
 6. mixed-fleet target selection does not leak profiled fields;
 7. projection cannot synthesize scope/repository/lineage authority.
 
-Do not add production Agent runtime code merely to parse a ChatGPT schema when a fixture/evaluator layer is sufficient.
-
 ### D3 — Agent dynamic-contract gap closure only when proven
 
-Use the exact PR-008 bound contract as the default Agent-owned input.
-
-Only if D1/D2 prove a concrete Agent-owned metadata gap may PR-009 change Agent contract advertisement. Any such change must be additive, versioned and mixed-fleet safe.
-
-The existing arbitrary request payload mapping means no breaking request-wire protocol change is planned merely to carry scoped fields.
+Use the exact PR-008 bound contract by default. Change Agent advertisement only if conformance work proves a concrete Agent-owned metadata gap. No breaking wire change merely to carry scoped fields.
 
 ### D4 — Production Hub projection implementation
 
-This is the implementation step that Plan Revision 1 was missing.
-
-Using the exact `HubImplementationBinding` from P0-A, modify the Hub-owned implementation surface so a compatible selected Agent projects a model-facing execution schema semantically capable of carrying:
+Using the exact P0-A binding, modify the Hub-owned implementation surface so a compatible selected Agent projects a model-facing schema capable of carrying:
 
 ```text
 execution_profile
@@ -262,18 +244,16 @@ repository
 
 Rules:
 
-- resolution is per target Agent, not fleet-global;
-- unsupported Agents retain legacy-compatible shape;
-- the Hub projects fields but never invents authority-bearing values;
-- payload forwarding preserves exact semantics expected by the Agent;
-- missing/incompatible target contract fails closed;
-- no wrapper/direct-exec/allowlist/unrestricted fallback is introduced.
-
-The external implementation must produce exact revision/deployment evidence through the bound target's own transport. PR-009 records references/receipts; it does not copy Hub code into `sentinelx-cloud-core` to fake ownership.
+- per-target-Agent resolution;
+- unsupported Agents remain legacy-compatible;
+- Hub never invents authority-bearing values;
+- payload forwarding preserves exact Agent semantics;
+- incompatible contract fails closed;
+- no wrapper/direct-exec/allowlist/unrestricted fallback.
 
 ### D5 — Provider-owned scope composition
 
-Use the exact P0-B provider-scope revision/evidence. The live flow is:
+Use the exact P0-B provider-scope revision/evidence:
 
 ```text
 provision provider scope
@@ -283,133 +263,50 @@ provision provider scope
 → inspect terminal scope state
 ```
 
-No caller-created scope/workspace identity is valid.
-
 ### D6 — Live ChatGPT projection probe
 
-After Hub deployment, inspect the actual ChatGPT-visible tool schema and normalize it into the D2 evaluator.
-
-Persist bounded evidence of:
-
-```text
-target Agent build/revision
-Agent contract revision
-Hub deployment revision/receipt
-client-visible required fields
-projection conformance result
-```
-
-Do not persist secrets or reusable live mutation authority.
+After Hub deployment, inspect the actual ChatGPT-visible tool schema and persist bounded evidence for target Agent revision, Agent contract revision, Hub deployment revision/receipt, client-visible required fields, and conformance result.
 
 ### D7 — Harmless end-to-end scoped transaction
 
-Run one deterministic harmless marker through the actual model-facing profiled surface using provider-issued scope authority and exact repository/semantic lineage.
-
-Success requires:
-
-- child execution success;
-- deterministic marker/readback;
-- audit lineage evidence;
-- terminal/non-reactivatable scope readback;
-- no canonical source-checkout mutation used as a shortcut.
-
-Separately prove direct Python `sentinel_exec` remains `command_not_allowed` while Python is not allowlisted.
+Run one deterministic harmless marker through the actual model-facing profiled surface using provider-issued scope authority and exact repository/semantic lineage. Verify child success, deterministic readback, audit lineage, terminal scope closure, and direct Python `sentinel_exec` denial when Python is not allowlisted.
 
 ## Dependency Drift Rules
 
-Any of the following invalidates affected PR-009 implementation assumptions before execution:
+Any change to HubImplementationBinding, PR-007 consumed authority contract, PR-008 profile contract, Agent feature semantics, or Task/transport lineage invalidates affected assumptions before execution. Stop, reread exact evidence, and return to Planning/Plan Review when material.
 
-```text
-HubImplementationBinding target/revision changes
-PR-007 consumed authority contract changes
-PR-008 execution-profile contract changes
-Agent feature token/required-field semantics change
-repository or task transport lineage changes
-```
+## Future Execution Slices — Compile Only After Approval
 
-On drift:
-
-1. stop before further implementation side effects;
-2. read the new exact dependency evidence;
-3. determine whether Plan semantics are still valid;
-4. return upstream to Planning/Plan Review when material;
-5. never silently follow a moving branch.
-
-## Execution Slices — Compile Only After Plan Approval
-
-This section defines future slice semantics. **No canonical Execution Slice Set exists yet.** It may be compiled only after P0-A/P0-B/P0-C admission passes and Plan Review approves this exact revision.
+**No canonical Execution Slice Set exists yet.**
 
 ### S01 — Projection Contract + Conformance Baseline
-
-- freeze D1 against exact P0 dependency revisions;
+- freeze D1 against exact admitted dependency revisions;
 - implement D2 fixtures/evaluator;
 - prove mixed-fleet/no-authority-synthesis regressions.
 
 ### S02 — Hub Projection Implementation + Deployment
-
-- execute D3 only if a proven Agent-owned metadata gap exists;
-- implement D4 on the exact P0-A Hub target;
-- deploy/promote through the authorized Hub mechanism;
+- D3 only if a concrete Agent metadata gap is proven;
+- implement D4 on exact P0-A target;
+- deploy/promote through authorized Hub mechanism;
 - persist exact revision/deployment receipt and readback.
 
 ### S03 — Live Model-Facing Projection Verification
-
-- run D6 against the production/current client-visible schema;
-- PASS only if all required scoped-development semantics are expressible for the compatible target Agent.
+- run D6 against the current client-visible schema;
+- PASS only if all scoped-development semantics are expressible for the compatible target Agent.
 
 ### S04 — End-to-End Scoped Development Transaction
-
 - execute D5 + D7;
 - verify audit evidence and terminal scope closure;
 - verify direct Python denial;
 - produce end-to-end evidence eligible for Acceptance.
 
-## Verification Strategy
+## Review R2 Unblock Conditions
 
-Repository-owned checks:
+Another Plan-local rewrite is not useful while external admission remains unchanged.
 
-```text
-focused projection-contract tests
-mixed-fleet compatibility tests
-no-authority-synthesis tests
-existing exact PR-008 profile contract checks when touched
-existing exact PR-007 scope contract checks when composed
-git diff --check or equivalent static validation
-```
+A new substantive review becomes meaningful after:
 
-External/live checks:
+1. a valid P0-A `HubImplementationBinding` is available; and
+2. P0-B has an exact stable verified provider-scope admission revision/receipt.
 
-```text
-Hub deployment receipt/readback
-actual ChatGPT-visible tool schema
-known target Agent build + contract token
-provider-issued scope lifecycle
-harmless scoped execution
-audit + terminal scope readback
-direct exec denial
-```
-
-CI is optional evidence, not the only semantic acceptance channel.
-
-## Risk Controls
-
-- **False implementation target:** P0-A requires an exact Hub-owned mutation/deployment surface before approval.
-- **P0 bypass:** no repository-owned "pre-work" Slice is executable while current-task P0 remains unresolved.
-- **Dependency drift:** exact immutable refs plus invalidation rules; no moving-branch authority.
-- **Duplicate authority:** PR-007/008 semantics are composed, never reimplemented casually.
-- **Security regression:** no synthesized authority, no unrestricted fallback, no allowlist expansion.
-- **Mixed-fleet regression:** projection is resolved per selected Agent.
-- **False completion:** only production schema + harmless scoped transaction + terminal readback can close the task.
-
-## Plan Review Checklist for Revision 2
-
-The next reviewer must verify all of the following before an `Approved` decision:
-
-1. P0-A identifies a real writable/deployable Hub-owned implementation target with authority and readback evidence.
-2. P0-B identifies a stable verified provider-scope admission revision/evidence set.
-3. P0-C still points to a valid exact PR-008 contract revision or has been refreshed to a newer immutable one.
-4. No implementation Slice is being used to resolve a still-open current-task P0 dependency.
-5. Hub projection changes occur on the actual Hub-owned target, not as documentation-only changes in `sentinelx-cloud-core`.
-6. final verification still requires the real ChatGPT-visible schema and harmless scoped transaction.
-
-If any item is unresolved, the Plan is not Implementation Ready and must not be approved into `implementation`.
+At that point, Plan remediation should refresh exact dependency bindings/current reality, return the Task to `plan_review`, and then run a new Plan Review.
