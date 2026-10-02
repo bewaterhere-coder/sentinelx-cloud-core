@@ -41,6 +41,15 @@ verification:
     exact_head_statuses_present: false
     exact_head_workflow_runs_present: false
     existing_ci_runs_focused_pytest: false
+review_findings:
+  repository_identity_primitive_reuse:
+    status: unresolved_before_slice_completion
+    severity: material_design_consistency
+    evidence:
+      existing_primitive: sentinelx_core.mutation_placement.RepositoryIdentity
+      new_s01_normalizer: sentinelx_core.policy._canonical_repository_identity
+    concern: S01 currently defines parallel repository-identity normalization semantics even though the Requirement forbids a second repository identity model when the existing SentinelX primitive can be composed; the new normalizer also drops explicit authority ports
+    required_resolution: compose the existing RepositoryIdentity primitive or persist an explicit compatibility justification before S01 completion
 project_scope_boundary:
   sentinelx_cloud_core_is_only_mutation_target: true
   hub_is_third_party_closed_source: true
@@ -48,7 +57,7 @@ project_scope_boundary:
   hub_fix_required_for_pr010_s01: false
 boundary:
   disposition: verification_blocked
-  reason: S01FocusedDynamicVerificationUnavailable
+  reason: S01VerificationAndIdentityCompositionReviewRequired
   implementation_landed: true
   slice_completed: false
 continuation:
