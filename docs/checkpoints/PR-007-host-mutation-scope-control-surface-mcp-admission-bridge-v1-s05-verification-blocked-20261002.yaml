@@ -37,6 +37,21 @@ activation_attempt_1:
   live_version_after_failure: 0.24.1.dev21+g0badec027
   classification: HarnessDependencyReinstallFileLock
   product_runtime_regression: false
+activation_attempt_2:
+  install: passed
+  restart_requested: true
+  harness_wait_window_seconds: 80
+  harness_result: reconnect_timeout
+  later_live_revalidation:
+    service_running: true
+    hub_connected: true
+    agent_version: 0.24.1.dev58+g21b2cb154
+    candidate_commit_active: true
+    mutation_scope_advertised: true
+    scoped_mutation_readiness_available: true
+    scoped_mutation_readiness_verified: true
+  classification: HarnessReconnectWindowTooShort
+  product_runtime_regression: false
 operator_harness:
   path: D:/coco/workspaces/pr007-s05-live-operator.ps1
   stores_api_key_on_disk: false
@@ -45,9 +60,12 @@ operator_harness:
   activates_candidate_commit: 21b2cb1543b239d64787dd5596b3919989169896
   candidate_install_mode: force_reinstall_no_deps
   dependency_dll_reinstall_avoided: true
+  precheck_skips_activation_when_candidate_already_live: true
+  reconnect_wait_window_seconds_when_activation_required: 180
   sequence:
-    - install exact known build and restart SentinelX
-    - wait for Hub reconnect
+    - precheck current live build and skip activation when exact candidate is already active
+    - otherwise install exact known build and restart SentinelX
+    - wait up to 180 seconds for Hub reconnect
     - verify mutation_scope advertisement and profiled script feature advertisement
     - generic /op mutation_scope provision
     - generic /op profiled script_run with exact provider-issued scope/repository/lineage
