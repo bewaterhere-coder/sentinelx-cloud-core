@@ -142,37 +142,25 @@ def _paths_overlap(left: Path, right: Path) -> bool:
 
 
 def _canonical_repository_identity(value: Any, field_name: str) -> str:
-    """Normalize repository identity without retaining credentials."""
+    """Reuse SentinelX's canonical repository identity primitive."""
     if not isinstance(value, dict):
         raise ValueError(f"mutation_execution.{field_name}.repository must be a mapping")
 
-    vcs = str(value.get("vcs") or "").strip().lower()
-    authority = str(value.get("authority") or "").strip().lower().replace("\\", "/")
-    path = str(value.get("path") or "").strip().replace("\\", "/").strip("/")
+    # Local import avoids a module-level cycle: mutation_placement imports this
+    # policy module for MutationExecutionPolicy, while Policy.from_dict invokes
+    # this helper only after module initialization is complete.
+    from sentinelx_core.mutation_placement import RepositoryIdentity
 
-    if "://" in authority:
-        authority = authority.split("://", 1)[1]
-    authority = authority.rsplit("@", 1)[-1].split("/", 1)[0]
-    if authority.startswith("["):
-        end = authority.find("]")
-        authority = authority[: end + 1] if end >= 0 else authority
-    elif ":" in authority:
-        authority = authority.split(":", 1)[0]
-
-    if path.lower().endswith(".git"):
-        path = path[:-4]
-    path_parts = tuple(part for part in path.split("/") if part)
-    if any(part in {".", ".."} for part in path_parts):
+    try:
+        return RepositoryIdentity(
+            vcs=str(value.get("vcs") or ""),
+            authority=str(value.get("authority") or ""),
+            path=str(value.get("path") or ""),
+        ).canonical
+    except ValueError as exc:
         raise ValueError(
-            f"mutation_execution.{field_name}.repository.path contains traversal segments"
-        )
-    path = "/".join(path_parts)
-
-    if not vcs or not authority or not path:
-        raise ValueError(
-            f"mutation_execution.{field_name}.repository requires vcs, authority and path"
-        )
-    return f"{vcs}://{authority}/{path}"
+            f"mutation_execution.{field_name}.repository identity is invalid: {exc}"
+        ) from exc
 
 
 @dataclass(frozen=True)

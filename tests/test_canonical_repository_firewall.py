@@ -8,6 +8,7 @@ from sentinelx_core.canonical_repository_firewall import (
     CanonicalRepositoryFirewall,
     CanonicalRepositoryFirewallDisposition,
 )
+from sentinelx_core.mutation_placement import RepositoryIdentity
 from sentinelx_core.policy import Policy
 
 
@@ -61,8 +62,12 @@ def test_inventory_is_host_owned_and_repository_identity_drops_credentials(
     assert mutation.canonical_repository_inventory_valid is True
     assert len(mutation.canonical_repositories) == 1
     spec = mutation.canonical_repositories[0]
+    expected_identity = RepositoryIdentity(
+        vcs="git", authority="https://token@github.com:443", path="owner/repo.git"
+    ).canonical
     assert spec.root == canonical.resolve(strict=False)
-    assert spec.repository_identity == "git://github.com/owner/repo"
+    assert spec.repository_identity == expected_identity
+    assert spec.repository_identity == "git://github.com:443/owner/repo"
     assert spec.canonical_branch == "main"
     assert spec.provenance == "operator_config"
 
@@ -74,7 +79,7 @@ def test_exact_root_and_descendant_are_blocked(tmp_path: Path) -> None:
     assert firewall.classify_write_target(canonical).disposition is BLOCKED
     decision = firewall.classify_write_target(canonical / "src" / "file.py")
     assert decision.disposition is BLOCKED
-    assert decision.repository_identity == "git://github.com/owner/repo"
+    assert decision.repository_identity == "git://github.com:443/owner/repo"
 
 
 def test_parent_mutation_intersecting_checkout_is_blocked(tmp_path: Path) -> None:
