@@ -131,7 +131,8 @@ slices:
 
   - id: S05
     title: Live generic Hub operation admission evidence
-    status: pending
+    status: verification_blocked
+    checkpoint_ref: docs/checkpoints/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-s05-verification-blocked-20261002.yaml
     objective: Establish the external control-plane truth boundary for scope lifecycle admission and record any remaining Hub/tool-surface dependency without fallback.
     required_behavior:
       - use supported short-lived generic Hub operation-relay authorization

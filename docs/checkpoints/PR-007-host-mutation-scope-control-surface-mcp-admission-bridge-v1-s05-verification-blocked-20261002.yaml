@@ -1,0 +1,72 @@
+schema: devforge.continuation-checkpoint.v1
+project_id: sentinelx-cloud-core
+task_id: PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1
+stage: implementation
+source_command: "#开发执行 PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1"
+active_slice_id: S05
+slice_state: verification_blocked
+known_build:
+  base_candidate_commit: 0badec02738af83c7e93101a72c18311858abf30
+  pr007_head: 3df73ac9384fd69a2a2bb6fb8e21b51d9bc5d242
+  combined_candidate_branch: candidate/pr007-s05-known-build-20261002
+  combined_candidate_commit: 21b2cb1543b239d64787dd5596b3919989169896
+  merge_conflicts: false
+  pr007_or_pr008_merged_for_activation: false
+live_baseline:
+  agent_version: 0.24.1.dev21+g0badec027
+  mutation_scope_advertised: false
+  interpretation: current live Agent contains the PR-008 known build but not PR-007 and therefore cannot be used as final S05 relay evidence
+  model_facing_script_run_profile_fields_projected: false
+  harmless_script_run_probe:
+    ok: false
+    error: execution_profile_required
+  direct_python_probe:
+    ok: false
+    error: command_not_allowed
+generic_hub_relay:
+  short_lived_authorization_supported: true
+  authorization_obtained: true
+  chat_sandbox_http_client_available: false
+  secret_materialization_to_host_file_allowed: false
+  internal_generic_relay_tool_available: false
+  classification: OperatorHttpRelayRequired
+operator_harness:
+  path: D:/coco/workspaces/pr007-s05-live-operator.ps1
+  stores_api_key_on_disk: false
+  key_input: secure_prompt_non_echoing
+  result_path: D:/coco/workspaces/pr007-s05-live-result.json
+  activates_candidate_commit: 21b2cb1543b239d64787dd5596b3919989169896
+  sequence:
+    - install exact known build and restart SentinelX
+    - wait for Hub reconnect
+    - verify mutation_scope advertisement and profiled script feature advertisement
+    - generic /op mutation_scope provision
+    - generic /op profiled script_run with exact provider-issued scope/repository/lineage
+    - generic /op terminal inspect
+    - mismatched lineage inspect must fail closed
+    - direct Python exec must remain command_not_allowed
+    - cleanup any still-active scope authority
+external_boundary:
+  pr007_generic_relay_evidence_pending: true
+  pr008_model_facing_projection_still_blocked: HubToolProjectionRequired
+  boundaries_conflated: false
+boundary:
+  disposition: blocked
+  reason: S05LiveGenericHubRelayRequiresOperatorHttpClientAfterKnownBuildActivation
+  implementation_landed: true
+  slice_completed: false
+continuation:
+  mode: verify_current_slice
+  next_slice_id: S05
+  next_expected_actor: operator
+  next_action_hint: run D:/coco/workspaces/pr007-s05-live-operator.ps1 in elevated PowerShell with a fresh short-lived SentinelX API key
+invariants:
+  direct_python_allowlist_not_changed: true
+  pytest_allowlist_not_added: true
+  model_facing_script_run_bypass_not_used: true
+  wrapper_fallback_not_used: true
+  caller_minted_scope_not_used: true
+  operator_unrestricted_not_used: true
+  canonical_main_not_modified: true
+  pr007_not_merged: true
+  pr008_not_merged: true
