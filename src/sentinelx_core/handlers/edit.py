@@ -49,6 +49,7 @@ import uuid
 from pathlib import Path
 from typing import Any
 
+from sentinelx_core.canonical_repository_firewall import enforce_material_write_target
 from sentinelx_core.executor import HandlerError
 from sentinelx_core.policy import Policy
 from sentinelx_core.staging import staging_root
@@ -102,6 +103,15 @@ def _resolve_safe_edit_bin() -> str:
 
 # Public name the rest of the module reads.
 DEFAULT_SAFE_EDIT_BIN = LEGACY_SAFE_EDIT_BIN  # kept for backward compat with old refs
+
+# The registry constructs make_edit_handler(policy, upload_base) before the
+# chunked edit helpers. Reuse that same immutable Policy object for provider
+# staging admission without changing the shared registry composition seam.
+_EDIT_POLICY_BY_BASE: dict[str, Policy] = {}
+
+
+def _edit_policy_key(upload_base: Path) -> str:
+    return str(upload_base.expanduser().resolve(strict=False))
 
 
 def _validate_mode_payload(mode: str, payload: dict[str, Any]) -> None:
@@ -276,6 +286,7 @@ async def _run_argv(argv: list[str], timeout: int = 60) -> dict[str, Any]:
 
 def make_edit_handler(policy: Policy, upload_base: Path):
     """Single-call edit, content passed inline as 'old' and 'new_text'."""
+    _EDIT_POLICY_BY_BASE[_edit_policy_key(upload_base)] = policy
     binary = _resolve_safe_edit_bin()
 
     async def handle_edit(payload: dict[str, Any]) -> dict[str, Any]:
@@ -311,7 +322,11 @@ def make_edit_handler(policy: Policy, upload_base: Path):
         # instead of an invisible property of the sudo flag.
         resolved = policy.resolve_path(str(path), need_write=True)
         if resolved is not None:
-            # Under an rw entry (sudo or not): use the canonical path.
+            # Under an rw entry (sudo or not): use the canonical path, then
+            # enforce canonical-source exclusion before staging/backup/spawn.
+            resolved = enforce_material_write_target(
+                policy.mutation_execution, resolved, operation="edit"
+            )
             path = str(resolved)
         else:
             # Not under any rw entry: reject, sudo or not. This is the
@@ -334,6 +349,12 @@ def make_edit_handler(policy: Policy, upload_base: Path):
         tmp_root = staging_root(upload_base)
 
         workdir = tmp_root / f"edit_job_{uuid.uuid4().hex}"
+        enforce_material_write_target(
+            policy.mutation_execution,
+            workdir,
+            operation="edit",
+            label="provider_staging",
+        )
         workdir.mkdir(parents=True, exist_ok=True)
 
         try:
@@ -378,9 +399,22 @@ def make_edit_handler(policy: Policy, upload_base: Path):
 
 # --- Chunked edit upload --------------------------------------------------------
 
-def _edit_upload_dir(upload_base: Path, upload_id: str) -> Path:
+def _edit_upload_dir(
+    upload_base: Path,
+    upload_id: str,
+    *,
+    policy: Policy | None = None,
+) -> Path:
     tmp_root = staging_root(upload_base)
     upload_dir = tmp_root / f"edit_{upload_id}"
+    effective_policy = policy or _EDIT_POLICY_BY_BASE.get(_edit_policy_key(upload_base))
+    if effective_policy is not None:
+        enforce_material_write_target(
+            effective_policy.mutation_execution,
+            upload_dir,
+            operation="edit_upload_staging",
+            label="provider_staging",
+        )
     upload_dir.mkdir(parents=True, exist_ok=True)
     return upload_dir
 
@@ -516,6 +550,11 @@ def make_edit_upload_complete_handler(policy: Policy, upload_base: Path):
         # longer is). sudo does not exempt it either.
         resolved = policy.resolve_path(str(path), need_write=True)
         if resolved is not None:
+            resolved = enforce_material_write_target(
+                policy.mutation_execution,
+                resolved,
+                operation="edit_upload_complete",
+            )
             path = str(resolved)
         else:
             rw_paths = [
@@ -531,7 +570,7 @@ def make_edit_upload_complete_handler(policy: Policy, upload_base: Path):
                 details={"writable_paths": rw_paths},
             )
 
-        upload_dir = _edit_upload_dir(upload_base, upload_id)
+        upload_dir = _edit_upload_dir(upload_base, upload_id, policy=policy)
         old_file = upload_dir / "old.txt"
         new_file = upload_dir / "new.txt"
 

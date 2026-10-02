@@ -380,6 +380,10 @@ class LocalApiAction:
     # closed, which forces these declarations to be revisited rather than
     # silently used against a changed API.
     params_schema: dict[str, Any] | None = None
+    # Optional bounded declaration used only for repository-effect accounting.
+    # Absence or an invalid value is UNKNOWN. Mutation declarations describe
+    # effect only; they never self-assert physical firewall coverage.
+    repository_effect: str | None = None
 
 
 @dataclass(frozen=True)
@@ -782,6 +786,24 @@ class Policy:
                         "ignoring it", name, act_name,
                     )
                     pschema = None
+                repository_effect = act.get("repository_effect")
+                allowed_repository_effects = {
+                    "read_only",
+                    "non_repository_mutation",
+                    "structured_mutation",
+                    "process_mutation",
+                }
+                if repository_effect is not None:
+                    repository_effect = str(repository_effect).strip()
+                    if repository_effect not in allowed_repository_effects:
+                        logger.warning(
+                            "local_apis: %s.%s has invalid repository_effect=%r; "
+                            "treating it as unknown for firewall readiness",
+                            name,
+                            act_name,
+                            repository_effect,
+                        )
+                        repository_effect = None
                 actions[str(act_name)] = LocalApiAction(
                     request=str(request) if request else None,
                     method=str(method) if method else None,
@@ -790,6 +812,7 @@ class Policy:
                         str(act["description"]) if act.get("description") else None
                     ),
                     params_schema=pschema,
+                    repository_effect=repository_effect,
                 )
             if not actions:
                 logger.warning(

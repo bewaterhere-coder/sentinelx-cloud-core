@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 
+from sentinelx_core.executor import HandlerError
 from sentinelx_core.policy import MutationExecutionPolicy
 
 
@@ -115,3 +116,50 @@ class CanonicalRepositoryFirewall:
             CanonicalRepositoryFirewallDisposition.HOST_CANONICAL_MUTATION_FIREWALL_INDETERMINATE,
             reason=reason,
         )
+
+
+def enforce_material_write_target(
+    policy: MutationExecutionPolicy,
+    target: str | Path,
+    *,
+    operation: str,
+    label: str = "path",
+) -> Path:
+    """Apply the canonical-repository firewall before a material write.
+
+    A disabled firewall preserves legacy behavior. Once explicitly enabled,
+    invalid inventory/indeterminate classification fails closed just like a
+    positive canonical-root match. Callers must invoke this before backups,
+    overwrite/delete, metadata changes, patch application, or finalization.
+    """
+    candidate = Path(target).expanduser().resolve(strict=False)
+    if not policy.canonical_repository_firewall_enabled:
+        return candidate
+
+    decision = CanonicalRepositoryFirewall(policy).classify_write_target(candidate)
+    if decision.allowed:
+        return candidate
+
+    details = {
+        "operation": operation,
+        "target_label": label,
+        "disposition": decision.disposition.value,
+        "reason": decision.reason,
+    }
+    if decision.repository_identity:
+        details["repository_identity"] = decision.repository_identity
+
+    if (
+        decision.disposition
+        is CanonicalRepositoryFirewallDisposition.CANONICAL_REPOSITORY_MUTATION_BLOCKED
+    ):
+        raise HandlerError(
+            CanonicalRepositoryFirewallDisposition.CANONICAL_REPOSITORY_MUTATION_BLOCKED.value,
+            f"{operation} is blocked because {label} intersects a canonical repository",
+            details=details,
+        )
+    raise HandlerError(
+        CanonicalRepositoryFirewallDisposition.HOST_CANONICAL_MUTATION_FIREWALL_INDETERMINATE.value,
+        f"{operation} cannot prove that {label} is outside the canonical repository inventory",
+        details=details,
+    )
