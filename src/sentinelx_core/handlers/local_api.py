@@ -1,28 +1,18 @@
-"""`local_api` op: list, describe and call host-local structured endpoints.
-
-Registered ONLY when the host declares `local_apis`. A host without that block
-gets no handler and advertises no capability, so this is additive by
-construction: nothing changes for the fleet that does not opt in.
-"""
-
+"""`local_api` op: list, describe and call structured endpoints."""
 from __future__ import annotations
 
 import logging
 from typing import Any
 
+from sentinelx_core.executor import HandlerError
 from sentinelx_core.local_api import LocalApiError, call_action
 from sentinelx_core.policy import Policy
+from sentinelx_core.request_context import RequestContext, context_aware
 
 logger = logging.getLogger(__name__)
 
 
 def _param_names(action: Any) -> list[str]:
-    """Parameter names for one action, from whichever source it has.
-
-    A declared schema wins because it is the richer statement; the template is
-    the fallback and needs no declaring. Required names come first, since that
-    is the order a caller cares about.
-    """
     schema = getattr(action, "params_schema", None)
     if isinstance(schema, dict):
         props = schema.get("properties")
@@ -30,52 +20,55 @@ def _param_names(action: Any) -> list[str]:
             required = [r for r in (schema.get("required") or []) if r in props]
             rest = sorted(k for k in props if k not in required)
             return list(required) + rest
-    return sorted(
-        {
-            seg.split("}")[0]
-            for seg in (getattr(action, "request", None) or "").split("{")[1:]
-            if "}" in seg
-        }
-    )
+    return sorted({seg.split("}")[0] for seg in (getattr(action, "request", None) or "").split("{")[1:] if "}" in seg})
 
 
-def make_local_api_handler(policy: Policy):
-    """Build the handler over this host's configured endpoints."""
+def make_local_api_handler(policy: Policy, *, builtin_providers: dict[str, Any] | None = None):
+    builtins = dict(builtin_providers or {})
+    for name in sorted(set(policy.local_apis) & set(builtins)):
+        logger.warning("builtin_local_api_name_conflict", extra={"endpoint": name, "resolution": "configured_external_wins"})
 
-    async def handle_local_api(payload: dict[str, Any]) -> dict[str, Any]:
+    def _builtin(name: str):
+        return None if name in policy.local_apis else builtins.get(name)
+
+    @context_aware
+    async def handle_local_api(context_or_payload: RequestContext | dict[str, Any], maybe_payload: dict[str, Any] | None = None) -> dict[str, Any]:
+        if maybe_payload is None:
+            context: RequestContext | None = None
+            payload = context_or_payload
+            if not isinstance(payload, dict):
+                raise HandlerError("invalid_payload", "local_api payload must be a mapping")
+        else:
+            if not isinstance(context_or_payload, RequestContext):
+                raise HandlerError("invalid_payload", "local_api RequestContext is unavailable")
+            context = context_or_payload
+            payload = maybe_payload
+
         operation = str(payload.get("operation") or "").strip()
-
         if operation == "list":
-            return {
-                "ok": True,
-                "operation": "list",
-                "endpoints": [
-                    {
-                        "name": e.name,
-                        "protocol": e.protocol,
-                        "transport": e.transport,
-                        "action_count": len(e.actions),
-                    }
-                    for e in policy.local_apis.values()
-                ],
-            }
+            external_entries = [
+                {"name": e.name, "protocol": e.protocol, "transport": e.transport, "action_count": len(e.actions)}
+                for e in policy.local_apis.values()
+            ]
+            builtin_entries = [
+                provider.list_entry()
+                for name, provider in sorted(builtins.items())
+                if name not in policy.local_apis and provider.available_actions()
+            ]
+            return {"ok": True, "operation": "list", "endpoints": external_entries + builtin_entries}
 
         name = str(payload.get("endpoint") or "").strip()
         endpoint = policy.local_apis.get(name)
-        if endpoint is None:
-            return {
-                "ok": False,
-                "error": "endpoint_not_configured",
-                "message": (
-                    f"no local endpoint named '{name}' on this host. "
-                    f"Configured: {sorted(policy.local_apis)}"
-                ),
-            }
+        builtin = _builtin(name)
+        if endpoint is None and builtin is None:
+            return {"ok": False, "error": "endpoint_not_configured", "message": f"no local endpoint named '{name}' on this host. Configured: {sorted(policy.local_apis)}"}
 
         if operation == "describe":
-            # Mandatory, not a convenience. Without it the model has to guess
-            # the shape of `params`, and a guessed call against an opaque
-            # endpoint is exactly what the action allowlist exists to prevent.
+            if endpoint is None:
+                try:
+                    return builtin.describe()
+                except HandlerError as exc:
+                    return {"ok": False, "error": exc.code, "message": str(exc)}
             return {
                 "ok": True,
                 "operation": "describe",
@@ -87,28 +80,8 @@ def make_local_api_handler(policy: Policy):
                         "method": a.method,
                         "returns": list(a.select) or "the endpoint's own shape",
                         "description": a.description,
-                        # Names the caller must supply. Two sources, and the
-                        # field stays a list of names either way so a consumer
-                        # that only reads this keeps working:
-                        #
-                        #   HTTP     -> the {placeholders} in the request
-                        #               template, which cannot drift from what
-                        #               actually runs.
-                        #   JSON-RPC -> the properties of the declared schema.
-                        #               There is no template to read, so
-                        #               without a declaration this was empty
-                        #               for every such action.
                         "params": _param_names(a),
-                        # The declared shape, verbatim, when the profile gives
-                        # one. Nested objects, arrays and enums live here; the
-                        # flat list above cannot express them. Absent when
-                        # undeclared rather than null, so its presence means
-                        # something.
-                        **(
-                            {"params_schema": a.params_schema}
-                            if a.params_schema
-                            else {}
-                        ),
+                        **({"params_schema": a.params_schema} if a.params_schema else {}),
                     }
                     for an, a in sorted(endpoint.actions.items())
                 },
@@ -118,30 +91,22 @@ def make_local_api_handler(policy: Policy):
             action = str(payload.get("action") or "").strip()
             params = payload.get("params") or {}
             if not isinstance(params, dict):
-                return {
-                    "ok": False,
-                    "error": "invalid_payload",
-                    "message": "params must be an object",
-                }
+                return {"ok": False, "error": "invalid_payload", "message": "params must be an object"}
+            if endpoint is None:
+                if context is None:
+                    return {"ok": False, "error": "invalid_payload", "message": "builtin local_api calls require transport RequestContext"}
+                try:
+                    result = await builtin.call(context, action, params)
+                except HandlerError as exc:
+                    return {"ok": False, "error": exc.code, "message": str(exc)}
+                return {"ok": True, "operation": "call", "endpoint": builtin.name, "action": action, "result": result}
             try:
                 result = await call_action(endpoint, action, params)
             except LocalApiError as exc:
-                logger.warning(
-                    "local_api call failed: %s/%s: %s", name, action, exc.code
-                )
+                logger.warning("local_api call failed: %s/%s: %s", name, action, exc.code)
                 return {"ok": False, "error": exc.code, "message": exc.message}
-            return {
-                "ok": True,
-                "operation": "call",
-                "endpoint": endpoint.name,
-                "action": action,
-                "result": result,
-            }
+            return {"ok": True, "operation": "call", "endpoint": endpoint.name, "action": action, "result": result}
 
-        return {
-            "ok": False,
-            "error": "invalid_payload",
-            "message": f"unknown operation '{operation}'; expected list, describe or call",
-        }
+        return {"ok": False, "error": "invalid_payload", "message": f"unknown operation '{operation}'; expected list, describe or call"}
 
     return handle_local_api

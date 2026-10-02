@@ -145,57 +145,39 @@ def _store_error(exc: Exception) -> HandlerError:
     return HandlerError(code, str(exc))
 
 
-def make_mutation_scope_handler(
+def make_mutation_scope_service(
     policy: Policy,
     upload_base: Path,
     *,
     config_path: Path | None = None,
     mutation_state_root: Path | None = None,
 ):
-    """Build the bounded provider-owned mutation scope lifecycle handler."""
+    """Canonical lifecycle service shared by bounded transport adapters."""
     state_root = (
         mutation_state_root.resolve(strict=False)
         if mutation_state_root is not None
         else ((config_path.parent if config_path is not None else upload_base.parent) / "state").resolve(strict=False)
     )
 
-    @context_aware
-    async def handle(context: RequestContext, payload: dict[str, Any]) -> dict[str, Any]:
-        if context.op != "mutation_scope":
-            raise HandlerError("invalid_payload", "transport operation does not match mutation_scope")
+    async def service(payload: dict[str, Any]) -> dict[str, Any]:
         if not isinstance(payload, dict):
             raise HandlerError("invalid_payload", "mutation_scope payload must be a mapping")
-
         action = payload.get("action")
         if not isinstance(action, str) or action not in _ACTIONS:
-            raise HandlerError(
-                "invalid_payload",
-                "mutation_scope.action must be one of provision, revalidate, inspect, terminalize",
-            )
-
+            raise HandlerError("invalid_payload", "mutation_scope.action must be one of provision, revalidate, inspect, terminalize")
         allowed_top = _PROVISION_KEYS if action == "provision" else _BOUND_KEYS
         _strict_mapping(payload, name="payload", allowed=allowed_top, required=allowed_top)
-
         mutation_policy = policy.mutation_execution
         if not mutation_policy.configured or not mutation_policy.scoped_mutation_enabled:
-            raise HandlerError(
-                "HostMutationSandboxUnavailable",
-                "scoped mutation lifecycle is not enabled by Host policy",
-            )
-
+            raise HandlerError("HostMutationSandboxUnavailable", "scoped mutation lifecycle is not enabled by Host policy")
         repository = _parse_repository(payload)
         semantic = _parse_semantic(payload)
         store = MutationScopeStore(state_root)
         protected = (state_root.resolve(strict=False),)
-
         try:
             if action == "provision":
-                purpose = payload.get("purpose")
-                if purpose != _PURPOSE_SCOPED_SCRIPT:
-                    raise HandlerError(
-                        "invalid_payload",
-                        "mutation_scope provision supports only purpose=scoped_script",
-                    )
+                if payload.get("purpose") != _PURPOSE_SCOPED_SCRIPT:
+                    raise HandlerError("invalid_payload", "mutation_scope provision supports only purpose=scoped_script")
                 record = store.provision_scope(
                     mutation_policy,
                     repository,
@@ -216,12 +198,7 @@ def make_mutation_scope_handler(
                         provider_protected_roots=protected,
                     )
                 elif action == "inspect":
-                    record = store.read_bound_scope(
-                        scope_id,
-                        generation,
-                        repository,
-                        semantic,
-                    )
+                    record = store.read_bound_scope(scope_id, generation, repository, semantic)
                 else:
                     record = store.terminalize_scope(
                         scope_id,
@@ -237,10 +214,31 @@ def make_mutation_scope_handler(
             raise _store_error(exc) from exc
         except ValueError as exc:
             raise HandlerError("invalid_payload", str(exc)) from exc
+        return {"action": action, "scope": _project(record)}
 
-        return {
-            "action": action,
-            "scope": _project(record),
-        }
+    return service
+
+
+def make_mutation_scope_handler(
+    policy: Policy,
+    upload_base: Path,
+    *,
+    config_path: Path | None = None,
+    mutation_state_root: Path | None = None,
+    lifecycle_service=None,
+):
+    """Build the direct mutation_scope transport adapter."""
+    service = lifecycle_service or make_mutation_scope_service(
+        policy,
+        upload_base,
+        config_path=config_path,
+        mutation_state_root=mutation_state_root,
+    )
+
+    @context_aware
+    async def handle(context: RequestContext, payload: dict[str, Any]) -> dict[str, Any]:
+        if context.op != "mutation_scope":
+            raise HandlerError("invalid_payload", "transport operation does not match mutation_scope")
+        return await service(payload)
 
     return handle

@@ -42,7 +42,11 @@ from sentinelx_core.handlers.fsmutate import (
 )
 from sentinelx_core.handlers.project_snapshot import make_project_snapshot_handler
 from sentinelx_core.handlers.git_ops import make_git_handler
-from sentinelx_core.handlers.mutation_scope import make_mutation_scope_handler
+from sentinelx_core.handlers.mutation_scope import (
+    make_mutation_scope_handler,
+    make_mutation_scope_service,
+)
+from sentinelx_core.handlers.devforge_runtime import make_devforge_runtime_provider
 from sentinelx_core.handlers.scoped_script import make_profiled_script_run_handler
 from sentinelx_core.handlers.service import make_restart_handler, make_service_handler
 from sentinelx_core.handlers.upload import (
@@ -101,6 +105,8 @@ def build_registry(
     _pg.set_config_path(config_path)
 
     upload_base = policy.upload_base
+    mutation_scope_service = make_mutation_scope_service(policy, upload_base, config_path=config_path)
+    devforge_runtime = make_devforge_runtime_provider(policy, mutation_scope_service)
 
     registry: dict[str, Handler] = {
         # Read-only / introspection
@@ -120,6 +126,7 @@ def build_registry(
             policy,
             upload_base,
             config_path=config_path,
+            lifecycle_service=mutation_scope_service,
         ),
 
         # File editing
@@ -180,12 +187,16 @@ def build_registry(
         upload_base=upload_base,
     )
 
-    # Only when the host opted in. No local_apis block means no handler and no
-    # advertised capability, which is what makes this additive for the fleet.
-    if policy.local_apis:
+    # Reuse the existing local_api envelope for configured external endpoints
+    # and for a policy-admitted builtin provider. External name collisions keep
+    # the configured endpoint authoritative.
+    if policy.local_apis or devforge_runtime.available_actions():
         from sentinelx_core.handlers.local_api import make_local_api_handler
 
-        registry["local_api"] = make_local_api_handler(policy)
+        registry["local_api"] = make_local_api_handler(
+            policy,
+            builtin_providers={devforge_runtime.name: devforge_runtime},
+        )
 
     # Switched-off ops are removed here, at the end, so this is the last word
     # regardless of how a handler got in. Removal rather than a guard inside
