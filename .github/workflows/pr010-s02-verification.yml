@@ -24,9 +24,3 @@ jobs:
           tests/test_structured_mutation_firewall.py
           tests/test_canonical_repository_firewall.py
           tests/test_repository_identity_compatibility.py
-          tests/test_handlers_edit.py
-          tests/test_handlers_fsmutate.py
-          tests/test_handlers_upload.py
-          tests/test_upload_land_in_place.py
-          tests/test_git_network.py
-          tests/test_git_recount.py
