@@ -34,7 +34,11 @@ from sentinelx_core.mutation_audit import (
 )
 from sentinelx_core.mutation_placement import RepositoryIdentity, SemanticIdentity
 from sentinelx_core.mutation_sandbox import build_mutation_sandbox
-from sentinelx_core.mutation_scope import MutationScopeRecord, MutationScopeStore
+from sentinelx_core.mutation_scope import (
+    SCOPED_SCRIPT_OPERATION_CLASS,
+    MutationScopeRecord,
+    MutationScopeStore,
+)
 from sentinelx_core.policy import Policy
 from sentinelx_core.request_context import MutationLineage, RequestContext, context_aware
 from sentinelx_core.windows_mutation_sandbox import (
@@ -328,8 +332,9 @@ async def _run_scoped(
     terminalized = False
     process = None
     try:
-        record = store.revalidate_scope(
+        record = store.revalidate_scope_for_operation(
             scope_id, generation, mutation_policy, repository, semantic,
+            required_operation_class=SCOPED_SCRIPT_OPERATION_CLASS,
             provider_protected_roots=protected,
         )
         interpreter = payload.get("interpreter")

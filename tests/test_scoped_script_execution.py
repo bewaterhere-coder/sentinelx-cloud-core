@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 
 from sentinelx_core.executor import HandlerError
+from sentinelx_core.handlers.mutation_scope import make_mutation_scope_handler
 from sentinelx_core.handlers.scoped_script import make_profiled_script_run_handler
 from sentinelx_core.mutation_audit import (
     EVENT_FINISHED,
@@ -25,7 +26,13 @@ from sentinelx_core.windows_mutation_sandbox import WindowsMutationSandbox
 pytestmark = pytest.mark.skipif(sys.platform != "win32", reason="Windows scoped mutation only")
 
 
-def _fixture(tmp_path: Path, *, attempt_id: str, interpreter: str = "python3"):
+def _fixture(
+    tmp_path: Path,
+    *,
+    attempt_id: str,
+    interpreter: str = "python3",
+    operation_classes: tuple[str, ...] = ("scoped_script",),
+):
     workspace_root = tmp_path / "workspaces"
     state_root = tmp_path / "provider-state"
     upload_base = tmp_path / "uploads"
@@ -33,7 +40,10 @@ def _fixture(tmp_path: Path, *, attempt_id: str, interpreter: str = "python3"):
     for path in (workspace_root, state_root, upload_base, protected):
         path.mkdir(parents=True, exist_ok=True)
 
-    runtime_roots = {Path(sys.executable).resolve().parent}
+    runtime_roots = {
+        Path(sys.prefix).resolve(),
+        Path(sys.base_prefix).resolve(),
+    }
     if interpreter == "pwsh":
         executable = shutil.which("pwsh")
         if executable:
@@ -57,34 +67,11 @@ def _fixture(tmp_path: Path, *, attempt_id: str, interpreter: str = "python3"):
     )
     semantic = SemanticIdentity(
         project_id="sentinelx-cloud-core",
-        task_id="SX-HMSA-001",
-        run_id="s05-real-windows",
+        task_id="PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1",
+        run_id="s04-scoped-composition",
         attempt_id=attempt_id,
-        slice_id="S05",
+        slice_id="S04",
     )
-    store = MutationScopeStore(state_root)
-    record = store.provision_scope(
-        mutation_policy,
-        repository,
-        semantic,
-        allowed_operation_classes=("workspace_materialize", "scoped_mutation"),
-        provider_protected_roots=(state_root.resolve(),),
-    )
-    handler = make_profiled_script_run_handler(
-        policy,
-        upload_base,
-        mutation_state_root=state_root,
-    )
-    context = RequestContext(
-        request_id=f"req-{attempt_id}",
-        op="script_run",
-        opaque_ref="s05",
-        received_at=datetime.now(UTC),
-    )
-    mutation = {
-        "execution_profile": "scoped_mutation",
-        "scope_ref": {"scope_id": record.scope_id, "generation": record.generation},
-    }
     lineage = {
         "project_id": semantic.project_id,
         "task_id": semantic.task_id,
@@ -93,6 +80,55 @@ def _fixture(tmp_path: Path, *, attempt_id: str, interpreter: str = "python3"):
         "slice_id": semantic.slice_id,
     }
     repo = {"vcs": repository.vcs, "authority": repository.authority, "path": repository.path}
+    store = MutationScopeStore(state_root)
+    if operation_classes == ("scoped_script",):
+        lifecycle = make_mutation_scope_handler(
+            policy,
+            upload_base,
+            mutation_state_root=state_root,
+        )
+        lifecycle_context = RequestContext(
+            request_id=f"scope-{attempt_id}",
+            op="mutation_scope",
+            opaque_ref="s04",
+            received_at=datetime.now(UTC),
+        )
+        provisioned = asyncio.run(
+            lifecycle(
+                lifecycle_context,
+                {
+                    "action": "provision",
+                    "purpose": "scoped_script",
+                    "repository": repo,
+                    "lineage": lineage,
+                },
+            )
+        )
+        scope = provisioned["scope"]
+        record = store.read_scope(scope["scope_id"])
+    else:
+        record = store.provision_scope(
+            mutation_policy,
+            repository,
+            semantic,
+            allowed_operation_classes=operation_classes,
+            provider_protected_roots=(state_root.resolve(),),
+        )
+    handler = make_profiled_script_run_handler(
+        policy,
+        upload_base,
+        mutation_state_root=state_root,
+    )
+    context = RequestContext(
+        request_id=f"req-{attempt_id}",
+        op="script_run",
+        opaque_ref="s04",
+        received_at=datetime.now(UTC),
+    )
+    mutation = {
+        "execution_profile": "scoped_mutation",
+        "scope_ref": {"scope_id": record.scope_id, "generation": record.generation},
+    }
     return handler, context, store, record, mutation, lineage, repo
 
 
@@ -229,6 +265,104 @@ def test_scoped_rejects_elevation_absolute_cwd_and_authority_env(tmp_path: Path)
             assert current.state in {"terminal", "revoked"}
 
 
+@pytest.mark.parametrize("binding", ["repository", "lineage"])
+def test_lifecycle_scope_requires_exact_repository_and_lineage_before_materialization(
+    tmp_path: Path, binding: str
+) -> None:
+    handler, context, store, record, mutation, lineage, repo = _fixture(
+        tmp_path / binding, attempt_id=f"binding-{binding}", interpreter="python3"
+    )
+    wrong_repo = dict(repo)
+    wrong_lineage = dict(lineage)
+    if binding == "repository":
+        wrong_repo["path"] = "bewaterhere-coder/not-the-issued-repository"
+    else:
+        wrong_lineage["attempt_id"] = "not-the-issued-attempt"
+
+    with pytest.raises(HandlerError) as exc_info:
+        _run(
+            handler,
+            context,
+            {
+                "interpreter": "python3",
+                "content": "print('must not materialize')",
+                "timeout": 30,
+                "mutation": mutation,
+                "lineage": wrong_lineage,
+                "repository": wrong_repo,
+            },
+        )
+    assert exc_info.value.code == "HostMutationScopeBindingMismatch"
+    assert store.read_scope(record.scope_id).state == "provisioned"
+    assert not Path(record.exact_workspace).exists()
+    assert MutationAuditJournal(store.root.parent, evidence_retention_days=7).read_events() == []
+
+
+def test_lifecycle_scope_timeout_terminalizes_authority(tmp_path: Path) -> None:
+    handler, context, store, record, mutation, lineage, repo = _fixture(
+        tmp_path, attempt_id="timeout-terminal", interpreter="python3"
+    )
+    result = _run(
+        handler,
+        context,
+        {
+            "interpreter": "python3",
+            "content": "import time\ntime.sleep(5)\n",
+            "timeout": 1,
+            "mutation": mutation,
+            "lineage": lineage,
+            "repository": repo,
+        },
+    )
+    assert result["timed_out"] is True
+    assert result["returncode"] == -1
+    current = store.read_scope(record.scope_id)
+    assert current.state == "terminal"
+    assert not current.active_job_ids
+    assert not current.active_process_ids
+    assert not current.sandbox_write_authority_present
+    events = MutationAuditJournal(store.root.parent, evidence_retention_days=7).read_events(
+        result["audit_operation_id"]
+    )
+    assert [event["event"] for event in events] == [EVENT_STARTED, EVENT_SPAWNED, EVENT_FINISHED]
+    assert events[-1]["status"] == "timeout"
+    assert events[-1]["closure"]["scope_state"] == "terminal"
+    assert events[-1]["closure"]["process_tree_quiescent"] is True
+
+
+def test_lifecycle_scope_nonzero_failure_terminalizes_authority(tmp_path: Path) -> None:
+    handler, context, store, record, mutation, lineage, repo = _fixture(
+        tmp_path, attempt_id="nonzero-terminal", interpreter="python3"
+    )
+    result = _run(
+        handler,
+        context,
+        {
+            "interpreter": "python3",
+            "content": "raise SystemExit(7)\n",
+            "timeout": 30,
+            "mutation": mutation,
+            "lineage": lineage,
+            "repository": repo,
+        },
+    )
+    assert result["ok"] is False
+    assert result["returncode"] == 7
+    assert result["terminal_state"] == "terminal"
+    current = store.read_scope(record.scope_id)
+    assert current.state == "terminal"
+    assert not current.active_job_ids
+    assert not current.active_process_ids
+    assert not current.sandbox_write_authority_present
+    events = MutationAuditJournal(store.root.parent, evidence_retention_days=7).read_events(
+        result["audit_operation_id"]
+    )
+    assert [event["event"] for event in events] == [EVENT_STARTED, EVENT_SPAWNED, EVENT_FINISHED]
+    assert events[-1]["status"] == "failed"
+    assert events[-1]["returncode"] == 7
+    assert events[-1]["closure"]["scope_state"] == "terminal"
+
+
 def test_scoped_failure_never_falls_back_to_unrestricted(tmp_path: Path) -> None:
     handler, context, _store, record, mutation, lineage, repo = _fixture(
         tmp_path, attempt_id="no-fallback", interpreter="python3"
@@ -296,3 +430,32 @@ def test_terminalization_failure_prevents_success_and_successful_finish(
     kinds = [event["event"] for event in events]
     assert kinds == [EVENT_STARTED, EVENT_SPAWNED]
     assert EVENT_FINISHED not in kinds
+
+
+def test_scoped_requires_durable_operation_class_before_audit_or_materialization(
+    tmp_path: Path,
+) -> None:
+    handler, context, store, record, mutation, lineage, repo = _fixture(
+        tmp_path,
+        attempt_id="operation-class-denied",
+        interpreter="python3",
+        operation_classes=("different_operation",),
+    )
+    with pytest.raises(HandlerError) as exc_info:
+        _run(
+            handler,
+            context,
+            {
+                "interpreter": "python3",
+                "content": "print('must not run')",
+                "timeout": 30,
+                "mutation": mutation,
+                "lineage": lineage,
+                "repository": repo,
+            },
+        )
+    assert exc_info.value.code == "HostMutationScopeOperationNotAllowed"
+    assert store.read_scope(record.scope_id).state == "provisioned"
+    assert not Path(record.exact_workspace).exists()
+    events = MutationAuditJournal(store.root.parent, evidence_retention_days=7).read_events()
+    assert events == []

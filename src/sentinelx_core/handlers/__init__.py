@@ -42,6 +42,7 @@ from sentinelx_core.handlers.fsmutate import (
 )
 from sentinelx_core.handlers.project_snapshot import make_project_snapshot_handler
 from sentinelx_core.handlers.git_ops import make_git_handler
+from sentinelx_core.handlers.mutation_scope import make_mutation_scope_handler
 from sentinelx_core.handlers.scoped_script import make_profiled_script_run_handler
 from sentinelx_core.handlers.service import make_restart_handler, make_service_handler
 from sentinelx_core.handlers.upload import (
@@ -115,6 +116,11 @@ def build_registry(
         "service": make_service_handler(policy),
         "restart": make_restart_handler(policy),
         "script_run": make_profiled_script_run_handler(policy, upload_base, config_path=config_path),
+        "mutation_scope": make_mutation_scope_handler(
+            policy,
+            upload_base,
+            config_path=config_path,
+        ),
 
         # File editing
         "edit": make_edit_handler(policy, upload_base),

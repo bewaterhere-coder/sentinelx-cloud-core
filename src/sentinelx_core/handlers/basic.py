@@ -431,6 +431,11 @@ def make_help_handler(policy: Policy):
                 nav["exec"] = "run ONE allowlisted command (no pipes or redirects)"
             if _op_live("script_run"):
                 nav["script_run"] = "run a multi-step bash/python script for complex tasks"
+            if _op_live("mutation_scope"):
+                nav["mutation_scope"] = (
+                    "provider-owned scoped-mutation lifecycle control; dispatchability does not imply "
+                    "runtime readiness — verify host_mutation_sandbox_v1 in capabilities"
+                )
             if _op_live("service", "restart") and has_services:
                 nav["service / restart"] = "manage allowlisted services"
             if _op_live("upload_file", "upload_init"):
