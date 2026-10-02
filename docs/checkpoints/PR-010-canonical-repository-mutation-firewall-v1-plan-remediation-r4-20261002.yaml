@@ -1,0 +1,67 @@
+schema: devforge.continuation-checkpoint.v1
+project_id: sentinelx-cloud-core
+task_id: PR-010-canonical-repository-mutation-firewall-v1
+stage: plan_review
+source_command: "#开发计划修复 PR-010-canonical-repository-mutation-firewall-v1"
+requirement_revision: 2
+plan_revision: 4
+plan_status: ready_for_review
+plan_approved: false
+implementation_authorized: false
+acceptance_approved: false
+completion_verified: false
+planning_baseline_main: f7e878f3497582547e5d52cd33b060cae18d2e84
+canonical_main_at_remediation: f7e878f3497582547e5d52cd33b060cae18d2e84
+prior_review:
+  artifact: docs/reviews/PR-010-canonical-repository-mutation-firewall-v1-plan-review-r3.md
+  result: Rejected
+  classification: plan_local
+remediation:
+  F1:
+    code: LocalApiEndpointActionCoverageRequired
+    disposition: repaired_in_plan_revision_4
+    changes:
+      - authoritative effect model now supports mixed operations with bounded Core-owned suboperation classifiers
+      - local_api coverage resolves endpoint/action effects rather than assuming top-level non-repository behavior
+      - configured external endpoint/actions default to unknown for firewall readiness
+      - operator configuration presence/action naming is not firewall coverage proof
+      - builtin devforge_runtime may compose existing scoped execution/sandbox/audit coverage
+      - unknown nested effect makes canonical_repository_mutation_firewall_v1 readiness false
+  F2:
+    code: RepositoryIdentityConsumerCompatibilityVerificationRequired
+    disposition: repaired_in_plan_revision_4
+    changes:
+      - S01 completion now requires existing mutation_placement consumer regression
+      - S01 completion now requires mutation_scope repository/semantic binding and digest regression
+      - S01 completion now requires scoped_script repository binding regression
+      - relevant Windows sandbox identity compatibility regression is required
+      - any binding/digest incompatibility is a Decision Boundary requiring explicit compatibility or migration decision
+observed_dependencies:
+  pr007_head: 3aec855ce79339b6b286f4d420cf78bc8a78bd80
+  pr007_state: plan_review_plan_revision_4
+  pr008_head: f7594c468d764ad85c0dc508ad47f009c89793c1
+  pr008_state: acceptance_blocked
+  authority: observation_only
+artifacts:
+  requirement: docs/requirements/PR-010-canonical-repository-mutation-firewall-v1.md
+  requirement_change_impact: docs/reviews/PR-010-canonical-repository-mutation-firewall-v1-requirement-r2-invalidation.md
+  plan: docs/plans/PR-010-canonical-repository-mutation-firewall-v1-plan.md
+  prior_plan_review: docs/reviews/PR-010-canonical-repository-mutation-firewall-v1-plan-review-r3.md
+  execution_slice_set: docs/execution/PR-010-canonical-repository-mutation-firewall-v1-slices.yaml
+retained_state:
+  s01_source_implementation: true
+  s01_replay_required: false
+  historical_hub_projection_blocker_current: false
+  local_candidate_commit_from_prior_execution_is_not_canonical_authority: true
+scope_boundary:
+  sentinelx_cloud_core_only_mutation_target: true
+  hub_is_immutable_third_party_boundary: true
+  hub_modification_or_deployment_required: false
+next_expected_actor: reviewer
+next_action_hint: "#开发评审 PR-010-canonical-repository-mutation-firewall-v1"
+invariants:
+  implementation_remains_unauthorized: true
+  no_product_code_mutation_authorized_by_this_remediation: true
+  no_permission_expansion_or_unrestricted_fallback: true
+  no_hub_modification_required: true
+  no_replay_of_retained_s01_side_effects: true

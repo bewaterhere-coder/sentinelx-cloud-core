@@ -34,6 +34,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
+from sentinelx_core.canonical_repository_firewall import enforce_material_write_target
 from sentinelx_core.executor import HandlerError
 from sentinelx_core import platform_guidance as _pg
 from sentinelx_core.executor_engine import safe_path_under
@@ -42,6 +43,17 @@ from sentinelx_core.policy import Policy
 # 10 GiB hard ceiling, mirrors legacy SENTINEL_MAX_UPLOAD_BYTES default
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024 * 1024
 CHUNK_READ_SIZE = 1024 * 1024  # 1 MiB
+
+# build_registry constructs upload_init (which already receives Policy) before
+# upload_complete. Keep the exact same immutable Policy object keyed by the
+# provider staging root so finalization can revalidate canonical-repository
+# admission without changing the shared registry composition seam owned by
+# PR-007. This is wiring only; it creates no new policy authority.
+_UPLOAD_POLICY_BY_BASE: dict[str, Policy] = {}
+
+
+def _upload_policy_key(upload_base: Path) -> str:
+    return str(upload_base.expanduser().resolve(strict=False))
 
 
 # ── SSRF defense ───────────────────────────────────────────────────────────
@@ -269,7 +281,6 @@ def make_upload_file_handler(policy: Policy, upload_base: Path):
                 "provide exactly one of 'content_base64' or 'file_url'",
             )
 
-        upload_base.mkdir(parents=True, exist_ok=True)
         try:
             dest = safe_path_under(upload_base, str(target_path))
         except ValueError as exc:
@@ -280,6 +291,13 @@ def make_upload_file_handler(policy: Policy, upload_base: Path):
                 "that escape upload_base are refused.",
             ) from exc
 
+        dest = enforce_material_write_target(
+            policy.mutation_execution,
+            dest,
+            operation="upload_file",
+            label="target_path",
+        )
+        upload_base.mkdir(parents=True, exist_ok=True)
         dest.parent.mkdir(parents=True, exist_ok=True)
         if dest.exists() and not overwrite:
             raise HandlerError(
@@ -289,6 +307,12 @@ def make_upload_file_handler(policy: Policy, upload_base: Path):
             )
 
         tmp_root = upload_base / ".sentinelx_uploads"
+        enforce_material_write_target(
+            policy.mutation_execution,
+            tmp_root,
+            operation="upload_file",
+            label="provider_staging",
+        )
         tmp_root.mkdir(parents=True, exist_ok=True)
         tmp = tmp_root / f"{uuid.uuid4().hex}.upload"
 
@@ -323,6 +347,9 @@ def make_upload_file_handler(policy: Policy, upload_base: Path):
 
 
 def make_upload_init_handler(upload_base: Path, policy: Policy | None = None):
+    if policy is not None:
+        _UPLOAD_POLICY_BY_BASE[_upload_policy_key(upload_base)] = policy
+
     async def handle_upload_init(payload: dict[str, Any]) -> dict[str, Any]:
         target_path = payload.get("target_path")
         overwrite = bool(payload.get("overwrite", False))
@@ -342,6 +369,13 @@ def make_upload_init_handler(upload_base: Path, policy: Policy | None = None):
                 "the file before uploading.",
             )
 
+        if policy is not None:
+            enforce_material_write_target(
+                policy.mutation_execution,
+                upload_base / ".sentinelx_uploads",
+                operation="upload_init",
+                label="provider_staging",
+            )
         upload_base.mkdir(parents=True, exist_ok=True)
         # Land-in-place only when asked AND under an rw file_ops entry.
         # resolve_path(need_write=True) canonicalises symlinks and defeats
@@ -366,6 +400,13 @@ def make_upload_init_handler(upload_base: Path, policy: Policy | None = None):
                     "that escape upload_base are refused.",
                 ) from exc
 
+        if policy is not None:
+            dest = enforce_material_write_target(
+                policy.mutation_execution,
+                dest,
+                operation="upload_init",
+                label="target_path",
+            )
         if dest.exists() and not overwrite:
             raise HandlerError(
                 "conflict",
@@ -400,6 +441,8 @@ def make_upload_init_handler(upload_base: Path, policy: Policy | None = None):
 
 
 def make_upload_chunk_handler(upload_base: Path):
+    effective_policy = _UPLOAD_POLICY_BY_BASE.get(_upload_policy_key(upload_base))
+
     async def handle_upload_chunk(payload: dict[str, Any]) -> dict[str, Any]:
         upload_id = payload.get("upload_id")
         index = payload.get("index")
@@ -429,7 +472,15 @@ def make_upload_chunk_handler(upload_base: Path):
         except (ValueError, base64.binascii.Error) as exc:
             raise HandlerError("invalid_payload", f"bad base64: {exc}") from exc
 
-        part_path = _parts_dir(upload_dir) / f"{idx:08d}.part"
+        part_path = upload_dir / "parts" / f"{idx:08d}.part"
+        if effective_policy is not None:
+            part_path = enforce_material_write_target(
+                effective_policy.mutation_execution,
+                part_path,
+                operation="upload_chunk",
+                label="provider_staging",
+            )
+        _parts_dir(upload_dir)
         part_path.write_bytes(data)
 
         return {
@@ -442,7 +493,9 @@ def make_upload_chunk_handler(upload_base: Path):
     return handle_upload_chunk
 
 
-def make_upload_complete_handler(upload_base: Path):
+def make_upload_complete_handler(upload_base: Path, policy: Policy | None = None):
+    effective_policy = policy or _UPLOAD_POLICY_BY_BASE.get(_upload_policy_key(upload_base))
+
     async def handle_upload_complete(payload: dict[str, Any]) -> dict[str, Any]:
         upload_id = payload.get("upload_id")
         sha256_expected = payload.get("sha256")
@@ -458,6 +511,13 @@ def make_upload_complete_handler(upload_base: Path):
 
         meta = json.loads(meta_file.read_text())
         dest = Path(meta["target_path"]).resolve()
+        if effective_policy is not None:
+            dest = enforce_material_write_target(
+                effective_policy.mutation_execution,
+                dest,
+                operation="upload_complete",
+                label="target_path",
+            )
         dest.parent.mkdir(parents=True, exist_ok=True)
 
         parts = sorted((upload_dir / "parts").glob("*.part"))

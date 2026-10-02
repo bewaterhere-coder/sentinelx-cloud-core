@@ -31,6 +31,7 @@ import shutil
 from pathlib import Path
 from typing import Any
 
+from sentinelx_core.canonical_repository_firewall import enforce_material_write_target
 from sentinelx_core.executor import HandlerError
 from sentinelx_core.handlers.fileops import _require_str, _resolve_or_reject
 from sentinelx_core.policy import Policy
@@ -647,6 +648,13 @@ async def _op_apply_patch(policy: Policy, payload: dict[str, Any]) -> dict[str, 
                 "rw entry; refusing to apply.",
                 details={"git_root": git_root_str},
             )
+        if not dry_run:
+            git_root = enforce_material_write_target(
+                policy.mutation_execution,
+                git_root,
+                operation="git.apply_patch",
+                label="repository_root",
+            )
 
         patch_bytes = patch.encode("utf-8")
 
@@ -976,6 +984,20 @@ async def _op_fetch(policy: Policy, payload: dict[str, Any]) -> dict[str, Any]:
     root = await _revalidate_git_root(
         policy, _resolve_or_reject(policy, str(path)), str(path)
     )
+    writable_root = policy.resolve_path(str(root), need_write=True)
+    if writable_root is None:
+        raise HandlerError(
+            "path_not_allowed",
+            "fetch updates repository refs and therefore requires the git root "
+            "under a file_ops entry with access: rw.",
+            details={"root": str(root)},
+        )
+    root = enforce_material_write_target(
+        policy.mutation_execution,
+        writable_root,
+        operation="git.fetch",
+        label="repository_root",
+    )
     remote = str(payload.get("remote") or "origin").strip()
     args = ["fetch", "--prune", remote]
     if payload.get("ref"):
@@ -1033,6 +1055,12 @@ async def _op_clone(policy: Policy, payload: dict[str, Any]) -> dict[str, Any]:
             f"entry with access: rw. Writable paths on this host: {rw_paths}.",
             details={"writable_paths": rw_paths, "dest": dest},
         ) from exc
+    target = enforce_material_write_target(
+        policy.mutation_execution,
+        target,
+        operation="git.clone",
+        label="destination",
+    )
     if target.exists() and any(target.iterdir()):
         raise HandlerError(
             "dest_not_empty",

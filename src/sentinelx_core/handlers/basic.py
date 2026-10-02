@@ -124,6 +124,7 @@ def make_capabilities_handler(
     config_path=None,
     ops_supported: Callable[[], Iterable[str]] | None = None,
     upload_base: Path | None = None,
+    canonical_firewall_feature: Callable[[], dict[str, Any]] | None = None,
 ):
     """Build the `capabilities` handler.
 
@@ -177,6 +178,16 @@ def make_capabilities_handler(
                 state_parent / "state",
             )
         mutation_feature = readiness.feature()
+        firewall_feature = (
+            canonical_firewall_feature()
+            if canonical_firewall_feature is not None
+            else {
+                "available": False,
+                "verified": False,
+                "reason": "readiness_composer_unavailable",
+                "uncovered_classes": ["readiness_composer_unavailable"],
+            }
+        )
         result = {
             "agent": "sentinelx-cloud-core",
             "version": AGENT_VERSION,
@@ -234,6 +245,7 @@ def make_capabilities_handler(
                     **mutation_feature,
                     "bound_to": "host_mutation_sandbox_v1",
                 },
+                "canonical_repository_mutation_firewall_v1": firewall_feature,
             },
             # Whether chained exec commands are checked segment by segment.
             # Part of the same question -- what is this host actually willing to
