@@ -8,7 +8,7 @@ task_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1
 title: Scoped Verification Toolchain & Dependency Capsule V1
 requirement_revision: 1
 development:
-  stage: plan_review
+  stage: plan_review_rejected
   gates:
     requirement_ready: true
     plan_approved: false
@@ -16,7 +16,9 @@ development:
     completion_verified: false
   plan_revision: 2
   implementation_authorized: false
-  next_expected_actor: reviewer
+  next_expected_actor: planner
+  blocking_findings:
+    - PR011-R2-F3-stale-main-baseline-pr007-merged-dependency-reconciliation
   authorization:
     mode: legacy_command_scoped
 transport:
@@ -26,14 +28,15 @@ transport:
   base_branch: main
 artifacts:
   plan: docs/plans/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan.md
-  latest_plan_review: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-review-r1.md
-  latest_plan_review_transition_receipt: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-review-r1-transition-receipt.yaml
+  latest_plan_review: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-review-r2.md
+  latest_plan_review_transition_receipt: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-review-r2-transition-receipt.yaml
+  prior_plan_review: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-review-r1.md
   latest_plan_remediation: docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-remediation-r1-20261003.yaml
   plan_remediation_transition_receipt: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-remediation-r1-transition-receipt.yaml
   development_start_receipt: docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-development-start-20261003.yaml
   provisional_bootstrap: docs/checkpoints/scoped-verification-toolchain-dependency-capsule-v1-provisional-bootstrap.md
 related_tasks:
-  integration_dependency:
+  satisfied_integration_dependency:
     - PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1
   overlap_reconciliation:
     - PR-010-canonical-repository-mutation-firewall-v1
@@ -76,6 +79,8 @@ Canonical `main` does **not** provide:
 - a model-facing `devforge_runtime` action on `main`.
 
 The currently deployed `devforge_runtime` builtin provider is implemented on unmerged PR-007. This Task MUST NOT treat that code as `main` reality. Integration with that action requires an exact admitted PR-007/equivalent revision and must not duplicate its scope store, sandbox, executor, or audit authority.
+
+> Freshness note after Plan Review R2: the repository-reality paragraph above records Requirement Revision 1's creation-time baseline. PR-007 has since completed and merged into canonical `main`; Plan Revision 3 must reconcile against the new main baseline without changing the Requirement's security semantics.
 
 Production `mcp.sentinelx.app` is a closed-source external transport boundary and is not modifiable by this Task.
 
@@ -177,6 +182,8 @@ Required characteristics:
 
 If PR-007/equivalent is not yet admitted, Core verification-profile implementation may proceed only where it does not consume unmerged code; the Task cannot claim the end-to-end integration criterion until that dependency is exact and verified.
 
+PR-007 is now merged and satisfies this conditional admission; Plan Revision 3 must therefore consume the canonical main `devforge_runtime` seam directly rather than treating it as an unmerged dependency.
+
 ### R8 — Verification evidence and readiness
 
 A successful profiled verification result must expose bounded machine-readable evidence sufficient to identify:
@@ -231,7 +238,7 @@ This downstream proof is cross-repository evidence; it does not transfer ChatGPT
 - safe profiled environment composition for Node/npm;
 - scoped-executor integration using existing sandbox/scope/audit authority;
 - Node/npm-specific readiness/capability evidence;
-- PR-007/equivalent `devforge_runtime.execute_scoped` integration after exact dependency admission;
+- admitted canonical `devforge_runtime.execute_scoped` integration;
 - unit, Windows integration, negative-security and live read-back coverage;
 - operator documentation and example configuration;
 - an explicit provider-side capsule preparation/validation utility if required by the Plan, provided it is not model-facing execution authority.
@@ -275,7 +282,7 @@ The Plan/implementation must explicitly disconfirm the following failure modes:
 - **AC6:** Exact-workspace and Job containment remain effective for npm lifecycle descendants; canonical/protected repository roots remain inaccessible/non-mutable.
 - **AC7:** Unprofiled scoped Python/PowerShell behavior and base `host_mutation_sandbox_v1` readiness remain regression-compatible.
 - **AC8:** A separately gated Node/npm verification capability/readiness surface is false when configuration/runtime admission is incomplete and true only after a real AppContainer self-check.
-- **AC9:** When PR-007/equivalent is admitted, `sentinel_local_api describe devforge_runtime` shows the bounded verification selector and a live `execute_scoped` call returns profile/toolchain/capsule/offline/audit evidence without Hub changes.
+- **AC9:** With the admitted canonical `devforge_runtime` seam, `sentinel_local_api describe devforge_runtime` shows the bounded verification selector and a live `execute_scoped` call returns profile/toolchain/capsule/offline/audit evidence without Hub changes.
 - **AC10:** Repository tests include policy parsing, path/overlap validation, capsule integrity, environment sanitization, AppContainer ACL, offline execution, descendant containment, readiness, local-api integration and negative security cases.
 - **AC11:** Existing CI plus relevant Windows physical-sandbox tests pass; no canonical checkout is used as a mutation workspace.
 - **AC12:** On an activated accepted Agent build, ChatGPTControlShell PR-015 S01 can obtain real dependency-backed `mcp npm run typecheck` and `mcp npm run check` receipts through scoped verification, with PR-015 remaining the authority for its own completion claim.
@@ -287,10 +294,10 @@ requirement_artifact_bundle: not_required
 ui_semantic_resolution: not_applicable
 visual_fidelity: not_applicable
 current_task_p0_dependencies: []
-integration_dependency:
-  - exact PR-007/equivalent admission required before R7/AC9 end-to-end integration and AC12 downstream proof
+satisfied_integration_dependency:
+  - PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1
 ```
 
-Core policy/capsule/sandbox implementation can be reviewed and executed independently on `main` reality. The PR-007 dependency gates only the `devforge_runtime` integration and cross-repository downstream proof; it is not a blanket implementation blocker for earlier core slices.
+Core policy/capsule/sandbox implementation and `devforge_runtime` integration must now be planned against current canonical `main` reality. PR-010 remains a separate unmerged overlap reconciliation boundary.
 
 There is no user-facing UI requirement. Security/readiness diagnostics are evidence surfaces, not product UI.
