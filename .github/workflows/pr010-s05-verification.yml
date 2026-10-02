@@ -1,6 +1,8 @@
 name: pr010-s05-verification
 
 on:
+  push:
+    branches: [task/canonical-repository-mutation-firewall-v1]
   pull_request:
     branches: [main]
 

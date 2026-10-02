@@ -335,7 +335,7 @@ sudoers policy, not the path allowlist — this is what lets the
 canonicalization still runs (no traversal/symlink bypass); only the
 `rw`-membership check is waived for the sudo path. This carve-out and its
 residual risk are documented in [`THREAT_MODEL.md`](./THREAT_MODEL.md)
-(§4.2.1).
+(§4.3.1).
 
 ## Security model
 
@@ -358,7 +358,7 @@ residual risk are documented in [`THREAT_MODEL.md`](./THREAT_MODEL.md)
   allowlist can escape it. Empty allowlist = the primitives are disabled.
   Writing ops that overwrite or delete an existing target back it up first
   (timestamped `.bak`). `sentinel_edit` with `sudo=true` is a documented
-  exception to the `rw` check — see `THREAT_MODEL.md` §4.2.1.
+  exception to the `rw` check — see `THREAT_MODEL.md` §4.3.1.
 - **Unprivileged user with passwordless sudo.** The agent runs as `sentinelx`,
   not as root. By default the installer grants `sentinelx` passwordless sudo
   so it can manage services and edit system files — but it can still only
