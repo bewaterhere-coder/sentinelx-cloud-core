@@ -96,11 +96,13 @@ retained_history:
 slices:
   - id: S01
     title: Retained inventory repair and repository identity consumer revalidation
-    status: implementation_retained_revalidation_required
+    status: completed
     implementation_retained: true
-    slice_completed: false
+    slice_completed: true
+    completion_checkpoint: docs/checkpoints/PR-010-canonical-repository-mutation-firewall-v1-s01-completed-r4-20261002.yaml
+    verified_implementation_head: 69dfdef75bc14ef2df445fa01ddd8d436868daa5
     objective: Preserve retained inventory/firewall work, converge on one repository identity semantic, and prove compatibility across existing identity consumers before proceeding.
-    current_blocker:
+    resolved_blocker:
       code: RepositoryIdentityPrimitiveReuseRequired
       existing_primitive: sentinelx_core.mutation_placement.RepositoryIdentity
       parallel_normalizer: sentinelx_core.policy._canonical_repository_identity
