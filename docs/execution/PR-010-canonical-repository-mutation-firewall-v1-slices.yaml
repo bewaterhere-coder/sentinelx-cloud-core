@@ -2,13 +2,14 @@ schema: devforge.execution-slice-set.v1
 project_id: sentinelx-cloud-core
 task_id: PR-010-canonical-repository-mutation-firewall-v1
 requirement_revision: 2
-plan_revision: 3
+plan_revision: 4
 plan_review: pending
 implementation_authorized: false
 execution_mode: incremental
 one_manual_invocation_max_slices: 1
 planning_baseline_main: f7e878f3497582547e5d52cd33b060cae18d2e84
 requirement_change_impact: docs/reviews/PR-010-canonical-repository-mutation-firewall-v1-requirement-r2-invalidation.md
+plan_remediation: docs/checkpoints/PR-010-canonical-repository-mutation-firewall-v1-plan-remediation-r4-20261002.yaml
 verification_authority:
   required:
     - sentinelx_core_unit
@@ -28,15 +29,21 @@ entry_reconciliation:
     - PR-008-provider-execution-profile-tool-surface-alignment-v1
   non_blocking_related:
     - PR-009-mcp-development-execution-projection-dynamic-tool-contract-v1
+  observed_at_plan_remediation:
+    pr007_head: 3aec855ce79339b6b286f4d420cf78bc8a78bd80
+    pr008_head: f7594c468d764ad85c0dc508ad47f009c89793c1
+    authority: observation_only
   required_reads_on_overlap:
     - exact latest dependency head
     - current changed-file set
-    - relevant immutable contract/artifact revision
+    - relevant contract/artifact revision
     - current dependency stage/disposition
   overlap_family:
     - src/sentinelx_core/client.py
     - src/sentinelx_core/handlers/__init__.py
     - src/sentinelx_core/handlers/basic.py
+    - src/sentinelx_core/handlers/local_api.py
+    - src/sentinelx_core/local_api.py
     - src/sentinelx_core/handlers/mutation_scope.py
     - src/sentinelx_core/handlers/scoped_script.py
     - src/sentinelx_core/mutation_scope.py
@@ -53,12 +60,16 @@ invariants:
   - file_ops_rw_never_overrides_canonical_repository_role
   - protected_roots_do_not_double_as_canonical_repository_identity
   - repository_identity_has_one_provider_semantic_source
+  - repository_identity_shared_consumer_compatibility_is_verified_before_s01_completion
   - one_provider_firewall_classifier_is_reused_by_relevant_mutators
   - structured_mutation_is_blocked_before_backup_or_material_side_effect
   - generic_process_string_parsing_is_not_physical_security_proof
   - arbitrary_unprofiled_process_mutation_cannot_coexist_with_advertised_provider_wide_firewall_without_physical_exclusion
   - core_process_disposition_does_not_depend_on_hub_execution_profile_projection
   - authoritative_operation_registration_is_dispatch_and_coverage_truth
+  - mixed_operations_require_core_owned_suboperation_effect_classification
+  - unknown_local_api_endpoint_action_effect_invalidates_firewall_readiness
+  - operator_local_api_configuration_is_not_by_itself_firewall_coverage_proof
   - unknown_model_facing_operation_effect_invalidates_firewall_readiness
   - required_uncovered_mutator_invalidates_firewall_readiness
   - internal_only_ops_are_explicitly_distinct_from_model_facing_ops
@@ -68,32 +79,34 @@ invariants:
   - no_unrestricted_or_permission_expansion_fallback
   - dependency_overlap_is_reconciled_before_first_overlapping_mutation
 retained_history:
-  prior_plan_revision: 2
-  prior_plan_review: docs/reviews/PR-010-canonical-repository-mutation-firewall-v1-plan-review-r2.md
+  prior_plan_revision: 3
+  prior_plan_review: docs/reviews/PR-010-canonical-repository-mutation-firewall-v1-plan-review-r3.md
+  prior_plan_review_result: Rejected
+  prior_approved_plan_revision: 2
   prior_approval_checkpoint: docs/checkpoints/PR-010-canonical-repository-mutation-firewall-v1-plan-review-r2-approved-20261002.yaml
   s01_historical_checkpoint: docs/checkpoints/PR-010-canonical-repository-mutation-firewall-v1-s01-verification-blocked-20261002.yaml
   s01_implementation_head: 62b9fba588fac58161c909e8622278d791c07a92
   no_replay_of_verified_side_effects: true
 slices:
   - id: S01
-    title: Retained canonical inventory implementation repair and Core revalidation
+    title: Retained inventory repair and repository identity consumer revalidation
     status: implementation_retained_revalidation_required
     implementation_retained: true
     slice_completed: false
-    objective: Preserve already-landed inventory/firewall work, remove the parallel repository-identity semantic, and revalidate S01 entirely through Core-owned evidence.
+    objective: Preserve retained inventory/firewall work, converge on one repository identity semantic, and prove compatibility across existing identity consumers before proceeding.
     current_blocker:
       code: RepositoryIdentityPrimitiveReuseRequired
       existing_primitive: sentinelx_core.mutation_placement.RepositoryIdentity
       parallel_normalizer: sentinelx_core.policy._canonical_repository_identity
-      required_resolution: reuse or extract one shared provider repository identity semantic, including explicit authority/port behavior
+      required_resolution: reuse or extract one shared provider repository identity semantic with explicit authority/port behavior and compatibility evidence
     superseded_blocker:
       code: HubExecutionProfileProjectionUnavailable
       disposition: external_integration_limitation_non_blocking
     entry_gate:
-      - Plan Revision 3 must be approved before product-code mutation resumes
+      - Plan Revision 4 must be approved before product-code mutation resumes
       - compute exact intended changed-file set
+      - re-read canonical main
       - if intended files overlap active PR-007/PR-008 surfaces, perform entry_reconciliation before mutation
-      - canonical main must be re-read before implementation mutation
     retained_surfaces:
       - src/sentinelx_core/policy.py
       - src/sentinelx_core/canonical_repository_firewall.py
@@ -102,133 +115,162 @@ slices:
       - src/sentinelx_core/mutation_placement.py or one provider-neutral shared repository identity module if extraction is needed
     required_behavior:
       - canonical repository inventory remains Host/operator authority
-      - canonical roots remain normalized/canonicalized
       - one shared repository identity semantic handles vcs, authority, path, credentials exclusion, authority ports and .git normalization
+      - traversal and invalid identity fail closed
       - invalid duplicate/conflicting/ambiguous inventory makes readiness false
       - execution workspaces are not inferred canonical solely from repository identity
       - broad parent file_ops rw does not alter canonical classification
-      - prior Hub projection failure is not used as completion evidence or blocker
+      - existing valid repository/scope bindings are not silently changed
+      - stored digest/binding incompatibility triggers a Decision Boundary and explicit compatibility decision
     verification:
       - focused repository identity normalization tests including explicit authority ports
-      - traversal and symlink normalization cases
+      - traversal and invalid identity cases
       - duplicate/conflicting inventory failure cases
       - canonical root versus same-repository execution workspace cases
       - caller payload cannot create/remove canonical inventory authority
       - indeterminate classification fails closed for material mutation
-      - Core-owned focused unit test execution/readback
-    completion_rule: one repository identity semantic is proven and focused Core-owned S01 verification passes; handler-wide mutation coverage is not yet claimed
+      - Core-owned focused firewall/inventory unit test execution/readback
+      - focused mutation_placement repository binding regression
+      - focused mutation_scope repository/semantic binding and digest regression
+      - focused scoped_script repository binding regression
+      - relevant Windows mutation sandbox identity compatibility regression
+    completion_rule: one repository identity semantic is proven, focused firewall tests pass, and existing identity-consumer compatibility evidence passes without an unresolved binding/digest migration question
     next_on_pass: S02
 
   - id: S02
-    title: Authoritative operation-effect registry and structured mutation integration
+    title: Authoritative op/suboperation effect registry and structured mutation integration
     status: planned_not_authorized
-    objective: Extend authoritative Core operation registration into fail-closed coverage truth and wire explicit-path mutators through the central firewall before material side effects.
+    objective: Extend authoritative Core registration into fail-closed top-level and nested-effect coverage truth and wire explicit-path mutators through central admission before side effects.
     entry_gate:
       - S01 completed under Requirement Revision 2
       - compute exact intended changed-file set
-      - run entry_reconciliation before mutating handlers/__init__.py or any current dependency-overlap surface
+      - re-read canonical main
+      - run entry_reconciliation before mutating registry/local_api or any dependency-overlap surface
       - persist observed dependency heads and no-loss composition decision for this Slice
     primary_surfaces:
       - src/sentinelx_core/handlers/__init__.py
+      - src/sentinelx_core/handlers/local_api.py
+      - src/sentinelx_core/local_api.py as required for effect metadata/dispatch composition
       - src/sentinelx_core/handlers/edit.py
       - src/sentinelx_core/handlers/fsmutate.py
       - src/sentinelx_core/handlers/git_ops.py
       - src/sentinelx_core/handlers/upload.py
-      - registry/capability coverage tests
+      - registry/mixed-operation/capability coverage tests
       - structured mutation firewall tests
     required_behavior:
       - authoritative registration carries handler plus exposure/repository-effect/firewall-coverage semantics or equivalent fail-closed metadata
+      - repository_effect supports mixed operations with a bounded Core-owned suboperation classifier
       - dispatch and ops_supported remain derived from the same authoritative registry
-      - new effective model-facing op with missing/unknown repository effect makes firewall readiness false
+      - new effective model-facing op with missing/unknown repository effect makes readiness false
+      - mixed op with missing/unknown selected suboperation effect makes readiness false
       - required-but-unproven firewall coverage makes readiness false
-      - internal-only operations are explicitly distinguishable from model-facing operations
-      - read-only operations are explicitly distinguishable from mutators
-      - mixed structured Git mutation selectors cannot hide behind read-only selectors
+      - internal-only and read-only operations are explicit
       - disabled_ops removal precedes effective-surface readiness accounting
+      - Git operation selectors are explicitly classified
+      - local_api list/describe are read-only; call resolves endpoint/action effect
+      - configured external local_api endpoint/action effect is unknown by default
+      - operator configuration presence or action naming cannot implicitly prove non_repository_mutation
+      - any explicit configured effect declaration, if implemented, is schema-bounded and Core validated; absence/invalid declaration remains unknown
+      - PR-007 builtin endpoint/action metadata is composed rather than reimplemented when present
       - structured mutators consume central admission before backup, overwrite, delete, patch, metadata change or final materialization
     verification:
       - unknown/unclassified model-facing op => readiness false
+      - unknown Git selector => readiness false
+      - local_api configured action with no valid effect contract => readiness false
+      - known read-only/non_repository local_api action => does not falsely require repository mutation coverage
+      - local_api structured/process mutation action without proven coverage => readiness false
       - required uncovered mutator => readiness false
       - internal-only op does not count as model-facing firewall evidence
       - disabled op is absent from effective exposed-surface accounting
-      - canonical exact-root/descendant writes block before side effect
+      - canonical exact-root/descendant structured writes block before side effect
       - no .bak artifact on blocked edit/delete
       - move/copy endpoint matrix preserves correct read/write semantics
-      - structured Git diff/read behavior remains available
-    completion_rule: authoritative coverage accounting and structured mutator regressions pass without a parallel hand-maintained firewall operation list
+      - structured Git read behavior remains available
+    completion_rule: authoritative top-level and nested-effect accounting fails closed and structured mutator regressions pass without a parallel firewall operation list
     next_on_pass: S03
 
   - id: S03
-    title: Core process mutation fail-closed boundary
+    title: Core process and mixed-operation mutation fail-closed boundary
     status: planned_not_authorized
-    objective: Ensure effective exec/script/background process surfaces cannot bypass canonical exclusion while provider-wide Core readiness is claimed, without depending on Hub parameter projection.
+    objective: Ensure effective exec/script/background and process-producing nested operations cannot bypass canonical exclusion while Core readiness is true.
     entry_gate:
       - S02 completed
-      - mandatory entry_reconciliation against exact current PR-007 and PR-008 state before touching scoped_script/basic/client/mutation-scope/executor or equivalent overlap seams
-      - planning/review-time dependency SHAs are evidence only
+      - mandatory entry_reconciliation against exact current PR-007 and PR-008 state before touching local_api/scoped_script/basic/client/mutation-scope/executor or equivalent process seams
+      - planning/review-time dependency SHAs are observation only
       - stop on material semantic conflict before product-code mutation
     primary_surfaces:
       - src/sentinelx_core/handlers/exec.py
       - src/sentinelx_core/handlers/scoped_script.py
+      - src/sentinelx_core/handlers/local_api.py and built-in endpoint semantics as required
       - process/background execution admission seams
       - relevant sandbox/mutation-scope composition tests
     required_behavior:
-      - authoritative registry identifies effective process-producing operation classes
+      - authoritative registry identifies effective top-level and nested process-producing operation classes
       - Core computes process disposition independent of Hub execution_profile availability
       - arbitrary unprofiled process execution with no physical canonical exclusion cannot remain effective while firewall capability is advertised
       - legacy compatibility may remain only with firewall readiness unavailable
-      - profiled/scoped mutation reuses existing scope/sandbox/audit authority and gains no new caller authority
-      - shell/script text or path heuristics are never physical security proof
+      - profiled/scoped mutation reuses existing scope/sandbox/audit authority and gains no caller authority
+      - devforge_runtime.execute_scoped if present composes existing scoped execution coverage rather than duplicate executor authority
+      - configured local_api action whose relay/effect is process-producing is accounted for; unknown/uncovered path removes readiness
+      - shell/script/path string heuristics are never physical security proof
       - background children, timeout and nonzero paths preserve canonical exclusion
       - operator_unrestricted and allowlist expansion are not fallbacks
     verification:
       - generic git switch attempt cannot mutate canonical checkout under firewall-ready mode
       - shell redirection cannot mutate canonical checkout
       - Python/PowerShell direct and spawned-child canonical writes cannot bypass
-      - unclassified process op invalidates readiness
-      - scoped execution workspace mutation passes firewall exclusion then remains subject to existing authority/sandbox/audit gates
-      - missing Hub execution_profile projection is recorded only as external diagnostic when observed
-    completion_rule: process regression matrix proves no generic or child-process canonical mutation bypass while provider-wide Core readiness can be true
+      - unclassified process op/suboperation invalidates readiness
+      - scoped execution workspace mutation passes firewall then existing scope/sandbox/audit gates
+      - devforge_runtime scoped execution uses existing physical authority when present
+      - configured external local_api unknown/process mutation action cannot silently coexist with readiness true
+      - missing Hub execution_profile projection is external diagnostic only
+    completion_rule: no effective top-level, nested or child-process canonical mutation bypass exists while provider-wide Core readiness can be true
     next_on_pass: S04
 
   - id: S04
     title: Core Capability Readiness and Existing Transport Projection
     status: planned_not_authorized
-    objective: Compose final Core readiness/advertisement from inventory, authoritative effective operation surface, structured coverage and process disposition, then verify it through existing SentinelX Core protocol structures without requiring Hub modification or rendering.
+    objective: Compose final Core readiness from inventory, identity compatibility, effective op/suboperation surface, structured coverage and process disposition, then verify through existing Core protocol structures.
     entry_gate:
       - S03 completed
-      - re-run entry_reconciliation if PR-007/PR-008 moved since the last recorded reconciliation or this Slice touches an overlap surface
+      - re-run entry_reconciliation if PR-007/PR-008 moved or this Slice touches registry/local_api/capability/hello/protocol seams
       - read current Core capability/hello/protocol contracts before mutation
     primary_surfaces:
       - Core capability/readiness projection code
       - src/sentinelx_core/handlers/basic.py as required
       - src/sentinelx_core/client.py as required
+      - registry/local_api readiness diagnostics
       - Core protocol-feature/capability tests
     required_behavior:
-      - advertise canonical_repository_mutation_firewall_v1 only when policy/inventory valid and every effective Core mutator has proven coverage/disposition
-      - exposed unknown/unclassified op removes capability
-      - exposed required-but-uncovered mutator removes capability
-      - policy disabled leaves legacy host behavior intact but firewall capability unavailable
+      - advertise canonical_repository_mutation_firewall_v1 only when policy/inventory valid and every effective Core op/suboperation has proven classification/coverage/disposition
+      - exposed unknown top-level op removes capability
+      - exposed unknown mixed selector/endpoint/action removes capability
+      - required-but-uncovered mutator removes capability
+      - policy disabled leaves legacy behavior intact but firewall capability unavailable
       - scoped-mutation readiness remains independent from firewall readiness
-      - Linux/macOS remain capability-unavailable unless equivalent physical exclusion is proven
-      - diagnostics identify uncovered operation classes without leaking unnecessary sensitive paths
+      - Linux/macOS remain unavailable unless equivalent physical exclusion is proven
+      - diagnostics identify uncovered operation/action classes without leaking sensitive endpoint/path details
       - existing Core hello/capability/protocol output carries readiness when true
       - no Hub source/schema/deployment/dynamic-tool/capability-rendering change is required or claimed
     verification:
-      - one unknown exposed op => Core capability absent/unavailable
-      - one uncovered mutator => Core capability absent/unavailable
-      - valid Windows complete-coverage fixture => Core capability advertised
-      - policy disabled => Core capability unavailable with legacy compatibility preserved
+      - one unknown exposed op => Core capability unavailable
+      - one unknown Git selector effect => unavailable
+      - one unknown configured local_api endpoint/action => unavailable
+      - known external read-only/non_repository local_api action => compatible with readiness
+      - devforge_runtime.execute_scoped if present and physically proven => covered process disposition
+      - one uncovered mutation action => unavailable
+      - valid Windows complete-coverage fixture => capability advertised
+      - policy disabled => unavailable with legacy compatibility preserved
       - PR-007/PR-008 existing Core capability semantics are not lost
       - Core hello/protocol readback confirms readiness output
-      - Hub projection absence is not an S04 blocker
-    completion_rule: partial Core coverage cannot advertise the capability and complete Core coverage is verifiable in existing Core-owned protocol output
+      - Hub projection absence is not a blocker
+    completion_rule: incomplete top-level or nested effective-surface coverage cannot advertise the capability and complete Core coverage is visible in Core-owned output
     next_on_pass: S05
 
   - id: S05
     title: Incident regression security suite and documentation
     status: planned_not_authorized
-    objective: Freeze the canonical-checkout incident family, run affected Core security regressions on Windows candidate evidence, and document operator/configuration plus immutable-Hub semantics.
+    objective: Freeze canonical-checkout incidents plus mixed-operation coverage, run affected Core security regressions on Windows evidence, and document operator/configuration and immutable-Hub semantics.
     entry_gate:
       - S04 completed
       - re-read canonical main and dependency state if implementation drifted since S04
@@ -237,6 +279,7 @@ slices:
       - incident regression tests
       - structured mutation security tests
       - process/background security tests
+      - mixed Git/local_api coverage tests
       - README/configuration documentation
       - SECURITY/THREAT_MODEL or equivalent boundary documentation
     required_behavior:
@@ -247,16 +290,20 @@ slices:
       - indirect/background child canonical write blocks
       - unknown inventory/target classification fails closed
       - canonical read/list/search/status/diff remains usable
-      - same-repository non-canonical execution workspace can pass firewall then is evaluated by existing scoped authorities
-      - fake canonical_sync claim on generic tool cannot bypass
-      - new model-facing op with unknown effect removes capability readiness
-      - internal-only transport op does not silently become model-facing coverage evidence
+      - same-repository non-canonical execution workspace can pass firewall then existing authorities decide
+      - fake canonical_sync claim cannot bypass
+      - new model-facing op with unknown effect removes readiness
+      - unknown mixed Git selector removes readiness
+      - unknown local_api endpoint/action effect removes readiness
+      - proven read-only/non_repository local_api action remains compatible with readiness
+      - local_api structured/process mutation without coverage removes readiness
+      - internal-only transport op does not silently become model-facing evidence
       - Hub execution_profile/dynamic-tool/capability projection omissions are documented external limitations only
     verification:
       - full affected Core unit/security/regression suites
       - Windows fixture with broad rw parent + canonical checkout + separate same-repository execution workspace
-      - explicit absence of .bak/partial material side effects on blocked mutations
-      - Core capability readiness negative/positive matrices
+      - explicit absence of .bak/partial side effects on blocked mutations
+      - Core capability readiness top-level/nested negative and positive matrices
       - documentation review confirms no Hub implementation requirement
     completion_rule: repository-local Core implementation has durable required evidence and is ready for #开发验收; no production activation, merge, release or Hub change is claimed
 terminal_transition:
@@ -266,4 +313,5 @@ terminal_transition:
   when_all_slices_complete: acceptance
   acceptance_requires_windows_incident_evidence: true
   acceptance_requires_provider_wide_core_coverage_evidence: true
+  acceptance_requires_mixed_operation_effect_coverage_evidence: true
   acceptance_requires_hub_projection_evidence: false
