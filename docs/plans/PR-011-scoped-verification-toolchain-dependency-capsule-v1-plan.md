@@ -114,11 +114,11 @@ V1 safe defaults are the values above. Operator configuration may lower them or 
 
 ```yaml
 hard_ceiling:
-  source_max_total_bytes: 2147483648       # 2 GiB
+  source_max_total_bytes: 2147483648
   source_max_files: 200000
-  dependency_max_total_bytes: 4294967296   # 4 GiB
+  dependency_max_total_bytes: 4294967296
   dependency_max_files: 200000
-  max_single_file_bytes: 1073741824        # 1 GiB
+  max_single_file_bytes: 1073741824
   max_relative_path_chars: 1024
 ```
 
@@ -262,12 +262,7 @@ The provider creates deterministic workspace-local launch shims under:
 <exact-workspace>\.sentinelx-verification\bin
 ```
 
-They invoke exactly:
-
-```text
-provider-resolved node.exe
-+ provider-resolved node_modules/npm/bin/npm-cli.js
-```
+They invoke exactly provider-resolved `node.exe` plus provider-resolved `node_modules/npm/bin/npm-cli.js`.
 
 The shim bytes/digest are derived from the sealed `VerificationAdmission` and are included in verification START evidence. The verification environment prepends only this shim directory for logical `npm`/`node` convenience; execution identity remains the sealed Node/npm components. Launcher substitution or PATH shadowing is rejected/neutralized.
 
@@ -287,17 +282,7 @@ verification:
 
 Additional Host path/network/executable/cache fields are rejected.
 
-Resolution produces immutable `VerificationAdmission` containing:
-
-- profile id + contract revision;
-- exact source repository/transport revision identity;
-- source manifest digest + admitted file inventory;
-- provider-resolved toolchain manifest/digest and exact node/npm CLI identities;
-- dependency capsule revision/payload digest;
-- expected package-lock digest;
-- configured resource limits;
-- offline/network mode = `none`;
-- exact workspace-local source/cache/shim destinations.
+Resolution produces immutable `VerificationAdmission` containing source identity, source manifest digest, toolchain manifest/digest, dependency capsule digest, expected lock digest, resource limits and offline mode.
 
 Admission order before START:
 
@@ -311,106 +296,47 @@ resolve policy profile
 → durable audit START
 ```
 
-Caller fields are never consulted again for Host path authority.
-
 ## 8. Audit Binding
 
-Use the existing `MutationAuditJournal`; do not create a second verification journal.
+Use existing `MutationAuditJournal`; do not create a second verification journal.
 
-Seal a bounded verification intent into START evidence:
-
-```yaml
-verification_intent:
-  profile_id: node_npm
-  profile_revision: 1
-  source_repository_digest: <sha256>
-  source_revision: <exact revision>
-  source_manifest_digest: <sha256>
-  toolchain_kind: node_npm_v1
-  toolchain_digest: <sha256>
-  launcher_digest: <sha256>
-  capsule_id: <id>
-  capsule_revision: 1
-  capsule_payload_digest: <sha256>
-  expected_package_lock_sha256: <sha256>
-  network_mode: none
-  resource_limits_digest: <sha256>
-```
-
-The object participates in the existing START evidence digest. Receipt projection exposes logical identities/digests, never raw Host paths, credentials or package contents.
+Seal source repository/revision/manifest, toolchain digest, launcher digest, capsule digest, expected package-lock digest, network mode and limits digest into START evidence. Receipt projection exposes logical identities/digests only, never raw Host paths, credentials or package contents.
 
 ## 9. Pre-SPAWN Workspace Materialization — F1/F2
 
 After durable START and exact sandbox workspace activation, but **before any root process is spawned**:
 
-1. broker materializes the admitted source snapshot payload into:
-   ```text
-   <exact-workspace>\source
-   ```
-2. broker re-hashes the complete workspace source copy and proves it equals sealed `source_manifest_digest`;
-3. broker requires `<exact-workspace>\source\package-lock.json` to exist and verifies its SHA-256 equals the sealed expected digest;
-4. broker materializes the admitted dependency capsule into:
-   ```text
-   <exact-workspace>\.sentinelx-verification\npm-cache
-   ```
-5. broker re-hashes materialized cache against the capsule manifest;
-6. broker writes deterministic launcher shims into the reserved verification bin and verifies their digest;
+1. broker materializes source snapshot into `<exact-workspace>\source`;
+2. broker re-hashes the complete source copy and proves it equals sealed source manifest digest;
+3. broker requires `source\package-lock.json` and verifies its SHA-256;
+4. broker materializes dependency capsule into `<exact-workspace>\.sentinelx-verification\npm-cache`;
+5. broker re-hashes the cache against capsule manifest;
+6. broker writes deterministic launcher shims and verifies their digest;
 7. provider revalidates toolchain final paths + manifest digest a second time;
-8. only after all checks pass may `sandbox.spawn(...)` create the suspended root PowerShell/Python process.
+8. only then may `sandbox.spawn(...)` create the suspended root PowerShell/Python process.
 
-Consequences:
-
-- `package-lock.json` may **not** be absent at SPAWN for a profiled Node/npm verification;
-- no script is allowed to materialize or choose the package-under-test after process start;
-- the AppContainer never reads the immutable source/capsule stores directly;
-- every mutable copy is confined to exact workspace;
-- any copy/hash/bounds failure removes partial reserved material and fails before SPAWN;
-- a post-run source/lock digest check remains mandatory tamper detection before successful receipt.
-
-This directly closes Round-1 F1.
+`package-lock.json` may not be absent at SPAWN. No script may materialize or choose the package-under-test after process start. Any copy/hash/bounds failure removes partial reserved material and fails before SPAWN. Post-run source/lock checks remain tamper detection before successful receipt.
 
 ## 10. Environment Composition
 
-Create a verification-specific overlay on the existing sanitized scoped environment.
-
 For `node_npm_v1`:
 
-- set `cwd` for verification scripts beneath `<exact-workspace>\source` only;
-- prepend the workspace-local provider-generated shim directory to PATH;
-- do not add Host toolchain root to PATH as a launcher-discovery mechanism;
-- set `NPM_CONFIG_CACHE` to workspace-local admitted cache;
-- force `NPM_CONFIG_OFFLINE=true`;
-- disable npm audit/fund/update-notifier network-adjacent behavior;
-- set temp/log/home/profile locations inside exact workspace;
-- remove inherited proxy/registry overrides and credential-bearing npm/Git/SSH/GitHub variables;
-- reject caller `env` attempts to override reserved verification keys;
-- reject `NODE_OPTIONS` values that could inject external code.
-
-At minimum reserve/filter:
-
-```text
-PATH
-HTTP_PROXY / HTTPS_PROXY / ALL_PROXY / NO_PROXY
-npm_config_proxy / npm_config_https_proxy
-npm_config_registry
-NPM_CONFIG_CACHE
-NPM_CONFIG_OFFLINE
-NODE_OPTIONS
-NPM_TOKEN / NODE_AUTH_TOKEN
-GITHUB_TOKEN / GH_TOKEN
-GIT_ASKPASS / SSH_AUTH_SOCK
-USERPROFILE / HOME / APPDATA / LOCALAPPDATA
-```
+- cwd remains beneath `<exact-workspace>\source`;
+- prepend workspace-local provider-generated shim directory to PATH;
+- do not use Host toolchain root as PATH launcher discovery;
+- set workspace-local npm cache/temp/log/home/profile locations;
+- force npm offline mode;
+- remove proxy/registry and npm/Git/SSH/GitHub credential variables;
+- reject overrides of reserved verification keys;
+- reject `NODE_OPTIONS` external injection.
 
 Existing non-profiled scoped execution remains unchanged.
 
 ## 11. Node/npm Execution Semantics
 
-Do **not** add `node` as a generic scoped interpreter.
+Reuse existing `python3` / `powershell` / `pwsh` root execution. Do not add Node as a generic interpreter.
 
-Reuse existing `python3` / `powershell` / `pwsh` root execution. The provider-generated shims expose the sealed Node/npm toolchain to descendants while preserving the one existing executor and Job containment.
-
-Example verification script:
+Example:
 
 ```powershell
 npm ci --offline
@@ -419,37 +345,15 @@ npm test
 npm run check
 ```
 
-The logical `npm` resolves only to the workspace-local sealed shim, which invokes the exact hashed Node + npm CLI. Missing cache content fails offline.
-
-Before successful result projection:
-
-- source manifest is re-hashed or source mutation policy is checked according to the sealed source contract;
-- package-lock SHA-256 is rechecked;
-- toolchain/capsule/source identities in the result must match START evidence;
-- terminal Scope closure remains required.
+Logical `npm` resolves only to the sealed workspace shim. Before successful projection, source/lock integrity, verification identities and terminal Scope closure are revalidated.
 
 ## 12. Readiness / Capability
 
-Keep base `host_mutation_sandbox_v1` readiness independent.
+Keep base `host_mutation_sandbox_v1` readiness independent. Add a separate Node/npm verification feature.
 
-Add a separate feature such as:
+Readiness verifies config, toolchain manifest, final paths, read/execute-not-write ACL, sealed launcher execution, AppContainer Job containment, credential isolation and terminal ACL cleanup.
 
-```text
-host_runtime.scoped_verification_node_npm_v1
-```
-
-Readiness verifies physically:
-
-- profile configuration resolves;
-- toolchain manifest/digest can be computed;
-- Node/npm final paths are valid;
-- AppContainer receives read/execute but not write to toolchain root;
-- provider-generated launcher invokes sealed Node/npm components;
-- `node --version` / `npm --version` run in exact workspace + existing Job;
-- no broker credentials/user profile are inherited;
-- terminalization removes transient ACL authority.
-
-Readiness remains a capability preflight only. Every verification request independently revalidates selected source/capsule/toolchain integrity as defined above. Toolchain replacement after readiness therefore fails request admission even if readiness was cached.
+Readiness is preflight only. Every request independently revalidates source/capsule/toolchain integrity. Toolchain replacement after cached readiness therefore fails request admission.
 
 ## 13. `devforge_runtime` Integration Dependency
 
@@ -457,263 +361,103 @@ Core implementation remains independent of PR-007.
 
 Only after exact PR-007/equivalent admission exists in repository ancestry may `handlers/devforge_runtime.py` be modified.
 
-Extend `execute_scoped` schema with only:
-
-```yaml
-verification:
-  type: object
-  required:
-    - profile
-    - source_id
-    - source_manifest_sha256
-    - source_revision
-    - capsule_id
-    - package_lock_sha256
-  additionalProperties: false
-```
-
-The adapter passes this bounded object to the existing scoped handler. No Host paths, duplicate executor or Hub change.
+Extend `execute_scoped` with a bounded verification object containing only logical profile/source/capsule ids and integrity values. No Host paths, duplicate executor or Hub change.
 
 If PR-007 remains unmerged when core slices finish, stop at an external dependency checkpoint before this integration slice.
 
 ## 14. PR-010 Overlap Reconciliation
 
-At every implementation entry:
-
-1. re-read `main` and PR-010 state;
-2. if PR-010 merged, consume its canonical repository inventory/firewall primitive rather than duplicate it;
-3. toolchain/source/capsule stores must never become canonical-repository write authority;
-4. profiled execution remains `process_mutation` routed through the physically constrained scoped path;
-5. no PR-010 implementation is copied from an unmerged branch.
+At every implementation entry, re-read `main` and PR-010. If merged, consume its canonical inventory/firewall primitive. Verification stores never become canonical-repository write authority, profiled execution remains `process_mutation` through the scoped path, and no unmerged PR-010 code is copied.
 
 ## 15. Implementation Sequence
 
 ### Step A — policy + pure contracts
 
-Expected files:
-
-- `src/sentinelx_core/policy.py`
-- new `src/sentinelx_core/verification_profile.py`
-- `config.example.windows.yaml`
-- pure tests.
-
-Implements:
-
-- profile parsing + limits/hard ceilings;
-- SourceUnderTestSnapshot manifest/digest/bounds;
-- DependencyCapsule manifest/digest/bounds;
-- ToolchainManifest deterministic digest contract;
-- request/admission schemas.
-
-Exit evidence:
-
-- legacy config unchanged;
-- path/bounds/manifest/launcher substitution cases fail closed;
-- no AppContainer mutation yet.
+Implement profile parsing, resource limits, source/dependency manifests, toolchain manifest and request/admission schemas. Exit requires legacy config compatibility and fail-closed pure negative cases.
 
 ### Step B — audit + sandbox + pre-SPAWN materialization
 
-Expected files:
-
-- `src/sentinelx_core/mutation_audit.py`
-- `src/sentinelx_core/windows_mutation_sandbox.py`
-- verification helpers/tests.
-
-Implements:
-
-- verification intent sealed at START;
-- exact source/cache/shim broker materialization after START and before SPAWN;
-- mandatory pre-SPAWN source manifest + lockfile verification;
-- read/execute-only toolchain ACL;
-- second request-time toolchain integrity check;
-- bounded streaming copy and partial-copy cleanup;
-- transient ACL cleanup.
-
-Exit evidence:
-
-- wrong source head/manifest/lockfile fails before SPAWN;
-- toolchain tamper after readiness fails before SPAWN;
-- oversized/file-count capsule fails without residual partial copy;
-- existing sandbox tests remain passing.
+Implement START sealing, exact source/cache/shim materialization, mandatory pre-SPAWN source/lock verification, read/execute-only toolchain ACL, second toolchain revalidation, bounded copy/cleanup and transient ACL cleanup.
 
 ### Step C — scoped execution + real Node/npm verification
 
-Expected files:
-
-- `src/sentinelx_core/handlers/scoped_script.py`
-- optional snapshot/capsule builder utilities
-- scoped integration/Windows fixtures.
-
-Exit evidence:
-
-- real sealed Node/npm toolchain executes through workspace-local shim;
-- matching source + lockfile + dependency capsule completes offline npm checks;
-- source mutation / launcher substitution / cache miss / credential override / network attempts fail closed;
-- npm descendants remain in existing Job;
-- post-run lockfile/source integrity verified before success projection.
+Implement sealed launcher use, offline npm execution, post-run integrity projection, network/credential controls and physical Windows fixtures.
 
 ### Step D — readiness/capability/docs
 
-Expected files:
-
-- readiness module(s)
-- `src/sentinelx_core/handlers/basic.py`
-- README/config docs
-- activation/readiness tests.
-
-Exit evidence:
-
-- base sandbox readiness unaffected;
-- separate Node/npm readiness is physically gated;
-- cached readiness is proven non-authoritative for request-time toolchain integrity.
+Add separate Node/npm readiness and docs without changing base readiness.
 
 ### Step E — dependency-gated `devforge_runtime` integration
 
-Precondition: exact PR-007/equivalent is admitted into repository ancestry or explicitly reconciled after merge.
-
-Exit evidence:
-
-- local_api `describe` exposes bounded verification object;
-- `execute_scoped` uses source/profile/capsule identities and existing executor;
-- Host-path fields rejected;
-- no Hub modification.
+After exact PR-007/equivalent admission, project the bounded verification object through existing local_api and existing scoped executor.
 
 ### Step F — downstream AC12 proof
 
-Requires separate authority from ChatGPTControlShell PR-015.
+Under separate ChatGPTControlShell PR-015 authority:
 
-Procedure:
-
-1. resolve exact current PR-015 head SHA from its canonical transport;
-2. construct/read back a verification source snapshot containing the exact `mcp/` package bytes from that head, with manifest bound to repository `bewaterhere-coder/ChatGPTControlShell`, PR #15, head SHA and source subpath `mcp`;
-3. build/admit the matching dependency capsule from that exact `mcp/package-lock.json` digest;
-4. invoke PR-015's separately authorized S01 continuation without replaying implementation side effects;
-5. provider materializes source/cache into fresh exact workspace and verifies lockfile before SPAWN;
-6. execute real `npm run typecheck` and `npm run check` offline;
-7. receipt identifies PR-015 head SHA + source manifest digest + lockfile digest + toolchain digest + capsule digest + audit/scope identity;
-8. PR-015 remains sole authority to issue its Slice completion receipt.
-
-PR-011 Acceptance may consume that receipt as AC12 evidence but cannot synthesize or mutate PR-015 state.
+1. resolve exact current PR-015 head SHA;
+2. construct/read back source snapshot containing exact `mcp/` bytes from that head and bound to repo/PR/head/subpath;
+3. admit matching dependency capsule from exact `mcp/package-lock.json` digest;
+4. resume PR-015 S01 without replaying implementation;
+5. materialize source/cache into fresh exact workspace and verify lock before SPAWN;
+6. run real `npm run typecheck` and `npm run check` offline;
+7. receipt identifies PR head, source manifest, lock, toolchain, capsule and audit/scope identity;
+8. PR-015 remains sole authority for Slice completion.
 
 ## 16. Test Matrix
 
-### Pure/unit
+Required tests cover:
 
-- profile absent/valid/malformed;
-- configured limits and hard-ceiling rejection;
-- toolchain member traversal/final-path rejection;
-- ToolchainManifest canonical digest stability;
-- source snapshot repository/revision/manifest digest validation;
-- wrong source head/revision and manifest mismatch;
-- dependency capsule containment/tamper/lock mismatch;
-- source/capsule bytes, file-count, per-file and path-length bounds;
-- symlink/reparse/unexpected-file rejection;
-- launcher shim deterministic digest;
-- reserved environment rejection and credential/proxy stripping.
-
-### Scoped integration
-
-- existing unprofiled Python/PowerShell unchanged;
-- source copied only into exact workspace;
-- package-lock verified before first SPAWN;
-- node/npm success through provider shim;
-- Host `npm.cmd`/`npm.ps1` substitution cannot affect execution;
-- wrong source/capsule/lockfile fails before SPAWN;
-- post-readiness toolchain replacement fails request-time revalidation;
-- oversized capsule/file-count exhaustion fails closed;
-- partial source/cache copy cleanup on failure;
-- missing cache remains offline and fails;
-- toolchain write denied;
-- capsule/source immutable stores not AppContainer-writable;
-- descendants remain Job-contained;
-- timeout/nonzero/activation failure removes transient ACL/scope authority.
-
-### Physical Windows
-
-- sealed `node --version` / `npm --version` in AppContainer;
-- offline fixture `npm ci` + scripts;
-- DNS/HTTP probe remains unavailable;
-- canonical/protected roots inaccessible/non-mutable;
-- exact source manifest/head appears in receipt;
-- residual toolchain ACL absent after terminalization.
-
-### Regression
-
-- mutation policy tests;
-- scoped-script tests;
-- mutation readiness tests;
-- Windows mutation sandbox tests;
-- incident regression suite;
-- full CI and macOS compatibility where applicable.
+- profile/limit parsing and hard-ceiling rejection;
+- toolchain manifest digest stability and tamper after readiness;
+- source repository/revision/manifest mismatch;
+- wrong lockfile before SPAWN;
+- source/capsule bytes/file-count/per-file/path bounds;
+- reparse/unexpected-file rejection;
+- launcher substitution/PATH shadowing;
+- reserved env and credential/proxy stripping;
+- exact-workspace-only source/cache materialization;
+- partial copy cleanup;
+- offline cache miss;
+- toolchain write denial;
+- Job descendant containment;
+- timeout/nonzero/activation cleanup;
+- physical Windows node/npm versions, offline npm ci/scripts, no network, canonical path negative probes, and residual ACL absence;
+- existing policy/scoped-script/readiness/sandbox/incident/full CI regressions.
 
 ## 17. Risks and Controls
 
 | Risk | Control |
 |---|---|
-| Verification checks wrong source | immutable SourceUnderTestSnapshot bound to exact transport head + pre-SPAWN manifest/lock verification |
-| Script creates/replaces source after start | source materialized by broker before SPAWN; post-run integrity check before success |
-| Toolchain receipt hashes different launcher | complete toolchain manifest + provider-generated sealed launcher shim; no Host PATH npm launcher |
-| Toolchain changes after cached readiness | request-time pre-START and pre-SPAWN manifest revalidation |
-| Capsule resource exhaustion | fixed defaults + hard ceilings + streaming bounds + partial-copy cleanup |
-| Toolchain ACL grants write | dedicated read/execute ACL + negative physical test + closure readback |
-| Capsule/source smuggles Host path | logical ids + provider roots + normalized manifest + final-path containment |
+| Verification checks wrong source | source snapshot bound to exact transport head + pre-SPAWN manifest/lock verification |
+| Script chooses source after start | broker materialization before SPAWN + post-run tamper check |
+| Receipt hashes different npm launcher | full toolchain manifest + provider-generated sealed shim |
+| Toolchain changes after readiness | pre-START and pre-SPAWN request-time revalidation |
+| Capsule resource exhaustion | fixed defaults + hard ceilings + bounded copy + cleanup |
+| Toolchain ACL grants write | read/execute ACL + physical negative test + closure readback |
+| Source/capsule smuggles Host path | logical ids + provider roots + normalized manifests + final-path containment |
 | npm silently networks | offline env + proxy/registry sanitization + no-network physical test |
-| Credential leak | environment deny/reserved set + isolated workspace profiles |
-| Job descendant escape | existing no-breakaway Job + lifecycle descendant regression |
-| Audit loses verification identity | source/toolchain/capsule/lock/limits sealed into START evidence |
-| Base runtime becomes unavailable | independent verification readiness feature |
+| Credential leak | reserved/deny environment + isolated workspace profiles |
+| Job escape | existing no-breakaway Job + descendant regression |
+| Audit loses identity | source/toolchain/capsule/lock/limits sealed into START |
+| Base runtime regresses | separate verification readiness |
 | PR-007 copied silently | dependency-gated Step E |
 | PR-010 weakened | fresh implementation-entry reconciliation |
 
 ## 18. Explicitly Rejected Alternatives
 
-Rejected:
-
-- reading/mounting canonical checkout from AppContainer;
-- source materialization by the verification script after SPAWN;
-- allowing `package-lock.json` to be absent before profiled SPAWN;
-- using Host PATH `npm.cmd`/`npm.ps1` as authoritative launcher;
-- globally widening toolchain ACL;
-- adding Node/npm to generic command allowlists;
-- Internet/DNS fallback for npm;
-- inheriting broker credentials;
-- caller-supplied toolchain/source/cache/capsule Host paths;
-- running npm outside scoped AppContainer;
-- second executor/audit/scope authority;
-- `operator_unrestricted` fallback;
-- Hub modification;
-- copying unmerged PR-007/PR-010 implementation into this branch.
+Rejected: canonical checkout mount/read from AppContainer; source creation after SPAWN; lockfile absence before SPAWN; Host PATH npm launcher; global toolchain ACL widening; Node/npm generic allowlist expansion; network fallback; broker credential inheritance; caller Host paths; npm outside AppContainer; second executor/audit/scope authority; `operator_unrestricted`; Hub mutation; silent copy of unmerged PR-007/PR-010 code.
 
 ## 19. Round-1 Finding Closure
 
-### F1 — source-under-test materialization / pre-toolchain binding
+### F1
+Closed by exact SourceUnderTestSnapshot identity, broker pre-SPAWN source materialization, mandatory pre-SPAWN lock verification, exact PR-015 head binding and post-run tamper checks.
 
-Closed in Plan Revision 2 by Sections 4, 7, 8, 9, 15 Step B/C, 15 Step F and Test Matrix:
-
-- exact repository/PR head/source manifest identity is sealed;
-- source is broker-materialized before SPAWN;
-- package-lock must exist and match before first process;
-- downstream PR-015 proof is explicitly bound to exact PR head + `mcp/` bytes;
-- post-run checks are tamper detection, not a substitute for pre-SPAWN truth.
-
-### F2 — toolchain/capsule integrity / resource bounds
-
-Closed in Plan Revision 2 by Sections 3, 5, 6, 9, 12 and Test Matrix:
-
-- deterministic complete toolchain manifest/digest;
-- exact Node + npm CLI execution through provider-generated launcher shims;
-- request-time pre-START and pre-SPAWN integrity revalidation independent of readiness cache;
-- concrete safe defaults + hard resource ceilings;
-- bounded streaming copy + partial-copy cleanup and required negative tests.
+### F2
+Closed by deterministic complete toolchain manifest, provider-generated sealed launchers, request-time pre-START + pre-SPAWN revalidation, explicit safe defaults/hard ceilings, bounded copy/cleanup and negative tests.
 
 ## 20. Review Questions for Revision 2
 
-Reviewer must re-evaluate the whole Plan, with particular attention to:
+Reviewer must re-evaluate the whole Plan, especially whether the source snapshot remains verification-only rather than replacing generic workspace materialization, whether toolchain digest/launcher identity cannot diverge, whether TOCTOU is sufficiently closed, whether resource limits are safe/testable, and whether PR-007/PR-010 dependency boundaries remain fail-closed.
 
-1. whether SourceUnderTestSnapshot is sufficiently narrow to preserve the Requirement's rule not to replace generic DevForge execution-workspace materialization semantics;
-2. whether full readable-toolchain manifest + sealed workspace launcher prevents hash/launcher divergence;
-3. whether pre-START + pre-SPAWN revalidation sufficiently closes cached-readiness/TOCTOU integrity risk;
-4. whether the resource defaults/hard ceilings are safe and testable;
-5. whether PR-007 remains correctly slice-local and PR-010 reconciliation remains fail-closed.
-
-No Requirement semantic change is introduced by Revision 2. Plan approval remains reviewer-owned.
+No Requirement semantic change is introduced. Plan approval remains reviewer-owned.
