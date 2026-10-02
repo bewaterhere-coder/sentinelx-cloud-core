@@ -12,9 +12,11 @@ canonical_transport: github-pr
 pr_number: 7
 canonical_branch: task/host-mutation-scope-control-surface-mcp-admission-bridge-v1
 evaluated_head: fc760a033b991072405fc2a19bdb31f5d39ab8c9
-next_stage: fixing
-fixing_disposition: blocked_external_dependency_no_local_code_churn
-acceptance_approved: false
+current_stage: acceptance
+gate_transition: not_applied
+stop_disposition: external_blocker
+fixing_disposition: not_entered_no_local_repair
+a cceptance_approved: false
 completion_verified: false
 ```
 
@@ -23,6 +25,8 @@ completion_verified: false
 Repository-local implementation quality and the provider-owned security boundary are substantially verified, but the Task cannot enter `accepted` because Acceptance Criterion A7 is not satisfied: the live generic Hub `/op` projection still does not expose or route `mutation_scope` end to end.
 
 This is an external Hub projection blocker, not a repository-local implementation defect. No unrestricted fallback, caller-minted scope authority, dedicated-Hub-tool claim, or local workaround is authorized by this finding.
+
+The Acceptance decision is durable evidence. No `acceptance -> fixing` Gate transition is applied by this review because the blocking finding is not `repair_local`; forcing a fixing transition would imply local repair authority that does not exist. The canonical Task therefore remains at the Acceptance boundary until the external dependency changes and Acceptance can be re-run.
 
 ## Runtime / Transport Consistency
 
@@ -132,6 +136,8 @@ Completion Verified: false
 Result: Rejected
 Blocking Finding: HubGenericOpProjectionRequired
 Finding Class: external_blocker
+Gate Transition: not applied
+Current Stage: acceptance
 ```
 
 The Task must not be merged or marked done from this state.
