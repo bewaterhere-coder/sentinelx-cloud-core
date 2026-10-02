@@ -16,7 +16,7 @@ transition:
 lineage:
   requirement_revision: 1
   requirement_before_blob_sha: c3058b742d77313256b4c40236b9bee3cb64e4a0
-  requirement_after_blob_sha: 1a3d284b126b265d2a99251e703c383e429b510c
+  requirement_after_blob_sha: 841dc291cad3c4351fdf7f52923ce81042a8cf59
   plan_revision: 1
   plan_blob_sha: 0ecca078bfaf01131c293c1d7b16e6f28ba60cd8
   review_ref: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-review-r1.md
