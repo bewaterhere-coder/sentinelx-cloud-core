@@ -5,14 +5,14 @@
 ```yaml
 task_id: PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1
 requirement_revision: 2
-stage: plan_review
-plan_status: ready_for_review
+stage: plan_review_rejected
+plan_status: rejected
 implementation_authorized: false
 plan_revision: 3
 requirement: docs/requirements/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1.md
 requirement_change_invalidation: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-requirement-r2-invalidation.md
 prior_plan_review: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-plan-review-r2.md
-current_plan_review: null
+current_plan_review: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-plan-review-r3.md
 execution_slice_set: null
 transport: github-pr
 pr_number: 7
@@ -450,16 +450,28 @@ Reviewer must specifically challenge:
 5. Can `sentinel_local_api.params` carry all nested fields needed without requiring any Hub schema change?
 6. Does the live acceptance path prove the actual model-facing boundary rather than only Agent-local unit behavior?
 
+## Plan Review R3 Result
+
+Plan Review R3 rejected Revision 3 with plan-local remediation only. Canonical findings are in:
+
+`docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-plan-review-r3.md`
+
+Required corrections are limited to:
+
+1. preserve `disabled_ops` transitively across built-in lifecycle and execute actions;
+2. bound `execute_scoped` cleanup/response so exact provider workspace/script paths are not exposed;
+3. define deterministic built-in/external endpoint collision handling and built-in identity metadata.
+
 ## Current Disposition
 
 ```text
 Requirement Revision 2: Ready
-Plan Revision 3: Ready for Review
+Plan Revision 3: Rejected
 Plan Approved: false
 Execution Slice Set: not compiled
 Implementation Authorized: false
-Current Gate: plan_review
-Next Actor: reviewer
+Current Gate: plan_review_rejected
+Next Actor: planner
 ```
 
 No implementation or acceptance claim is made by this Plan.
