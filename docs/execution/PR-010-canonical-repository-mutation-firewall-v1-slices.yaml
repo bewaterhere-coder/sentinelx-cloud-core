@@ -317,7 +317,10 @@ slices:
 
   - id: S05
     title: Incident regression security suite and documentation
-    status: pending
+    status: completed
+    slice_completed: true
+    completion_checkpoint: docs/checkpoints/PR-010-canonical-repository-mutation-firewall-v1-s05-completed-r4-20261003.yaml
+    verified_implementation_head: c08e46dfce287213b7b3760a322c2a53eb6acdc6
     objective: Freeze canonical-checkout incidents plus mixed-operation coverage, run affected Core security regressions on Windows evidence, and document operator/configuration and immutable-Hub semantics.
     entry_gate:
       - S04 completed
@@ -354,6 +357,13 @@ slices:
       - Core capability readiness top-level/nested negative and positive matrices
       - documentation review confirms no Hub implementation requirement
     completion_rule: repository-local Core implementation has durable required evidence and is ready for #开发验收; no production activation, merge, release or Hub change is claimed
+    completion_evidence:
+      focused_windows_run: 37078293416
+      macos_run: 37078293526
+      exact_product_head: c08e46dfce287213b7b3760a322c2a53eb6acdc6
+      canonical_main_final_readback: df9252fd4305eed361d8dc84e04da90222cd622e
+      final_reconciliation: docs/checkpoints/PR-010-canonical-repository-mutation-firewall-v1-s05-final-reconciliation-20261003.yaml
+      result: success
 terminal_transition:
   plan_review_required_before_execution: true
   when_plan_approved: implementation
