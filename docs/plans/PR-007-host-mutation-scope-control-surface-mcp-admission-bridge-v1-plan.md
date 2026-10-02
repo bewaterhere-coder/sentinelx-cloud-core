@@ -5,15 +5,15 @@
 ```yaml
 task_id: PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1
 requirement_revision: 2
-stage: plan_review
-plan_status: ready_for_review
-implementation_authorized: false
+stage: implementation
+plan_status: approved
+implementation_authorized: true
 plan_revision: 4
 requirement: docs/requirements/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1.md
 requirement_change_invalidation: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-requirement-r2-invalidation.md
 prior_plan_review: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-plan-review-r3.md
-current_plan_review: null
-execution_slice_set: null
+current_plan_review: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-plan-review-r4.md
+execution_slice_set: docs/execution/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-r4-slices.yaml
 transport: github-pr
 pr_number: 7
 task_branch: task/host-mutation-scope-control-surface-mcp-admission-bridge-v1
@@ -357,9 +357,11 @@ HostMutationScopeTerminalizationFailed
 
 No failure path authorizes shell, `exec`, direct Python, `operator_unrestricted`, legacy unrestricted compatibility, caller workspace placement, provider substitution, or response-path leakage.
 
-## Planned Implementation Slices — Compile only after Plan approval
+## Approved Implementation Slices — compiled after Plan Review R4
 
-No current Execution Slice Set exists while Revision 4 is under review.
+Current Execution Slice Set:
+
+`docs/execution/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-r4-slices.yaml`
 
 ### S06 — Built-in `devforge_runtime` endpoint + lifecycle composition
 
@@ -523,26 +525,26 @@ At minimum retain/execute affected checks for:
 
 ## Plan Review Questions
 
-Reviewer must specifically verify:
+Reviewer verified:
 
-1. Does D11 preserve existing `disabled_ops` as the single policy truth without a second deny list?
-2. Can any direct built-in call bypass the same policy filtering used by describe/list?
-3. Does the D6/D13 positive result projection remain safe if the inner scoped handler adds fields later?
-4. Does collision behavior preserve an operator-configured external `devforge_runtime` exactly rather than shadow or reinterpret it?
-5. Does `provider_kind=builtin + contract_revision=1` let Acceptance prove the provider identity unambiguously?
-6. Does `execute_scoped` still compose the exact existing scoped execution path and RequestContext?
-7. Does live S08 prove the real model-facing boundary without requiring Hub modification?
+1. D11 preserves existing `disabled_ops` as the single policy truth without a second deny list.
+2. Direct built-in calls cannot bypass the same policy filtering used by describe/list.
+3. D6/D13 use a positive result projection that remains safe if the inner scoped handler adds fields later.
+4. Collision behavior preserves an operator-configured external `devforge_runtime` rather than shadowing or reinterpreting it.
+5. `provider_kind=builtin + contract_revision=1` lets Acceptance prove provider identity unambiguously.
+6. `execute_scoped` still composes the exact existing scoped execution path and RequestContext.
+7. S08 proves the real model-facing boundary without requiring Hub modification.
 
 ## Current Disposition
 
 ```text
 Requirement Revision 2: Ready
-Plan Revision 4: Ready for Review
-Plan Approved: false
-Execution Slice Set: not compiled
-Implementation Authorized: false
-Current Gate: plan_review
-Next Actor: reviewer
+Plan Revision 4: Approved
+Plan Approved: true
+Execution Slice Set: docs/execution/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-r4-slices.yaml
+Implementation Authorized: true
+Current Gate: implementation
+Next Actor: implementer
 ```
 
 No implementation or acceptance claim is made by this Plan.
