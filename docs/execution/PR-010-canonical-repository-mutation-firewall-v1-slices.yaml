@@ -262,7 +262,10 @@ slices:
 
   - id: S04
     title: Core Capability Readiness and Existing Transport Projection
-    status: pending
+    status: completed
+    slice_completed: true
+    completion_checkpoint: docs/checkpoints/PR-010-canonical-repository-mutation-firewall-v1-s04-completed-r4-20261003.yaml
+    verified_implementation_head: f7a4731638de19513aa3f6247fa38d8b81d2f97d
     objective: Compose final Core readiness from inventory, identity compatibility, effective op/suboperation surface, structured coverage and process disposition, then verify through existing Core protocol structures.
     entry_gate:
       - S03 completed
@@ -298,11 +301,23 @@ slices:
       - Core hello/protocol readback confirms readiness output
       - Hub projection absence is not a blocker
     completion_rule: incomplete top-level or nested effective-surface coverage cannot advertise the capability and complete Core coverage is visible in Core-owned output
+    completion_evidence:
+      focused_windows_run: 37051579069
+      s03_regression_run: 37051578954
+      s02_regression_run: 37051578898
+      s01_regression_run: 37051578962
+      ci_run: 37051578909
+      macos_run: 37051579043
+      exact_product_head: f7a4731638de19513aa3f6247fa38d8b81d2f97d
+      pr007_final_reconciled_head: 0e6044de87b6dd48a6a190b88499b41162b22826
+      pr008_final_reconciled_head: f7594c468d764ad85c0dc508ad47f009c89793c1
+      entry_reconciliation: docs/checkpoints/PR-010-canonical-repository-mutation-firewall-v1-s04-entry-reconciliation-20261003.yaml
+      result: success
     next_on_pass: S05
 
   - id: S05
     title: Incident regression security suite and documentation
-    status: planned_not_authorized
+    status: pending
     objective: Freeze canonical-checkout incidents plus mixed-operation coverage, run affected Core security regressions on Windows evidence, and document operator/configuration and immutable-Hub semantics.
     entry_gate:
       - S04 completed
