@@ -4,19 +4,21 @@
 
 ```yaml
 task_id: PR-010-canonical-repository-mutation-firewall-v1
-stage: plan_review
-plan_status: ready_for_review
+stage: implementation
+plan_status: approved
 plan_revision: 4
 requirement_revision: 2
 requirement: docs/requirements/PR-010-canonical-repository-mutation-firewall-v1.md
 requirement_change_impact: docs/reviews/PR-010-canonical-repository-mutation-firewall-v1-requirement-r2-invalidation.md
 prior_plan_review: docs/reviews/PR-010-canonical-repository-mutation-firewall-v1-plan-review-r3.md
+plan_review: docs/reviews/PR-010-canonical-repository-mutation-firewall-v1-plan-review-r4.md
+approval_checkpoint: docs/checkpoints/PR-010-canonical-repository-mutation-firewall-v1-plan-review-r4-approved-20261002.yaml
 transport: github-pr
 pr_number: 10
 task_branch: task/canonical-repository-mutation-firewall-v1
 base_branch: main
 planning_baseline_main: f7e878f3497582547e5d52cd33b060cae18d2e84
-implementation_authorized: false
+implementation_authorized: true
 execution_slice_set: docs/execution/PR-010-canonical-repository-mutation-firewall-v1-slices.yaml
 acceptance_approved: false
 completion_verified: false
@@ -59,9 +61,9 @@ A semantic incompatibility is a Decision Boundary: either preserve compatibility
 
 ### Canonical repository and dependencies
 
-- canonical `main`: `f7e878f3497582547e5d52cd33b060cae18d2e84` at remediation time;
+- canonical `main`: `f7e878f3497582547e5d52cd33b060cae18d2e84` at review time;
 - PR-010 transport remains PR #10;
-- observed PR-007 head at remediation: `3aec855ce79339b6b286f4d420cf78bc8a78bd80`, Plan Revision 4 / plan review;
+- observed PR-007 head at Plan R4 review: `221c7b870e9305847a94b7d947a870dbe6aa28ab`, implementation;
 - observed PR-008 head: `f7594c468d764ad85c0dc508ad47f009c89793c1`, Acceptance blocked;
 - dependency SHAs are observations only and must be re-read at every overlapping Slice entry.
 
@@ -324,62 +326,57 @@ External Hub projection/rendering is never a required PR-010 receipt.
 
 **Stop condition:** no effective generic, mixed-operation or child-process canonical mutation bypass can coexist with readiness true.
 
-### S04 — Core capability readiness + existing transport projection
+### S04 — Core Capability Readiness + Existing Transport Projection
 
 **Entry:** exact overlap reconciliation if registry/local_api/capability/hello/protocol seams moved.
 
 **Scope:**
 
-- compose readiness from inventory, identity compatibility, effective op/suboperation registry, structured coverage and process disposition;
-- expose readiness through existing Core hello/capability/protocol structures;
-- add bounded reason codes, including unknown mixed operation/action coverage without leaking sensitive endpoint/path details;
+- compose readiness from inventory + effective operation registry + structured coverage + process disposition;
+- expose capability through existing SentinelX Core hello/capability/protocol structures;
+- add bounded reason codes/diagnostics;
 - preserve PR-007/PR-008 semantics;
-- require no Hub modification or rendering.
+- do not modify, require changes to, deploy, or validate production Hub rendering.
 
 **Verification:**
 
-- unknown exposed op -> unavailable;
-- unknown Git selector metadata -> unavailable;
-- unknown configured `local_api` endpoint/action -> unavailable;
-- known external read-only/non-repository action does not falsely make readiness unavailable;
-- `devforge_runtime.execute_scoped`, if present and proven through existing scoped authority, contributes covered process disposition rather than duplicate execution logic;
-- uncovered mutation action -> unavailable;
-- policy disabled -> unavailable with legacy behavior preserved;
-- valid Windows complete-coverage fixture -> present;
-- Core hello/protocol readback confirms capability.
+- one unknown exposed op => Core capability unavailable;
+- one uncovered mutator => unavailable;
+- policy disabled => unavailable while legacy behavior remains;
+- valid Windows complete-coverage fixture => Core capability present;
+- Core protocol/hello readback confirms the field;
+- missing Hub projection, if separately observed, is diagnostic only.
 
-**Stop condition:** incomplete top-level or nested effective-surface coverage cannot mechanically advertise the capability.
+**Stop condition:** partial Core coverage cannot mechanically advertise the capability, and complete Core coverage is visible in existing Core-owned protocol output.
 
-### S05 — Incident regression, security suite and documentation
+### S05 — Incident regression, affected security suite and documentation
 
-Freeze the incident family plus nested/mixed operation coverage.
+**Scope:**
 
-Required matrix includes:
+Freeze the real incident family and document the final operator/security boundary.
+
+Required regression matrix:
 
 1. broad parent `rw` + canonical edit -> blocked;
 2. canonical delete/edit -> blocked before backup;
 3. canonical structured Git patch -> blocked;
 4. generic process switch/write -> blocked under firewall-ready mode;
-5. indirect/background child write -> blocked;
+5. indirect/background child canonical write -> blocked;
 6. unknown inventory/target -> fail closed;
 7. canonical read/list/search/status/diff -> allowed;
-8. same-repository execution workspace -> firewall pass then existing authority;
-9. fake `canonical_sync` -> no bypass;
-10. unknown top-level op -> readiness unavailable;
-11. unknown mixed Git selector -> readiness unavailable;
-12. `local_api` unknown endpoint/action effect -> readiness unavailable;
-13. `local_api` proven read-only/non-repository endpoint action -> compatible with readiness;
-14. `local_api` process/structured mutation without coverage -> readiness unavailable;
-15. internal-only transport op -> not counted as model-facing evidence;
-16. Hub projection omission -> external diagnostic only.
+8. same-repository non-canonical execution workspace -> passes firewall then existing authorities decide;
+9. fake `canonical_sync` claim -> no bypass;
+10. unknown/unclassified operation -> readiness unavailable;
+11. internal-only transport op -> not silently counted as model-facing evidence;
+12. Hub projection omission -> documented external limitation only, no PR-010 failure.
 
-Documentation covers canonical inventory, repository identity compatibility, operation/suboperation effect model, external `local_api` default-unknown semantics, process compatibility, platform support, and immutable Hub boundary.
+Documentation covers inventory configuration, identity semantics, readiness/error behavior, platform support, `file_ops` vs `protected_roots` vs canonical firewall vs scoped sandbox, authoritative operation registration, process compatibility, and immutable Hub boundary.
 
-**Stop condition:** durable Core-owned evidence is ready for `#开发验收`; no merge, release, production Host activation or Hub change is implied.
+**Stop condition:** Core/local implementation has durable required evidence and is ready for `#开发验收`; no merge, release, production Host activation, or Hub activation is implied.
 
 ## Implementation-Ready Admission Gate
 
-Plan Review must confirm:
+Plan Review confirms:
 
 ### P0-A — Requirement R2 lineage
 Review is against Requirement Revision 2 / Plan Revision 4; prior approvals are history only.
@@ -404,11 +401,10 @@ PR-007/PR-008 are re-read before overlapping mutation; PR-009 remains non-blocki
 
 ## Post-Review Transition
 
-If Plan Revision 4 is approved, authorize the Revision 4 Slice Set and resume at **S01 retained inventory repair + identity consumer revalidation**.
-
-Until approval:
+Plan Revision 4 is approved. The Revision 4 Slice Set is implementation authority and execution resumes at **S01 retained inventory repair + identity consumer revalidation**.
 
 ```yaml
-implementation_authorized: false
-current_gate: plan_review
+implementation_authorized: true
+current_gate: implementation
+next_slice: S01
 ```
