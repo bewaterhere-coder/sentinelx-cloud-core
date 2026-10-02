@@ -407,8 +407,15 @@ registry. Its presence in `ops_supported` means only that this Agent can dispatc
 operation; it does **not** prove scoped mutation readiness. Callers must separately
 inspect `execution_features.host_mutation_sandbox_v1`. Operators may disable
 `mutation_scope` through `disabled_ops`, which removes both advertisement and dispatch.
-V1 relies on the existing generic Hub operation relay and does not claim or require a
-dedicated public MCP tool for this lifecycle operation.
+`mutation_scope` may remain a direct Agent/internal compatibility surface, but model-facing
+development admission does **not** depend on the Hub projecting that operation by name.
+On an explicitly opted-in Host, the existing `sentinel_local_api` / Agent `local_api`
+envelope exposes the Agent-owned built-in `devforge_runtime` endpoint with bounded
+`provision_scope`, `revalidate_scope`, `inspect_scope`, `terminalize_scope`, and
+`execute_scoped` actions. This reuses the existing Hub envelope unchanged and requires no
+Hub source, schema, or deployment modification. `local_api` dispatchability alone does not
+prove mutation readiness; callers must still verify the exact endpoint/action contract and
+`execution_features.host_mutation_sandbox_v1` on the target Host.
 
 ## Local development
 

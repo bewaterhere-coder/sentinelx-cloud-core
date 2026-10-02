@@ -69,11 +69,20 @@ def _run(handler, *args):
 
 
 def test_no_policy_no_external_keeps_local_api_unregistered() -> None:
-    assert "local_api" not in build_registry(policy=Policy.empty())
+    registry = build_registry(policy=Policy.empty())
+    assert "local_api" not in registry
+    help_result = _run(registry["help"], {"topic": "operations"})
+    assert "local_api" not in help_result["navigation"]
 
 
 def test_eligible_host_lists_bounded_builtin(tmp_path: Path) -> None:
     registry = build_registry(policy=_policy(tmp_path))
+    help_result = _run(registry["help"], {"topic": "operations"})
+    help_text = help_result["navigation"]["local_api"]
+    assert "devforge_runtime" in help_text
+    assert "does not imply mutation readiness" in help_text
+    assert "host_mutation_sandbox_v1" in help_text
+
     listed = _run(registry["local_api"], {"operation": "list"})
     entry = next(
         item for item in listed["endpoints"] if item["name"] == "devforge_runtime"
@@ -171,6 +180,33 @@ def test_disabled_mutation_scope_hides_and_denies_lifecycle(tmp_path: Path) -> N
     assert denied["error"] == "operation_disabled"
 
 
+def test_help_hides_local_api_when_builtin_has_no_admitted_action(tmp_path: Path) -> None:
+    policy = _policy(tmp_path, frozenset({"mutation_scope", "script_run"}))
+    registry = build_registry(policy=policy)
+    help_result = _run(registry["help"], {"topic": "operations"})
+
+    assert "local_api" not in registry
+    assert "local_api" not in help_result["navigation"]
+
+
+def test_help_describes_external_local_api_without_claiming_devforge_runtime(tmp_path: Path) -> None:
+    external = LocalApiEndpoint(
+        name="external_tools",
+        transport="unix",
+        path="/tmp/external.sock",
+        protocol="jsonrpc",
+        actions={"external.echo": LocalApiAction(method="external.echo")},
+    )
+    policy = replace(Policy.empty(), local_apis={external.name: external})
+    registry = build_registry(policy=policy)
+    help_result = _run(registry["help"], {"topic": "operations"})
+
+    assert "local_api" in registry
+    help_text = help_result["navigation"]["local_api"]
+    assert "operator-configured" in help_text
+    assert "devforge_runtime" not in help_text
+
+
 def test_disabled_script_run_filters_optional_execute_adapter(tmp_path: Path) -> None:
     policy = _policy(tmp_path, frozenset({"script_run"}))
     state = tmp_path / "state"
@@ -221,6 +257,12 @@ def test_external_name_collision_preserves_external(tmp_path: Path, caplog) -> N
         actions={"external.echo": LocalApiAction(method="external.echo")},
     )
     policy = replace(base, local_apis={external.name: external})
+    registry = build_registry(policy=policy)
+    help_result = _run(registry["help"], {"topic": "operations"})
+    help_text = help_result["navigation"]["local_api"]
+    assert "operator-configured" in help_text
+    assert "Agent-owned" not in help_text
+
     state = tmp_path / "state"
     state.mkdir()
     provider = make_devforge_runtime_provider(
