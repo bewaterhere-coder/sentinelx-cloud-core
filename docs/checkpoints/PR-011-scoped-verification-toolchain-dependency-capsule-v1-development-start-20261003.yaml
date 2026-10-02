@@ -59,7 +59,6 @@ completion_guard:
   status: satisfied
   canonical_next_action: "#开发评审 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
 notes:
-  - Historical development-start receipt; current Plan Revision is 2 after Plan Review R1 remediation.
   - Production mcp.sentinelx.app remains an immutable external transport boundary.
-  - No product source, runtime policy, Host configuration, Agent installation or downstream ChatGPTControlShell task was mutated by #开发.
-  - No Execution Slice Set existed at development-start; Slice Set may be compiled only after current Plan Review approval.
+  - No product source, runtime policy, Host configuration, Agent installation or downstream ChatGPTControlShell task was mutated by this command.
+  - No Execution Slice Set exists yet; it may be compiled only after Plan Review approval.
