@@ -3,8 +3,10 @@ project_id: sentinelx-cloud-core
 task_id: PR-010-canonical-repository-mutation-firewall-v1
 requirement_revision: 2
 plan_revision: 4
-plan_review: pending
-implementation_authorized: false
+plan_review: docs/reviews/PR-010-canonical-repository-mutation-firewall-v1-plan-review-r4.md
+plan_review_result: Approved
+approval_checkpoint: docs/checkpoints/PR-010-canonical-repository-mutation-firewall-v1-plan-review-r4-approved-20261002.yaml
+implementation_authorized: true
 execution_mode: incremental
 one_manual_invocation_max_slices: 1
 planning_baseline_main: f7e878f3497582547e5d52cd33b060cae18d2e84
@@ -31,6 +33,10 @@ entry_reconciliation:
     - PR-009-mcp-development-execution-projection-dynamic-tool-contract-v1
   observed_at_plan_remediation:
     pr007_head: 3aec855ce79339b6b286f4d420cf78bc8a78bd80
+    pr008_head: f7594c468d764ad85c0dc508ad47f009c89793c1
+    authority: observation_only
+  observed_at_plan_review_r4:
+    pr007_head: 221c7b870e9305847a94b7d947a870dbe6aa28ab
     pr008_head: f7594c468d764ad85c0dc508ad47f009c89793c1
     authority: observation_only
   required_reads_on_overlap:
