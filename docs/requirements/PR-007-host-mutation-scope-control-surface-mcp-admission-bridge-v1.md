@@ -8,13 +8,13 @@ task_id: PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1
 title: Host Mutation Scope Control Surface & MCP Admission Bridge V1
 requirement_revision: 2
 development:
-  stage: plan_review
+  stage: implementation
   gates:
     requirement_ready: true
-    plan_approved: false
+    plan_approved: true
     acceptance_approved: false
     completion_verified: false
-  next_expected_actor: reviewer
+  next_expected_actor: implementer
 transport:
   type: github-pr
   pr_number: 7
@@ -22,8 +22,8 @@ transport:
   base_branch: main
 artifacts:
   plan: docs/plans/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-plan.md
-  plan_review: null
-  execution_slice_set: null
+  plan_review: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-plan-review-r4.md
+  execution_slice_set: docs/execution/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-r4-slices.yaml
   requirement_change_invalidation: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-requirement-r2-invalidation.md
 historical_artifacts:
   prior_plan_review: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-plan-review-r3.md
@@ -356,8 +356,10 @@ Requirement Ready: true
 Prior Plan Revision 2: invalidated for current requirement
 Current Plan Revision: 4
 Prior Plan Review R3: Rejected / remediated by Revision 4
-Current Gate: plan_review
-Plan Approved: false
-Implementation Authorized: false
-Next Actor: reviewer
+Current Plan Review R4: Approved
+Current Execution Slice Set: docs/execution/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-r4-slices.yaml
+Current Gate: implementation
+Plan Approved: true
+Implementation Authorized: true
+Next Actor: implementer
 ```
