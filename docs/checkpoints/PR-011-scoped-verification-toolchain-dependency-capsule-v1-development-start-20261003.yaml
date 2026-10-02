@@ -1,0 +1,64 @@
+schema_version: "1.0"
+kind: devforge_development_start_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1
+source_command: "#开发 Scoped Verification Toolchain & Dependency Capsule V1"
+generated_at: 2026-10-03T02:38:00+08:00
+runtime:
+  repository: bewaterhere-coder/DevForge
+  branch: main
+  version: 2.34.0
+  revision: e0fe219252b160ec35d7349bb1dc27c16227229a
+  workflow_id: project_development
+  workflow_version: "2.1"
+transport:
+  type: github-pr
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 11
+  branch: task/scoped-verification-toolchain-dependency-capsule-v1
+  base_branch: main
+  base_sha: f7e878f3497582547e5d52cd33b060cae18d2e84
+  provisional_bootstrap: docs/checkpoints/scoped-verification-toolchain-dependency-capsule-v1-provisional-bootstrap.md
+artifacts:
+  requirement:
+    ref: docs/requirements/PR-011-scoped-verification-toolchain-dependency-capsule-v1.md
+    revision: 1
+    blob_sha: c3058b742d77313256b4c40236b9bee3cb64e4a0
+    read_back_verified: true
+  plan:
+    ref: docs/plans/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan.md
+    revision: 1
+    blob_sha: 0ecca078bfaf01131c293c1d7b16e6f28ba60cd8
+    read_back_verified: true
+requirement_refinement:
+  requirement_ready: true
+  material_product_decision_pending: false
+  requirement_artifact_bundle: not_required
+  ui_semantic_resolution: not_applicable
+  visual_fidelity: not_applicable
+planning:
+  plan_ready: true
+  plan_approved: false
+  implementation_authorized: false
+  current_task_p0_dependencies: []
+  integration_dependency:
+    - PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1 gates only devforge_runtime integration and downstream proof
+  overlap_reconciliation:
+    - PR-010-canonical-repository-mutation-firewall-v1 must be re-read at implementation entry
+postconditions:
+  task_id_frozen: true
+  transport_resolved_and_verified: true
+  requirement_durable_and_readback_verified: true
+  plan_durable_and_readback_verified: true
+  development_stage: plan_review
+  requirement_ready: true
+  plan_approved: false
+  next_expected_actor: reviewer
+  product_implementation_mutated: false
+completion_guard:
+  status: satisfied
+  canonical_next_action: "#开发评审 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
+notes:
+  - Production mcp.sentinelx.app remains an immutable external transport boundary.
+  - No product source, runtime policy, Host configuration, Agent installation or downstream ChatGPTControlShell task was mutated by this command.
+  - No Execution Slice Set exists yet; it may be compiled only after Plan Review approval.
