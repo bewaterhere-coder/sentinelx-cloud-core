@@ -22,7 +22,10 @@ from sentinelx_core.handlers.basic import (
     make_help_handler,
     make_read_audit_handler,
 )
-from sentinelx_core.handlers.devforge_runtime import make_devforge_runtime_provider
+from sentinelx_core.handlers.devforge_runtime import (
+    make_devforge_execute_scoped_adapter,
+    make_devforge_runtime_provider,
+)
 from sentinelx_core.handlers.edit import (
     make_edit_handler,
     make_edit_upload_complete_handler,
@@ -105,7 +108,16 @@ def build_registry(
 
     upload_base = policy.upload_base
     mutation_scope_service = make_mutation_scope_service(policy, upload_base, config_path=config_path)
-    devforge_runtime = make_devforge_runtime_provider(policy, mutation_scope_service)
+    profiled_script_run = make_profiled_script_run_handler(
+        policy,
+        upload_base,
+        config_path=config_path,
+    )
+    devforge_runtime = make_devforge_runtime_provider(
+        policy,
+        mutation_scope_service,
+        execute_scoped_adapter=make_devforge_execute_scoped_adapter(profiled_script_run),
+    )
 
     registry: dict[str, Handler] = {
         # Read-only / introspection
@@ -120,7 +132,7 @@ def build_registry(
         "exec": make_exec_handler(policy),
         "service": make_service_handler(policy),
         "restart": make_restart_handler(policy),
-        "script_run": make_profiled_script_run_handler(policy, upload_base, config_path=config_path),
+        "script_run": profiled_script_run,
         "mutation_scope": make_mutation_scope_handler(
             policy,
             upload_base,

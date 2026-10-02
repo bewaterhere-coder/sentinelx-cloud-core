@@ -5,8 +5,12 @@ from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 
+from sentinelx_core.executor import HandlerError
 from sentinelx_core.handlers import build_registry
-from sentinelx_core.handlers.devforge_runtime import make_devforge_runtime_provider
+from sentinelx_core.handlers.devforge_runtime import (
+    make_devforge_execute_scoped_adapter,
+    make_devforge_runtime_provider,
+)
 from sentinelx_core.handlers.local_api import make_local_api_handler
 from sentinelx_core.handlers.mutation_scope import make_mutation_scope_service
 from sentinelx_core.policy import (
@@ -87,8 +91,8 @@ def test_eligible_host_lists_bounded_builtin(tmp_path: Path) -> None:
         "revalidate_scope",
         "inspect_scope",
         "terminalize_scope",
+        "execute_scoped",
     }
-    assert "execute_scoped" not in described["actions"]
 
 
 def test_builtin_lifecycle_reuses_canonical_service(tmp_path: Path) -> None:
@@ -249,3 +253,112 @@ def test_external_name_collision_preserves_external(tmp_path: Path, caplog) -> N
 def test_disabled_local_api_removes_outer_op(tmp_path: Path) -> None:
     policy = _policy(tmp_path, frozenset({"local_api"}))
     assert "local_api" not in build_registry(policy=policy)
+
+
+def _execute_params() -> dict[str, object]:
+    return {
+        "scope_ref": {"scope_id": "scope-s07", "generation": 1},
+        "repository": _repository(),
+        "lineage": {**_lineage(), "run_id": "s07", "slice_id": "S07"},
+        "interpreter": "python3",
+        "content": "print('s07')",
+        "args": ["arg"],
+        "cwd": ".",
+        "env": {"SAFE_VALUE": "1"},
+        "timeout": 30,
+    }
+
+
+def test_execute_scoped_adapter_injects_fixed_authority_and_projects_result() -> None:
+    captured: dict[str, object] = {}
+
+    async def fake_profiled(context, payload):
+        captured["context"] = context
+        captured["payload"] = payload
+        return {
+            "ok": True,
+            "interpreter": "python3",
+            "sudo": False,
+            "cwd": "D:/provider/private/workspace",
+            "cleanup": True,
+            "execution_profile": "scoped_mutation",
+            "command": ["D:/provider/private/python.exe", "script.py"],
+            "output": "s07",
+            "returncode": 0,
+            "mutation_scope_ref": {"scope_id": "scope-s07", "generation": 1},
+            "audit_operation_id": "audit-s07",
+            "terminal_state": "terminal",
+            "script_path": "D:/provider/private/workspace/script.py",
+            "workdir": "D:/provider/private/workspace",
+            "future_debug_path": "D:/provider/private/future",
+            "unexpected": "drop-me",
+        }
+
+    adapter = make_devforge_execute_scoped_adapter(fake_profiled)
+    context = _context()
+    result = _run(adapter, context, _execute_params())
+    payload = captured["payload"]
+
+    assert captured["context"] is context
+    assert isinstance(payload, dict)
+    assert payload["execution_profile"] == "scoped_mutation"
+    assert payload["cleanup"] is True
+    assert payload["mutation"] == {
+        "scope_ref": {"scope_id": "scope-s07", "generation": 1}
+    }
+    assert set(result) == {
+        "ok",
+        "interpreter",
+        "returncode",
+        "output",
+        "execution_profile",
+        "audit_operation_id",
+        "mutation_scope_ref",
+        "terminal_state",
+    }
+    assert "cwd" not in result
+    assert "command" not in result
+    assert "script_path" not in result
+    assert "workdir" not in result
+    assert "future_debug_path" not in result
+    assert "unexpected" not in result
+
+
+def test_execute_scoped_adapter_rejects_caller_authority_overrides() -> None:
+    called = False
+
+    async def fake_profiled(_context, _payload):
+        nonlocal called
+        called = True
+        return {"execution_profile": "scoped_mutation"}
+
+    adapter = make_devforge_execute_scoped_adapter(fake_profiled)
+    context = _context()
+    cases = [
+        ("cleanup", False),
+        ("execution_profile", "operator_unrestricted"),
+        ("workspace_id", "caller-workspace"),
+        ("operation_classes", ["anything"]),
+    ]
+    for field, value in cases:
+        params = _execute_params()
+        params[field] = value
+        try:
+            _run(adapter, context, params)
+        except HandlerError as exc:
+            assert exc.code == "invalid_payload"
+        else:
+            raise AssertionError(f"caller authority field {field} was accepted")
+
+    nested = _execute_params()
+    scope_ref = dict(nested["scope_ref"])
+    scope_ref["workspace_id"] = "caller-workspace"
+    nested["scope_ref"] = scope_ref
+    try:
+        _run(adapter, context, nested)
+    except HandlerError as exc:
+        assert exc.code == "invalid_payload"
+    else:
+        raise AssertionError("nested caller authority field was accepted")
+
+    assert called is False

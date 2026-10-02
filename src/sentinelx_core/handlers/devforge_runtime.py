@@ -18,7 +18,26 @@ CONTRACT_ID = "devforge_runtime"
 CONTRACT_REVISION = 1
 
 LifecycleService = Callable[[dict[str, Any]], Awaitable[dict[str, Any]]]
+ProfiledScriptHandler = Callable[[RequestContext, dict[str, Any]], Awaitable[dict[str, Any]]]
 ScopedExecuteAdapter = Callable[[RequestContext, dict[str, Any]], Awaitable[dict[str, Any]]]
+
+_EXECUTE_SCOPED_ALLOWED = frozenset(
+    {"scope_ref", "repository", "lineage", "interpreter", "content", "args", "cwd", "env", "timeout"}
+)
+_EXECUTE_SCOPED_REQUIRED = frozenset(
+    {"scope_ref", "repository", "lineage", "interpreter", "content"}
+)
+_EXECUTE_SCOPED_RESULT_FIELDS = (
+    "ok",
+    "interpreter",
+    "returncode",
+    "timed_out",
+    "output",
+    "execution_profile",
+    "audit_operation_id",
+    "mutation_scope_ref",
+    "terminal_state",
+)
 
 _LIFECYCLE_ACTIONS = {
     "provision_scope": "provision",
@@ -118,6 +137,102 @@ _ACTION_SCHEMAS = {
         },
     ),
 }
+
+
+def _strict_mapping(
+    params: dict[str, Any],
+    name: str,
+    *,
+    allowed: frozenset[str],
+    required: frozenset[str],
+) -> dict[str, Any]:
+    value = params.get(name)
+    if not isinstance(value, dict):
+        raise HandlerError("invalid_payload", f"{name} must be an object")
+    extras = sorted(set(value) - allowed)
+    if extras:
+        raise HandlerError("invalid_payload", f"unsupported {name} fields: {extras}")
+    missing = sorted(required - set(value))
+    if missing:
+        raise HandlerError("invalid_payload", f"missing {name} fields: {missing}")
+    return dict(value)
+
+
+def make_devforge_execute_scoped_adapter(
+    profiled_script_handler: ProfiledScriptHandler,
+) -> ScopedExecuteAdapter:
+    """Adapt bounded local_api params onto the one canonical scoped executor."""
+
+    async def execute_scoped(
+        context: RequestContext,
+        params: dict[str, Any],
+    ) -> dict[str, Any]:
+        if not isinstance(context, RequestContext):
+            raise HandlerError(
+                "HostMutationAuditLineageInvalid",
+                "execute_scoped requires transport RequestContext",
+            )
+        if not isinstance(params, dict):
+            raise HandlerError("invalid_payload", "execute_scoped params must be an object")
+
+        extras = sorted(set(params) - _EXECUTE_SCOPED_ALLOWED)
+        if extras:
+            raise HandlerError("invalid_payload", f"unsupported execute_scoped fields: {extras}")
+        missing = sorted(_EXECUTE_SCOPED_REQUIRED - set(params))
+        if missing:
+            raise HandlerError("invalid_payload", f"missing execute_scoped fields: {missing}")
+
+        scope_ref = _strict_mapping(
+            params,
+            "scope_ref",
+            allowed=frozenset({"scope_id", "generation"}),
+            required=frozenset({"scope_id", "generation"}),
+        )
+        repository = _strict_mapping(
+            params,
+            "repository",
+            allowed=frozenset({"vcs", "authority", "path"}),
+            required=frozenset({"vcs", "authority", "path"}),
+        )
+        lineage = _strict_mapping(
+            params,
+            "lineage",
+            allowed=frozenset({"project_id", "task_id", "run_id", "attempt_id", "slice_id"}),
+            required=frozenset({"project_id", "task_id", "run_id", "attempt_id"}),
+        )
+
+        payload: dict[str, Any] = {
+            "execution_profile": "scoped_mutation",
+            "cleanup": True,
+            "mutation": {"scope_ref": scope_ref},
+            "repository": repository,
+            "lineage": lineage,
+            "interpreter": params["interpreter"],
+            "content": params["content"],
+        }
+        for name in ("args", "cwd", "env", "timeout"):
+            if name in params:
+                payload[name] = params[name]
+
+        result = await profiled_script_handler(context, payload)
+        if not isinstance(result, dict):
+            raise HandlerError(
+                "scoped_mutation_failed",
+                "scoped executor returned an invalid result",
+            )
+        if result.get("execution_profile") != "scoped_mutation":
+            raise HandlerError(
+                "scoped_mutation_failed",
+                "scoped executor returned an unexpected execution profile",
+            )
+
+        return {
+            key: result[key]
+            for key in _EXECUTE_SCOPED_RESULT_FIELDS
+            if key in result
+        }
+
+    return execute_scoped
 
 
 class DevforgeRuntimeProvider:

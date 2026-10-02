@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 
 from sentinelx_core.executor import HandlerError
+from sentinelx_core.handlers.devforge_runtime import make_devforge_execute_scoped_adapter
 from sentinelx_core.handlers.mutation_scope import make_mutation_scope_handler
 from sentinelx_core.handlers.scoped_script import make_profiled_script_run_handler
 from sentinelx_core.mutation_audit import (
@@ -459,3 +460,38 @@ def test_scoped_requires_durable_operation_class_before_audit_or_materialization
     assert not Path(record.exact_workspace).exists()
     events = MutationAuditJournal(store.root.parent, evidence_retention_days=7).read_events()
     assert events == []
+
+
+def test_devforge_execute_scoped_adapter_reuses_existing_executor(tmp_path: Path) -> None:
+    handler, _script_context, store, record, mutation, lineage, repo = _fixture(
+        tmp_path, attempt_id="devforge-adapter", interpreter="python3"
+    )
+    adapter = make_devforge_execute_scoped_adapter(handler)
+    local_context = RequestContext(
+        request_id="req-devforge-adapter",
+        op="local_api",
+        opaque_ref="s07",
+        received_at=datetime.now(UTC),
+    )
+    result = asyncio.run(
+        adapter(
+            local_context,
+            {
+                "scope_ref": mutation["scope_ref"],
+                "repository": repo,
+                "lineage": lineage,
+                "interpreter": "python3",
+                "content": "print('devforge-s07-marker')",
+                "timeout": 30,
+            },
+        )
+    )
+    assert result["ok"] is True
+    assert result["execution_profile"] == "scoped_mutation"
+    assert result["terminal_state"] == "terminal"
+    assert "devforge-s07-marker" in result["output"]
+    assert "cwd" not in result
+    assert "command" not in result
+    assert "script_path" not in result
+    assert "workdir" not in result
+    assert store.read_scope(record.scope_id).state == "terminal"
