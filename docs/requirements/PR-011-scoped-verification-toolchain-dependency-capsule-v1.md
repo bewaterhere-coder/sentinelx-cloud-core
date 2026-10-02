@@ -8,7 +8,7 @@ task_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1
 title: Scoped Verification Toolchain & Dependency Capsule V1
 requirement_revision: 1
 development:
-  stage: plan_review
+  stage: plan_review_rejected
   gates:
     requirement_ready: true
     plan_approved: false
@@ -16,7 +16,10 @@ development:
     completion_verified: false
   plan_revision: 1
   implementation_authorized: false
-  next_expected_actor: reviewer
+  next_expected_actor: planner
+  blocking_findings:
+    - PR011-R1-F1-source-under-test-materialization-pre-toolchain-binding
+    - PR011-R1-F2-toolchain-capsule-integrity-resource-bounds
   authorization:
     mode: legacy_command_scoped
 transport:
@@ -26,6 +29,7 @@ transport:
   base_branch: main
 artifacts:
   plan: docs/plans/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan.md
+  latest_plan_review: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-review-r1.md
   development_start_receipt: docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-development-start-20261003.yaml
   provisional_bootstrap: docs/checkpoints/scoped-verification-toolchain-dependency-capsule-v1-provisional-bootstrap.md
 related_tasks:
