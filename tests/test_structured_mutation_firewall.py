@@ -12,6 +12,7 @@ from sentinelx_core.handlers.git_ops import make_git_handler
 from sentinelx_core.handlers.upload import (
     make_upload_chunk_handler,
     make_upload_complete_handler,
+    make_upload_file_handler,
     make_upload_init_handler,
 )
 from sentinelx_core.policy import Policy
@@ -176,3 +177,54 @@ async def test_upload_complete_revalidates_tampered_final_target(tmp_path: Path)
 
     assert exc.value.code == BLOCKED
     assert not (canonical / "tampered.bin").exists()
+
+
+async def test_single_upload_blocks_when_provider_staging_is_canonical(tmp_path: Path) -> None:
+    upload_base = tmp_path / "uploads"
+    canonical = upload_base / ".sentinelx_uploads"
+    policy = _policy(tmp_path, canonical, upload_base=upload_base)
+    handler = make_upload_file_handler(policy, upload_base)
+
+    with pytest.raises(HandlerError) as exc:
+        await handler(
+            {
+                "target_path": "safe.bin",
+                "overwrite": True,
+                "content_base64": base64.b64encode(b"x").decode("ascii"),
+            }
+        )
+
+    assert exc.value.code == BLOCKED
+    assert not canonical.exists()
+    assert not (upload_base / "safe.bin").exists()
+
+
+async def test_upload_chunk_revalidates_provider_staging_before_part_write(tmp_path: Path) -> None:
+    upload_base = tmp_path / "uploads"
+    upload_id = "a" * 32
+    upload_dir = upload_base / ".sentinelx_uploads" / upload_id
+    canonical = upload_dir / "parts"
+    policy = _policy(tmp_path, canonical, upload_base=upload_base)
+
+    # Factory construction mirrors build_registry: upload_init binds the exact
+    # Policy before upload_chunk is built. Test setup creates only the metadata
+    # precondition; the handler must refuse creating the canonical parts root.
+    make_upload_init_handler(upload_base, policy)
+    upload_dir.mkdir(parents=True)
+    (upload_dir / "meta.json").write_text(
+        json.dumps({"target_path": str(upload_base / "safe.bin")}),
+        encoding="utf-8",
+    )
+    chunk = make_upload_chunk_handler(upload_base)
+
+    with pytest.raises(HandlerError) as exc:
+        await chunk(
+            {
+                "upload_id": upload_id,
+                "index": 0,
+                "content_base64": base64.b64encode(b"x").decode("ascii"),
+            }
+        )
+
+    assert exc.value.code == BLOCKED
+    assert not canonical.exists()

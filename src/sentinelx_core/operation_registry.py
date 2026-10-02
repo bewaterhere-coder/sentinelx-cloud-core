@@ -216,7 +216,18 @@ def git_effect_inventory() -> tuple[OperationEffectResolution, ...]:
     return tuple(_GIT_EFFECTS[name] for name in sorted(_GIT_EFFECTS))
 
 
-def _configured_local_api_effect(action: Any, selector: str) -> OperationEffectResolution:
+def _configured_local_api_effect(
+    endpoint: Any, action: Any, selector: str
+) -> OperationEffectResolution:
+    # run_as uses a helper process/relay. Operator effect metadata may not
+    # downgrade that physical process-producing path to read-only.
+    if getattr(endpoint, "run_as", None):
+        return OperationEffectResolution(
+            RepositoryEffect.PROCESS_MUTATION,
+            FirewallCoverage.UNPROVEN,
+            selector=selector,
+            reason="external_local_api_run_as_unproven",
+        )
     raw = getattr(action, "repository_effect", None)
     try:
         effect = RepositoryEffect(raw) if raw is not None else RepositoryEffect.UNKNOWN
@@ -302,7 +313,7 @@ def make_local_api_effect_classifier(
                     selector=selector,
                     reason="configured_local_api_action_unknown",
                 )
-            return _configured_local_api_effect(action, selector)
+            return _configured_local_api_effect(endpoint, action, selector)
         provider = builtins.get(endpoint_name)
         if provider is not None and endpoint_name not in policy.local_apis:
             return _builtin_effect(provider, action_name, selector)
@@ -332,7 +343,7 @@ def make_local_api_effect_inventory(
             for action_name, action in sorted(endpoint.actions.items()):
                 effects.append(
                     _configured_local_api_effect(
-                        action, f"{endpoint_name}/{action_name}"
+                        endpoint, action, f"{endpoint_name}/{action_name}"
                     )
                 )
         for endpoint_name, provider in sorted(builtins.items()):
@@ -401,7 +412,7 @@ def build_effect_registry(
                 repository_effect=RepositoryEffect.READ_ONLY,
                 firewall_coverage=FirewallCoverage.NOT_REQUIRED,
             )
-        elif name in {"service", "restart", "edit_upload_init", "edit_upload_file", "upload_chunk"}:
+        elif name in {"service", "restart"}:
             registry.register(
                 name,
                 handler,
@@ -410,6 +421,8 @@ def build_effect_registry(
             )
         elif name in {
             "edit",
+            "edit_upload_init",
+            "edit_upload_file",
             "edit_upload_complete",
             "move",
             "copy",
@@ -418,6 +431,7 @@ def build_effect_registry(
             "chown",
             "upload_file",
             "upload_init",
+            "upload_chunk",
             "upload_complete",
         }:
             registry.register(

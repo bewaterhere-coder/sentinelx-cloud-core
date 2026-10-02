@@ -307,6 +307,12 @@ def make_upload_file_handler(policy: Policy, upload_base: Path):
             )
 
         tmp_root = upload_base / ".sentinelx_uploads"
+        enforce_material_write_target(
+            policy.mutation_execution,
+            tmp_root,
+            operation="upload_file",
+            label="provider_staging",
+        )
         tmp_root.mkdir(parents=True, exist_ok=True)
         tmp = tmp_root / f"{uuid.uuid4().hex}.upload"
 
@@ -435,6 +441,8 @@ def make_upload_init_handler(upload_base: Path, policy: Policy | None = None):
 
 
 def make_upload_chunk_handler(upload_base: Path):
+    effective_policy = _UPLOAD_POLICY_BY_BASE.get(_upload_policy_key(upload_base))
+
     async def handle_upload_chunk(payload: dict[str, Any]) -> dict[str, Any]:
         upload_id = payload.get("upload_id")
         index = payload.get("index")
@@ -464,7 +472,15 @@ def make_upload_chunk_handler(upload_base: Path):
         except (ValueError, base64.binascii.Error) as exc:
             raise HandlerError("invalid_payload", f"bad base64: {exc}") from exc
 
-        part_path = _parts_dir(upload_dir) / f"{idx:08d}.part"
+        part_path = upload_dir / "parts" / f"{idx:08d}.part"
+        if effective_policy is not None:
+            part_path = enforce_material_write_target(
+                effective_policy.mutation_execution,
+                part_path,
+                operation="upload_chunk",
+                label="provider_staging",
+            )
+        _parts_dir(upload_dir)
         part_path.write_bytes(data)
 
         return {

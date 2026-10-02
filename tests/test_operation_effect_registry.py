@@ -68,22 +68,19 @@ def test_git_selector_effects_are_bounded_and_unknown_fails_closed() -> None:
     assert unknown.reason == "unknown_git_selector"
 
 
-def _local_api_policy(effect: str | None) -> Policy:
+def _local_api_policy(effect: str | None, *, run_as: str | None = None) -> Policy:
     action = {"method": "repo.inspect"}
     if effect is not None:
         action["repository_effect"] = effect
-    return Policy.from_dict(
-        {
-            "local_apis": {
-                "fixture": {
-                    "transport": "unix",
-                    "protocol": "jsonrpc",
-                    "path": "/tmp/fixture.sock",
-                    "actions": {"inspect": action},
-                }
-            }
-        }
-    )
+    endpoint = {
+        "transport": "unix",
+        "protocol": "jsonrpc",
+        "path": "/tmp/fixture.sock",
+        "actions": {"inspect": action},
+    }
+    if run_as is not None:
+        endpoint["run_as"] = run_as
+    return Policy.from_dict({"local_apis": {"fixture": endpoint}})
 
 
 def test_configured_local_api_action_without_effect_metadata_is_unknown() -> None:
@@ -151,3 +148,27 @@ def test_builtin_without_provider_owned_effect_metadata_is_unknown() -> None:
         "local_api/devforge_runtime/execute_scoped" in reason
         for reason in effects.firewall_readiness.reasons
     )
+
+
+def test_run_as_local_api_relay_cannot_be_downgraded_to_read_only() -> None:
+    policy = _local_api_policy("read_only", run_as="provider-user")
+    effects = build_effect_registry(build_registry(policy=policy), policy)
+
+    resolved = effects.resolve_effect(
+        "local_api",
+        {"operation": "call", "endpoint": "fixture", "action": "inspect"},
+    )
+    assert resolved.effect is RepositoryEffect.PROCESS_MUTATION
+    assert resolved.coverage is FirewallCoverage.UNPROVEN
+    assert resolved.reason == "external_local_api_run_as_unproven"
+    assert any("local_api/fixture/inspect" in reason for reason in effects.firewall_readiness.reasons)
+
+
+def test_staging_writers_are_structured_mutations_with_proven_coverage() -> None:
+    policy = _policy()
+    effects = build_effect_registry(build_registry(policy=policy), policy)
+
+    for name in ("edit_upload_init", "edit_upload_file", "upload_chunk"):
+        resolved = effects.resolve_effect(name)
+        assert resolved.effect is RepositoryEffect.STRUCTURED_MUTATION
+        assert resolved.coverage is FirewallCoverage.PROVEN
