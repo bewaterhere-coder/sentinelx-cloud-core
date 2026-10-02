@@ -16,7 +16,7 @@ current_stage: acceptance
 gate_transition: not_applied
 stop_disposition: external_blocker
 fixing_disposition: not_entered_no_local_repair
-a cceptance_approved: false
+acceptance_approved: false
 completion_verified: false
 ```
 
