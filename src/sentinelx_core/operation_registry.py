@@ -6,10 +6,13 @@ logic never depends on a second hand-maintained operation list.
 """
 from __future__ import annotations
 
+import platform
 from collections.abc import Awaitable, Callable, Iterable, Mapping
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any
+
+from sentinelx_core.canonical_repository_firewall import CanonicalRepositoryFirewall
 
 Handler = Callable[..., Awaitable[dict[str, Any]]]
 
@@ -59,6 +62,20 @@ class OperationRegistration:
 @dataclass(frozen=True)
 class OperationRegistryReadiness:
     ready: bool
+    reasons: tuple[str, ...]
+
+
+CANONICAL_REPOSITORY_MUTATION_FIREWALL_CAPABILITY = (
+    "canonical_repository_mutation_firewall_v1"
+)
+
+
+@dataclass(frozen=True)
+class CanonicalRepositoryMutationFirewallReadiness:
+    ready: bool
+    inventory_ready: bool
+    effective_surface_ready: bool
+    platform_supported: bool
     reasons: tuple[str, ...]
 
 
@@ -615,3 +632,68 @@ def build_effect_registry(
             # until their owning provider supplies an explicit composition.
             registry.register(name, handler)
     return registry
+
+
+def _public_readiness_reason(reason: str) -> str:
+    """Reduce effect diagnostics to operation/effect classes only."""
+    subject, separator, code = reason.rpartition(":")
+    if not separator:
+        return reason.split("/", 1)[0]
+    return f"{subject.split('/', 1)[0]}:{code}"
+
+
+def canonical_repository_mutation_firewall_readiness(
+    dispatch: Mapping[str, Handler],
+    policy: Any,
+    *,
+    builtin_local_api_providers: Mapping[str, Any] | None = None,
+    platform_name: str | None = None,
+) -> CanonicalRepositoryMutationFirewallReadiness:
+    """Compose provider-wide firewall readiness from existing Core truths."""
+    inventory = CanonicalRepositoryFirewall(policy.mutation_execution).readiness
+    surface = build_effect_registry(
+        dispatch,
+        policy,
+        builtin_local_api_providers=builtin_local_api_providers,
+    ).firewall_readiness
+    current_platform = platform_name or platform.system()
+    platform_supported = current_platform == "Windows"
+
+    reasons: list[str] = list(inventory.reasons)
+    reasons.extend(_public_readiness_reason(reason) for reason in surface.reasons)
+    if not platform_supported:
+        reasons.append("unsupported_platform")
+
+    unique_reasons = tuple(dict.fromkeys(reasons))
+    return CanonicalRepositoryMutationFirewallReadiness(
+        ready=inventory.ready and surface.ready and platform_supported,
+        inventory_ready=inventory.ready,
+        effective_surface_ready=surface.ready,
+        platform_supported=platform_supported,
+        reasons=unique_reasons,
+    )
+
+
+def canonical_repository_mutation_firewall_feature(
+    dispatch: Mapping[str, Handler],
+    policy: Any,
+    *,
+    builtin_local_api_providers: Mapping[str, Any] | None = None,
+    platform_name: str | None = None,
+) -> dict[str, Any]:
+    """Return the sanitized Core capability projection for capabilities output."""
+    readiness = canonical_repository_mutation_firewall_readiness(
+        dispatch,
+        policy,
+        builtin_local_api_providers=builtin_local_api_providers,
+        platform_name=platform_name,
+    )
+    return {
+        "available": readiness.ready,
+        "verified": readiness.ready,
+        "inventory_ready": readiness.inventory_ready,
+        "effective_surface_ready": readiness.effective_surface_ready,
+        "platform_supported": readiness.platform_supported,
+        "reason": readiness.reasons[0] if readiness.reasons else None,
+        "uncovered_classes": list(readiness.reasons),
+    }

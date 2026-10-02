@@ -73,7 +73,25 @@ class Executor:
 
     def capability_names(self) -> list[str]:
         """Names of supported ops plus protocol features, for `hello`."""
-        return list(self._get_handlers().keys()) + list(self.PROTOCOL_FEATURES)
+        handlers = self._get_handlers()
+        names = list(handlers.keys()) + list(self.PROTOCOL_FEATURES)
+        try:
+            from sentinelx_core.operation_registry import (
+                CANONICAL_REPOSITORY_MUTATION_FIREWALL_CAPABILITY,
+                canonical_repository_mutation_firewall_readiness,
+            )
+            from sentinelx_core.policy import Policy
+
+            policy = Policy.from_file(self._config_path)
+            readiness = canonical_repository_mutation_firewall_readiness(
+                handlers,
+                policy,
+            )
+            if readiness.ready:
+                names.append(CANONICAL_REPOSITORY_MUTATION_FIREWALL_CAPABILITY)
+        except Exception:
+            logger.warning("canonical firewall readiness probe failed", exc_info=True)
+        return names
 
     def config_summary(self) -> dict[str, int]:
         """Policy counts for the hello's ConfigSummary — aggregates only.
