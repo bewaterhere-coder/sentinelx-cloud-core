@@ -210,7 +210,10 @@ slices:
 
   - id: S03
     title: Core process and mixed-operation mutation fail-closed boundary
-    status: pending
+    status: completed
+    slice_completed: true
+    completion_checkpoint: docs/checkpoints/PR-010-canonical-repository-mutation-firewall-v1-s03-completed-r4-20261003.yaml
+    verified_implementation_head: 4c23087b50ba4e27a53fc884699377e4d5762e0d
     objective: Ensure effective exec/script/background and process-producing nested operations cannot bypass canonical exclusion while Core readiness is true.
     entry_gate:
       - S02 completed
@@ -244,11 +247,22 @@ slices:
       - configured external local_api unknown/process mutation action cannot silently coexist with readiness true
       - missing Hub execution_profile projection is external diagnostic only
     completion_rule: no effective top-level, nested or child-process canonical mutation bypass exists while provider-wide Core readiness can be true
+    completion_evidence:
+      focused_windows_run: 37041949750
+      s02_regression_run: 37041949752
+      s01_regression_run: 37041949724
+      ci_run: 37041949787
+      macos_run: 37041949565
+      exact_product_head: 4c23087b50ba4e27a53fc884699377e4d5762e0d
+      pr007_final_reconciled_head: c053d01f0ff5e1b65ff5b43f4ce511508f317580
+      pr008_final_reconciled_head: f7594c468d764ad85c0dc508ad47f009c89793c1
+      entry_reconciliation: docs/checkpoints/PR-010-canonical-repository-mutation-firewall-v1-s03-entry-reconciliation-20261003.yaml
+      result: success
     next_on_pass: S04
 
   - id: S04
     title: Core Capability Readiness and Existing Transport Projection
-    status: planned_not_authorized
+    status: pending
     objective: Compose final Core readiness from inventory, identity compatibility, effective op/suboperation surface, structured coverage and process disposition, then verify through existing Core protocol structures.
     entry_gate:
       - S03 completed
