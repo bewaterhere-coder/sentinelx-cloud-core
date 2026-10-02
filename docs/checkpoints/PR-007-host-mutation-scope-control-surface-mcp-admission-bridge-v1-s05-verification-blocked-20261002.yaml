@@ -30,12 +30,21 @@ generic_hub_relay:
   secret_materialization_to_host_file_allowed: false
   internal_generic_relay_tool_available: false
   classification: OperatorHttpRelayRequired
+activation_attempt_1:
+  result: blocked_before_candidate_activation
+  failure: "pip force-reinstall attempted to reinstall websockets and hit WinError 5 on the loaded speedups.cp314-win_amd64.pyd"
+  live_agent_after_failure: healthy
+  live_version_after_failure: 0.24.1.dev21+g0badec027
+  classification: HarnessDependencyReinstallFileLock
+  product_runtime_regression: false
 operator_harness:
   path: D:/coco/workspaces/pr007-s05-live-operator.ps1
   stores_api_key_on_disk: false
   key_input: secure_prompt_non_echoing
   result_path: D:/coco/workspaces/pr007-s05-live-result.json
   activates_candidate_commit: 21b2cb1543b239d64787dd5596b3919989169896
+  candidate_install_mode: force_reinstall_no_deps
+  dependency_dll_reinstall_avoided: true
   sequence:
     - install exact known build and restart SentinelX
     - wait for Hub reconnect
