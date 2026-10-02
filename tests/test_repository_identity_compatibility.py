@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import hashlib
+import sys
 from pathlib import Path
 
 import pytest
@@ -13,19 +13,25 @@ from sentinelx_core.mutation_placement import (
 )
 from sentinelx_core.mutation_scope import MutationScopeStore
 from sentinelx_core.policy import MutationExecutionPolicy
-from sentinelx_core import windows_mutation_sandbox
+from sentinelx_core.windows_mutation_sandbox import WindowsMutationSandbox
 
 
 LEGACY_CANONICAL = "git://github.com/bewaterhere-coder/sentinelx-cloud-core"
-LEGACY_DIGEST = hashlib.sha256(LEGACY_CANONICAL.encode("utf-8")).hexdigest()
+# Existing mutation-placement digest for the normal provider repository identity.
+# _digest() JSON-encodes strings before SHA-256; pinning the value detects drift.
+LEGACY_DIGEST = "4fab8923f2df571ace78e59890aa5e0077470857a5c02c120f5fdad6b645bbd0"
 
 
 def _policy(tmp_path: Path) -> MutationExecutionPolicy:
+    workspace_root = tmp_path / "workspaces"
+    protected = tmp_path / "protected"
+    workspace_root.mkdir(parents=True, exist_ok=True)
+    protected.mkdir(parents=True, exist_ok=True)
     return MutationExecutionPolicy(
         configured=True,
         scoped_mutation_enabled=True,
-        workspace_root=tmp_path / "workspaces",
-        protected_roots=(tmp_path / "protected",),
+        workspace_root=workspace_root,
+        protected_roots=(protected,),
     )
 
 
@@ -47,7 +53,7 @@ def _semantic() -> SemanticIdentity:
     )
 
 
-def test_legacy_repository_identity_and_digest_remain_stable(tmp_path: Path) -> None:
+def test_existing_repository_identity_and_placement_digest_remain_stable(tmp_path: Path) -> None:
     repository = _repository()
     assert repository.canonical == LEGACY_CANONICAL
 
@@ -129,5 +135,25 @@ def test_repository_identity_invalid_port_or_traversal_fails_closed(
         _ = RepositoryIdentity(vcs="git", authority=authority, path=path).canonical
 
 
-def test_windows_sandbox_consumes_the_shared_repository_identity_class() -> None:
-    assert windows_mutation_sandbox.RepositoryIdentity is RepositoryIdentity
+@pytest.mark.skipif(sys.platform != "win32", reason="Windows sandbox identity consumer")
+def test_windows_sandbox_revalidates_same_repository_digest(tmp_path: Path) -> None:
+    policy = _policy(tmp_path)
+    repository = _repository()
+    semantic = _semantic()
+    store = MutationScopeStore(tmp_path / "provider-state")
+    record = store.provision_scope(
+        policy,
+        repository,
+        semantic,
+        allowed_operation_classes=("scoped_mutation",),
+    )
+
+    sandbox = WindowsMutationSandbox(
+        policy=policy,
+        scope_store=store,
+        repository=repository,
+        semantic=semantic,
+    )
+    current = sandbox._revalidate(record.scope_id, record.generation)
+    assert current.repository_identity_digest == LEGACY_DIGEST
+    assert current.scope_digest == record.scope_digest
