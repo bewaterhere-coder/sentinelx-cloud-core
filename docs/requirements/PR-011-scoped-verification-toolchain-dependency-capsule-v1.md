@@ -30,6 +30,7 @@ transport:
 artifacts:
   plan: docs/plans/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan.md
   latest_plan_review: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-review-r1.md
+  latest_plan_review_transition_receipt: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-review-r1-transition-receipt.yaml
   development_start_receipt: docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-development-start-20261003.yaml
   provisional_bootstrap: docs/checkpoints/scoped-verification-toolchain-dependency-capsule-v1-provisional-bootstrap.md
 related_tasks:
