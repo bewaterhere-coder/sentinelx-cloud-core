@@ -46,15 +46,31 @@ verification:
       production_workspace_root: D:/SentinelX/mutation-workspaces
       verification_root: D:/SentinelX/verification-temp
       parent_acl_material_difference_observed: false
+    fresh_production_policy_probe:
+      identity: LocalSystem
+      available: true
+      reason: real Windows AppContainer/ACL/Job/audit/scope self-check passed
+      checks_all_true: true
+      force: true
+      config: C:/ProgramData/SentinelX/config.yaml
+      state_root: C:/ProgramData/SentinelX/state
+      workspace_root: D:/SentinelX/mutation-workspaces
+      classification: production_runtime_is_healthy_fixture_layout_is_the_remaining_variable
+    path_length_hypothesis:
+      previous_fixture_exact_workspace_chars_approx: 206
+      previous_python_pyc_path_chars_approx: 250
+      win32_legacy_max_path_boundary: 260
+      shortened_verification_root: D:/SentinelX/s04
+      classification: hypothesis_requires_rerun
     next_verification:
       identity: LocalSystem
       harness: D:/coco/workspaces/pr007-s04-system-verify.ps1
       runner: D:/coco/workspaces/pr007-s04-system-verify.py
-      phase_0: fresh production config readiness with force=true against C:/ProgramData/SentinelX/state and D:/SentinelX/mutation-workspaces
-      phase_1: fixture readiness only if production readiness passes
-      phase_2: full S04 security matrix only if both readiness probes pass
+      phase_0: fresh production config readiness force=true
+      phase_1: shortened-path fixture readiness
+      phase_2: full S04 matrix only if both readiness probes pass
       rerun_required: true
-    reason: SYSTEM fixture readiness still times out; the next deterministic split is fresh force=true readiness using the exact production mutation policy and workspace root
+    reason: fresh production readiness passes under the same SYSTEM process while the long fixture layout times out; rerun the fixture and matrix under a short verification root before changing product sandbox code
   required_matrix:
     - provider-issued scoped_script scope composes with execution_profile=scoped_mutation
     - operation-class admission remains before audit/materialization
@@ -66,7 +82,7 @@ verification:
     - no unrestricted fallback
 boundary:
   disposition: blocked
-  reason: S04WindowsSandboxMatrixRequiresFreshProductionPolicyProbe
+  reason: S04WindowsSandboxMatrixRequiresShortPathFixtureRerun
   implementation_landed: true
   slice_completed: false
 continuation:
