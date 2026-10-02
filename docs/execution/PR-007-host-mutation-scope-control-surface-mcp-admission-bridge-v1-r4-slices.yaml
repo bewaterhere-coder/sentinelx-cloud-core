@@ -3,7 +3,7 @@ project_id: sentinelx-cloud-core
 task_id: PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1
 requirement_revision: 2
 plan_revision: 4
-plan_digest: git-blob-sha1:eddd4ee39d80bb81560c9fac2e4fe73111c4d874
+plan_digest: git-blob-sha1:02d5e16ca18f385cafbbe11c04b5f8d2c64ea7af
 plan_review: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-plan-review-r4.md
 implementation_authorized: true
 execution_mode: incremental
