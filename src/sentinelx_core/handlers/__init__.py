@@ -10,16 +10,21 @@ referenced directly.
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Awaitable, Callable
 from pathlib import Path
 from typing import Any
 
 from sentinelx_core.handlers.basic import (
     handle_ping,
-    make_read_audit_handler,
     handle_state,
     make_capabilities_handler,
     make_help_handler,
+    make_read_audit_handler,
+)
+from sentinelx_core.handlers.devforge_runtime import (
+    make_devforge_execute_scoped_adapter,
+    make_devforge_runtime_provider,
 )
 from sentinelx_core.handlers.edit import (
     make_edit_handler,
@@ -28,6 +33,11 @@ from sentinelx_core.handlers.edit import (
     make_edit_upload_init_handler,
 )
 from sentinelx_core.handlers.exec import make_exec_handler
+from sentinelx_core.handlers.file_export import (
+    make_file_export_chunk_handler,
+    make_file_export_complete_handler,
+    make_file_export_init_handler,
+)
 from sentinelx_core.handlers.fileops import (
     make_list_handler,
     make_read_handler,
@@ -40,8 +50,12 @@ from sentinelx_core.handlers.fsmutate import (
     make_delete_handler,
     make_move_handler,
 )
-from sentinelx_core.handlers.project_snapshot import make_project_snapshot_handler
 from sentinelx_core.handlers.git_ops import make_git_handler
+from sentinelx_core.handlers.mutation_scope import (
+    make_mutation_scope_handler,
+    make_mutation_scope_service,
+)
+from sentinelx_core.handlers.project_snapshot import make_project_snapshot_handler
 from sentinelx_core.handlers.scoped_script import make_profiled_script_run_handler
 from sentinelx_core.handlers.service import make_restart_handler, make_service_handler
 from sentinelx_core.handlers.upload import (
@@ -49,11 +63,6 @@ from sentinelx_core.handlers.upload import (
     make_upload_complete_handler,
     make_upload_file_handler,
     make_upload_init_handler,
-)
-from sentinelx_core.handlers.file_export import (
-    make_file_export_chunk_handler,
-    make_file_export_complete_handler,
-    make_file_export_init_handler,
 )
 from sentinelx_core.policy import Policy
 
@@ -65,8 +74,6 @@ Handler = Callable[[dict[str, Any]], Awaitable[dict[str, Any]]]
 # nothing is worse than one that is absent, because it still holds a slot and
 # still looks connected. `help` stays for the same reason: the one op that can
 # explain why another is missing must not be the one that is missing.
-import logging
-
 logger = logging.getLogger(__name__)
 
 UNDISABLEABLE_OPS = frozenset({"ping", "capabilities", "state", "help"})
@@ -100,6 +107,17 @@ def build_registry(
     _pg.set_config_path(config_path)
 
     upload_base = policy.upload_base
+    mutation_scope_service = make_mutation_scope_service(policy, upload_base, config_path=config_path)
+    profiled_script_run = make_profiled_script_run_handler(
+        policy,
+        upload_base,
+        config_path=config_path,
+    )
+    devforge_runtime = make_devforge_runtime_provider(
+        policy,
+        mutation_scope_service,
+        execute_scoped_adapter=make_devforge_execute_scoped_adapter(profiled_script_run),
+    )
 
     registry: dict[str, Handler] = {
         # Read-only / introspection
@@ -114,7 +132,13 @@ def build_registry(
         "exec": make_exec_handler(policy),
         "service": make_service_handler(policy),
         "restart": make_restart_handler(policy),
-        "script_run": make_profiled_script_run_handler(policy, upload_base, config_path=config_path),
+        "script_run": profiled_script_run,
+        "mutation_scope": make_mutation_scope_handler(
+            policy,
+            upload_base,
+            config_path=config_path,
+            lifecycle_service=mutation_scope_service,
+        ),
 
         # File editing
         "edit": make_edit_handler(policy, upload_base),
@@ -174,12 +198,16 @@ def build_registry(
         upload_base=upload_base,
     )
 
-    # Only when the host opted in. No local_apis block means no handler and no
-    # advertised capability, which is what makes this additive for the fleet.
-    if policy.local_apis:
+    # Reuse the existing local_api envelope for configured external endpoints
+    # and for a policy-admitted builtin provider. External name collisions keep
+    # the configured endpoint authoritative.
+    if policy.local_apis or devforge_runtime.available_actions():
         from sentinelx_core.handlers.local_api import make_local_api_handler
 
-        registry["local_api"] = make_local_api_handler(policy)
+        registry["local_api"] = make_local_api_handler(
+            policy,
+            builtin_providers={devforge_runtime.name: devforge_runtime},
+        )
 
     # Switched-off ops are removed here, at the end, so this is the last word
     # regardless of how a handler got in. Removal rather than a guard inside

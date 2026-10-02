@@ -1,0 +1,62 @@
+schema: devforge.continuation-checkpoint.v1
+project_id: sentinelx-cloud-core
+task_id: PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1
+stage: implementation
+source_command: "#开发执行 PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1"
+active_slice_id: S03
+slice_state: completed
+implementation:
+  primary_commit: f22b2c80fc3670b4148ab28ae96a4789cf819cc4
+  registry_verification_commit: 4c2c2f391712d92fb555bee5632dae7abd31277a
+  transport_literal_repair_commit: e05819b8b231bd67bbcfd1d5c5be9bc31a55205c
+  prior_verification_checkpoint: 35f8b2af3bf690052e459c0b98cdbccdb841c44d
+  changed_surfaces:
+    - src/sentinelx_core/handlers/__init__.py
+    - src/sentinelx_core/handlers/basic.py
+    - src/sentinelx_core/client.py
+    - README.md
+    - tests/test_mutation_scope_registry.py
+  registry_source_of_truth_preserved: true
+  dedicated_hub_mcp_tool_claimed: false
+verification:
+  static:
+    python_compile: passed
+    git_diff_check: passed
+    staged_diff_review: passed
+  operator_focused_run:
+    command_scope: tests/test_mutation_scope_registry.py
+    result: passed
+    passed: 7
+    failed: 0
+    warnings: 1
+    duration_seconds: 0.37
+    warning: pytest environment reports unknown asyncio_mode; focused suite uses asyncio.run and does not depend on pytest-asyncio
+  verified_behavior:
+    - mutation_scope is registered and dispatchable through normal registry
+    - capabilities ops_supported exactly derives registry truth
+    - dispatchability remains distinct from host_mutation_sandbox_v1 readiness
+    - help explains readiness boundary
+    - disabled_ops removes mutation_scope from registry advertisement and help
+    - disabled mutation_scope dispatch returns unsupported_op
+    - unknown future wire op reaches Executor and returns unsupported_op
+    - no dedicated Hub MCP tool identity is claimed
+transport_contract:
+  shared_protocol_literal_gap_observed: true
+  repair: strict protocol validation remains authoritative for all request fields while bounded registry-defined operation names can reach Executor dispatch
+  unknown_operation_behavior: unsupported_op
+boundary:
+  disposition: completed
+  implementation_landed: true
+  slice_completed: true
+continuation:
+  mode: execute_next_slice
+  next_slice_id: S04
+  next_expected_actor: implementer
+  next_action_hint: "#开发执行 PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1"
+invariants:
+  direct_python_allowlist_not_changed: true
+  pytest_allowlist_not_added: true
+  script_run_bypass_not_used: true
+  wrapper_fallback_not_used: true
+  operator_unrestricted_not_used: true
+  s04_not_started: true

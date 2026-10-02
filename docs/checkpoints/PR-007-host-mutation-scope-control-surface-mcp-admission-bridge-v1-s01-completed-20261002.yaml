@@ -1,0 +1,48 @@
+schema: devforge.continuation-checkpoint.v1
+project_id: sentinelx-cloud-core
+task_id: PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1
+stage: implementation
+source_command: "#开发执行 PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1"
+completed_slice_id: S01
+slice_state: completed
+implementation:
+  implementation_head: 910f2150c0b7c790aefdb4588345865996500924
+  reconciliation_commit: 27bf2c036c00e6a5943ceef0c3b1a5cf5c355707
+  canonical_main: f7e878f3497582547e5d52cd33b060cae18d2e84
+  pr008_head_observed: f7594c468d764ad85c0dc508ad47f009c89793c1
+verification:
+  static:
+    python_compile: passed
+    git_diff_check: passed
+  operator_focused_run:
+    result: passed_for_s01_scope
+    aggregate: "8 passed, 1 skipped, 3 failed"
+    s01_specific_tests:
+      mutation_scope_admission_file: passed
+      durable_operation_class_denial_before_audit_materialization: passed
+    non_s01_failures:
+      - test_scoped_python_preserves_unicode_cwd_and_drops_host_credentials
+      - test_scoped_powershell_preserves_unicode
+      - test_terminalization_failure_prevents_success_and_successful_finish
+    classification: pre_existing_environment_constraint
+    reason: "Manual test runner used C:\\Python314; the pre-existing fixture derives runtime_read_roots from sys.executable.parent, causing AppContainer ACL preparation against C:\\Python314 to fail with access denied before those legacy integration scenarios reach their intended assertions."
+    main_baseline_fixture_ref: tests/test_scoped_script_execution.py@f7e878f3497582547e5d52cd33b060cae18d2e84
+  focused_completion_rule:
+    all_s01_focused_tests_passed: true
+    duplicate_authority_or_readback_path_detected: false
+boundary:
+  disposition: completed
+  reason: S01FocusedVerificationPassed
+  implementation_landed: true
+  slice_completed: true
+continuation:
+  mode: next_slice
+  next_slice_id: S02
+  next_expected_actor: implementer
+  next_action_hint: "#开发执行 PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1"
+invariants:
+  direct_python_allowlist_not_changed: true
+  python314_acl_not_modified: true
+  wrapper_fallback_not_used: true
+  operator_unrestricted_not_used: true
+  s02_not_started: true

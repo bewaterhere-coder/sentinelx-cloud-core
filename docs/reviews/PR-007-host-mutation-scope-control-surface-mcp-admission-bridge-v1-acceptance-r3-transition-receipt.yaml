@@ -1,0 +1,73 @@
+schema_version: "1.0"
+kind: devforge_gate_transition_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1
+source_command: "#开发验收 PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1"
+transition:
+  from: acceptance
+  to: accepted
+  result: applied
+  reason: AcceptanceApproved
+lineage:
+  requirement_revision: 2
+  plan_revision: 4
+  acceptance_revision: 3
+  acceptance_ref: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-acceptance-r3.md
+  prior_acceptance_ref: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-acceptance-r2.md
+  repair_checkpoint_ref: docs/checkpoints/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-acceptance-r2-repair-completed-20261003.yaml
+transport:
+  type: github-pr
+  pr_number: 7
+  branch: task/host-mutation-scope-control-surface-mcp-admission-bridge-v1
+  evaluated_head: c053d01f0ff5e1b65ff5b43f4ce511508f317580
+  base_branch: main
+  base_head: f7e878f3497582547e5d52cd33b060cae18d2e84
+verification:
+  current_head_ci_run_id: 37040751232
+  current_head_ci_result: success
+  current_head_macos_run_id: 37040751337
+  current_head_macos_result: success
+  a10_focused_run_id: 37040107791
+  a10_focused_result: success
+  a10_pytest_passed: 18
+  live_agent_version: 0.24.1.dev70+gf11491fd4
+  live_candidate_commit: f11491fd48199f2dbe958f4dcd54caf1d39d9c5a
+  live_local_api_contract_revision: 1
+  live_local_api_actions: 5
+  live_mutation_sandbox_verified: true
+  live_pre_execution_audit_lineage_verified: true
+  post_s08_execution_path_changed: false
+acceptance:
+  result: Approved
+  acceptance_approved: true
+  completion_verified: false
+  criteria:
+    A1: pass
+    A2: pass
+    A3: pass
+    A4: pass
+    A5: pass
+    A6: pass
+    A7: pass
+    A8: pass
+    A9: pass
+    A10: pass
+    A11: pass
+    A12: pass
+    A13: pass
+    A14: pass
+safety:
+  hub_modified: false
+  host_policy_widened: false
+  implementation_replayed: false
+  merge_performed: false
+  done_claimed: false
+continuation:
+  current_gate: accepted
+  next_action: "#开发完成 PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1"
+  acceptance_approved: true
+  completion_verified: false
+freshness:
+  generated_date: "2026-10-03"
+  devforge_main: e0fe219252b160ec35d7349bb1dc27c16227229a
+  acceptance_contract: v1.5
