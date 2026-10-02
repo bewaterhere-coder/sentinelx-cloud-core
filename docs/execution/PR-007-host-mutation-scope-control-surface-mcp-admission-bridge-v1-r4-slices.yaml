@@ -126,7 +126,8 @@ slices:
 
   - id: S08
     title: Known-build activation and real sentinel_local_api end-to-end evidence
-    status: pending
+    status: completed
+    checkpoint_ref: docs/checkpoints/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-s08-completed-20261003.yaml
     objective: Prove the approved Agent-owned bridge through the actual model-visible sentinel_local_api interface on one exact known build, without modifying the Hub.
     primary_surfaces:
       - existing release/development activation contract
