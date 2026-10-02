@@ -23,6 +23,7 @@ from typing import Any
 from uuid import uuid4
 
 import websockets
+from pydantic import ValidationError
 from sentinelx_protocol import (
     HEARTBEAT_INTERVAL_SECONDS,
     MAX_BINARY_FRAME_BYTES,
@@ -66,6 +67,33 @@ BACKOFF_SCHEDULE = [0, 1, 2, 5, 10, 20, 30, 60, 120, 300]
 # hub must not be able to tell the fleet to go quiet for a day, so the agent
 # decides the ceiling.
 MAX_RETRY_AFTER_SECONDS = 300
+
+
+def _parse_agent_message(data: dict[str, Any]):
+    """Parse a Hub frame while allowing registry-defined request op names.
+
+    The shared protocol currently constrains RequestMessage.op to a fixed
+    Literal list. The Agent registry is intentionally extensible, so a newly
+    registered op would otherwise be rejected before Executor.dispatch could
+    return unsupported_op on mixed fleets or handle the op on a capable Agent.
+
+    Keep the protocol model authoritative for every other request field. For an
+    otherwise-valid request whose op name is simply newer than the protocol
+    package, validate the frame with a known placeholder op, then restore the
+    original bounded op name on the validated RequestMessage instance.
+    """
+    try:
+        return parse_message(data)
+    except ValidationError:
+        if data.get("type") != "request":
+            raise
+        op = data.get("op")
+        if not isinstance(op, str) or not op or len(op) > 128:
+            raise
+        probe = dict(data)
+        probe["op"] = "ping"
+        validated = parse_message(probe)
+        return validated.model_copy(update={"op": op})
 
 
 def _read_text(path: str) -> str | None:
@@ -467,7 +495,7 @@ class HubClient:
                 continue
             try:
                 data = json.loads(raw) if isinstance(raw, str) else json.loads(raw.decode())
-                msg = parse_message(data)
+                msg = _parse_agent_message(data)
             except Exception as exc:  # noqa: BLE001
                 logger.warning("failed to parse incoming message: %s", exc)
                 continue

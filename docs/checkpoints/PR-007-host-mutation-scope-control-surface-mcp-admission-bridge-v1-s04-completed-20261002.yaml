@@ -1,0 +1,77 @@
+schema: devforge.continuation-checkpoint.v1
+project_id: sentinelx-cloud-core
+task_id: PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1
+stage: implementation
+source_command: "#开发执行 PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1"
+active_slice_id: S04
+slice_state: completed
+implementation:
+  primary_commit: 6e8b563a817c4128da11cfdedd3559936d56eca3
+  runtime_closure_fixture_repair_commit: b3890c2
+  prior_verification_checkpoint: e3a0572
+  changed_surfaces:
+    - tests/test_scoped_script_execution.py
+    - tests/test_incident_20260927_d_root_recursive_delete.py
+  product_sandbox_code_changed: false
+  second_executor_or_authority_model_added: false
+verification:
+  identity: LocalSystem
+  harness: D:/coco/workspaces/pr007-s04-system-verify.ps1
+  runner: D:/coco/workspaces/pr007-s04-system-verify.py
+  phase_0_fresh_production_policy_readiness:
+    result: passed
+    force: true
+    config: C:/ProgramData/SentinelX/config.yaml
+    state_root: C:/ProgramData/SentinelX/state
+    workspace_root: D:/SentinelX/mutation-workspaces
+    available: true
+    checks_all_true: true
+    reason: real Windows AppContainer/ACL/Job/audit/scope self-check passed
+  phase_1_short_path_fixture_readiness:
+    result: passed
+    passed: 1
+    failed: 0
+    warnings: 1
+    duration_seconds: 1.88
+  phase_2_security_matrix:
+    result: passed
+    passed: 13
+    skipped: 1
+    failed: 0
+    warnings: 1
+    duration_seconds: 34.32
+  warning: pytest environment reports unknown asyncio_mode; the executed matrix does not rely on pytest-asyncio
+  verified_behavior:
+    - provider-issued scoped_script scope composes with execution_profile=scoped_mutation
+    - operation-class admission remains before material mutation
+    - repository and semantic lineage binding remain exact and fail closed on mismatch
+    - success timeout and nonzero failure terminalize authority
+    - terminal scope remains inspectable through bound non-reactivating readback
+    - audit START/SPAWN/FINISH ordering remains authoritative
+    - Windows AppContainer ACL and no-breakaway Job containment remain enforced
+    - INCIDENT-20260927-D-ROOT-RECURSIVE-DELETE protected sentinels survive admitted scoped execution
+    - no unrestricted fallback is introduced
+fixture_diagnosis:
+  long_path_failure_reproduced: true
+  long_fixture_exact_workspace_chars_approx: 206
+  long_python_pyc_path_chars_approx: 250
+  shortened_verification_root: D:/SentinelX/s04
+  short_path_rerun_green: true
+  classification: test_fixture_path_length_artifact
+  production_runtime_regression: false
+boundary:
+  disposition: completed
+  implementation_landed: true
+  slice_completed: true
+continuation:
+  mode: execute_next_slice
+  next_slice_id: S05
+  next_expected_actor: implementer
+  next_action_hint: "#开发执行 PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1"
+invariants:
+  direct_python_allowlist_not_changed: true
+  pytest_allowlist_not_added: true
+  script_run_bypass_not_used: true
+  wrapper_fallback_not_used: true
+  operator_unrestricted_not_used: true
+  s05_not_started: true
