@@ -141,110 +141,6 @@ def _paths_overlap(left: Path, right: Path) -> bool:
     return left == right or left.is_relative_to(right) or right.is_relative_to(left)
 
 
-def _canonical_repository_identity(value: Any, field_name: str) -> str:
-    """Normalize repository identity without retaining credentials."""
-    if not isinstance(value, dict):
-        raise ValueError(f"mutation_execution.{field_name}.repository must be a mapping")
-
-    vcs = str(value.get("vcs") or "").strip().lower()
-    authority = str(value.get("authority") or "").strip().lower().replace("\\", "/")
-    path = str(value.get("path") or "").strip().replace("\\", "/").strip("/")
-
-    if "://" in authority:
-        authority = authority.split("://", 1)[1]
-    authority = authority.rsplit("@", 1)[-1].split("/", 1)[0]
-    if authority.startswith("["):
-        # Preserve bracketed IPv6 authority without a port if one was provided.
-        end = authority.find("]")
-        authority = authority[: end + 1] if end >= 0 else authority
-    elif ":" in authority:
-        authority = authority.split(":", 1)[0]
-
-    if path.lower().endswith(".git"):
-        path = path[:-4]
-    path_parts = tuple(part for part in path.split("/") if part)
-    if any(part in {".", ".."} for part in path_parts):
-        raise ValueError(
-            f"mutation_execution.{field_name}.repository.path contains traversal segments"
-        )
-    path = "/".join(path_parts)
-
-    if not vcs or not authority or not path:
-        raise ValueError(
-            f"mutation_execution.{field_name}.repository requires vcs, authority and path"
-        )
-    return f"{vcs}://{authority}/{path}"
-
-
-@dataclass(frozen=True)
-class CanonicalRepositorySpec:
-    """One Host-authoritative canonical source checkout."""
-
-    root: Path
-    repository_identity: str
-    canonical_branch: str | None = None
-    provenance: str = "operator_config"
-
-
-def _canonical_repository_inventory(
-    value: Any,
-    *,
-    workspace_root: Path | None,
-) -> tuple[tuple[CanonicalRepositorySpec, ...], bool, tuple[str, ...]]:
-    """Parse canonical source roots while keeping diagnostics path-free."""
-    if value is None:
-        return (), True, ()
-    if isinstance(value, (str, bytes)) or not isinstance(value, (list, tuple)):
-        return (), False, ("canonical_repository_inventory_not_list",)
-
-    specs: list[CanonicalRepositorySpec] = []
-    diagnostics: list[str] = []
-    seen_roots: set[str] = set()
-
-    for index, entry in enumerate(value):
-        field_name = f"canonical_repositories[{index}]"
-        if not isinstance(entry, dict):
-            diagnostics.append("canonical_repository_entry_not_mapping")
-            continue
-        try:
-            root = _canonical_host_root(entry.get("root"), f"{field_name}.root")
-            repository_identity = _canonical_repository_identity(
-                entry.get("repository"), field_name
-            )
-        except ValueError:
-            diagnostics.append("canonical_repository_entry_invalid")
-            continue
-
-        root_key = str(root).casefold()
-        if root_key in seen_roots:
-            diagnostics.append("canonical_repository_duplicate_root")
-        seen_roots.add(root_key)
-
-        branch_text = str(entry.get("canonical_branch") or "").strip()
-        canonical_branch = branch_text or None
-        if repository_identity.startswith("git://") and canonical_branch is None:
-            diagnostics.append("canonical_repository_git_branch_missing")
-
-        specs.append(
-            CanonicalRepositorySpec(
-                root=root,
-                repository_identity=repository_identity,
-                canonical_branch=canonical_branch,
-            )
-        )
-
-    ordered = tuple(sorted(specs, key=lambda item: str(item.root).casefold()))
-    for left_index, left in enumerate(ordered):
-        if workspace_root is not None and _paths_overlap(left.root, workspace_root):
-            diagnostics.append("canonical_repository_overlaps_workspace_root")
-        for right in ordered[left_index + 1 :]:
-            if _paths_overlap(left.root, right.root):
-                diagnostics.append("canonical_repository_roots_overlap")
-
-    unique_diagnostics = tuple(dict.fromkeys(diagnostics))
-    return ordered, not unique_diagnostics, unique_diagnostics
-
-
 @dataclass(frozen=True)
 class MutationExecutionPolicy:
     """Provider-owned mutation execution policy introduced by SX-HMSA-001/S01."""
@@ -257,10 +153,6 @@ class MutationExecutionPolicy:
     scope_ttl_seconds: int = 3600
     evidence_retention_days: int = 30
     operator_unrestricted_enabled: bool = False
-    canonical_repository_firewall_enabled: bool = False
-    canonical_repositories: tuple[CanonicalRepositorySpec, ...] = ()
-    canonical_repository_inventory_valid: bool = True
-    canonical_repository_inventory_diagnostics: tuple[str, ...] = ()
 
     @property
     def legacy_unrestricted_compat(self) -> bool:
@@ -271,27 +163,6 @@ class MutationExecutionPolicy:
     def scoped_runtime_ready(self) -> bool:
         """S01 readiness seam; mandatory later-slice prerequisites are absent."""
         return False
-
-    @property
-    def canonical_repository_inventory_ready(self) -> bool:
-        """Inventory/classifier readiness only; not provider-wide capability readiness."""
-        return (
-            self.configured
-            and self.canonical_repository_firewall_enabled
-            and self.canonical_repository_inventory_valid
-            and bool(self.canonical_repositories)
-        )
-
-    @property
-    def canonical_repository_inventory_readiness_reasons(self) -> tuple[str, ...]:
-        reasons = list(self.canonical_repository_inventory_diagnostics)
-        if not self.configured:
-            reasons.append("mutation_execution_not_configured")
-        if not self.canonical_repository_firewall_enabled:
-            reasons.append("canonical_repository_firewall_disabled")
-        if not self.canonical_repositories:
-            reasons.append("canonical_repository_inventory_empty")
-        return tuple(dict.fromkeys(reasons))
 
     @classmethod
     def from_block(cls, block: dict[str, Any] | None, *, configured: bool) -> "MutationExecutionPolicy":
@@ -321,13 +192,6 @@ class MutationExecutionPolicy:
                         "scoped mutation placement would be ambiguous"
                     )
 
-        canonical_repositories, inventory_valid, inventory_diagnostics = (
-            _canonical_repository_inventory(
-                block.get("canonical_repositories"),
-                workspace_root=workspace_root,
-            )
-        )
-
         try:
             scope_ttl_seconds = int(block.get("scope_ttl_seconds", 3600))
             evidence_retention_days = int(block.get("evidence_retention_days", 30))
@@ -349,12 +213,6 @@ class MutationExecutionPolicy:
             scope_ttl_seconds=scope_ttl_seconds,
             evidence_retention_days=evidence_retention_days,
             operator_unrestricted_enabled=bool(block.get("operator_unrestricted_enabled", False)),
-            canonical_repository_firewall_enabled=bool(
-                block.get("canonical_repository_firewall_enabled", False)
-            ),
-            canonical_repositories=canonical_repositories,
-            canonical_repository_inventory_valid=inventory_valid,
-            canonical_repository_inventory_diagnostics=inventory_diagnostics,
         )
 
 
@@ -375,20 +233,62 @@ class LocalApiAction:
     method: str | None = None
     select: tuple[str, ...] = ()
     description: str | None = None
+    # Declared shape of this action's parameters, carried VERBATIM and never
+    # interpreted here. `describe` hands it to the caller as-is.
+    #
+    # WHY DECLARED RATHER THAN PROBED. For an HTTP action the parameters are
+    # readable from the request template ("/containers/{id}/json" yields `id`),
+    # so nothing needs declaring. A JSON-RPC action has a method and no
+    # template, so there is nothing to read: describe returned an empty list
+    # for every such action, which is no use to a caller that has to build a
+    # nested object. Asking the endpoint instead would be better, but it
+    # assumes introspection: Herdr's schema is only reachable through its CLI
+    # (verified against 0.9.0 / protocol 22, core#45) and Docker has none, so
+    # a probe cannot be the baseline.
+    #
+    # The cost is a second source of truth that can drift. The compatibility
+    # constraint is what bounds that: an endpoint that changes protocol fails
+    # closed, which forces these declarations to be revisited rather than
+    # silently used against a changed API.
     params_schema: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)
 class LocalApiEndpoint:
-    """A host-local endpoint the agent may talk to."""
+    """A host-local endpoint the agent may talk to.
+
+    `path` is NOT a binary and actions are NOT subcommands. With transport
+    "unix" the agent OPENS a socket: no process, no shell, no argv, no exit
+    code. Only transport "stdio" has a binary at `path`.
+    """
 
     name: str
-    transport: str
+    transport: str            # "unix" | "stdio"
     path: str
-    protocol: str
+    protocol: str             # "http" | "jsonrpc"
     actions: dict[str, LocalApiAction]
     timeout_s: float = 30.0
     run_as: str | None = None
+    # Declared compatibility constraint, evaluated once per connection epoch.
+    #
+    # BOTH HALVES ARE DECLARED, per the contract agreed in core#45: "the profile
+    # declares how to obtain compatibility metadata and which values it accepts;
+    # SentinelX evaluates that declared constraint."
+    #
+    #   compatibility:
+    #     probe:   { method: session.describe }   # or request: GET /version
+    #     extract: protocol                        # dotted path into the reply
+    #     accept:  { exact: 20 }                   # or { allowed: [20, 21] }
+    #
+    # `exact` is the default strictness and `allowed` is how a maintainer widens
+    # it deliberately. SentinelX NEVER infers compatibility from
+    # `new_version >= configured`: a higher number does not imply the protocol
+    # still matches, and assuming it would put that judgement with the wrong
+    # party.
+    #
+    # A block missing either half is dropped with a warning rather than
+    # half-enforced, because a constraint that silently does nothing is worse
+    # than no constraint: it reads as protection that is not there.
     compatibility: dict[str, Any] = field(default_factory=dict)
 
 
@@ -396,31 +296,157 @@ class LocalApiEndpoint:
 class Policy:
     """Loaded policy. Immutable after construction."""
 
+    # Check EVERY segment of a chained command against allowed_commands, not
+    # just what the whole string starts with. Off by default: measured against
+    # 48h of fleet traffic, turning it on unconditionally would reject roughly a
+    # third of chained calls even with the cd and read-only-filter concessions,
+    # and every single one of them without. A security default that gets
+    # reverted within the hour protects nobody. See segment_check.py.
     exec_strict: bool = False
+
+    # Ops the operator has switched off on this host. An op named here is not
+    # built into the registry at all, so it vanishes from capabilities and
+    # dispatch answers unsupported_op -- the same as if this agent had never
+    # shipped it. One lever, one place, no second enforcement path to drift.
+    #
+    # WHY THIS EXISTS. allowed_commands gates `exec` and only `exec`; that is
+    # what its own heading says and always has. script_run runs a script body
+    # through an interpreter and was never bound by it. Reasonable operators
+    # read an empty allowlist as "this host executes nothing" and were
+    # surprised -- reported independently by two of them, one after a
+    # governance audit on a Windows host where the service runs as LocalSystem.
+    # Being documented did not make the surprise unreasonable, and there was no
+    # supported way to say no. Now there is.
     disabled_ops: frozenset[str] = field(default_factory=frozenset)
+
+    # Command prefixes the agent will execute via the `exec` op.
+    # An exec request matches if cmd.startswith(allowed) for some entry.
     allowed_commands: tuple[str, ...] = field(default_factory=tuple)
+
+    # Optional Windows user-scoped Git execution. Default deny: a service
+    # process never borrows an interactive user's credential context unless
+    # the operator explicitly opts in. Credential material is never exposed.
     authenticated_git_enabled: bool = False
     authenticated_git_allow_push: bool = False
     authenticated_git_timeout_seconds: int = 20
+
+    # Provider-owned host mutation policy. Absent block preserves only the
+    # historical unprofiled script_run behavior as internal compatibility;
+    # it never implies the new scoped mutation capabilities are ready.
     mutation_execution: MutationExecutionPolicy = field(default_factory=MutationExecutionPolicy)
+
+    # service name -> ServiceSpec
     services: dict[str, ServiceSpec] = field(default_factory=dict)
+
+    # name -> LocalApiEndpoint. Empty unless the host declares `local_apis`,
+    # and an endpoint with no `actions` is NOT registered: the allowlist is the
+    # entire security boundary here. exec is bounded by command prefixes, but a
+    # socket bridge is bounded only by whatever the far side exposes, which the
+    # agent cannot enumerate.
     local_apis: dict[str, LocalApiEndpoint] = field(default_factory=dict)
+
+    # short label -> LocationSpec
     locations: dict[str, LocationSpec] = field(default_factory=dict)
+
+    # diagnostic playbook name -> ordered list of commands
     playbooks: dict[str, dict[str, Any]] = field(default_factory=dict)
+
+    # optional human-readable label for this host
     hostname_label: str | None = None
+
+    # Advisory MCP toolset profile this host prefers ('compact' | 'full'),
+    # advertised in the hello. None (the default) = no preference; stock
+    # SentinelX leaves it None and gets the full catalog. The hub treats this
+    # as a default only, and only under unanimity across the user's agents —
+    # an explicit dashboard choice always wins. Sanitized in from_file: any
+    # value other than 'compact'/'full' degrades to None (never advertises a
+    # bogus value that the hub's Literal would reject).
     preferred_profile: str | None = None
+
+    # exec timeout default
     exec_timeout_default: int = 60
     exec_timeout_max: int = 600
+
+    # Where uploads + edit workdirs live. Resolved rather than hardcoded: the
+    # old default was /home/sentinelx/uploads, which on most installs either
+    # does not exist or belongs to root, so an agent whose config lost its
+    # `upload_base` (e.g. an emptied config.yaml) could not stage anything --
+    # including the edit that would have restored the config.
     upload_base: Path = field(default_factory=lambda: default_upload_base())
+
+    # ── file_url SSRF defense ──────────────────────────────────────────────
+    # When the hub asks the agent to fetch a URL (upload_file with file_url),
+    # the URL's hostname must be in this allowlist AND its resolved IP must
+    # not be private/loopback/link-local.
+    #
+    # Default empty = file_url is effectively disabled. Operators must
+    # opt-in by listing trusted hosts. This is the principle of least
+    # privilege: the agent runs with elevated rights, so a fetch primitive
+    # to arbitrary hosts is a SSRF gun pointed at the host's network.
+    #
+    # Typical configuration for SentinelX:
+    #   trusted_fetch_hosts:
+    #     - drop.pensa.ar
+    #     - get.sentinelx.app
     trusted_fetch_hosts: tuple[str, ...] = ()
+
+    # Tighter timeout than the legacy 60s — fetches that take that long
+    # against an attacker-controlled host are tying up agent resources
+    # while leaking timing info.
     file_url_timeout_seconds: int = 15
+
+    # ── file_ops: read/list/search primitives ──────────────────────────────
+    # Read-only filesystem primitives the agent exposes for inspecting files
+    # and directories. Unlike `exec` (which has an explicit command allowlist)
+    # these primitives are constrained by a PATH allowlist: the only paths
+    # the agent will read/list/search are those that fall under one of
+    # the configured `file_ops_paths` entries.
+    #
+    # Empty list = deny-all. The handlers return a clear "path_not_allowed"
+    # error pointing the operator to add the directory in config.yaml.
+    #
+    # Why a separate allowlist rather than reusing `locations`? `locations`
+    # is a list of "known places" the operator wants the agent to be aware
+    # of (typically used by humans navigating capabilities output). The
+    # file_ops allowlist is a security boundary: a directory could be in
+    # `locations` for discoverability but NOT in this allowlist, and the
+    # read/list/search primitives would still refuse to touch it.
+    #
+    # Path resolution is canonical (resolve symlinks before checking), and
+    # the check rejects anything outside the allowed prefixes. This blocks
+    # path-traversal attacks like ../../../etc/shadow even if the operator
+    # accidentally allows /home/user.
+    #
+    # Unified r/rw model: each entry carries an access level. "r" entries
+    # behave exactly like the legacy allowlist (read/list/search only).
+    # "rw" entries additionally permit the mutating ops (edit, move,
+    # copy, delete, chmod, chown). A path must be EXPLICITLY "rw" for any
+    # mutation — the default and the fallback for anything unrecognized
+    # is "r", so the model can never silently grant write.
+    #
+    # Backward compatibility: a legacy config with
+    #   file_ops:
+    #     allowed_read_paths: [/etc, /var/log]
+    # is mapped automatically to read-only entries (access: r). Existing
+    # agents keep working with zero changes and zero new permissions.
     file_ops_paths: tuple[FileOpsPath, ...] = ()
-    file_ops_max_read_bytes: int = 65536
+
+    # Maximum number of bytes to read per `read` op. Files larger than
+    # this are returned truncated with truncated=True so the caller knows
+    # to use view_range or accept the partial result.
+    file_ops_max_read_bytes: int = 65536  # 64 KB
+
+    # Maximum entries returned by `list` per call. Beyond this, the
+    # response is truncated.
     file_ops_max_list_entries: int = 1000
+
+    # Maximum matches returned by `search`. Search is recursive, so this
+    # protects the agent from runaway grep over a massive tree.
     file_ops_max_search_results: int = 200
 
     @classmethod
     def empty(cls) -> "Policy":
+        """Used in tests and as the default if no config file exists."""
         return cls()
 
     @classmethod
@@ -428,19 +454,49 @@ class Policy:
         if not path.exists():
             logger.warning("policy_config_missing", extra={"path": str(path)})
             return cls.empty()
+
         try:
             data = yaml.safe_load(path.read_text()) or {}
         except (yaml.YAMLError, OSError) as exc:
             logger.error("policy_config_invalid", extra={"path": str(path), "error": str(exc)})
             return cls.empty()
+
+        # Schema errors (unknown keys, typos like `allow:` instead of
+        # `allowed_commands:`) are reported as ValueError by from_dict. We
+        # log them prominently and refuse to fall back to empty — silently
+        # loading nothing was the exact bug we're trying to prevent.
         try:
             return cls.from_dict(data)
         except ValueError as exc:
-            logger.error("policy_config_schema_error", extra={"path": str(path), "error": str(exc)})
+            logger.error(
+                "policy_config_schema_error",
+                extra={"path": str(path), "error": str(exc)},
+            )
+            # Re-raise so the agent fails loudly at startup rather than
+            # accepting WS connections with an empty allowlist. The systemd
+            # unit will restart but journalctl will show this clearly.
             raise
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "Policy":
+        # --- Schema validation: detect typos with high-confidence -----------
+        # We deliberately use a TWO-TIER approach:
+        #
+        #   Tier 1: HARD FAIL on keys we know are common typos for required
+        #           keys. These produce a ValueError so the agent crashes
+        #           loudly at startup (better than silently loading nothing).
+        #
+        #   Tier 2: SOFT WARN on unknown keys that don't match any known
+        #           typo. We just log a warning and continue. This avoids
+        #           breaking forward-compatible configs that include keys
+        #           we haven't seen yet (e.g. a future version adds a new
+        #           top-level key, but the user is still running an older
+        #           agent — their config keeps working).
+        #
+        # The bug we're preventing is the one from May 2 2026: someone
+        # writes `allow:` instead of `allowed_commands:` and the agent
+        # silently loads zero commands. We hard-fail on that exact typo
+        # but stay tolerant of unknowns we don't recognize.
         TYPO_HINTS = {
             "allow": "allowed_commands",
             "allowedCommands": "allowed_commands",
@@ -450,6 +506,7 @@ class Policy:
             "playbook": "playbooks",
             "hub": "hub_url",
         }
+        # Hard fail: any key in TYPO_HINTS is a known mistake.
         typos_found = [k for k in data.keys() if k in TYPO_HINTS]
         if typos_found:
             hints = [
@@ -462,17 +519,29 @@ class Policy:
                 + "\nFix the key name(s) and restart the agent."
             )
 
+        # Soft warn: anything else not in KNOWN_KEYS is just informational.
+        # It does NOT block the agent from starting.
         KNOWN_KEYS = {
             "agent", "exec", "allowed_commands", "services", "locations",
             "playbooks", "hub_url", "upload_base", "log", "security",
-            "file_ops", "local_apis", "disabled_ops", "exec_strict",
-            "authenticated_git", "mutation_execution",
+            "file_ops",
+            # Adding a top-level block means adding it here too, or a valid
+            # config warns about itself: local_apis shipped parsed and working
+            # while policy_unknown_keys told the operator it was unrecognised.
+            "local_apis",
+            "disabled_ops",
+            "exec_strict",
+            "authenticated_git",
+            "mutation_execution",
         }
         unknown = set(data.keys()) - KNOWN_KEYS - set(TYPO_HINTS.keys())
         if unknown:
             logger.warning(
                 "policy_unknown_keys",
-                extra={"unknown_keys": sorted(unknown), "known_keys": sorted(KNOWN_KEYS)},
+                extra={
+                    "unknown_keys": sorted(unknown),
+                    "known_keys": sorted(KNOWN_KEYS),
+                },
             )
 
         agent_block = data.get("agent", {}) or {}
@@ -485,28 +554,38 @@ class Policy:
 
         mutation_execution_present = "mutation_execution" in data
         mutation_execution = MutationExecutionPolicy.from_block(
-            data.get("mutation_execution"), configured=mutation_execution_present
+            data.get("mutation_execution"),
+            configured=mutation_execution_present,
         )
         if not mutation_execution_present:
             logger.warning(
                 "mutation_execution_legacy_unrestricted_compat",
-                extra={"detail": (
-                    "mutation_execution is absent; preserving historical unprofiled "
-                    "script_run behavior as legacy compatibility only. This does not "
-                    "satisfy scoped mutation or pre-execution audit capabilities."
-                )},
+                extra={
+                    "detail": (
+                        "mutation_execution is absent; preserving historical unprofiled "
+                        "script_run behavior as legacy compatibility only. This does not "
+                        "satisfy scoped mutation or pre-execution audit capabilities."
+                    )
+                },
             )
 
         services: dict[str, ServiceSpec] = {}
         for name, meta in (data.get("services") or {}).items():
             actions = tuple(meta.get("actions") or [])
             services[name] = ServiceSpec(
-                unit=meta.get("unit", name), actions=actions,
+                unit=meta.get("unit", name),
+                actions=actions,
                 requires_sudo=bool(meta.get("requires_sudo", True)),
                 description=meta.get("description", ""),
-                domain=meta.get("domain", "system"), backend=meta.get("backend", "service"),
+                domain=meta.get("domain", "system"),
+                backend=meta.get("backend", "service"),
             )
 
+        # ── local_apis ────────────────────────────────────────────────────
+        # Host-local endpoints that already speak a structured protocol. An
+        # endpoint is skipped, loudly, unless it is fully formed: `actions` is
+        # the whole security boundary, so a malformed block must not degrade
+        # into "allow everything" or into a half-configured endpoint.
         local_apis: dict[str, LocalApiEndpoint] = {}
         for name, meta in (data.get("local_apis") or {}).items():
             if not isinstance(meta, dict):
@@ -516,41 +595,116 @@ class Policy:
             protocol = str(meta.get("protocol") or "").strip()
             path_value = str(meta.get("path") or "").strip()
             raw_actions = meta.get("actions")
-            if transport not in ("unix", "stdio") or protocol not in ("http", "jsonrpc"):
-                logger.warning("local_apis: %s has invalid transport/protocol; skipped", name)
+            if transport not in ("unix", "stdio"):
+                logger.warning(
+                    "local_apis: %s has transport=%r; expected unix or stdio; skipped",
+                    name, transport,
+                )
                 continue
-            if not path_value or not isinstance(raw_actions, dict) or not raw_actions:
-                logger.warning("local_apis: %s is incomplete; skipped", name)
+            if protocol not in ("http", "jsonrpc"):
+                logger.warning(
+                    "local_apis: %s has protocol=%r; expected http or jsonrpc; skipped",
+                    name, protocol,
+                )
                 continue
+            if not path_value:
+                logger.warning("local_apis: %s has no path; skipped", name)
+                continue
+            if not isinstance(raw_actions, dict) or not raw_actions:
+                # Deliberate: no list, no endpoint. Registering one without an
+                # action allowlist would expose whatever the far side happens
+                # to offer, which the agent cannot see or bound.
+                logger.warning(
+                    "local_apis: %s declares no actions; skipped (an action "
+                    "allowlist is required)", name,
+                )
+                continue
+
             actions: dict[str, LocalApiAction] = {}
             for act_name, act in raw_actions.items():
                 act = act or {}
                 if not isinstance(act, dict):
+                    logger.warning(
+                        "local_apis: %s.%s is not a mapping; skipped", name, act_name
+                    )
                     continue
                 request = act.get("request")
                 method = act.get("method")
                 if protocol == "http" and not request:
+                    logger.warning(
+                        "local_apis: %s.%s needs `request` for protocol http; skipped",
+                        name, act_name,
+                    )
                     continue
                 if protocol == "jsonrpc" and not method:
+                    logger.warning(
+                        "local_apis: %s.%s needs `method` for protocol jsonrpc; skipped",
+                        name, act_name,
+                    )
                     continue
+                sel = act.get("select") or ()
+                # `params:` on an action is its SCHEMA, not values. Only shape
+                # is checked; the content is the endpoint's business and the
+                # agent never reads it.
                 pschema = act.get("params")
                 if pschema is not None and not isinstance(pschema, dict):
+                    logger.warning(
+                        "local_apis: %s.%s has a non-mapping `params` schema; "
+                        "ignoring it", name, act_name,
+                    )
                     pschema = None
                 actions[str(act_name)] = LocalApiAction(
                     request=str(request) if request else None,
                     method=str(method) if method else None,
-                    select=tuple(str(x) for x in (act.get("select") or ())),
-                    description=str(act["description"]) if act.get("description") else None,
+                    select=tuple(str(x) for x in sel),
+                    description=(
+                        str(act["description"]) if act.get("description") else None
+                    ),
                     params_schema=pschema,
                 )
             if not actions:
+                logger.warning(
+                    "local_apis: %s had actions but none were usable; skipped", name
+                )
                 continue
+
+            # Validate the compatibility block here so a malformed one is
+            # caught at load, where the operator sees the warning, rather than
+            # at first use where it would look like an endpoint fault.
             compat = meta.get("compatibility") or {}
-            if compat and not isinstance(compat, dict):
-                compat = {}
+            if compat:
+                probe = compat.get("probe") if isinstance(compat, dict) else None
+                accept = compat.get("accept") if isinstance(compat, dict) else None
+                extract = compat.get("extract") if isinstance(compat, dict) else None
+                problem = None
+                if not isinstance(compat, dict):
+                    problem = "compatibility must be a mapping"
+                elif not isinstance(probe, dict) or not (
+                    probe.get("method") or probe.get("request")
+                ):
+                    problem = "compatibility.probe needs a `method` or a `request`"
+                elif not extract:
+                    problem = "compatibility.extract must name the field to read"
+                elif not isinstance(accept, dict) or not (
+                    "exact" in accept or "allowed" in accept
+                ):
+                    problem = "compatibility.accept needs `exact` or `allowed`"
+                elif "allowed" in accept and not isinstance(accept["allowed"], list):
+                    problem = "compatibility.accept.allowed must be a list"
+                if problem:
+                    logger.warning(
+                        "local_apis: %s has an unusable compatibility block (%s); "
+                        "dropping the constraint rather than half-enforcing it",
+                        name, problem,
+                    )
+                    compat = {}
             local_apis[str(name)] = LocalApiEndpoint(
-                name=str(name), transport=transport, path=path_value, protocol=protocol,
-                actions=actions, timeout_s=float(meta.get("timeout_s") or 30),
+                name=str(name),
+                transport=transport,
+                path=path_value,
+                protocol=protocol,
+                actions=actions,
+                timeout_s=float(meta.get("timeout_s") or 30),
                 run_as=str(meta["run_as"]) if meta.get("run_as") else None,
                 compatibility=compat if isinstance(compat, dict) else {},
             )
@@ -561,34 +715,109 @@ class Policy:
                 locations[label] = LocationSpec(path=meta)
             else:
                 locations[label] = LocationSpec(
-                    path=meta["path"], description=meta.get("description", "")
+                    path=meta["path"],
+                    description=meta.get("description", ""),
                 )
 
+        # --- file_ops paths: unified r/rw model + legacy back-compat ------
+        #
+        # Three shapes are accepted, in priority order:
+        #
+        #   1. New model:
+        #        file_ops:
+        #          paths:
+        #            - path: /home/carlos
+        #              access: rw
+        #            - path: /etc
+        #              access: r
+        #            - /var/log            # bare string == access: r
+        #
+        #   2. Legacy model (back-compat, zero breakage):
+        #        file_ops:
+        #          allowed_read_paths: [/etc, /var/log]
+        #      Each entry becomes a read-only FileOpsPath (access: r).
+        #      Existing agents keep the EXACT behaviour they had — no new
+        #      permissions are ever granted by the migration.
+        #
+        #   3. Both keys present: `paths` wins, `allowed_read_paths` is
+        #      ignored with a loud warning. We do NOT merge them: merging
+        #      would make the effective access level of a directory
+        #      ambiguous, and "explicit beats implicit" is the safer rule
+        #      for a security boundary.
+        #
+        # An unknown `access` value (typo like "readwrite") degrades to
+        # "r" inside FileOpsPath.__post_init__ — never to "rw".
         raw_paths = file_ops_block.get("paths")
         legacy_read_paths = file_ops_block.get("allowed_read_paths")
+
         file_ops_paths_list: list[FileOpsPath] = []
         if raw_paths:
             if legacy_read_paths:
-                logger.warning("file_ops_both_keys_present")
+                logger.warning(
+                    "file_ops_both_keys_present",
+                    extra={
+                        "detail": (
+                            "file_ops has BOTH 'paths' and the legacy "
+                            "'allowed_read_paths'. Using 'paths'; "
+                            "'allowed_read_paths' is ignored. Remove the "
+                            "legacy key to silence this warning."
+                        )
+                    },
+                )
             for entry in raw_paths:
                 if isinstance(entry, str):
                     file_ops_paths_list.append(FileOpsPath(path=entry))
                 elif isinstance(entry, dict) and entry.get("path"):
                     file_ops_paths_list.append(
-                        FileOpsPath(path=str(entry["path"]), access=str(entry.get("access", "r")))
+                        FileOpsPath(
+                            path=str(entry["path"]),
+                            access=str(entry.get("access", "r")),
+                        )
                     )
                 else:
-                    logger.warning("file_ops_path_entry_invalid", extra={"entry": repr(entry)})
+                    # Skip malformed entries loudly rather than crash the
+                    # whole agent — a single bad list item shouldn't take
+                    # the host offline, but the operator must see it.
+                    logger.warning(
+                        "file_ops_path_entry_invalid",
+                        extra={"entry": repr(entry)},
+                    )
         elif legacy_read_paths:
-            logger.warning("file_ops_allowed_read_paths_deprecated")
+            logger.warning(
+                "file_ops_allowed_read_paths_deprecated",
+                extra={
+                    "detail": (
+                        "file_ops.allowed_read_paths is deprecated. It "
+                        "still works (mapped to access: r) but please "
+                        "migrate to the unified file_ops.paths model with "
+                        "explicit r/rw access levels. See "
+                        "config.example.yaml."
+                    )
+                },
+            )
             for entry in legacy_read_paths:
-                file_ops_paths_list.append(FileOpsPath(path=str(entry), access="r"))
+                file_ops_paths_list.append(
+                    FileOpsPath(path=str(entry), access="r")
+                )
 
+        # Advisory toolset-profile hint (optional). Only 'compact'/'full' are
+        # meaningful; anything else degrades to None with a loud warning so a
+        # typo can't advertise a value the hub's Literal would reject (which
+        # would fail the hello and take the host offline).
         _raw_profile = agent_block.get("preferred_profile")
         if _raw_profile in (None, "compact", "full"):
             _preferred_profile = _raw_profile
         else:
-            logger.warning("policy_preferred_profile_invalid", extra={"value": repr(_raw_profile)})
+            logger.warning(
+                "policy_preferred_profile_invalid",
+                extra={
+                    "value": repr(_raw_profile),
+                    "detail": (
+                        "agent.preferred_profile must be 'compact' or 'full'; "
+                        "ignoring and advertising no preference."
+                    ),
+                },
+            )
             _preferred_profile = None
 
         policy = cls(
@@ -611,17 +840,42 @@ class Policy:
             preferred_profile=_preferred_profile,
             exec_timeout_default=int(exec_block.get("timeout_default", 60)),
             exec_timeout_max=int(exec_block.get("timeout_max", 600)),
-            upload_base=Path(data.get("upload_base") or default_upload_base()).resolve(),
-            trusted_fetch_hosts=tuple(security_block.get("trusted_fetch_hosts") or ()),
-            file_url_timeout_seconds=int(security_block.get("file_url_timeout_seconds", 15)),
+            upload_base=Path(
+                data.get("upload_base") or default_upload_base()
+            ).resolve(),
+            trusted_fetch_hosts=tuple(
+                security_block.get("trusted_fetch_hosts") or ()
+            ),
+            file_url_timeout_seconds=int(
+                security_block.get("file_url_timeout_seconds", 15)
+            ),
             file_ops_paths=tuple(file_ops_paths_list),
-            file_ops_max_read_bytes=int(file_ops_block.get("max_read_bytes", 65536)),
-            file_ops_max_list_entries=int(file_ops_block.get("max_list_entries", 1000)),
-            file_ops_max_search_results=int(file_ops_block.get("max_search_results", 200)),
+            file_ops_max_read_bytes=int(
+                file_ops_block.get("max_read_bytes", 65536)
+            ),
+            file_ops_max_list_entries=int(
+                file_ops_block.get("max_list_entries", 1000)
+            ),
+            file_ops_max_search_results=int(
+                file_ops_block.get("max_search_results", 200)
+            ),
         )
+
+        # --- Fix #7-prevention (part 2): warn on empty allowlist -----------
+        # An empty allowed_commands list is technically valid (deny-all) but
+        # it almost always means the operator forgot to populate it or used
+        # the wrong key name. Loud warning at startup so it surfaces in
+        # journalctl rather than only when the first exec attempt fails.
         if not policy.allowed_commands:
+            # Note: don't pass `message` in extra — that's a reserved field
+            # in stdlib logging.LogRecord and using it raises KeyError.
             logger.warning(
-                "Policy loaded with NO allowed_commands. All `exec` calls will be rejected."
+                "Policy loaded with NO allowed_commands. "
+                "All `exec` calls will be rejected. "
+                "If this is unintentional, check that "
+                f"{_pg.CONFIG_PATH} contains an "
+                "`allowed_commands:` block (with underscore — "
+                "`allow:` won't work)."
             )
         else:
             logger.info(
@@ -632,9 +886,16 @@ class Policy:
                     "playbooks_count": len(policy.playbooks),
                 },
             )
+
         return policy
 
+    # --- Query methods --------------------------------------------------------
+
     def is_command_allowed(self, cmd: str) -> bool:
+        """Match by prefix, like the legacy core does.
+
+        Empty allowlist means deny-all.
+        """
         cmd = (cmd or "").strip()
         if not cmd:
             return False
@@ -645,25 +906,89 @@ class Policy:
 
     def is_service_action_allowed(self, name: str, action: str) -> bool:
         spec = self.services.get(name)
-        return spec is not None and action in spec.actions
+        if spec is None:
+            return False
+        return action in spec.actions
 
-    def resolve_path(self, path: str, *, need_write: bool = False) -> Path | None:
-        if not self.file_ops_paths or not path:
+    def resolve_path(
+        self, path: str, *, need_write: bool = False
+    ) -> Path | None:
+        """Resolve `path` against the unified file_ops allowlist.
+
+        Returns the canonical Path if `path` falls under one of the
+        configured `file_ops_paths` entries with sufficient access, or
+        None otherwise (no match, empty allowlist, or write needed on a
+        read-only entry).
+
+        `need_write`:
+          - False (default): the path only needs to fall under ANY
+            entry (access "r" or "rw"). Used by read/list/search.
+          - True: the path must fall under an entry whose access is
+            "rw". Used by edit and the destructive ops (move, copy,
+            delete, chmod, chown).
+
+        Security properties (UNCHANGED from the legacy
+        resolve_read_path — this is the load-bearing check):
+
+          - Canonicalization via Path.resolve(strict=False) follows
+            symlinks BEFORE the prefix check. A symlink at
+            /home/carlos/escape -> /etc/shadow does NOT bypass the
+            allowlist: the resolved /etc/shadow is only allowed if /etc
+            itself is a configured entry (with rw, if need_write).
+          - Path traversal (`../`) is defeated by the same resolve().
+          - Path.is_relative_to() is used so /etc/passwd does not match
+            an allowlist entry of /etc-not-this-one.
+
+        It does NOT check existence or readability — handlers do that
+        AFTER the allowlist check passes, so they can return a clean
+        not_found / permission_denied instead of masking those as
+        path_not_allowed.
+
+        When multiple entries match (e.g. /home is "r" and
+        /home/carlos is "rw"), the MOST PERMISSIVE matching entry wins
+        for the requested access: if any matching entry satisfies the
+        need, the path is allowed. This is intentional and matches the
+        operator's mental model — declaring a subtree "rw" is an
+        explicit grant that a broader "r" parent must not silently
+        veto. The narrower, more specific decision is the one the
+        operator most recently/intentionally expressed.
+        """
+        if not self.file_ops_paths:
             return None
+        if not path:
+            return None
+
         try:
             candidate = Path(path).resolve(strict=False)
-        except (OSError, RuntimeError, ValueError):
+        except (OSError, RuntimeError):
+            # OSError for paths with NUL chars / nonexistent parts on
+            # some platforms; RuntimeError for circular symlinks.
             return None
+
         for entry in self.file_ops_paths:
             if need_write and entry.access != "rw":
                 continue
             try:
                 allowed = Path(entry.path).resolve(strict=False)
-            except (OSError, RuntimeError, ValueError):
+            except (OSError, RuntimeError):
                 continue
+            # Use Path.is_relative_to so /etc/passwd doesn't match
+            # an allowlist of /etc-not-this-one. Python 3.9+.
             if candidate == allowed or candidate.is_relative_to(allowed):
                 return candidate
+
         return None
 
     def resolve_read_path(self, path: str) -> Path | None:
+        """Backward-compatible shim → resolve_path(need_write=False).
+
+        Kept so existing callers (handlers/fileops.py and any
+        out-of-tree consumers / tests) keep working unchanged after the
+        unified r/rw refactor. New code should call resolve_path()
+        directly and pass need_write=True for mutating operations.
+
+        Behaviour is identical to the pre-refactor resolve_read_path:
+        a path under ANY file_ops entry (r or rw) resolves; the access
+        level is not consulted for read.
+        """
         return self.resolve_path(path, need_write=False)
