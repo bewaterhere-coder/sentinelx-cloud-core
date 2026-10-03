@@ -78,6 +78,10 @@ safety:
   unrestricted_fallback_used: false
   manual_github_merge_tree_fabricated: false
   done_claimed: false
+recovery_notes:
+  requirement_file_restored_to_pre_finalization_blob: ab1c1dfceba44f26eec240fd90bd5081e32501db
+  accidental_requirement_semantic_rewrite_retained: false
+  restored_by_commit: f67b54a4d9dd0a86a4fd0c227dc33e6bad548ba4
 resume:
   condition: Windows SentinelX Host reconnects and the same accepted Task lineage is re-read
   rule: re-read current main and current PR head before first mutation; do not assume the incomplete local merge workspace remains authoritative
