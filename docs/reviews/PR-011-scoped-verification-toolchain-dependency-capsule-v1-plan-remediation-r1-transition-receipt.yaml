@@ -1,0 +1,49 @@
+schema_version: "1.0"
+kind: devforge_artifact_state_transition_receipt
+task_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1
+source_command: "#开发计划修复 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
+runtime:
+  repository: bewaterhere-coder/DevForge
+  version: 2.34.0
+  revision: e0fe219252b160ec35d7349bb1dc27c16227229a
+  workflow: project_development
+  workflow_version: "2.1"
+transition:
+  from_stage: plan_review_rejected
+  to_stage: plan_review
+  decision: Remediated
+  next_expected_actor: reviewer
+lineage:
+  requirement_revision: 1
+  requirement_before_blob_sha: 841dc291cad3c4351fdf7f52923ce81042a8cf59
+  requirement_after_blob_sha: d219c40b739c1ae2b4e478f72a7c195c25f8f7cc
+  rejected_plan_revision: 1
+  rejected_plan_blob_sha: 0ecca078bfaf01131c293c1d7b16e6f28ba60cd8
+  remediated_plan_revision: 2
+  remediated_plan_blob_sha: c30d771ea5167db92f549bcb8e55589a7550dafd
+  rejected_review_ref: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-review-r1.md
+  rejected_review_blob_sha: f8a2a7deb8bdbc5ec3a6678cf97ebcc157c53622
+  remediation_ref: docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-remediation-r1-20261003.yaml
+transport:
+  type: github-pr
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 11
+  branch: task/scoped-verification-toolchain-dependency-capsule-v1
+findings:
+  - id: PR011-R1-F1-source-under-test-materialization-pre-toolchain-binding
+    classification: plan_local
+    disposition: remediated_pending_re_review
+  - id: PR011-R1-F2-toolchain-capsule-integrity-resource-bounds
+    classification: plan_local
+    disposition: remediated_pending_re_review
+postconditions:
+  requirement_ready: true
+  plan_approved: false
+  implementation_authorized: false
+  execution_slice_set_compiled: false
+  task_stage_read_back: plan_review
+  next_expected_actor_read_back: reviewer
+  plan_revision_read_back: 2
+  remediation_read_back_verified: true
+  task_read_back_verified: true
+canonical_next_action: "#开发评审 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
