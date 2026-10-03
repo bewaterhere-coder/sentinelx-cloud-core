@@ -8,15 +8,22 @@ task_id: PR-010-canonical-repository-mutation-firewall-v1
 title: SentinelX Provider Canonical Repository Mutation Firewall V1
 requirement_revision: 2
 development:
-  stage: implementation
+  stage: accepted
   gates:
     requirement_ready: true
     plan_approved: true
-    acceptance_approved: false
+    acceptance_approved: true
     completion_verified: false
   plan_revision: 4
   implementation_authorized: true
-  next_expected_actor: implementer
+  finalization:
+    ready_for_merge: false
+    canonical_state_verified: false
+    plan_execution_state_verified: false
+    evidence_verified: true
+    transport_preconditions_verified: false
+    blocker: CompletionIntegrationHostOffline
+  next_expected_actor: completion_finalizer
 transport:
   type: github-pr
   pr_number: 10
@@ -27,6 +34,9 @@ artifacts:
   plan: docs/plans/PR-010-canonical-repository-mutation-firewall-v1-plan.md
   plan_review: docs/reviews/PR-010-canonical-repository-mutation-firewall-v1-plan-review-r4.md
   execution_slice_set: docs/execution/PR-010-canonical-repository-mutation-firewall-v1-slices.yaml
+  acceptance: docs/reviews/PR-010-canonical-repository-mutation-firewall-v1-acceptance-r1.md
+  acceptance_checkpoint: docs/checkpoints/PR-010-canonical-repository-mutation-firewall-v1-acceptance-r1-approved-20261003.yaml
+  completion_finalization_checkpoint: docs/checkpoints/PR-010-canonical-repository-mutation-firewall-v1-completion-finalization-blocked-20261003.yaml
 related_tasks:
   overlap_dependencies:
     - PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1
@@ -363,10 +373,8 @@ challenge_completed: true
 - `src/sentinelx_core/mutation_placement.py` — shared `RepositoryIdentity` semantics;
 - `src/sentinelx_core/canonical_repository_firewall.py` — central admission/readiness;
 - structured mutation handlers: edit, fsmutate, upload/finalization, structured Git;
-- process mutation handlers: exec and script/scoped-script paths;
-- authoritative operation registration and effective exposure accounting;
-- Core capability/readiness + hello/protocol output;
-- mutation scope/sandbox interaction;
-- Windows process-tree/AppContainer/ACL behavior;
-- configuration examples, README/security/threat-model documentation;
-- PR-007/PR-008 overlap and drift reconciliation.
+- process execution handlers and sandbox composition;
+- authoritative registry/effect metadata and mixed-operation classifiers;
+- Core capability/hello/protocol structures;
+- Windows incident regressions and same-repository execution-workspace allowance;
+- documentation/configuration examples and immutable-Hub boundary.
