@@ -65,6 +65,7 @@ slices:
         - inspect repository CI/pyproject and run appropriate broader checks required by current repository reality
     checkpoint:
       required: true
-    state: pending
-    run_refs: []
-    completion_receipt_ref: null
+    state: completed
+    run_refs:
+      - docs/checkpoints/PR-012-execute-scoped-explicit-execution-profile-v1-s01-completion-20261005.yaml
+    completion_receipt_ref: docs/reviews/PR-012-execute-scoped-explicit-execution-profile-v1-s01-completion-receipt.yaml
