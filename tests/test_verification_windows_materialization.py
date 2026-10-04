@@ -294,7 +294,9 @@ def test_verification_toolchain_is_read_execute_only_and_revoked_at_terminal(tmp
     status = read_status.read_text(encoding="utf-8").strip() if read_status.exists() else "<missing>"
     error = read_error.read_text(encoding="utf-8", errors="replace").strip() if read_error.exists() else "<missing>"
     assert read_marker.exists(), f"toolchain direct read failed; status={status!r}; stderr={error!r}"
-    assert read_marker.read_bytes() == b"runtime"
+    assert read_marker.read_bytes() == b"runtime", (
+        f"toolchain direct read returned unexpected bytes; status={status!r}; stderr={error!r}"
+    )
     assert not toolchain_write.exists()
     assert not source_store_write.exists()
     assert not capsule_store_write.exists()
