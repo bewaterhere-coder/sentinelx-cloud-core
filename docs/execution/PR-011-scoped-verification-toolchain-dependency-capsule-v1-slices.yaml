@@ -59,9 +59,10 @@ slices:
         - existing hosts without verification profile remain behavior-compatible
     checkpoint:
       required: true
-    state: pending
-    run_refs: []
-    completion_receipt_ref: null
+    state: completed
+    run_refs:
+      - docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s01-completion-20261005.yaml
+    completion_receipt_ref: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s01-completion-receipt.yaml
 
   - slice_id: S02
     objective: Compose verification intent and bounded source/cache/toolchain materialization into the existing audit and Windows AppContainer pre-SPAWN path.
@@ -197,7 +198,7 @@ slices:
     run_refs: []
     completion_receipt_ref: null
 execution_state:
-  current_slice: S01
+  current_slice: S02
   current_slice_state: pending
   all_slices_completed: false
 acceptance_boundary:
