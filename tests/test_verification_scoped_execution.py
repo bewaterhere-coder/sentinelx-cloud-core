@@ -39,13 +39,20 @@ def _sha(value: bytes) -> str:
 
 
 def _real_node_profile(tmp_path: Path) -> NodeNpmVerificationProfile:
-    executable = shutil.which("node")
-    if executable is None:
+    node_executable = shutil.which("node")
+    if node_executable is None:
         pytest.skip("Node is not installed on this Windows runner")
-    toolchain_root = Path(executable).resolve().parent
-    npm_cli = toolchain_root / "node_modules" / "npm" / "bin" / "npm-cli.js"
-    if not npm_cli.is_file():
+    source_root = Path(node_executable).resolve().parent
+    npm_source = source_root / "node_modules" / "npm"
+    if not (npm_source / "bin" / "npm-cli.js").is_file():
         pytest.skip("Node toolchain does not contain provider-resolvable npm-cli.js")
+
+    # The verification profile owns a bounded toolchain tree. Do not grant
+    # AppContainer ACLs to GitHub Runner's shared C:\hostedtoolcache hierarchy.
+    toolchain_root = tmp_path / "provider-node-toolchain"
+    toolchain_root.mkdir(parents=True)
+    shutil.copy2(Path(node_executable).resolve(), toolchain_root / "node.exe")
+    shutil.copytree(npm_source, toolchain_root / "node_modules" / "npm")
     return NodeNpmVerificationProfile(
         profile_id="node_npm",
         toolchain_root=toolchain_root,
