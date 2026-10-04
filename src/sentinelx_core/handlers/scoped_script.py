@@ -244,6 +244,7 @@ def _runner_argv(
             "param([string]$Target,[string]$Stdout,[string]$Stderr,[string]$Result,[Parameter(ValueFromRemainingArguments=$true)][string[]]$ScriptArgs)\n"
         "$ErrorActionPreference='Stop'\n"
         "$utf8=New-Object System.Text.UTF8Encoding($false)\n"
+        "$ExecutionContext.SessionState.Path.SetLocation([Environment]::CurrentDirectory)\n"
         "try {\n"
         " $text=[System.IO.File]::ReadAllText($Target,$utf8); $sb=[ScriptBlock]::Create($text)\n"
         " $global:LASTEXITCODE=$null; $records=& $sb @ScriptArgs *>&1; $ok=$?\n"
