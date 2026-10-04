@@ -266,7 +266,7 @@ exit 0
             "repository": repo,
         },
     )
-    assert result["ok"] is True
+    assert result["ok"] is True, result
     assert result["cwd"] == "source"
     assert "offline-check-ok" in result["output"]
     assert "cache-miss-offline-ok" in result["output"]
