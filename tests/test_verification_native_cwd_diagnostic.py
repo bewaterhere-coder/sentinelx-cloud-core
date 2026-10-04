@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 from pathlib import Path
 
-from test_verification_scoped_execution import _fixture
+from tests.test_verification_scoped_execution import _fixture
 
 
 def test_profiled_native_node_observes_exact_source_cwd(tmp_path: Path) -> None:
