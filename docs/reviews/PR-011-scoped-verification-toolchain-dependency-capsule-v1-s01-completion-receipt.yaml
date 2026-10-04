@@ -18,6 +18,7 @@ lineage:
   slice_set_ref: docs/execution/PR-011-scoped-verification-toolchain-dependency-capsule-v1-slices.yaml
   slice_set_blob_sha_after: c29575531b5ab3c99f019cb7b9db97de1bbfb4af
   completion_checkpoint_ref: docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s01-completion-20261005.yaml
+  completion_checkpoint_blob_sha: 4784a47bbc9708da98e9d5c23f20cc54da01c6ff
 implementation:
   disposition: resumed_existing_candidate_without_replay
   primary_product_commit: c678986e68f6e1c061773b3382505a6c2e0b40ee
@@ -61,7 +62,7 @@ postconditions:
   task_stage_read_back: implementation
   implementation_authorized: true
   all_slices_completed: false
-  checkpoint_read_back_required: true
+  checkpoint_read_back_verified: true
   task_read_back_verified: true
   slice_set_read_back_verified: true
 completion_guard:
