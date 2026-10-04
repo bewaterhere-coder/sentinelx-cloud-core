@@ -5,19 +5,26 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 1
 development:
-  stage: plan_review
+  stage: implementation
   gates:
     requirement_ready: true
-    plan_approved: false
+    plan_approved: true
     acceptance_approved: false
     completion_verified: false
-  next_expected_actor: plan_reviewer
+  plan_revision: 3
+  implementation_authorized: true
+  next_expected_actor: implementer
+  current_slice: S01
+  current_slice_state: pending
   authorization:
     mode: legacy_command_scoped
 artifacts:
   review_correction: docs/reviews/PR-012-execute-scoped-explicit-execution-profile-v1-review-correction-r3.md
-  latest_plan_review: docs/reviews/PR-012-execute-scoped-explicit-execution-profile-v1-plan-review-r2.md
+  latest_plan_review: docs/reviews/PR-012-execute-scoped-explicit-execution-profile-v1-plan-review-r3.md
+  latest_plan_review_transition_receipt: docs/reviews/PR-012-execute-scoped-explicit-execution-profile-v1-plan-review-r3-transition-receipt.yaml
+  prior_plan_review: docs/reviews/PR-012-execute-scoped-explicit-execution-profile-v1-plan-review-r2.md
   plan: docs/plans/PR-012-execute-scoped-explicit-execution-profile-v1-plan.md
+  execution_slice_set: docs/execution/PR-012-execute-scoped-explicit-execution-profile-v1-slices.yaml
 transport:
   type: github-pr
   pr_number: 12
