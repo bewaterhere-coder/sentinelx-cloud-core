@@ -19,6 +19,13 @@ development:
   current_slice_state: completed
   acceptance_disposition: approved
   blocking_findings: []
+  finalization:
+    ready_for_merge: true
+    canonical_state_verified: true
+    plan_execution_state_verified: true
+    evidence_verified: true
+    transport_preconditions_verified: true
+    merge_pending: true
   authorization:
     mode: legacy_command_scoped
 artifacts:
@@ -32,6 +39,7 @@ artifacts:
   latest_slice_completion_receipt: docs/reviews/PR-012-execute-scoped-explicit-execution-profile-v1-s01-completion-receipt.yaml
   prior_acceptance_checkpoint: docs/checkpoints/PR-012-execute-scoped-explicit-execution-profile-v1-acceptance-r1-activation-blocked-20261005.yaml
   latest_acceptance: docs/reviews/PR-012-execute-scoped-explicit-execution-profile-v1-acceptance-r1.md
+  latest_completion_finalization: docs/reviews/PR-012-execute-scoped-explicit-execution-profile-v1-completion-finalization-r1.yaml
 transport:
   type: github-pr
   pr_number: 12
@@ -83,4 +91,4 @@ Boundary: omitted/null/operator_unrestricted/read_only profile never reaches exe
 Counterexample: if the profile is visible in describe but dropped or replaced by a default, the requirement is not met.
 Readiness: no unresolved product decision; deliberate missing-field rejection follows the explicitly requested profile contract. No readiness profile was observed; absence alone does not block planning.
 Related tasks: PR-007 existing local_api scope bridge; PR-008/009 broader projection work; PR-010 firewall.
-S01 implementation and focused verification are complete on the canonical task transport. Acceptance R1 is Approved: the exact candidate is running on the Windows Agent, live describe requires execution_profile=scoped_mutation, a provider-owned scoped marker executed successfully with durable audit identity and terminal scope readback, and live omitted/unsupported-profile calls were rejected before execution. Completion finalization remains pending.
+S01 implementation and focused verification are complete on the canonical task transport. Acceptance R1 is Approved: the exact candidate is running on the Windows Agent, live describe requires execution_profile=scoped_mutation, a provider-owned scoped marker executed successfully with durable audit identity and terminal scope readback, and live omitted/unsupported-profile calls were rejected before execution. Completion finalization is verified and ready for merge; authoritative done still requires merge readback plus integration receipt.
