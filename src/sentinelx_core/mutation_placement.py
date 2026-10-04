@@ -10,6 +10,7 @@ from dataclasses import dataclass
 import hashlib
 import json
 from pathlib import Path
+from urllib.parse import urlsplit
 from typing import Iterable
 
 from sentinelx_core.policy import MutationExecutionPolicy
@@ -41,12 +42,35 @@ class RepositoryIdentity:
     @property
     def canonical(self) -> str:
         vcs = self.vcs.strip().lower()
-        authority = self.authority.strip().lower()
+        raw_authority = self.authority.strip().replace("\\", "/")
         path = self.path.strip().replace("\\", "/").strip("/")
-        if path.endswith(".git"):
+        if path.lower().endswith(".git"):
             path = path[:-4]
-        if not vcs or not authority or not path:
+
+        if not vcs or not raw_authority or not path:
             raise ValueError("repository identity requires vcs, authority and path")
+
+        parsed = urlsplit(raw_authority if "://" in raw_authority else f"//{raw_authority}")
+        hostname = parsed.hostname
+        if not hostname:
+            raise ValueError("repository identity authority requires a hostname")
+        try:
+            port = parsed.port
+        except ValueError as exc:
+            raise ValueError("repository identity authority contains an invalid port") from exc
+
+        host = hostname.lower()
+        if ":" in host:
+            host = f"[{host}]"
+        authority = f"{host}:{port}" if port is not None else host
+
+        path_parts = tuple(part for part in path.split("/") if part)
+        if any(part in {".", ".."} for part in path_parts):
+            raise ValueError("repository identity path contains traversal segments")
+        path = "/".join(path_parts)
+        if not path:
+            raise ValueError("repository identity requires vcs, authority and path")
+
         return f"{vcs}://{authority}/{path}"
 
 

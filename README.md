@@ -157,6 +157,37 @@ declares an access level: `r` (read-only ops) or `rw` (read-only ops **plus**
 the writing ops). Destructive operations that overwrite or remove an existing
 target make a timestamped backup first.
 
+### Canonical repository mutation firewall
+
+Windows hosts can additionally opt into the Core-owned
+`canonical_repository_mutation_firewall_v1`. This protects configured
+canonical source checkouts even when a broad parent directory is intentionally
+`rw` in `file_ops`. The canonical inventory comes from Host/operator policy;
+caller-supplied repository identity, branch, cwd, repository-role labels, or a
+`canonical_sync` claim do not grant an exception.
+
+When the firewall is enabled, structured mutators revalidate material targets
+before backup creation, overwrite/delete, patch application, metadata changes,
+or final materialization. Read-only `read`/`list`/`search`, status-style
+introspection, and Git diff remain usable against the canonical checkout. A
+same-repository execution workspace outside the canonical inventory is not
+blocked by this firewall; existing scope, path, sandbox, and operation policies
+still decide whether the requested action is otherwise allowed.
+
+Capability advertisement is fail-closed and provider-wide. The agent exposes
+`canonical_repository_mutation_firewall_v1` as available only when canonical
+inventory is valid and every effective model-facing operation and mixed
+suboperation has a known repository effect plus the required physical coverage.
+An unknown operation, Git selector, or local API endpoint/action therefore
+removes readiness instead of being guessed safe. Scoped-mutation readiness is a
+separate capability and does not imply canonical-firewall readiness.
+
+The production hub at `mcp.sentinelx.app` is a transport boundary outside this
+repository. Missing Hub projection of an execution-profile field, dynamic tool,
+or capability display is an external integration limitation; it is not repaired
+by weakening Core admission and does not require a Hub source/schema/deployment
+change for this firewall implementation.
+
 The hub additionally exposes a handful of **hub-side integrations** (Cloudflare DNS, Resend email, Telegram) as MCP tools your LLM can use alongside the agent's tools — those live on the hub, not in this repo. See [the integrations table on sentinelx.app](https://sentinelx.app/#integrations).
 
 ## Config (`/etc/sentinelx/config.yaml`)
@@ -304,7 +335,7 @@ sudoers policy, not the path allowlist — this is what lets the
 canonicalization still runs (no traversal/symlink bypass); only the
 `rw`-membership check is waived for the sudo path. This carve-out and its
 residual risk are documented in [`THREAT_MODEL.md`](./THREAT_MODEL.md)
-(§4.2.1).
+(§4.3.1).
 
 ## Security model
 
@@ -327,7 +358,7 @@ residual risk are documented in [`THREAT_MODEL.md`](./THREAT_MODEL.md)
   allowlist can escape it. Empty allowlist = the primitives are disabled.
   Writing ops that overwrite or delete an existing target back it up first
   (timestamped `.bak`). `sentinel_edit` with `sudo=true` is a documented
-  exception to the `rw` check — see `THREAT_MODEL.md` §4.2.1.
+  exception to the `rw` check — see `THREAT_MODEL.md` §4.3.1.
 - **Unprivileged user with passwordless sudo.** The agent runs as `sentinelx`,
   not as root. By default the installer grants `sentinelx` passwordless sudo
   so it can manage services and edit system files — but it can still only

@@ -85,6 +85,7 @@ except ModuleNotFoundError:  # Windows
     grp = None  # type: ignore[assignment]
     pwd = None  # type: ignore[assignment]
 
+from sentinelx_core.canonical_repository_firewall import enforce_material_write_target
 from sentinelx_core.executor import HandlerError
 from sentinelx_core.policy import Policy
 from sentinelx_core.vendored.pensa_safe_edit import make_backup
@@ -144,6 +145,22 @@ def _resolve_rw(policy: Policy, path: str, *, label: str = "path") -> Path:
     return resolved
 
 
+def _resolve_mutation_target(
+    policy: Policy,
+    path: str,
+    *,
+    operation: str,
+    label: str = "path",
+) -> Path:
+    resolved = _resolve_rw(policy, path, label=label)
+    return enforce_material_write_target(
+        policy.mutation_execution,
+        resolved,
+        operation=operation,
+        label=label,
+    )
+
+
 def _audit(op: str, detail: dict[str, Any]) -> None:
     """Append one JSON line to the mutation log. Best-effort: never
     raises. An audit-log failure must not fail the operation."""
@@ -201,8 +218,12 @@ def make_move_handler(policy: Policy):
         dst_str = _require_str(payload, "dst")
         overwrite = bool(payload.get("overwrite", False))
 
-        src = _resolve_rw(policy, src_str, label="src")
-        dst = _resolve_rw(policy, dst_str, label="dst")
+        src = _resolve_mutation_target(
+            policy, src_str, operation="move", label="src"
+        )
+        dst = _resolve_mutation_target(
+            policy, dst_str, operation="move", label="dst"
+        )
 
         if not src.exists():
             raise HandlerError(
@@ -270,8 +291,12 @@ def make_copy_handler(policy: Policy):
         dst_str = _require_str(payload, "dst")
         overwrite = bool(payload.get("overwrite", False))
 
+        # Copy reads the source but mutates only the destination. Reading a
+        # canonical checkout remains permitted; writing one does not.
         src = _resolve_rw(policy, src_str, label="src")
-        dst = _resolve_rw(policy, dst_str, label="dst")
+        dst = _resolve_mutation_target(
+            policy, dst_str, operation="copy", label="dst"
+        )
 
         if not src.exists():
             raise HandlerError(
@@ -354,7 +379,9 @@ def make_delete_handler(policy: Policy):
         path_str = _require_str(payload, "path")
         recursive = bool(payload.get("recursive", False))
 
-        target = _resolve_rw(policy, path_str, label="path")
+        target = _resolve_mutation_target(
+            policy, path_str, operation="delete", label="path"
+        )
 
         if not target.exists() and not target.is_symlink():
             raise HandlerError(
@@ -471,7 +498,9 @@ def make_chmod_handler(policy: Policy):
                 f"{mode_str!r}",
             ) from exc
 
-        target = _resolve_rw(policy, path_str, label="path")
+        target = _resolve_mutation_target(
+            policy, path_str, operation="chmod", label="path"
+        )
         if not target.exists():
             raise HandlerError(
                 "not_found", f"path does not exist: {path_str!r}"
@@ -534,7 +563,9 @@ def make_chown_handler(policy: Policy):
                 "at least one of 'owner' or 'group' is required",
             )
 
-        target = _resolve_rw(policy, path_str, label="path")
+        target = _resolve_mutation_target(
+            policy, path_str, operation="chown", label="path"
+        )
         if not target.exists():
             raise HandlerError(
                 "not_found", f"path does not exist: {path_str!r}"
