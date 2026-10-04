@@ -1,0 +1,60 @@
+schema_version: "1.0"
+kind: devforge_artifact_state_transition_receipt
+task_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1
+source_command: "#开发计划修复 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
+runtime:
+  repository: bewaterhere-coder/DevForge
+  version: 2.35.0
+  revision: c6972894f187da7d41e384bfbc663a1ae06d1e35
+  workflow: project_development
+  workflow_version: "2.1"
+transition:
+  from_stage: plan_review_rejected
+  to_stage: plan_review
+  decision: RemediatedStatePersistence
+  next_expected_actor: reviewer
+lineage:
+  requirement_revision: 1
+  task_ref: docs/requirements/PR-011-scoped-verification-toolchain-dependency-capsule-v1.md
+  task_blob_sha_before: 7ec2ae08dba2fbf4ff34fd6a39aeab33dd0998bb
+  task_blob_sha_after: cdef3e146a30189ff7c03c5b32a522bf69a7efdc
+  remediated_plan_revision: 3
+  remediated_plan_ref: docs/plans/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan.md
+  remediated_plan_blob_sha: 048d3a56386f035cb723df18d4f55b67500bb16b
+  prior_remediation_transition_receipt_ref: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-remediation-r2-transition-receipt.yaml
+  prior_remediation_transition_receipt_blob_sha: 47d1b5f6999d6a61c77e65b16f62b8dc7e6dfce1
+  state_repair_checkpoint_ref: docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-remediation-r3-state-persistence-20261004.yaml
+  state_repair_checkpoint_blob_sha: b2bd9368a379e04cf4e6c03e9876808de7a3e26c
+  blocked_review_checkpoint_ref: docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-review-r3-blocked-state-inconsistency-20261004.yaml
+  blocked_review_checkpoint_blob_sha: 106dd622dad05c47ae6a1b85abc37a3908bd7dc7
+repository_reality:
+  canonical_main: df9252fd4305eed361d8dc84e04da90222cd622e
+  canonical_main_freshness_verified: true
+  ancestry_refresh_commit: 90121415ea0680c776bf4075f6bfd6c3f077836d
+  pr007_state: done_merged_canonical
+  pr010_state: accepted_unmerged_blocked_finalization
+findings:
+  - id: PR011-R1-F1-source-under-test-materialization-pre-toolchain-binding
+    disposition: preserved_closed_pending_full_re_review
+  - id: PR011-R1-F2-toolchain-capsule-integrity-resource-bounds
+    disposition: preserved_closed_pending_full_re_review
+  - id: PR011-R2-F3-stale-main-baseline-pr007-merged-dependency-reconciliation
+    disposition: remediated_pending_full_re_review
+repair_scope:
+  plan_content_changed: false
+  requirement_semantics_changed: false
+  task_state_persistence_repaired: true
+postconditions:
+  requirement_ready: true
+  plan_revision: 3
+  plan_approved: false
+  implementation_authorized: false
+  execution_slice_set_compiled: false
+  task_stage_read_back: plan_review
+  next_expected_actor_read_back: reviewer
+  blocking_findings_read_back: []
+  task_read_back_verified: true
+  plan_read_back_verified: true
+  transition_receipt_required_before_completion_claim: true
+  product_implementation_mutated: false
+canonical_next_action: "#开发评审 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
