@@ -785,6 +785,29 @@ def _remove_verification_toolchain_read(root: Path, app_sid: str) -> None:
             _run_icacls([str(ancestor), "/remove:g", f"*{app_sid}"])
 
 
+def _grant_workspace_traverse(workspace: Path, app_sid: str) -> tuple[Path, ...]:
+    """Grant only FILE_TRAVERSE on parents needed to reach an exact workspace."""
+    granted: list[Path] = []
+    try:
+        for ancestor in _verification_toolchain_traverse_ancestors(workspace):
+            _assert_final_path(ancestor)
+            _run_icacls([str(ancestor), "/grant:r", f"*{app_sid}:(X)"])
+            granted.append(ancestor)
+        return tuple(granted)
+    except Exception:
+        for ancestor in reversed(granted):
+            try:
+                _run_icacls([str(ancestor), "/remove:g", f"*{app_sid}"])
+            except Exception:
+                pass
+        raise
+
+
+def _remove_workspace_traverse(ancestors: Sequence[Path], app_sid: str) -> None:
+    for ancestor in reversed(tuple(ancestors)):
+        _run_icacls([str(ancestor), "/remove:g", f"*{app_sid}"])
+
+
 def _pid_alive(pid: int) -> bool:
     k32, _, _ = _windows_only()
     handle = k32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | SYNCHRONIZE, False, int(pid))
@@ -894,6 +917,7 @@ class WindowsMutationSandbox:
         self.provider_protected_roots = tuple(provider_protected_roots)
         self._processes: dict[str, ManagedMutationProcess] = {}
         self._verification_toolchain_reads: dict[tuple[str, int], Path] = {}
+        self._workspace_traverse_reads: dict[tuple[str, int], tuple[Path, ...]] = {}
         # Fail early if the required APIs are absent.
         _windows_only()
         self.broker_sid = _current_process_sid()
@@ -982,10 +1006,14 @@ class WindowsMutationSandbox:
             appcontainer_name=profile_name,
             broker_identity=self.broker_sid,
         )
+        scope_key = (current.scope_id, current.generation)
         granted_runtime: list[Path] = []
+        workspace_traverse: tuple[Path, ...] = ()
         try:
             _set_exact_acl(workspace, self.broker_sid, app_sid)
             _assert_exact_workspace_acl(workspace, self.broker_sid, app_sid)
+            workspace_traverse = _grant_workspace_traverse(workspace, app_sid)
+            self._workspace_traverse_reads[scope_key] = workspace_traverse
             for root in self.policy.runtime_read_roots:
                 runtime_root = _normal_path(root)
                 if not runtime_root.exists() or not runtime_root.is_dir():
@@ -999,6 +1027,11 @@ class WindowsMutationSandbox:
             return activation
         except (RuntimeError, OSError, ValueError) as activation_error:
             cleanup_errors: list[str] = []
+            traverse = self._workspace_traverse_reads.pop(scope_key, workspace_traverse)
+            try:
+                _remove_workspace_traverse(traverse, app_sid)
+            except (RuntimeError, OSError, ValueError) as cleanup_error:
+                cleanup_errors.append(f"workspace traverse grant: {cleanup_error}")
             for runtime_root in reversed(granted_runtime):
                 try:
                     _remove_runtime_read(runtime_root, app_sid)
@@ -1249,6 +1282,10 @@ class WindowsMutationSandbox:
                 _remove_verification_toolchain_read(verification_root, app_sid)
             for root in self.policy.runtime_read_roots:
                 _remove_runtime_read(_normal_path(root), app_sid)
+            workspace_traverse = self._workspace_traverse_reads.pop(
+                (record.scope_id, record.generation), ()
+            )
+            _remove_workspace_traverse(workspace_traverse, app_sid)
             _delete_appcontainer_profile(_profile_name(record.unique_lease_key))
 
         return MutationRuntimeClosure(
