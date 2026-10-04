@@ -1,0 +1,20 @@
+schema_version: 1
+kind: devforge_artifact_state_transition_receipt
+task_id: PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1
+from_stage: plan_review_rejected
+to_stage: plan_review
+transition_rule: revised_plan_verified
+source_command: "#开发计划修复 PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1"
+evidence_refs:
+  - docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-plan-review-r3.md
+  - docs/plans/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-plan.md
+  - docs/requirements/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1.md
+findings_remediated:
+  - F1-disabled-ops-transitive-admission
+  - F2-cleanup-path-leakage
+  - F3-builtin-external-endpoint-name-collision
+task_before_digest: "git-blob-sha1:3c1e1e85786888324df1fd4bdc3271395e6c3697"
+task_after_digest: "git-blob-sha1:cf150bb0ff69aa7677c7dd9e96066ad85ea238c7"
+plan_after_digest: "git-blob-sha1:eddd4ee39d80bb81560c9fac2e4fe73111c4d874"
+semantic_after_state_digest: 720973e08a46d31266fca5674cb8479025f44f69d2766fa3073d0dbc842db6a5
+verified: true

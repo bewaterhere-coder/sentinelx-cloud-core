@@ -367,6 +367,17 @@ def make_help_handler(policy: Policy):
         has_commands = bool(policy.allowed_commands)
         has_services = bool(getattr(policy, "services", None))
         has_playbooks = bool(getattr(policy, "playbooks", None))
+        has_external_local_apis = bool(policy.local_apis)
+        mutation = policy.mutation_execution
+        has_builtin_devforge_runtime = (
+            mutation.configured
+            and mutation.scoped_mutation_enabled
+            and "devforge_runtime" not in policy.local_apis
+            and (
+                "mutation_scope" not in disabled
+                or "script_run" not in disabled
+            )
+        )
 
         def _op_live(*ops: str) -> bool:
             # An op is live if it is not switched off. ping/help/capabilities/
@@ -388,6 +399,23 @@ def make_help_handler(policy: Policy):
                 nav["exec"] = "run ONE allowlisted command (no pipes or redirects)"
             if _op_live("script_run"):
                 nav["script_run"] = "run a multi-step bash/python script for complex tasks"
+            if _op_live("mutation_scope"):
+                nav["mutation_scope"] = (
+                    "provider-owned scoped-mutation lifecycle control; dispatchability does not imply "
+                    "runtime readiness — verify host_mutation_sandbox_v1 in capabilities"
+                )
+            if _op_live("local_api") and (has_external_local_apis or has_builtin_devforge_runtime):
+                if has_builtin_devforge_runtime:
+                    nav["local_api"] = (
+                        "bounded local endpoint envelope; an eligible Host may expose the Agent-owned "
+                        "builtin devforge_runtime contract here. Routing does not imply mutation "
+                        "readiness — use list/describe and verify host_mutation_sandbox_v1"
+                    )
+                else:
+                    nav["local_api"] = (
+                        "bounded operator-configured local endpoint envelope; use list/describe to "
+                        "discover the exact endpoint/action contract available on this Host"
+                    )
             if _op_live("service", "restart") and has_services:
                 nav["service / restart"] = "manage allowlisted services"
             if _op_live("upload_file", "upload_init"):

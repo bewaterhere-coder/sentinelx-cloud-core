@@ -432,6 +432,22 @@ not prove mutation readiness. `host_mutation_sandbox_v1` and
 `pre_execution_audit_lineage_v1` remain available only when the host policy and
 runtime self-check pass; Linux/macOS remain unavailable for scoped mutation V1.
 
+The Agent operation `mutation_scope` exposes the bounded provider-owned scope lifecycle
+(`provision`, `revalidate`, `inspect`, `terminalize`) through the normal operation
+registry. Its presence in `ops_supported` means only that this Agent can dispatch the
+operation; it does **not** prove scoped mutation readiness. Callers must separately
+inspect `execution_features.host_mutation_sandbox_v1`. Operators may disable
+`mutation_scope` through `disabled_ops`, which removes both advertisement and dispatch.
+`mutation_scope` may remain a direct Agent/internal compatibility surface, but model-facing
+development admission does **not** depend on the Hub projecting that operation by name.
+On an explicitly opted-in Host, the existing `sentinel_local_api` / Agent `local_api`
+envelope exposes the Agent-owned built-in `devforge_runtime` endpoint with bounded
+`provision_scope`, `revalidate_scope`, `inspect_scope`, `terminalize_scope`, and
+`execute_scoped` actions. This reuses the existing Hub envelope unchanged and requires no
+Hub source, schema, or deployment modification. `local_api` dispatchability alone does not
+prove mutation readiness; callers must still verify the exact endpoint/action contract and
+`execution_features.host_mutation_sandbox_v1` on the target Host.
+
 ## Local development
 
 ```bash
