@@ -54,6 +54,19 @@ def test_disabled_operation_is_removed_before_effect_accounting() -> None:
     assert not any(reason.startswith("script_run") for reason in effects.firewall_readiness.reasons)
 
 
+def test_mutation_scope_lifecycle_is_non_repository_mutation() -> None:
+    policy = _policy()
+    effects = build_effect_registry(build_registry(policy=policy), policy)
+
+    resolved = effects.resolve_effect("mutation_scope")
+    assert resolved.effect is RepositoryEffect.NON_REPOSITORY_MUTATION
+    assert resolved.coverage is FirewallCoverage.NOT_REQUIRED
+    assert not any(
+        reason.startswith("mutation_scope:")
+        for reason in effects.firewall_readiness.reasons
+    )
+
+
 def test_git_selector_effects_are_bounded_and_unknown_fails_closed() -> None:
     policy = _policy()
     effects = build_effect_registry(build_registry(policy=policy), policy)

@@ -554,6 +554,17 @@ def build_effect_registry(
                 repository_effect=RepositoryEffect.READ_ONLY,
                 firewall_coverage=FirewallCoverage.NOT_REQUIRED,
             )
+        elif name == "mutation_scope":
+            # mutation_scope persists provider-owned lifecycle authority under
+            # the SentinelX state root. It does not execute user code or
+            # materialize/mutate a repository checkout; actual scoped process
+            # mutation remains classified on script_run/local_api execute_scoped.
+            registry.register(
+                name,
+                handler,
+                repository_effect=RepositoryEffect.NON_REPOSITORY_MUTATION,
+                firewall_coverage=FirewallCoverage.NOT_REQUIRED,
+            )
         elif name in {"service", "restart"}:
             registry.register(
                 name,
