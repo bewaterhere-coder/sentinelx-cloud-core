@@ -1,37 +1,57 @@
-# PR-012-execute-scoped-explicit-execution-profile-v1 — Plan R1
+# PR-012-execute-scoped-explicit-execution-profile-v1 — Plan R2
 
-Requirement: docs/requirements/PR-012-execute-scoped-explicit-execution-profile-v1.md, revision 1.
-Status: Pending Plan Review. No implementation authorization.
+Requirement revision: 1 (unchanged).
+Status: Pending Plan Review; not approved; implementation not authorized.
+Supersedes R1. Repairs latest R1 findings without changing transport or Requirement.
 
-## Approach
-Extend the existing execute_scoped schema and adapter; preserve the single profiled executor. No Hub-side change is assumed: local_api already returns the Agent-owned schema, but integration evidence must confirm it.
+## Execution admission — F01 partially addressed, external blocker retained
+Configured project provider is direct/codex, not host-runtime. This Codex environment has shell execution. A read-only git ls-remote from this environment returned exact PR-12 branch HEAD 1ce634c09f9c7eef2ff454c1df18a77525390c79.
+This proves branch access only, not a writable transport or isolated implementation workspace. No checkout was created by plan remediation.
+Before approval/implementation, independently verify direct Codex workspace admission under current DevForge contracts, origin/branch/HEAD, write scope, test runtime and remote persistence. Revalidate HEAD at the actual boundary.
+Do not use the incompatible Windows execute_scoped endpoint to repair itself. Do not use generic SentinelX script wrappers, canonical checkout mutation or an implicit provider switch.
+F01 remains unresolved until full execution admission evidence exists. Read-only Git access is not a completion receipt.
 
-## Steps
-1. Add execution_profile to allowed/required fields, action schema properties and required list; verify describe parameter generation uses the same contract.
-2. Validate the value is the exact supported string before scope/executor dispatch. Use stable existing validation error conventions, with clear missing/unsupported diagnostics.
-3. Pass params["execution_profile"] into the existing payload after validation; preserve cleanup, bindings, disabled policy, downstream profile verification and bounded result projection.
-4. Update affected tests to supply explicit profile. Add missing/null/non-string/unsupported rejection cases with zero executor invocations, describe consistency and full local_api-to-adapter propagation coverage.
-5. Document the required-field compatibility change and live activation acceptance procedure. Run focused devforge_runtime/local_api/profile tests followed by applicable repository CI.
-6. At acceptance, use an approved deployment/activation path to install the exact accepted candidate; read describe, execute a harmless provider-scoped marker and read audit/terminal scope evidence. If the path is unavailable, report live acceptance blocked rather than completion.
+## Technical approach
+Use src/sentinelx_core/handlers/devforge_runtime.py:
+- _EXECUTE_SCOPED_ALLOWED and _EXECUTE_SCOPED_REQUIRED admit/require execution_profile.
+- _ACTION_SCHEMAS["execute_scoped"] requires the field and allows only scoped_mutation.
+- DevForgeRuntimeProvider.describe derives params directly from schema.required; test both projections together.
+- make_devforge_execute_scoped_adapter rejects missing or invalid profiles before invoking profiled_script_handler and propagates the validated caller value.
+Preserve existing cleanup, scope/repository/lineage, disabled policy and bounded result projection. Keep downstream unexpected-profile rejection.
 
-## Proposed slices
-S01: schema, adapter, integration tests and documentation (one tightly coupled change).
-S02: live activation verification and evidence, after code verification and authorized activation.
-The formal execution Slice Set is compiled after Plan approval.
+## Single implementation slice
+S01: schema, adapter, relevant tests and compatibility documentation.
+Formal Slice Set is compiled only after Plan approval.
+Remove former S02: installation/activation and live Acceptance are not implementation Slice completion.
 
-## Write scope
-src/sentinelx_core/handlers/devforge_runtime.py; directly relevant existing tests; README or focused execute_scoped contract documentation. Expand only for proven existing routing defects preserving Requirement.
+## Concrete test entrypoints and traceability — F03
+Existing tests/test_devforge_runtime_local_api.py contains:
+- test_eligible_host_lists_bounded_builtin: extend schema/params assertions (B1/AC1).
+- _execute_params: supply explicit profile in valid fixtures (B2).
+- test_execute_scoped_adapter_injects_fixed_authority_and_projects_result: revise to verify validated caller profile propagation while retaining authority/result bounds (B2/B5, AC2/AC4).
+- test_execute_scoped_adapter_rejects_caller_authority_overrides: retain forbidden authority fields, handle unsupported profile through explicit validation (B4/B6).
+- test_disabled_script_run_filters_optional_execute_adapter and lifecycle/disabled tests: preserve no-execution policy semantics (B6/AC4).
+Add local_api-handler -> builtin provider -> real adapter -> recording profiled handler integration for exact propagation (AC2).
+Add missing/null/non-string/read_only/operator_unrestricted/unknown-string cases with zero executor calls (B3/B4/B7, AC3).
+Add unexpected downstream profile rejection (B5).
+Existing tests/test_local_api.py covers outer routing; run alongside the focused runtime tests (AC4/AC5).
+Focused command on admitted test workspace: python -m pytest tests/test_devforge_runtime_local_api.py tests/test_local_api.py.
+Inspect repository CI/pyproject before choosing broader checks; record exact candidate, environment and outcomes. Windows containment/live evidence cannot be replaced by portable mocks.
 
-## Risks
-- Required field intentionally breaks old omitted-profile calls; update fixtures/docs, never default silently.
-- PR-011 may touch shared runtime files; revalidate task HEAD and assess overlap before execution, preserve independent transport.
-- Production Hub changes are out of scope. If evidence shows Hub filters params, return a scope decision rather than modify another repository.
-- Current Host tool projection lacks the field needed to bootstrap mutation through itself. Planning artifacts use repository API; implementation must separately resolve an admitted execution path, without wrappers or canonical checkout mutation.
+## Verifier-owned live Acceptance — F02
+AC6 belongs to Acceptance, separately from code Slice completion:
+1. Resolve exact candidate commit and its code-test evidence; do not install moving main.
+2. Resolve installation/restart operator and explicit activation authority before changing service installation. Current development/plan command does not grant deployment authority.
+3. Read previous running build and retain a reproducible recovery reference; any installation failure stops and follows the approved recovery procedure without deleting user data.
+4. Activate through a verified installation interface, restart and read running version/candidate identity.
+5. Through current ChatGPT local_api.describe read required execution_profile and exact supported value.
+6. Provision/revalidate a provider-owned scope for the exact harmless verification identity; execute a deterministic marker with explicit scoped_mutation.
+7. Read output, durable audit identity and terminal scope evidence. Invalid/missing profile must be denied before process spawn.
+If activation authority/interface is absent, return Acceptance blocked. If Hub filters parameters, surface scope decision; no unapproved Hub repository modification.
+No actual activation path or operator authority is claimed verified by this Plan.
 
-## Verification
-Meaningful behavioral checks: zero downstream calls for invalid profiles; exact profile reaches existing executor; describe and actual validation agree; disabled operations and foreign/stale scope remain denied; unexpected downstream profile is rejected. Record exact commit/test results. Live marker/audit evidence remains distinct from mocks.
-
-## Foundation and applicability
-UI/visual fidelity: NotApplicable.
-No unrelated foundation document required. Live profile-compatible execution is an operational admission dependency, not a reason to rewrite this Plan.
-No implementation, acceptance, deployment or merge is claimed.
+## Write scope / compatibility / risks
+Write scope: existing devforge_runtime adapter, tests/test_devforge_runtime_local_api.py, directly justified local_api regression tests, focused README/contract documentation.
+Required-field change intentionally rejects old omitted-profile clients; no default or migration of authority.
+Revalidate overlap with PR-011 without sharing transport. PR-008/009 remain related, independent work.
+UI/visual fidelity: NotApplicable. Requirement unchanged; no permission expansion, firewall change, unrestricted mode, acceptance or merge.
