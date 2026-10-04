@@ -317,6 +317,25 @@ upload_base: 'C:\Users\Public\sentinelx-uploads'
 #   evidence_retention_days: 30
 #   operator_unrestricted_enabled: false
 #
+#   # Optional provider-owned verification profiles. Callers name only the
+#   # logical profile plus integrity identifiers; Host paths stay policy-owned.
+#   verification_profiles:
+#     node_npm:
+#       kind: node_npm_v1
+#       toolchain_root: 'C:\Program Files\nodejs'
+#       node_relative: node.exe
+#       npm_cli_relative: 'node_modules\npm\bin\npm-cli.js'
+#       source_snapshot_root: 'D:\SentinelX\verification-sources'
+#       dependency_capsule_root: 'D:\SentinelX\verification-capsules\node-npm'
+#       capsule_manifest_revision: 1
+#       limits:
+#         source_max_total_bytes: 536870912
+#         source_max_files: 50000
+#         dependency_max_total_bytes: 1073741824
+#         dependency_max_files: 50000
+#         max_single_file_bytes: 268435456
+#         max_relative_path_chars: 512
+#
 #   # Canonical-repository mutation firewall. This is independent from the
 #   # broad file_ops rw allowlist: a path may be writable by file_ops and still
 #   # be protected here because it is the Host-owned canonical source checkout.
