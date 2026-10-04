@@ -740,17 +740,49 @@ def _remove_runtime_read(root: Path, app_sid: str) -> None:
         _run_icacls([str(root), "/remove:g", f"*{app_sid}"])
 
 
+def _verification_toolchain_traverse_ancestors(root: Path) -> tuple[Path, ...]:
+    """Return existing parents that need only FILE_TRAVERSE for AppContainer reachability."""
+    canonical = root.resolve(strict=True)
+    anchor = Path(canonical.anchor)
+    ancestors: list[Path] = []
+    current = canonical.parent
+    while current != anchor and current != current.parent:
+        ancestors.append(current)
+        current = current.parent
+    return tuple(reversed(ancestors))
+
+
 def _grant_verification_toolchain_read(root: Path, app_sid: str) -> None:
-    """Grant RX to the sealed toolchain tree, including already-existing children."""
+    """Grant ancestor traverse-only authority plus RX on the sealed toolchain tree."""
     _assert_no_reparse(root, root)
     _assert_final_path(root)
-    _run_icacls([str(root), "/grant:r", f"*{app_sid}:(RX)", "/T", "/C"])
+    granted_ancestors: list[Path] = []
+    try:
+        for ancestor in _verification_toolchain_traverse_ancestors(root):
+            _assert_final_path(ancestor)
+            _run_icacls([str(ancestor), "/grant:r", f"*{app_sid}:(X)"])
+            granted_ancestors.append(ancestor)
+        _run_icacls([str(root), "/grant:r", f"*{app_sid}:(RX)", "/T", "/C"])
+    except Exception:
+        if root.exists():
+            try:
+                _run_icacls([str(root), "/remove:g", f"*{app_sid}", "/T", "/C"])
+            except Exception:
+                pass
+        for ancestor in reversed(granted_ancestors):
+            try:
+                _run_icacls([str(ancestor), "/remove:g", f"*{app_sid}"])
+            except Exception:
+                pass
+        raise
 
 
 def _remove_verification_toolchain_read(root: Path, app_sid: str) -> None:
-    """Revoke the transient toolchain ACE from root and propagated descendants."""
+    """Revoke transient RX plus every traverse-only ancestor ACE."""
     if root.exists():
         _run_icacls([str(root), "/remove:g", f"*{app_sid}", "/T", "/C"])
+        for ancestor in reversed(_verification_toolchain_traverse_ancestors(root)):
+            _run_icacls([str(ancestor), "/remove:g", f"*{app_sid}"])
 
 
 def _pid_alive(pid: int) -> bool:
