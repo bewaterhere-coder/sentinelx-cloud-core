@@ -1,0 +1,51 @@
+schema_version: "1.0"
+kind: devforge_integration_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-010-canonical-repository-mutation-firewall-v1
+source_command: "#开发完成 PR-010-canonical-repository-mutation-firewall-v1"
+lineage:
+  requirement_revision: 2
+  plan_revision: 4
+  acceptance_revision: 1
+  finalization_ref: docs/reviews/PR-010-canonical-repository-mutation-firewall-v1-completion-finalization-r1.yaml
+transport:
+  type: github-pr
+  pr_number: 10
+  branch: task/canonical-repository-mutation-firewall-v1
+  finalized_head: 51b0706b1cf4bb51b338af0f501fcd75e5dee99c
+  base_before_merge: df9252fd4305eed361d8dc84e04da90222cd622e
+  merge_method: merge
+integration:
+  result: verified
+  pr_state: closed
+  merged: true
+  merge_commit: 23f6d7fa7ffec69f1cf439f363462ccda26cc425
+  merged_at: "2026-10-04T15:10:06Z"
+  main_readback: 23f6d7fa7ffec69f1cf439f363462ccda26cc425
+  head_match_verified: true
+  main_match_verified: true
+  integration_product_head: ee116655cea374bea4a666eecfc7b7a3fbca6fea
+verification:
+  integration_verifier_run_id: 37211123556
+  integration_verifier_result: success
+  windows_s05_run_id: 37211126824
+  windows_s05_result: success
+  ci_run_id: 37211126841
+  ci_result: success
+  macos_run_id: 37211126829
+  macos_result: success
+  product_code_changed_after_verified_head: false
+safety:
+  hub_modified: false
+  canonical_local_checkout_mutated: false
+  permission_expansion_used: false
+  allowlist_expansion_used: false
+  operator_unrestricted_used: false
+  unrestricted_fallback_used: false
+completion:
+  integration_verified: true
+  completion_state_persistence_required: true
+  completion_verified_after_done_state_readback: true
+freshness:
+  generated_date: "2026-10-04"
+  merge_finalization_contract: v1.1

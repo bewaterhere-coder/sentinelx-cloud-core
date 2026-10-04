@@ -8,12 +8,12 @@ task_id: PR-010-canonical-repository-mutation-firewall-v1
 title: SentinelX Provider Canonical Repository Mutation Firewall V1
 requirement_revision: 2
 development:
-  stage: accepted
+  stage: done
   gates:
     requirement_ready: true
     plan_approved: true
     acceptance_approved: true
-    completion_verified: false
+    completion_verified: true
   plan_revision: 4
   implementation_authorized: true
   finalization:
@@ -23,7 +23,10 @@ development:
     evidence_verified: true
     transport_preconditions_verified: true
     ref: docs/reviews/PR-010-canonical-repository-mutation-firewall-v1-completion-finalization-r1.yaml
-  next_expected_actor: integration
+    integration_verified: true
+    integration_receipt: docs/reviews/PR-010-canonical-repository-mutation-firewall-v1-integration-receipt-r1.yaml
+    reconciliation_receipt: docs/reviews/PR-010-canonical-repository-mutation-firewall-v1-completion-reconciliation-r1.yaml
+  next_expected_actor: none
 transport:
   type: github-pr
   pr_number: 10
