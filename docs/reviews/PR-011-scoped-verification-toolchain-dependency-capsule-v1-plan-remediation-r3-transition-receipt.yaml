@@ -24,7 +24,7 @@ lineage:
   prior_remediation_transition_receipt_ref: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-remediation-r2-transition-receipt.yaml
   prior_remediation_transition_receipt_blob_sha: 47d1b5f6999d6a61c77e65b16f62b8dc7e6dfce1
   state_repair_checkpoint_ref: docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-remediation-r3-state-persistence-20261004.yaml
-  state_repair_checkpoint_blob_sha: b2bd9368a379e04cf4e6c03e9876808de7a3e26c
+  state_repair_checkpoint_blob_sha: 1b06399de2f3370145829c224168e6503787a5d6
   blocked_review_checkpoint_ref: docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-review-r3-blocked-state-inconsistency-20261004.yaml
   blocked_review_checkpoint_blob_sha: 106dd622dad05c47ae6a1b85abc37a3908bd7dc7
 repository_reality:
@@ -54,7 +54,10 @@ postconditions:
   next_expected_actor_read_back: reviewer
   blocking_findings_read_back: []
   task_read_back_verified: true
+  task_state_diff_scope_verified: true
   plan_read_back_verified: true
-  transition_receipt_required_before_completion_claim: true
+  checkpoint_read_back_verified: true
   product_implementation_mutated: false
-canonical_next_action: "#开发评审 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
+completion_guard:
+  status: satisfied_after_this_receipt_readback
+  canonical_next_action: "#开发评审 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
