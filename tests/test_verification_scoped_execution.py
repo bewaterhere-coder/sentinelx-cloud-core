@@ -266,6 +266,8 @@ exit 0
             "repository": repo,
         },
     )
+    if result["ok"] is not True:
+        print("S03_RESULT=" + json.dumps(result, sort_keys=True, default=str))
     assert result["ok"] is True, result
     assert result["cwd"] == "source"
     assert "offline-check-ok" in result["output"]
