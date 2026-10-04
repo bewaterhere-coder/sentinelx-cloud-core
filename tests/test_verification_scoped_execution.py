@@ -236,18 +236,29 @@ def test_profiled_scoped_execution_runs_real_node_npm_offline_and_bounds_evidenc
 
     content = r"""
 $ErrorActionPreference='Stop'
+Set-Content -LiteralPath 'progress.txt' -Value 'start'
 if ($env:GITHUB_TOKEN) { throw 'credential leaked' }
 if ($env:HTTPS_PROXY) { throw 'proxy leaked' }
 if ($env:NPM_CONFIG_OFFLINE -ne 'true') { throw 'npm offline mode missing' }
+Add-Content -LiteralPath 'progress.txt' -Value 'before-node-version'
 node --version
+Add-Content -LiteralPath 'progress.txt' -Value 'after-node-version'
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+Add-Content -LiteralPath 'progress.txt' -Value 'before-npm-version'
 npm --version
+Add-Content -LiteralPath 'progress.txt' -Value 'after-npm-version'
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+Add-Content -LiteralPath 'progress.txt' -Value 'before-npm-ci'
 npm ci --offline
+Add-Content -LiteralPath 'progress.txt' -Value 'after-npm-ci'
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+Add-Content -LiteralPath 'progress.txt' -Value 'before-npm-check'
 npm run check
+Add-Content -LiteralPath 'progress.txt' -Value 'after-npm-check'
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+Add-Content -LiteralPath 'progress.txt' -Value 'before-cache-miss'
 npm view sentinelx-pr011-s03-package-that-does-not-exist-6f43b9 version --offline *> $null
+Add-Content -LiteralPath 'progress.txt' -Value 'after-cache-miss'
 if ($LASTEXITCODE -eq 0) { throw 'offline cache miss unexpectedly succeeded' }
 Write-Output 'cache-miss-offline-ok'
 exit 0
@@ -268,6 +279,9 @@ exit 0
     )
     if result["ok"] is not True:
         print("S03_RESULT=" + json.dumps(result, sort_keys=True, default=str))
+        progress = Path(record.exact_workspace) / "source" / "progress.txt"
+        if progress.exists():
+            print("S03_PROGRESS=" + progress.read_text(encoding="utf-8", errors="replace"))
     assert result["ok"] is True, result
     assert result["cwd"] == "source"
     assert "offline-check-ok" in result["output"]
