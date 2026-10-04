@@ -143,6 +143,9 @@ def _scoped_environment(extra: dict[str, str], workspace: Path) -> dict[str, str
     """Build a child environment without broker profile/Git/secret authority."""
     result = {key: value for key, value in os.environ.items() if not _credential_like(key)}
 
+    # AppContainer process creation with a custom environment requires profile
+    # variables on real Windows.  Point them at an exact-workspace profile so
+    # the broker user's Git config and credential helpers cannot be inherited.
     profile = workspace / ".sandbox-profile"
     local = profile / "AppData" / "Local"
     roaming = profile / "AppData" / "Roaming"
@@ -521,6 +524,10 @@ async def _run_scoped(
             }
 
         if not result_path.exists():
+            # The requested runtime itself did not initialize far enough to run
+            # the trusted runner (observed with Windows PowerShell 5.1 under
+            # AppContainer on some hosts).  This is availability, never a reason
+            # to retry through unrestricted execution.
             terminal = sandbox.terminalize(scope_id, generation)
             terminalized = True
             audit.finish(
@@ -587,6 +594,8 @@ async def _run_scoped(
                     )
                 terminalized = True
             except (RuntimeError, OSError, ValueError):
+                # A failed closure read-back must leave START/SPAWN without a
+                # fabricated FINISH and the request remains externally failed.
                 terminal = None
         if start is not None and not finished and terminal is not None:
             try:
@@ -609,6 +618,7 @@ def make_profiled_script_run_handler(
     config_path: Path | None = None,
     mutation_state_root: Path | None = None,
 ):
+    """Compose historical and scoped script profiles without fallback."""
     legacy = make_legacy_script_run_handler(policy, upload_base)
     state_root = (
         mutation_state_root.resolve(strict=False)
