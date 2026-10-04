@@ -6,9 +6,11 @@
 plan_revision: 3
 task_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1
 requirement_revision: 1
-status: proposed
-review_state: pending
-implementation_authorized: false
+status: approved
+review_state: approved
+implementation_authorized: true
+approved_review_ref: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-review-r3.md
+execution_slice_set_ref: docs/execution/PR-011-scoped-verification-toolchain-dependency-capsule-v1-slices.yaml
 remediates:
   - PR011-R1-F1-source-under-test-materialization-pre-toolchain-binding
   - PR011-R1-F2-toolchain-capsule-integrity-resource-bounds
@@ -256,7 +258,7 @@ Existing scoped Python/PowerShell/Pwsh remain the root interpreters. Node/npm ar
 
 For `node_npm_v1`:
 
-- working directory is confined beneath `<exact-workspace>\source`;
+- working directory is confined beneath `<exact-workspace>\source` only;
 - PATH uses the provider-generated workspace-local shim directory rather than Host launcher discovery;
 - `NPM_CONFIG_CACHE` points to the workspace-local admitted cache;
 - `NPM_CONFIG_OFFLINE=true` is mandatory;
@@ -432,68 +434,45 @@ Procedure remains:
 | Risk | Control |
 |---|---|
 | verifies wrong source | exact immutable SourceUnderTestSnapshot + pre-SPAWN source/lock binding |
-| toolchain receipt hashes a different launcher | complete ToolchainManifest + provider-generated sealed shim |
-| toolchain changes after readiness | request-time pre-START + pre-SPAWN revalidation |
-| source/capsule resource exhaustion | fixed defaults + hard ceilings + bounded copy + cleanup |
-| toolchain ACL becomes write authority | dedicated read/execute grant + negative test + closure readback |
-| source/capsule smuggles Host path | logical IDs + provider roots + normalized manifests + final-path containment |
-| npm silently networks | offline mode + environment sanitization + physical no-network probe |
-| credentials leak | explicit reserved/deny environment set |
-| npm descendant escapes | existing no-breakaway Job |
-| duplicate execution authority appears | extend canonical merged PR-007 adapter only; no second executor/store/journal |
-| PR-010 semantics drift underneath PR-011 | fresh main/PR-010 reconciliation at every implementation entry |
-| downstream PR-015 authority is crossed | Step F consumes only separately authorized PR-015 continuation evidence |
+| toolchain receipt does not match executed launcher | complete ToolchainManifest + provider-generated sealed shims |
+| cached readiness hides toolchain tamper | request-time pre-START + pre-SPAWN revalidation |
+| capsule exhausts disk/time | admission/copy bounds + hard ceilings + partial cleanup |
+| Host toolchain becomes writable | read/execute-only ACL + terminal removal + negative write test |
+| dependency capsule smuggles Host authority | logical id + provider root + relative paths + manifest + containment |
+| npm silently networks | no AppContainer network widening + offline config + missing-cache negative test |
+| credentials leak | sanitized env + reserved-key rejection + isolated temp/home/profile |
+| npm child escapes | existing Job containment + descendant regression test |
+| base scoped execution regresses | optional profile + unprofiled regression matrix |
+| PR-007 integration duplicated | extend canonical merged devforge_runtime only |
+| PR-010 firewall weakened | fresh implementation-entry reconciliation + no unmerged code copy |
+| downstream PR-015 is replayed | exact source snapshot + separate PR-015 authority + no side-effect replay |
 
-## 15. Explicitly Rejected Alternatives
+## 15. Implementation Entry Gate
 
-Rejected:
+Implementation may proceed only after Plan Review approves Revision 3 and the exact Revision 3 Slice Set is persisted/read back.
 
-- mounting/reading the canonical checkout from AppContainer;
-- letting verification scripts choose/materialize source after SPAWN;
-- allowing profiled SPAWN before lockfile verification;
-- Host PATH `npm.cmd` / `npm.ps1` authority;
-- arbitrary network/DNS fallback;
-- broker credential inheritance;
-- caller-selected Host paths for toolchain/source/cache/capsule;
-- Node/npm generic allowlist widening;
-- running npm outside the scoped AppContainer;
-- second executor, scope store, audit journal, or sandbox;
-- `operator_unrestricted` fallback;
-- production Hub modification;
-- reimplementing the already-merged PR-007 lifecycle/executor bridge;
-- copying unmerged PR-010 code into PR-011.
+Every Slice entry must then revalidate:
 
-## 16. Finding Closure
+1. current remote `main` still matches or is reconciled into the task branch;
+2. current PR-010 state and overlap;
+3. Plan Revision 3 is still current and approved;
+4. the Slice Set binds exact Plan Revision 3 / blob;
+5. current Slice is dependency-ready;
+6. required Host/runtime capability for that Slice is live;
+7. no permission/network/credential/canonical-repository widening is required.
 
-### R1 F1 — Source-under-test truth binding
+The physical Windows/Node/npm and live `devforge_runtime` slices may block on Host availability; they must not downgrade to mock-only completion evidence.
 
-Preserved from Revision 2. Exact source/revision identity, broker pre-SPAWN materialization, source manifest readback and mandatory lockfile verification remain normative.
+## 16. Approval Questions
 
-### R1 F2 — Toolchain/capsule request-time integrity and bounds
+Plan Review must answer:
 
-Preserved from Revision 2. Complete toolchain digest, sealed launcher, double request-time revalidation, explicit bounds/hard ceilings and partial-copy cleanup remain normative.
+1. Does the source snapshot + pre-SPAWN lock binding truthfully identify the source under test?
+2. Does the toolchain manifest + sealed shim ensure the hashed toolchain is the executed toolchain?
+3. Are source/capsule resource bounds and partial cleanup sufficient and testable?
+4. Does Revision 3 correctly consume merged PR-007 without duplicating executor/scope authority?
+5. Is PR-010 treated as an implementation-entry reconciliation boundary without importing unmerged code?
+6. Can required offline/no-network/credential/Job/canonical-root behavior be observed with real Windows evidence?
+7. Can AC12 be proven later without transferring ChatGPTControlShell authority into PR-011?
 
-### R2 F3 — Stale baseline / merged PR-007 reconciliation
-
-Remediated by Revision 3:
-
-- remote canonical baseline updated from `f7e878f...` to `df9252fd...`;
-- PR-007 is treated as completed/merged canonical main reality;
-- `devforge_runtime.py` is an ordinary canonical integration seam;
-- same PR-011 branch ancestry was refreshed through merge commit `90121415...`;
-- readback proves `behind_by=0` against the selected baseline;
-- Step E no longer waits for an external PR-007 admission;
-- PR-010 is tracked separately as accepted/unmerged and must be re-read at implementation entry.
-
-## 17. Revision 3 Review Questions
-
-Reviewer must re-evaluate the complete effective Plan (`Revision 3 + incorporated Revision 2 blob`) and explicitly confirm:
-
-1. F1/F2 closure remains intact after the baseline refresh;
-2. current canonical `devforge_runtime` seam is correctly reused rather than duplicated;
-3. branch ancestry refresh is sufficient for implementation against current main;
-4. PR-010 is handled as a fresh implementation-entry reconciliation, not silently copied;
-5. the planned verification observes the real source-under-test and real offline dependency-backed Node/npm behavior;
-6. Requirement R1-R10 remain traceable and no Requirement semantic change was introduced.
-
-Plan approval remains reviewer-owned. This remediation does not compile an Execution Slice Set and does not authorize implementation.
+If approved, compile a new Slice Set bound exactly to Plan Revision 3. Do not reuse any older provisional Slice Set.
