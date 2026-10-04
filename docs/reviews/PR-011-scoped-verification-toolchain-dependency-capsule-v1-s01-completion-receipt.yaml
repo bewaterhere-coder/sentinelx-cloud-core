@@ -65,6 +65,7 @@ postconditions:
   checkpoint_read_back_verified: true
   task_read_back_verified: true
   slice_set_read_back_verified: true
+  receipt_read_back_verified: true
 completion_guard:
-  status: satisfied_after_this_receipt_readback
+  status: satisfied
   canonical_next_action: "#开发执行 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
