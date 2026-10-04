@@ -5,7 +5,7 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 1
 development:
-  stage: implementation
+  stage: acceptance
   implementation_execution_complete: true
   gates:
     requirement_ready: true
@@ -14,10 +14,12 @@ development:
     completion_verified: false
   plan_revision: 3
   implementation_authorized: true
-  next_expected_actor: verifier
+  next_expected_actor: operator
   current_slice: S01
   current_slice_state: completed
-  blocking_findings: []
+  acceptance_disposition: blocked
+  blocking_findings:
+    - AC6 exact-candidate live activation is blocked because the currently exposed SentinelX installation path cannot carry the required explicit execution_profile
   authorization:
     mode: legacy_command_scoped
 artifacts:
@@ -29,6 +31,7 @@ artifacts:
   execution_slice_set: docs/execution/PR-012-execute-scoped-explicit-execution-profile-v1-slices.yaml
   latest_slice_checkpoint: docs/checkpoints/PR-012-execute-scoped-explicit-execution-profile-v1-s01-completion-20261005.yaml
   latest_slice_completion_receipt: docs/reviews/PR-012-execute-scoped-explicit-execution-profile-v1-s01-completion-receipt.yaml
+  latest_acceptance_checkpoint: docs/checkpoints/PR-012-execute-scoped-explicit-execution-profile-v1-acceptance-r1-activation-blocked-20261005.yaml
 transport:
   type: github-pr
   pr_number: 12
@@ -80,4 +83,4 @@ Boundary: omitted/null/operator_unrestricted/read_only profile never reaches exe
 Counterexample: if the profile is visible in describe but dropped or replaced by a default, the requirement is not met.
 Readiness: no unresolved product decision; deliberate missing-field rejection follows the explicitly requested profile contract. No readiness profile was observed; absence alone does not block planning.
 Related tasks: PR-007 existing local_api scope bridge; PR-008/009 broader projection work; PR-010 firewall.
-S01 implementation and focused verification are complete on the task transport. Live AC6 remains Acceptance-owned and has not been executed by implementation.
+S01 implementation and focused verification are complete on the task transport. Acceptance AC1-AC5 have supporting implementation/test evidence. AC6 is currently blocked pending exact-candidate activation: the running Agent is still the pre-PR-012 build, and the model-facing SentinelX installation path rejects the activation attempt with execution_profile_required before installation.
