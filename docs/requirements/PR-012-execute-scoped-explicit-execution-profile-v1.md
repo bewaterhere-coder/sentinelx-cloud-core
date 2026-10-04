@@ -5,16 +5,16 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 1
 development:
-  stage: accepted
+  stage: done
   implementation_execution_complete: true
   gates:
     requirement_ready: true
     plan_approved: true
     acceptance_approved: true
-    completion_verified: false
+    completion_verified: true
   plan_revision: 3
   implementation_authorized: true
-  next_expected_actor: integration
+  next_expected_actor: none
   current_slice: S01
   current_slice_state: completed
   acceptance_disposition: approved
@@ -25,7 +25,11 @@ development:
     plan_execution_state_verified: true
     evidence_verified: true
     transport_preconditions_verified: true
-    merge_pending: true
+    merge_pending: false
+    integration_verified: true
+    ref: docs/reviews/PR-012-execute-scoped-explicit-execution-profile-v1-completion-finalization-r1.yaml
+    integration_receipt: docs/reviews/PR-012-execute-scoped-explicit-execution-profile-v1-integration-receipt-r1.yaml
+    reconciliation_receipt: docs/reviews/PR-012-execute-scoped-explicit-execution-profile-v1-completion-reconciliation-r1.yaml
   authorization:
     mode: legacy_command_scoped
 artifacts:
@@ -40,6 +44,10 @@ artifacts:
   prior_acceptance_checkpoint: docs/checkpoints/PR-012-execute-scoped-explicit-execution-profile-v1-acceptance-r1-activation-blocked-20261005.yaml
   latest_acceptance: docs/reviews/PR-012-execute-scoped-explicit-execution-profile-v1-acceptance-r1.md
   latest_completion_finalization: docs/reviews/PR-012-execute-scoped-explicit-execution-profile-v1-completion-finalization-r1.yaml
+  latest_integration_receipt: docs/reviews/PR-012-execute-scoped-explicit-execution-profile-v1-integration-receipt-r1.yaml
+  latest_completion: docs/reviews/PR-012-execute-scoped-explicit-execution-profile-v1-completion-r1.md
+  latest_completion_reconciliation: docs/reviews/PR-012-execute-scoped-explicit-execution-profile-v1-completion-reconciliation-r1.yaml
+  latest_completion_checkpoint: docs/checkpoints/PR-012-execute-scoped-explicit-execution-profile-v1-completed-20261005.yaml
 transport:
   type: github-pr
   pr_number: 12
@@ -91,4 +99,4 @@ Boundary: omitted/null/operator_unrestricted/read_only profile never reaches exe
 Counterexample: if the profile is visible in describe but dropped or replaced by a default, the requirement is not met.
 Readiness: no unresolved product decision; deliberate missing-field rejection follows the explicitly requested profile contract. No readiness profile was observed; absence alone does not block planning.
 Related tasks: PR-007 existing local_api scope bridge; PR-008/009 broader projection work; PR-010 firewall.
-S01 implementation and focused verification are complete on the canonical task transport. Acceptance R1 is Approved: the exact candidate is running on the Windows Agent, live describe requires execution_profile=scoped_mutation, a provider-owned scoped marker executed successfully with durable audit identity and terminal scope readback, and live omitted/unsupported-profile calls were rejected before execution. Completion finalization is verified and ready for merge; authoritative done still requires merge readback plus integration receipt.
+S01 implementation and focused verification are complete on the canonical task transport. Acceptance R1 is Approved. PR #12 was finalized and merged at `29c724fdc6faed28018d60e61250d3f21b02c1b3`; canonical main integration was read back, Integration Receipt and Completion R1 were persisted under same-Task reconciliation semantics, and completion is verified.

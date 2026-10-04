@@ -1,7 +1,7 @@
 # PR-012-execute-scoped-explicit-execution-profile-v1 — Plan R3
 
 Requirement revision: 1 (unchanged).
-Status: Approved; S01 implementation completed; Acceptance R1 approved; completion finalization in progress.
+Status: Completed; S01 implementation completed; Acceptance R1 approved; PR #12 merged; completion verified.
 Supersedes R2. Withdraws the incorrect independent-Codex prerequisite; preserves tests, acceptance and Requirement.
 
 ## Corrected execution boundary
