@@ -8,9 +8,13 @@ lineage:
   requirement_revision: 1
   plan_revision: 3
   checkpoint_ref: docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s02-completion-20261005.yaml
+  checkpoint_blob_sha: ffddaad0fa6237d6c0e9bddb8646fc2dbf865942
+  task_blob_sha_after: 37f4d473e3f25381d6a9650444205a19cf99f3f7
+  slice_set_blob_sha_after: d2dc241fd41a2e536e3ddb85e04f957e6f8d4ac0
+  state_transition_commit: 58808f8651a8d04b7d06f7ee9cdeaa8e1facfa08
 implementation:
   verified_candidate_head: b91760f1b57e85eb1015094d37a2d4d1f99809ca
-  disposition: completed
+  disposition: completed_without_replay
   semantics:
     - verification_intent sealed into existing durable START evidence
     - admitted source and dependency capsule broker-materialized before SPAWN
@@ -20,6 +24,7 @@ implementation:
     - provider stores and canonical/protected roots remain non-writable by AppContainer
     - transient toolchain authority is removed during terminalization
 verification:
+  exact_pr_merge_ref: c52e874abc9f058f3a5d4cf598fb528a13d52df5
   pr011_s02:
     run_id: 37221717094
     job_id: 111493219557
@@ -63,9 +68,16 @@ safety:
   unrestricted_fallback_used: false
   duplicate_executor_store_sandbox_or_audit_introduced: false
   s03_executed: false
-completion:
-  slice_completed: true
-  next_slice: S03
-  next_slice_state: pending
+postconditions:
+  task_stage_read_back: implementation
+  slice_state_read_back: completed
+  next_slice_read_back: S03
+  next_slice_state_read_back: pending
+  task_read_back_verified: true
+  slice_set_read_back_verified: true
+  checkpoint_read_back_verified: true
   acceptance_approved: false
   completion_verified: false
+completion_guard:
+  status: satisfied_after_this_receipt_readback
+  canonical_next_action: "#开发执行 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
