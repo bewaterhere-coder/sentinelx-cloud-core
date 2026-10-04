@@ -4,7 +4,7 @@
 
 ```yaml
 task_id: PR-010-canonical-repository-mutation-firewall-v1
-stage: accepted
+stage: done
 plan_status: approved
 plan_revision: 4
 requirement_revision: 2
@@ -21,9 +21,12 @@ planning_baseline_main: f7e878f3497582547e5d52cd33b060cae18d2e84
 implementation_authorized: true
 execution_slice_set: docs/execution/PR-010-canonical-repository-mutation-firewall-v1-slices.yaml
 acceptance_approved: true
-completion_verified: false
-finalization_status: ready_for_merge
+completion_verified: true
+finalization_status: integrated
 finalization_ref: docs/reviews/PR-010-canonical-repository-mutation-firewall-v1-completion-finalization-r1.yaml
+integration_receipt: docs/reviews/PR-010-canonical-repository-mutation-firewall-v1-integration-receipt-r1.yaml
+completion_review: docs/reviews/PR-010-canonical-repository-mutation-firewall-v1-completion-r1.md
+reconciliation_receipt: docs/reviews/PR-010-canonical-repository-mutation-firewall-v1-completion-reconciliation-r1.yaml
 ```
 
 Plan Revision 4 repairs only the two plan-local findings from Plan Review R3. Requirement Revision 2, the Core-only security boundary, the immutable third-party Hub boundary, and the retained S01 implementation remain unchanged.
