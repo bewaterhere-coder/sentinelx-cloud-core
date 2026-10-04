@@ -1,0 +1,69 @@
+schema_version: "1.0"
+kind: devforge_slice_completion_receipt
+task_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1
+slice_id: S01
+source_command: "#开发执行 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
+runtime:
+  repository: bewaterhere-coder/DevForge
+  version: 2.37.0
+  revision: 7a3e29f865a38a1f14ec410a202681bd890d1bad
+  workflow: project_development
+  workflow_version: "2.1"
+lineage:
+  plan_revision: 3
+  plan_ref: docs/plans/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan.md
+  plan_blob_sha: 048d3a56386f035cb723df18d4f55b67500bb16b
+  task_ref: docs/requirements/PR-011-scoped-verification-toolchain-dependency-capsule-v1.md
+  task_blob_sha_after: 27347e9137658e0fa703ccb1769d0e0b9c0ed297
+  slice_set_ref: docs/execution/PR-011-scoped-verification-toolchain-dependency-capsule-v1-slices.yaml
+  slice_set_blob_sha_after: c29575531b5ab3c99f019cb7b9db97de1bbfb4af
+  completion_checkpoint_ref: docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s01-completion-20261005.yaml
+implementation:
+  disposition: resumed_existing_candidate_without_replay
+  primary_product_commit: c678986e68f6e1c061773b3382505a6c2e0b40ee
+  pr010_ancestry_refresh_commit_before_product_candidate: 3fd14a7
+  current_main_reconciliation_merge: 557b1ebe6e4aaf8bef6e21cb1d51f6c6a5f6cde3
+  state_transition_commit: 9687f3f
+repository_reality:
+  current_main: dbf4bfc9ebcdbde2374d41e6825b613d46aa87f2
+  pr010_merged: true
+  pr010_merge_commit: 23f6d7fa7ffec69f1cf439f363462ccda26cc425
+  pr011_refreshed_before_completion: true
+  final_reconciliation_conflicts: none
+verification:
+  exact_candidate_branch_head: 557b1ebe6e4aaf8bef6e21cb1d51f6c6a5f6cde3
+  exact_pr_merge_ref: 755aa0d4c83982e8b4e96e37261f39cf79909f5e
+  pr011_s01_workflow_run_id: 37215667227
+  pr011_s01_workflow_job_id: 111475537734
+  pr011_s01_workflow_conclusion: success
+  tests_passed: 30
+  tests_failed: 0
+  test_targets:
+    - tests/test_verification_profile_contracts.py
+    - tests/test_canonical_repository_firewall.py
+  generic_ci_run_id: 37215667268
+  generic_ci_conclusion: success
+  macos_agent_run_id: 37215667235
+  macos_agent_conclusion: success
+  local_host_direct_python_attempt: command_not_allowed
+  local_host_script_run_attempt: execution_profile_required
+  local_host_failed_attempts_used_as_positive_evidence: false
+safety:
+  canonical_checkout_mutated: false
+  operator_allowlist_changed: false
+  unrestricted_fallback_used: false
+  second_executor_or_scope_authority_introduced: false
+  s02_executed: false
+postconditions:
+  slice_state_read_back: completed
+  next_slice_read_back: S02
+  next_slice_state_read_back: pending
+  task_stage_read_back: implementation
+  implementation_authorized: true
+  all_slices_completed: false
+  checkpoint_read_back_required: true
+  task_read_back_verified: true
+  slice_set_read_back_verified: true
+completion_guard:
+  status: satisfied_after_this_receipt_readback
+  canonical_next_action: "#开发执行 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
