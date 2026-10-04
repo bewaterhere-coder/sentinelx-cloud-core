@@ -5,17 +5,24 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 1
 development:
-  stage: plan_review
+  stage: plan_review_rejected
   gates:
     requirement_ready: true
     plan_approved: false
     acceptance_approved: false
     completion_verified: false
-  next_expected_actor: plan_reviewer
+  latest_plan_review: rejected_round_1
+  blocking_findings:
+    - PR013-R1-F1-repository-transaction-scope-admission
+    - PR013-R1-F2-materialization-execution-identity
+    - PR013-R1-F3-publication-content-handoff-credential-boundary
+    - PR013-R1-F4-acceptance-downstream-authority-mixed-into-implementation
+  next_expected_actor: planner
   authorization:
     mode: legacy_command_scoped
 artifacts:
   plan: docs/plans/PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1-plan.md
+  latest_plan_review: docs/reviews/PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1-plan-review-r1.md
 transport:
   type: github-pr
   pr_number: 13
