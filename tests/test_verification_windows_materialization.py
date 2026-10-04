@@ -251,7 +251,10 @@ def _quoted(path: Path) -> str:
 
 def test_verification_toolchain_is_read_execute_only_and_revoked_at_terminal(tmp_path: Path) -> None:
     fx = VerificationFixture(tmp_path, attempt_id="rx-only")
+    workspace_write_marker = fx.materialized.source_root / "workspace-write.txt"
     read_marker = fx.materialized.source_root / "toolchain-read.txt"
+    read_error = fx.materialized.source_root / "toolchain-read-error.txt"
+    read_status = fx.materialized.source_root / "toolchain-read-status.txt"
     toolchain_write = fx.profile.toolchain_root / "tamper.txt"
     source_store_write = fx.profile.source_snapshot_root / "tamper.txt"
     capsule_store_write = fx.profile.dependency_capsule_root / "tamper.txt"
@@ -259,7 +262,9 @@ def test_verification_toolchain_is_read_execute_only_and_revoked_at_terminal(tmp
     canonical_write = fx.canonical / "tamper.txt"
     runtime_file = fx.profile.toolchain_root / "runtime.dat"
     command = (
-        f"copy /y {_quoted(runtime_file)} {_quoted(read_marker)} >nul & "
+        f"echo workspace-ok>{_quoted(workspace_write_marker)} & "
+        f"type {_quoted(runtime_file)} >{_quoted(read_marker)} 2>{_quoted(read_error)} "
+        f"&& echo 0>{_quoted(read_status)} || echo 1>{_quoted(read_status)} & "
         f"echo tamper>{_quoted(toolchain_write)} & "
         f"echo tamper>{_quoted(source_store_write)} & "
         f"echo tamper>{_quoted(capsule_store_write)} & "
@@ -275,6 +280,10 @@ def test_verification_toolchain_is_read_execute_only_and_revoked_at_terminal(tmp
         verification=fx.materialized,
     )
     assert process.wait(15), "verification ACL probe did not exit"
+    assert workspace_write_marker.read_text(encoding="utf-8").strip() == "workspace-ok"
+    status = read_status.read_text(encoding="utf-8").strip() if read_status.exists() else "<missing>"
+    error = read_error.read_text(encoding="utf-8", errors="replace").strip() if read_error.exists() else "<missing>"
+    assert read_marker.exists(), f"toolchain direct read failed; status={status!r}; stderr={error!r}"
     assert read_marker.read_bytes() == b"runtime"
     assert not toolchain_write.exists()
     assert not source_store_write.exists()
