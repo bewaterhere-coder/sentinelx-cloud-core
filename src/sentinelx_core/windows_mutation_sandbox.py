@@ -42,6 +42,13 @@ from sentinelx_core.mutation_scope import (
     MutationScopeStore,
 )
 from sentinelx_core.policy import MutationExecutionPolicy
+from sentinelx_core.verification_runtime import (
+    VerificationMaterialization,
+    VerificationRuntimePlan,
+    cleanup_verification_materialization,
+    materialize_verification_runtime,
+    revalidate_verification_before_spawn,
+)
 from sentinelx_core.winspawn import (
     SuspendedJobProcess,
     create_suspended_appcontainer_job_process,
@@ -841,6 +848,7 @@ class WindowsMutationSandbox:
         self.semantic = semantic
         self.provider_protected_roots = tuple(provider_protected_roots)
         self._processes: dict[str, ManagedMutationProcess] = {}
+        self._verification_toolchain_reads: dict[tuple[str, int], Path] = {}
         # Fail early if the required APIs are absent.
         _windows_only()
         self.broker_sid = _current_process_sid()
@@ -995,6 +1003,50 @@ class WindowsMutationSandbox:
         )
         return record
 
+    def materialize_verification(
+        self,
+        activation: ActivatedMutationSandbox,
+        audit_start: MutationAuditStart,
+        plan: VerificationRuntimePlan,
+    ) -> VerificationMaterialization:
+        """Broker-materialize sealed verification inputs after START, before SPAWN."""
+        self._assert_activation_current(activation, audit_start)
+        if audit_start.verification_intent is None:
+            raise HostMutationSandboxBindingMismatch(
+                "verification materialization requires a sealed START verification intent"
+            )
+        if audit_start.verification_intent != plan.audit_intent:
+            raise HostMutationSandboxBindingMismatch(
+                "verification runtime plan differs from sealed START intent"
+            )
+        key = (activation.scope_id, activation.generation)
+        if key in self._verification_toolchain_reads:
+            raise HostMutationSandboxBindingMismatch(
+                "verification toolchain authority already exists for this scope generation"
+            )
+
+        materialized: VerificationMaterialization | None = None
+        toolchain_root = _normal_path(plan.profile.toolchain_root)
+        try:
+            materialized = materialize_verification_runtime(plan, activation.workspace)
+            _grant_runtime_read(toolchain_root, activation.sandbox_identity)
+            self._verification_toolchain_reads[key] = toolchain_root
+            revalidate_verification_before_spawn(materialized)
+            return materialized
+        except Exception:
+            try:
+                _remove_runtime_read(toolchain_root, activation.sandbox_identity)
+            except (RuntimeError, OSError, ValueError):
+                # Keep the tracked root so terminalize() can retry revocation and
+                # fail closed if residual read/execute authority cannot be removed.
+                if key not in self._verification_toolchain_reads:
+                    self._verification_toolchain_reads[key] = toolchain_root
+            else:
+                self._verification_toolchain_reads.pop(key, None)
+            if materialized is not None:
+                cleanup_verification_materialization(materialized)
+            raise
+
     def spawn(
         self,
         activation: ActivatedMutationSandbox,
@@ -1004,6 +1056,7 @@ class WindowsMutationSandbox:
         argv: list[str],
         cwd: Path | None = None,
         env: dict[str, str] | None = None,
+        verification: VerificationMaterialization | None = None,
     ) -> ManagedMutationProcess:
         """Create suspended -> bind Job -> durable SPAWN -> only then resume."""
         self._assert_activation_current(activation, audit_start)
@@ -1014,6 +1067,27 @@ class WindowsMutationSandbox:
             raise HostMutationSandboxPathViolation("sandbox cwd is not an existing directory")
         _assert_no_reparse(activation.workspace, spawn_cwd)
         _assert_final_path(spawn_cwd)
+
+        if verification is not None:
+            key = (activation.scope_id, activation.generation)
+            if audit_start.verification_intent != verification.plan.audit_intent:
+                raise HostMutationSandboxBindingMismatch(
+                    "verification materialization differs from sealed START intent"
+                )
+            if verification.workspace.resolve(strict=True) != activation.workspace.resolve(strict=True):
+                raise HostMutationSandboxBindingMismatch(
+                    "verification materialization belongs to a different exact workspace"
+                )
+            granted_root = self._verification_toolchain_reads.get(key)
+            if granted_root is None or granted_root != _normal_path(verification.toolchain_root):
+                raise HostMutationSandboxBindingMismatch(
+                    "verification toolchain read authority is absent or mismatched"
+                )
+            revalidate_verification_before_spawn(verification)
+        elif audit_start.verification_intent is not None:
+            raise HostMutationSandboxBindingMismatch(
+                "sealed START verification intent requires pre-SPAWN materialization"
+            )
 
         with _appcontainer_sid_pointer(activation.appcontainer_name) as sid_pointer:
             raw = create_suspended_appcontainer_job_process(
@@ -1123,6 +1197,11 @@ class WindowsMutationSandbox:
                     raise HostMutationSandboxResidualAuthority(
                         "workspace DACL still contains the mutation AppContainer SID"
                     )
+            verification_root = self._verification_toolchain_reads.pop(
+                (record.scope_id, record.generation), None
+            )
+            if verification_root is not None:
+                _remove_runtime_read(verification_root, app_sid)
             for root in self.policy.runtime_read_roots:
                 _remove_runtime_read(_normal_path(root), app_sid)
             _delete_appcontainer_profile(_profile_name(record.unique_lease_key))
