@@ -273,8 +273,8 @@ def test_verification_toolchain_is_read_execute_only_and_revoked_at_terminal(tmp
 
     command = (
         "echo workspace-ok>workspace-write.txt & "
-        f"type {_quoted(runtime_file)} >toolchain-read.txt 2>toolchain-read-error.txt "
-        "&& echo 0>toolchain-read-status.txt || echo 1>toolchain-read-status.txt & "
+        f"type {runtime_file} >toolchain-read.txt 2>toolchain-read-error.txt "
+        "&& echo 0 >toolchain-read-status.txt || echo 1 >toolchain-read-status.txt & "
         f"echo tamper>{_quoted(toolchain_write)} & "
         f"echo tamper>{_quoted(source_store_write)} & "
         f"echo tamper>{_quoted(capsule_store_write)} & "
