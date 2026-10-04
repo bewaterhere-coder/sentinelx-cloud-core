@@ -141,6 +141,97 @@ def _paths_overlap(left: Path, right: Path) -> bool:
     return left == right or left.is_relative_to(right) or right.is_relative_to(left)
 
 
+def _canonical_repository_identity(value: Any, field_name: str) -> str:
+    """Reuse SentinelX's canonical repository identity primitive."""
+    if not isinstance(value, dict):
+        raise ValueError(f"mutation_execution.{field_name}.repository must be a mapping")
+
+    # Local import avoids a module-level cycle: mutation_placement imports this
+    # policy module for MutationExecutionPolicy, while Policy.from_dict invokes
+    # this helper only after module initialization is complete.
+    from sentinelx_core.mutation_placement import RepositoryIdentity
+
+    try:
+        return RepositoryIdentity(
+            vcs=str(value.get("vcs") or ""),
+            authority=str(value.get("authority") or ""),
+            path=str(value.get("path") or ""),
+        ).canonical
+    except ValueError as exc:
+        raise ValueError(
+            f"mutation_execution.{field_name}.repository identity is invalid: {exc}"
+        ) from exc
+
+
+@dataclass(frozen=True)
+class CanonicalRepositorySpec:
+    """One Host-authoritative canonical source checkout."""
+
+    root: Path
+    repository_identity: str
+    canonical_branch: str | None = None
+    provenance: str = "operator_config"
+
+
+def _canonical_repository_inventory(
+    value: Any,
+    *,
+    workspace_root: Path | None,
+) -> tuple[tuple[CanonicalRepositorySpec, ...], bool, tuple[str, ...]]:
+    """Parse canonical source roots while keeping diagnostics path-free."""
+    if value is None:
+        return (), True, ()
+    if isinstance(value, (str, bytes)) or not isinstance(value, (list, tuple)):
+        return (), False, ("canonical_repository_inventory_not_list",)
+
+    specs: list[CanonicalRepositorySpec] = []
+    diagnostics: list[str] = []
+    seen_roots: set[str] = set()
+
+    for index, entry in enumerate(value):
+        field_name = f"canonical_repositories[{index}]"
+        if not isinstance(entry, dict):
+            diagnostics.append("canonical_repository_entry_not_mapping")
+            continue
+        try:
+            root = _canonical_host_root(entry.get("root"), f"{field_name}.root")
+            repository_identity = _canonical_repository_identity(
+                entry.get("repository"), field_name
+            )
+        except ValueError:
+            diagnostics.append("canonical_repository_entry_invalid")
+            continue
+
+        root_key = str(root).casefold()
+        if root_key in seen_roots:
+            diagnostics.append("canonical_repository_duplicate_root")
+        seen_roots.add(root_key)
+
+        branch_text = str(entry.get("canonical_branch") or "").strip()
+        canonical_branch = branch_text or None
+        if repository_identity.startswith("git://") and canonical_branch is None:
+            diagnostics.append("canonical_repository_git_branch_missing")
+
+        specs.append(
+            CanonicalRepositorySpec(
+                root=root,
+                repository_identity=repository_identity,
+                canonical_branch=canonical_branch,
+            )
+        )
+
+    ordered = tuple(sorted(specs, key=lambda item: str(item.root).casefold()))
+    for left_index, left in enumerate(ordered):
+        if workspace_root is not None and _paths_overlap(left.root, workspace_root):
+            diagnostics.append("canonical_repository_overlaps_workspace_root")
+        for right in ordered[left_index + 1 :]:
+            if _paths_overlap(left.root, right.root):
+                diagnostics.append("canonical_repository_roots_overlap")
+
+    unique_diagnostics = tuple(dict.fromkeys(diagnostics))
+    return ordered, not unique_diagnostics, unique_diagnostics
+
+
 @dataclass(frozen=True)
 class MutationExecutionPolicy:
     """Provider-owned mutation execution policy introduced by SX-HMSA-001/S01."""
@@ -153,6 +244,10 @@ class MutationExecutionPolicy:
     scope_ttl_seconds: int = 3600
     evidence_retention_days: int = 30
     operator_unrestricted_enabled: bool = False
+    canonical_repository_firewall_enabled: bool = False
+    canonical_repositories: tuple[CanonicalRepositorySpec, ...] = ()
+    canonical_repository_inventory_valid: bool = True
+    canonical_repository_inventory_diagnostics: tuple[str, ...] = ()
 
     @property
     def legacy_unrestricted_compat(self) -> bool:
@@ -163,6 +258,27 @@ class MutationExecutionPolicy:
     def scoped_runtime_ready(self) -> bool:
         """S01 readiness seam; mandatory later-slice prerequisites are absent."""
         return False
+
+    @property
+    def canonical_repository_inventory_ready(self) -> bool:
+        """Inventory/classifier readiness only; not provider-wide capability readiness."""
+        return (
+            self.configured
+            and self.canonical_repository_firewall_enabled
+            and self.canonical_repository_inventory_valid
+            and bool(self.canonical_repositories)
+        )
+
+    @property
+    def canonical_repository_inventory_readiness_reasons(self) -> tuple[str, ...]:
+        reasons = list(self.canonical_repository_inventory_diagnostics)
+        if not self.configured:
+            reasons.append("mutation_execution_not_configured")
+        if not self.canonical_repository_firewall_enabled:
+            reasons.append("canonical_repository_firewall_disabled")
+        if not self.canonical_repositories:
+            reasons.append("canonical_repository_inventory_empty")
+        return tuple(dict.fromkeys(reasons))
 
     @classmethod
     def from_block(cls, block: dict[str, Any] | None, *, configured: bool) -> "MutationExecutionPolicy":
@@ -192,6 +308,13 @@ class MutationExecutionPolicy:
                         "scoped mutation placement would be ambiguous"
                     )
 
+        canonical_repositories, inventory_valid, inventory_diagnostics = (
+            _canonical_repository_inventory(
+                block.get("canonical_repositories"),
+                workspace_root=workspace_root,
+            )
+        )
+
         try:
             scope_ttl_seconds = int(block.get("scope_ttl_seconds", 3600))
             evidence_retention_days = int(block.get("evidence_retention_days", 30))
@@ -213,6 +336,12 @@ class MutationExecutionPolicy:
             scope_ttl_seconds=scope_ttl_seconds,
             evidence_retention_days=evidence_retention_days,
             operator_unrestricted_enabled=bool(block.get("operator_unrestricted_enabled", False)),
+            canonical_repository_firewall_enabled=bool(
+                block.get("canonical_repository_firewall_enabled", False)
+            ),
+            canonical_repositories=canonical_repositories,
+            canonical_repository_inventory_valid=inventory_valid,
+            canonical_repository_inventory_diagnostics=inventory_diagnostics,
         )
 
 
@@ -251,6 +380,10 @@ class LocalApiAction:
     # closed, which forces these declarations to be revisited rather than
     # silently used against a changed API.
     params_schema: dict[str, Any] | None = None
+    # Optional bounded declaration used only for repository-effect accounting.
+    # Absence or an invalid value is UNKNOWN. Mutation declarations describe
+    # effect only; they never self-assert physical firewall coverage.
+    repository_effect: str | None = None
 
 
 @dataclass(frozen=True)
@@ -653,6 +786,24 @@ class Policy:
                         "ignoring it", name, act_name,
                     )
                     pschema = None
+                repository_effect = act.get("repository_effect")
+                allowed_repository_effects = {
+                    "read_only",
+                    "non_repository_mutation",
+                    "structured_mutation",
+                    "process_mutation",
+                }
+                if repository_effect is not None:
+                    repository_effect = str(repository_effect).strip()
+                    if repository_effect not in allowed_repository_effects:
+                        logger.warning(
+                            "local_apis: %s.%s has invalid repository_effect=%r; "
+                            "treating it as unknown for firewall readiness",
+                            name,
+                            act_name,
+                            repository_effect,
+                        )
+                        repository_effect = None
                 actions[str(act_name)] = LocalApiAction(
                     request=str(request) if request else None,
                     method=str(method) if method else None,
@@ -661,6 +812,7 @@ class Policy:
                         str(act["description"]) if act.get("description") else None
                     ),
                     params_schema=pschema,
+                    repository_effect=repository_effect,
                 )
             if not actions:
                 logger.warning(

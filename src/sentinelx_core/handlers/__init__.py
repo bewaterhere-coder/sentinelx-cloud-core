@@ -64,6 +64,9 @@ from sentinelx_core.handlers.upload import (
     make_upload_file_handler,
     make_upload_init_handler,
 )
+from sentinelx_core.operation_registry import (
+    canonical_repository_mutation_firewall_feature,
+)
 from sentinelx_core.policy import Policy
 
 Handler = Callable[[dict[str, Any]], Awaitable[dict[str, Any]]]
@@ -191,11 +194,15 @@ def build_registry(
     # drifted twice -- move/copy/delete/chmod/chown, then file_export_* and
     # project_snapshot (issue #32) -- so a new op is now advertised the
     # moment it is registered here, and nothing else needs touching.
+    def _canonical_firewall_feature() -> dict[str, Any]:
+        return canonical_repository_mutation_firewall_feature(registry, policy)
+
     registry["capabilities"] = make_capabilities_handler(
         policy,
         config_path,
         ops_supported=lambda: registry.keys(),
         upload_base=upload_base,
+        canonical_firewall_feature=_canonical_firewall_feature,
     )
 
     # Reuse the existing local_api envelope for configured external endpoints

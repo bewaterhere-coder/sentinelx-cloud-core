@@ -1,0 +1,53 @@
+schema: devforge.continuation-checkpoint.v1
+project_id: sentinelx-cloud-core
+task_id: PR-010-canonical-repository-mutation-firewall-v1
+stage: implementation
+slice: S04
+status: entry_gate_satisfied
+source_command: "#开发执行 PR-010-canonical-repository-mutation-firewall-v1"
+requirement_revision: 2
+plan_revision: 4
+canonical_main: f7e878f3497582547e5d52cd33b060cae18d2e84
+pr010_entry_head: 6d07e70a6d508da3e8e7cfbf8cee877442d79565
+dependency_readback:
+  pr007:
+    head: c053d01f0ff5e1b65ff5b43f4ce511508f317580
+    stage: acceptance
+    movement_since_s03_final_reconciliation: false
+    capability_or_protocol_seam_conflict: false
+  pr008:
+    head: f7594c468d764ad85c0dc508ad47f009c89793c1
+    stage: acceptance
+    movement_since_s03_final_reconciliation: false
+    capability_or_protocol_seam_conflict: false
+core_contract_reads:
+  requirement_r8: docs/requirements/PR-010-canonical-repository-mutation-firewall-v1.md
+  plan_d8: docs/plans/PR-010-canonical-repository-mutation-firewall-v1-plan.md
+  effect_registry: src/sentinelx_core/operation_registry.py
+  capability_output: src/sentinelx_core/handlers/basic.py
+  hello_projection: src/sentinelx_core/client.py
+  executor_capabilities: src/sentinelx_core/executor.py
+no_loss_composition:
+  canonical_inventory_readiness_reused: true
+  effective_dispatch_effect_registry_reused: true
+  second_firewall_operation_list_added: false
+  pr007_scope_or_executor_authority_copied: false
+  scoped_mutation_readiness_coupled_to_firewall_readiness: false
+  hub_change_required: false
+intended_changed_files:
+  - src/sentinelx_core/operation_registry.py
+  - src/sentinelx_core/handlers/basic.py
+  - src/sentinelx_core/handlers/__init__.py
+  - src/sentinelx_core/executor.py
+  - tests/test_canonical_repository_firewall_readiness.py
+  - docs/execution/PR-010-canonical-repository-mutation-firewall-v1-slices.yaml
+  - docs/checkpoints/PR-010-canonical-repository-mutation-firewall-v1-s04-completed-r4-20261003.yaml
+decision:
+  material_overlap_conflict: false
+  proceed_with_s04: true
+safety:
+  canonical_checkout_mutated: false
+  hub_modified: false
+  permission_expansion_used: false
+  unrestricted_fallback_used: false
+next_action: implement_s04_core_readiness_projection
