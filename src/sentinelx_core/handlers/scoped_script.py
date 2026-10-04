@@ -17,9 +17,11 @@ from typing import Any
 
 from sentinelx_core.executor import HandlerError
 from sentinelx_core.handlers.script import (
+    PreparedMutationScript,
     TIMEOUT_MAX,
     TIMEOUT_MIN,
     _decode_output,
+    _scoped_script_bytes,
     prepare_scoped_script_evidence,
 )
 from sentinelx_core.handlers.script import (
@@ -28,6 +30,7 @@ from sentinelx_core.handlers.script import (
 from sentinelx_core.mutation_audit import (
     MutationAuditJournal,
     MutationAuditStart,
+    MutationAuditBinding,
     MutationAuthorityEvidence,
     MutationFinishClosureEvidence,
     MutationProcessIntent,
@@ -41,6 +44,16 @@ from sentinelx_core.mutation_scope import (
 )
 from sentinelx_core.policy import Policy
 from sentinelx_core.request_context import MutationLineage, RequestContext, context_aware
+from sentinelx_core.verification_execution import (
+    build_verification_environment,
+    planned_verification_cwd,
+    prepare_verification_execution,
+    revalidate_verification_after_run,
+    validate_verification_environment_request,
+    verification_cwd,
+    verification_cwd_label,
+    verification_evidence,
+)
 from sentinelx_core.windows_mutation_sandbox import (
     final_executable_path,
     requested_mutation_identity,
@@ -341,12 +354,32 @@ async def _run_scoped(
         extensions = {"python3": "py", "powershell": "ps1", "pwsh": "ps1", "bash": "sh"}
         if not isinstance(interpreter, str) or interpreter not in extensions:
             raise HandlerError("invalid_payload", "unsupported scoped interpreter")
+
+        try:
+            verification = prepare_verification_execution(
+                mutation_policy,
+                payload.get("verification"),
+            )
+            if verification is not None:
+                if not bool(payload.get("cleanup", True)):
+                    raise ValueError("profiled verification requires cleanup=true")
+                validate_verification_environment_request(env_extra)
+        except ValueError as exc:
+            raise HandlerError("HostMutationVerificationAdmissionFailed", str(exc)) from exc
+
         planned_workspace = Path(record.exact_workspace)
         script_path = planned_workspace / f"script.{extensions[interpreter]}"
         stdout_path = planned_workspace / "stdout.bin"
         stderr_path = planned_workspace / "stderr.bin"
         result_path = planned_workspace / "returncode.txt"
-        run_cwd = _cwd(planned_workspace, payload.get("cwd"), materialize=False)
+        try:
+            run_cwd = (
+                planned_verification_cwd(planned_workspace, payload.get("cwd"))
+                if verification is not None
+                else _cwd(planned_workspace, payload.get("cwd"), materialize=False)
+            )
+        except ValueError as exc:
+            raise HandlerError("HostMutationSandboxPathViolation", str(exc)) from exc
         planned_argv = _runner_argv(
             interpreter, script_path, args, planned_workspace,
             stdout_path, stderr_path, result_path, materialize=False,
@@ -357,19 +390,54 @@ async def _run_scoped(
             executable_final_path=final_executable_path(Path(planned_argv[0])),
             cwd_final_path=str(run_cwd),
         )
-        prepared = prepare_scoped_script_evidence(
-            context=context,
-            payload=payload,
-            lineage=lineage,
-            audit=audit,
-            scope_id=record.scope_id,
-            scope_generation=record.generation,
-            workspace_id=record.workspace_id,
-            unique_lease_key=record.unique_lease_key,
-            authority=_authority_evidence(record),
-            process_intent=process_intent,
-            requested_identity=requested_mutation_identity(record.unique_lease_key),
-        )
+        requested_identity = requested_mutation_identity(record.unique_lease_key)
+        if verification is None:
+            prepared = prepare_scoped_script_evidence(
+                context=context,
+                payload=payload,
+                lineage=lineage,
+                audit=audit,
+                scope_id=record.scope_id,
+                scope_generation=record.generation,
+                workspace_id=record.workspace_id,
+                unique_lease_key=record.unique_lease_key,
+                authority=_authority_evidence(record),
+                process_intent=process_intent,
+                requested_identity=requested_identity,
+            )
+        else:
+            content = payload.get("content")
+            if not isinstance(content, str):
+                raise HandlerError("invalid_payload", "missing 'content'")
+            exact_bytes = _scoped_script_bytes(content, interpreter)
+            evidence = audit.evidence.retain(exact_bytes)
+            binding = MutationAuditBinding.from_context(
+                context,
+                lineage,
+                scope_id=record.scope_id,
+                scope_generation=record.generation,
+                workspace_id=record.workspace_id,
+                unique_lease_key=record.unique_lease_key,
+                job_id=(
+                    payload.get("job_id")
+                    if isinstance(payload.get("job_id"), str)
+                    else None
+                ),
+            )
+            verification_start = audit.begin(
+                binding,
+                evidence,
+                authority=_authority_evidence(record),
+                process_intent=process_intent,
+                requested_identity=requested_identity,
+                verification_intent=verification.plan.audit_intent,
+            )
+            prepared = PreparedMutationScript(
+                interpreter=interpreter,
+                exact_bytes=exact_bytes,
+                evidence=evidence,
+                audit_start=verification_start,
+            )
         start = prepared.audit_start
         sandbox = build_mutation_sandbox(
             policy=mutation_policy,
@@ -385,20 +453,50 @@ async def _run_scoped(
         if hashlib.sha256(script_path.read_bytes()).hexdigest() != prepared.evidence.sha256:
             raise RuntimeError("materialized scoped script hash mismatch")
 
-        run_cwd = _cwd(activation.workspace, payload.get("cwd"), materialize=True)
+        verification_materialized = None
+        if verification is not None:
+            verification_materialized = sandbox.materialize_verification(
+                activation,
+                start,
+                verification.plan,
+            )
+            try:
+                run_cwd = verification_cwd(
+                    verification_materialized,
+                    payload.get("cwd"),
+                )
+            except ValueError as exc:
+                raise HandlerError("HostMutationSandboxPathViolation", str(exc)) from exc
+        else:
+            run_cwd = _cwd(activation.workspace, payload.get("cwd"), materialize=True)
+
         argv = _runner_argv(
             prepared.interpreter, script_path, args, activation.workspace,
             stdout_path, stderr_path, result_path, materialize=True,
         )
         if argv != planned_argv:
             raise RuntimeError("materialized runner argv differs from sealed process intent")
+
+        child_environment = _scoped_environment(env_extra, activation.workspace)
+        if verification_materialized is not None:
+            child_environment = build_verification_environment(
+                child_environment,
+                env_extra,
+                verification_materialized,
+            )
+        response_cwd = (
+            verification_cwd_label(payload.get("cwd"))
+            if verification_materialized is not None
+            else str(run_cwd)
+        )
         process = sandbox.spawn(
             activation,
             audit=audit,
             audit_start=start,
             argv=argv,
             cwd=run_cwd,
-            env=_scoped_environment(env_extra, activation.workspace),
+            env=child_environment,
+            verification=verification_materialized,
         )
         done = await asyncio.to_thread(process.wait, float(timeout))
         if not done:
@@ -414,7 +512,7 @@ async def _run_scoped(
                 "ok": False,
                 "interpreter": prepared.interpreter,
                 "sudo": False,
-                "cwd": str(run_cwd),
+                "cwd": response_cwd,
                 "cleanup": bool(payload.get("cleanup", True)),
                 "execution_profile": "scoped_mutation",
                 "output": "Timeout",
@@ -448,6 +546,12 @@ async def _run_scoped(
         stdout = _decode_output(stdout_path.read_bytes() if stdout_path.exists() else b"").strip()
         stderr = _decode_output(stderr_path.read_bytes() if stderr_path.exists() else b"").strip()
         output = (stdout + "\n" + stderr).strip() or "No output"
+        if returncode == 0 and verification_materialized is not None:
+            try:
+                revalidate_verification_after_run(verification_materialized)
+            except ValueError as exc:
+                raise HandlerError("HostMutationVerificationIntegrityFailed", str(exc)) from exc
+
         terminal = sandbox.terminalize(scope_id, generation)
         terminalized = True
         audit.finish(
@@ -459,19 +563,22 @@ async def _run_scoped(
             "ok": returncode == 0,
             "interpreter": prepared.interpreter,
             "sudo": False,
-            "cwd": str(run_cwd),
+            "cwd": response_cwd,
             "cleanup": bool(payload.get("cleanup", True)),
             "execution_profile": "scoped_mutation",
-            "command": argv,
             "output": output,
             "returncode": returncode,
             "mutation_scope_ref": {"scope_id": scope_id, "generation": generation},
             "audit_operation_id": start.operation_id,
             "terminal_state": terminal.state,
         }
-        if not bool(payload.get("cleanup", True)):
-            response["script_path"] = str(script_path)
-            response["workdir"] = str(activation.workspace)
+        if verification_materialized is not None:
+            response["verification"] = verification_evidence(verification_materialized)
+        else:
+            response["command"] = argv
+            if not bool(payload.get("cleanup", True)):
+                response["script_path"] = str(script_path)
+                response["workdir"] = str(activation.workspace)
         return response
     except Exception as exc:
         terminal = None
