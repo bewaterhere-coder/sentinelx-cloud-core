@@ -740,6 +740,21 @@ def _remove_runtime_read(root: Path, app_sid: str) -> None:
         _run_icacls([str(root), "/remove:g", f"*{app_sid}"])
 
 
+def _grant_verification_toolchain_read(root: Path, app_sid: str) -> None:
+    """Grant RX to the sealed toolchain tree, including already-existing children."""
+    _assert_no_reparse(root, root)
+    _assert_final_path(root)
+    _run_icacls(
+        [str(root), "/grant:r", f"*{app_sid}:(OI)(CI)(RX)", "/T", "/C"]
+    )
+
+
+def _remove_verification_toolchain_read(root: Path, app_sid: str) -> None:
+    """Revoke the transient toolchain ACE from root and propagated descendants."""
+    if root.exists():
+        _run_icacls([str(root), "/remove:g", f"*{app_sid}", "/T", "/C"])
+
+
 def _pid_alive(pid: int) -> bool:
     k32, _, _ = _windows_only()
     handle = k32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | SYNCHRONIZE, False, int(pid))
@@ -1029,13 +1044,13 @@ class WindowsMutationSandbox:
         toolchain_root = _normal_path(plan.profile.toolchain_root)
         try:
             materialized = materialize_verification_runtime(plan, activation.workspace)
-            _grant_runtime_read(toolchain_root, activation.sandbox_identity)
+            _grant_verification_toolchain_read(toolchain_root, activation.sandbox_identity)
             self._verification_toolchain_reads[key] = toolchain_root
             revalidate_verification_before_spawn(materialized)
             return materialized
         except Exception:
             try:
-                _remove_runtime_read(toolchain_root, activation.sandbox_identity)
+                _remove_verification_toolchain_read(toolchain_root, activation.sandbox_identity)
             except (RuntimeError, OSError, ValueError):
                 # Keep the tracked root so terminalize() can retry revocation and
                 # fail closed if residual read/execute authority cannot be removed.
@@ -1201,7 +1216,7 @@ class WindowsMutationSandbox:
                 (record.scope_id, record.generation), None
             )
             if verification_root is not None:
-                _remove_runtime_read(verification_root, app_sid)
+                _remove_verification_toolchain_read(verification_root, app_sid)
             for root in self.policy.runtime_read_roots:
                 _remove_runtime_read(_normal_path(root), app_sid)
             _delete_appcontainer_profile(_profile_name(record.unique_lease_key))
