@@ -744,9 +744,7 @@ def _grant_verification_toolchain_read(root: Path, app_sid: str) -> None:
     """Grant RX to the sealed toolchain tree, including already-existing children."""
     _assert_no_reparse(root, root)
     _assert_final_path(root)
-    _run_icacls(
-        [str(root), "/grant:r", f"*{app_sid}:(OI)(CI)(RX)", "/T", "/C"]
-    )
+    _run_icacls([str(root), "/grant:r", f"*{app_sid}:(RX)", "/T", "/C"])
 
 
 def _remove_verification_toolchain_read(root: Path, app_sid: str) -> None:
