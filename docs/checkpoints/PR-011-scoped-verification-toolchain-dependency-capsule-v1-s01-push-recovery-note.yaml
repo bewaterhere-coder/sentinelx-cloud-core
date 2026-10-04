@@ -1,5 +1,1 @@
-schema_version: "1.0"
-kind: devforge_transport_recovery_note
-task_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1
-slice_id: S01
-note: "Git object c678986e68f6e1c061773b3382505a6c2e0b40ee is present on GitHub after a timed-out host push, while the branch ref remains at 3fd14a7e496b009bcc8ba3dc875ac1f31479e6ce. Recovery will fast-forward the existing task branch ref to the exact descendant commit without force."
+This path is intentionally absent from the final tree; its transient history is preserved in commit 915c4d5a257d701a54d3430badcbafdb4eafbea0 and reconciled by merge commit 308692e08f8d61de501839e94e378cc54b1a7ed1.
