@@ -1,15 +1,17 @@
-# PR-012-execute-scoped-explicit-execution-profile-v1 — Plan R2
+# PR-012-execute-scoped-explicit-execution-profile-v1 — Plan R3
 
 Requirement revision: 1 (unchanged).
 Status: Pending Plan Review; not approved; implementation not authorized.
-Supersedes R1. Repairs latest R1 findings without changing transport or Requirement.
+Supersedes R2. Withdraws the incorrect independent-Codex prerequisite; preserves tests, acceptance and Requirement.
 
-## Execution admission — F01 partially addressed, external blocker retained
-Configured project provider is direct/codex, not host-runtime. This Codex environment has shell execution. A read-only git ls-remote from this environment returned exact PR-12 branch HEAD 1ce634c09f9c7eef2ff454c1df18a77525390c79.
-This proves branch access only, not a writable transport or isolated implementation workspace. No checkout was created by plan remediation.
-Before approval/implementation, independently verify direct Codex workspace admission under current DevForge contracts, origin/branch/HEAD, write scope, test runtime and remote persistence. Revalidate HEAD at the actual boundary.
-Do not use the incompatible Windows execute_scoped endpoint to repair itself. Do not use generic SentinelX script wrappers, canonical checkout mutation or an implicit provider switch.
-F01 remains unresolved until full execution admission evidence exists. Read-only Git access is not a completion receipt.
+## Corrected execution boundary
+An independent Codex execution channel is NOT a prerequisite of this Requirement or Plan. R1/R2 F01 incorrectly elevated one implementation option into a mandatory requirement; that rationale is withdrawn.
+Use SentinelX's existing restricted development path where currently admitted. The live devforge_runtime describe readback on 2026-10-05 still lacks execution_profile and rejects additional properties; the existing adapter hardcodes scoped_mutation internally. Scope lifecycle calls exist, but do not by themselves satisfy the explicit profile contract.
+Current model-facing script_run also lacks the required profile/scope fields. No compatible current SentinelX process tool was observed for this mutation/test operation.
+This is a live execution-interface limitation, not a design defect and not a reason to require Codex. Do not self-approve this Plan or use a missing-field call to bootstrap itself.
+Minimal bootstrap, if no compatible restricted tool is available: an operator uses their existing approved local development workflow on exact PR-12 branch in an isolated execution workspace, applies the bounded S01 correction and runs its tests, then activates the exact verified build through their authorized installation workflow. No new agent/tool platform is required. If workspace admission is absent, stop before materialization.
+After activation, current local_api.describe and harmless scoped execution/audit/terminal readback must prove the repaired interface.
+No generic SentinelX script, source-checkout write, unrestricted execution, provider switch or permission expansion is authorized by this correction.
 
 ## Technical approach
 Use src/sentinelx_core/handlers/devforge_runtime.py:
