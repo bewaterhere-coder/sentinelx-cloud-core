@@ -8,15 +8,22 @@ task_id: PR-010-canonical-repository-mutation-firewall-v1
 title: SentinelX Provider Canonical Repository Mutation Firewall V1
 requirement_revision: 2
 development:
-  stage: implementation
+  stage: accepted
   gates:
     requirement_ready: true
     plan_approved: true
-    acceptance_approved: false
+    acceptance_approved: true
     completion_verified: false
   plan_revision: 4
   implementation_authorized: true
-  next_expected_actor: implementer
+  finalization:
+    ready_for_merge: true
+    canonical_state_verified: true
+    plan_execution_state_verified: true
+    evidence_verified: true
+    transport_preconditions_verified: true
+    ref: docs/reviews/PR-010-canonical-repository-mutation-firewall-v1-completion-finalization-r1.yaml
+  next_expected_actor: integration
 transport:
   type: github-pr
   pr_number: 10
@@ -27,6 +34,9 @@ artifacts:
   plan: docs/plans/PR-010-canonical-repository-mutation-firewall-v1-plan.md
   plan_review: docs/reviews/PR-010-canonical-repository-mutation-firewall-v1-plan-review-r4.md
   execution_slice_set: docs/execution/PR-010-canonical-repository-mutation-firewall-v1-slices.yaml
+  acceptance: docs/reviews/PR-010-canonical-repository-mutation-firewall-v1-acceptance-r1.md
+  acceptance_checkpoint: docs/checkpoints/PR-010-canonical-repository-mutation-firewall-v1-acceptance-r1-approved-20261003.yaml
+  completion_finalization: docs/reviews/PR-010-canonical-repository-mutation-firewall-v1-completion-finalization-r1.yaml
 related_tasks:
   overlap_dependencies:
     - PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1
