@@ -17,6 +17,12 @@ from typing import Any
 import yaml
 
 from sentinelx_core import platform_guidance as _pg
+from sentinelx_core.verification_profile import (
+    NodeNpmVerificationProfile,
+    VerificationResourceLimits,
+    normalize_relative_path,
+    validate_profile_id,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -232,6 +238,117 @@ def _canonical_repository_inventory(
     return ordered, not unique_diagnostics, unique_diagnostics
 
 
+def _verification_profiles(
+    value: Any,
+    *,
+    workspace_root: Path | None,
+    protected_roots: tuple[Path, ...],
+    canonical_repositories: tuple[CanonicalRepositorySpec, ...],
+) -> tuple[NodeNpmVerificationProfile, ...]:
+    if value is None:
+        return ()
+    if not isinstance(value, dict):
+        raise ValueError("mutation_execution.verification_profiles must be a mapping")
+
+    profiles: list[NodeNpmVerificationProfile] = []
+    admitted_roots: list[Path] = []
+    forbidden_roots = list(protected_roots) + [item.root for item in canonical_repositories]
+    if workspace_root is not None:
+        forbidden_roots.append(workspace_root)
+
+    allowed_fields = {
+        "kind",
+        "toolchain_root",
+        "node_relative",
+        "npm_cli_relative",
+        "source_snapshot_root",
+        "dependency_capsule_root",
+        "capsule_manifest_revision",
+        "limits",
+    }
+
+    for raw_profile_id, entry in sorted(value.items(), key=lambda item: str(item[0]).casefold()):
+        profile_id = validate_profile_id(raw_profile_id)
+        if not isinstance(entry, dict):
+            raise ValueError(
+                f"mutation_execution.verification_profiles.{profile_id} must be a mapping"
+            )
+        unknown = set(entry) - allowed_fields
+        if unknown:
+            raise ValueError(
+                f"mutation_execution.verification_profiles.{profile_id} contains unknown fields"
+            )
+        kind = str(entry.get("kind") or "").strip()
+        if kind != "node_npm_v1":
+            raise ValueError(
+                f"mutation_execution.verification_profiles.{profile_id}.kind is unsupported"
+            )
+
+        toolchain_root = _canonical_host_root(
+            entry.get("toolchain_root"),
+            f"verification_profiles.{profile_id}.toolchain_root",
+        )
+        source_snapshot_root = _canonical_host_root(
+            entry.get("source_snapshot_root"),
+            f"verification_profiles.{profile_id}.source_snapshot_root",
+        )
+        dependency_capsule_root = _canonical_host_root(
+            entry.get("dependency_capsule_root"),
+            f"verification_profiles.{profile_id}.dependency_capsule_root",
+        )
+        node_relative = normalize_relative_path(
+            entry.get("node_relative", "node.exe"),
+            f"verification_profiles.{profile_id}.node_relative",
+        )
+        npm_cli_relative = normalize_relative_path(
+            entry.get("npm_cli_relative", "node_modules/npm/bin/npm-cli.js"),
+            f"verification_profiles.{profile_id}.npm_cli_relative",
+        )
+        try:
+            capsule_manifest_revision = int(entry.get("capsule_manifest_revision", 1))
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                f"mutation_execution.verification_profiles.{profile_id}.capsule_manifest_revision "
+                "must be an integer"
+            ) from exc
+        limits = VerificationResourceLimits.from_mapping(entry.get("limits"))
+
+        profile_roots = (toolchain_root, source_snapshot_root, dependency_capsule_root)
+        for index, root in enumerate(profile_roots):
+            for other in profile_roots[index + 1 :]:
+                if _paths_overlap(root, other):
+                    raise ValueError(
+                        f"mutation_execution.verification_profiles.{profile_id} roots overlap"
+                    )
+            for forbidden in forbidden_roots:
+                if _paths_overlap(root, forbidden):
+                    raise ValueError(
+                        f"mutation_execution.verification_profiles.{profile_id} root overlaps "
+                        "workspace/protected/canonical authority"
+                    )
+            for other in admitted_roots:
+                if _paths_overlap(root, other):
+                    raise ValueError("mutation_execution verification profile roots overlap")
+            admitted_roots.append(root)
+
+        profile = NodeNpmVerificationProfile(
+            profile_id=profile_id,
+            kind=kind,
+            toolchain_root=toolchain_root,
+            node_relative=node_relative,
+            npm_cli_relative=npm_cli_relative,
+            source_snapshot_root=source_snapshot_root,
+            dependency_capsule_root=dependency_capsule_root,
+            capsule_manifest_revision=capsule_manifest_revision,
+            limits=limits,
+        )
+        profile.resolve_node(require_exists=False)
+        profile.resolve_npm_cli(require_exists=False)
+        profiles.append(profile)
+
+    return tuple(profiles)
+
+
 @dataclass(frozen=True)
 class MutationExecutionPolicy:
     """Provider-owned mutation execution policy introduced by SX-HMSA-001/S01."""
@@ -248,11 +365,19 @@ class MutationExecutionPolicy:
     canonical_repositories: tuple[CanonicalRepositorySpec, ...] = ()
     canonical_repository_inventory_valid: bool = True
     canonical_repository_inventory_diagnostics: tuple[str, ...] = ()
+    verification_profiles: tuple[NodeNpmVerificationProfile, ...] = ()
 
     @property
     def legacy_unrestricted_compat(self) -> bool:
         """Historical unprofiled script_run compatibility, never a new capability."""
         return not self.configured
+
+    def verification_profile(self, profile_id: str) -> NodeNpmVerificationProfile | None:
+        logical_id = validate_profile_id(profile_id)
+        return next(
+            (profile for profile in self.verification_profiles if profile.profile_id == logical_id),
+            None,
+        )
 
     @property
     def scoped_runtime_ready(self) -> bool:
@@ -314,6 +439,12 @@ class MutationExecutionPolicy:
                 workspace_root=workspace_root,
             )
         )
+        verification_profiles = _verification_profiles(
+            block.get("verification_profiles"),
+            workspace_root=workspace_root,
+            protected_roots=protected_roots,
+            canonical_repositories=canonical_repositories,
+        )
 
         try:
             scope_ttl_seconds = int(block.get("scope_ttl_seconds", 3600))
@@ -342,6 +473,7 @@ class MutationExecutionPolicy:
             canonical_repositories=canonical_repositories,
             canonical_repository_inventory_valid=inventory_valid,
             canonical_repository_inventory_diagnostics=inventory_diagnostics,
+            verification_profiles=verification_profiles,
         )
 
 
