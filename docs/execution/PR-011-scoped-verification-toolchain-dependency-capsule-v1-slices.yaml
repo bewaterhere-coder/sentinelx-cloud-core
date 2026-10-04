@@ -95,9 +95,10 @@ slices:
         - existing audit START/SPAWN/FINISH lineage remains single-source
     checkpoint:
       required: true
-    state: pending
-    run_refs: []
-    completion_receipt_ref: null
+    state: completed
+    run_refs:
+      - docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s02-completion-20261005.yaml
+    completion_receipt_ref: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s02-completion-receipt.yaml
 
   - slice_id: S03
     objective: Enable real offline Node/npm descendant execution through sealed shims inside the existing scoped-script executor without widening network, credentials or interpreter authority.
@@ -198,7 +199,7 @@ slices:
     run_refs: []
     completion_receipt_ref: null
 execution_state:
-  current_slice: S02
+  current_slice: S03
   current_slice_state: pending
   all_slices_completed: false
 acceptance_boundary:
