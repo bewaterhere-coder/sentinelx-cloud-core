@@ -245,7 +245,6 @@ def _runner_argv(
         "$ErrorActionPreference='Stop'\n"
         "$utf8=New-Object System.Text.UTF8Encoding($false)\n"
         "try {\n"
-        " Set-Location -LiteralPath ([Environment]::CurrentDirectory)\n"
         " $text=[System.IO.File]::ReadAllText($Target,$utf8); $sb=[ScriptBlock]::Create($text)\n"
         " $global:LASTEXITCODE=$null; $records=& $sb @ScriptArgs *>&1; $ok=$?\n"
         " if($null -ne $LASTEXITCODE){$code=[int]$LASTEXITCODE}elseif($ok){$code=0}else{$code=1}\n"
