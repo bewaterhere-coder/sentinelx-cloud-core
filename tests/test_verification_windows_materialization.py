@@ -261,10 +261,20 @@ def test_verification_toolchain_is_read_execute_only_and_revoked_at_terminal(tmp
     protected_write = fx.protected / "tamper.txt"
     canonical_write = fx.canonical / "tamper.txt"
     runtime_file = fx.profile.toolchain_root / "runtime.dat"
+    app_sid = fx.activation.sandbox_identity
+    for materialized_root in (
+        fx.materialized.source_root,
+        fx.materialized.npm_cache_root,
+        fx.materialized.shim_root,
+    ):
+        assert any(
+            sid == app_sid for sid, _mask, _flags in _dacl_entries(materialized_root)
+        ), f"materialized verification root lost AppContainer authority: {materialized_root}"
+
     command = (
-        f"echo workspace-ok>{_quoted(workspace_write_marker)} & "
-        f"type {_quoted(runtime_file)} >{_quoted(read_marker)} 2>{_quoted(read_error)} "
-        f"&& echo 0>{_quoted(read_status)} || echo 1>{_quoted(read_status)} & "
+        "echo workspace-ok>workspace-write.txt & "
+        f"type {_quoted(runtime_file)} >toolchain-read.txt 2>toolchain-read-error.txt "
+        "&& echo 0>toolchain-read-status.txt || echo 1>toolchain-read-status.txt & "
         f"echo tamper>{_quoted(toolchain_write)} & "
         f"echo tamper>{_quoted(source_store_write)} & "
         f"echo tamper>{_quoted(capsule_store_write)} & "
@@ -291,7 +301,6 @@ def test_verification_toolchain_is_read_execute_only_and_revoked_at_terminal(tmp
     assert not protected_write.exists()
     assert not canonical_write.exists()
 
-    app_sid = fx.activation.sandbox_identity
     assert any(sid == app_sid for sid, _mask, _flags in _dacl_entries(fx.profile.toolchain_root))
     terminal = fx.sandbox.terminalize(fx.record.scope_id, fx.record.generation)
     assert terminal.state == "terminal"
