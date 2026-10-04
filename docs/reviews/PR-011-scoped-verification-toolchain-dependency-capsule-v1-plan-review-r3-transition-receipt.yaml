@@ -39,12 +39,7 @@ review_findings:
   PR011-R2-F3-stale-main-baseline-pr007-merged-dependency-reconciliation: closed
 slice_compilation:
   slice_count: 5
-  ordered_slices:
-    - S01
-    - S02
-    - S03
-    - S04
-    - S05
+  ordered_slices: [S01, S02, S03, S04, S05]
   current_slice: S01
   current_slice_state: pending
   cross_repository_PR015_proof:
@@ -63,7 +58,11 @@ postconditions:
   slice_set_read_back_verified: true
   review_read_back_verified: true
   task_read_back_verified: true
+  plan_exact_blob_restored_and_read_back: true
   product_implementation_executed: false
+reconciliation_note:
+  transient_plan_state_projection_commit_was_reverted_before_completion_claim: true
+  final_current_plan_blob_equals_reviewed_blob: true
 completion_guard:
   status: satisfied_after_this_receipt_readback
   canonical_next_action: "#开发执行 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
