@@ -183,9 +183,15 @@ def build_verification_environment(
     home = runtime_root / "home"
     temp = runtime_root / "tmp"
     roaming = home / "AppData" / "Roaming"
-    local = home / "AppData" / "Local"
+    # Reuse the base scoped sandbox LOCALAPPDATA instead of introducing a
+    # second profile-local root. Windows AppContainer descendant process
+    # initialization can depend on this profile identity; the base value is
+    # already provider-owned and confined beneath the exact workspace.
+    local = Path(base_environment["LOCALAPPDATA"]).resolve(strict=True)
+    if local == workspace or not local.is_relative_to(workspace):
+        raise ValueError("base scoped LOCALAPPDATA must remain beneath the exact workspace")
     npm_prefix = runtime_root / "npm-prefix"
-    for path in (runtime_root, home, temp, roaming, local, npm_prefix):
+    for path in (runtime_root, home, temp, roaming, npm_prefix):
         path.mkdir(parents=True, exist_ok=True)
     npmrc = runtime_root / "empty.npmrc"
     if not npmrc.exists():
