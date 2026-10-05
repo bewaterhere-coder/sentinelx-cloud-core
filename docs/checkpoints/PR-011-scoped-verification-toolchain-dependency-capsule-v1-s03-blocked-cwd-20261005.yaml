@@ -1,14 +1,11 @@
-schema_version: "1.0"
+schema_version: "1.1"
 kind: devforge_slice_continuation_checkpoint
 project_id: sentinelx-cloud-core
 task_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1
 slice_id: S03
 source_command: "#开发执行 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
 runtime:
-  repository: bewaterhere-coder/DevForge
-  version: 2.40.0
   workflow: project_development
-  workflow_version: "2.1"
 state:
   stage: implementation
   current_slice: S03
@@ -17,42 +14,67 @@ state:
   completion_claimed: false
 repository_reality:
   reconciled_main: e7064c9bf4fcd15bdb6f5a2678414210c01d1c00
-  ancestry_reconciliation_commit: 95aaef1d2240820ec956b7b822f29510e7fb2db9
-  branch_head_observed_after_reconciliation: ec644cd6fa09591c2b6de5040742a9598fc190fc
-  behind_current_main_after_reconciliation: 0
-verification:
-  workflow: pr011-s03-verification
-  run_id: 37260744177
-  job_id: 111607242651
-  conclusion: failure
-  tests_passed: 21
-  tests_failed: 1
-  failure_test: test_profiled_scoped_execution_runs_real_node_npm_offline_and_bounds_evidence
-  observed_failure: "first relative Set-Content resolved to C:\\progress.txt and failed access denied"
-  observed_effective_native_current_directory: "C:\\"
-  generic_ci_exact_head: success
-  macos_agent_exact_head: success
+  branch_head_verified: ff9888b15f7083780e7a1f34cf4f239d6d30f08e
+  mergeable_with_current_main: true
+history:
+  - candidate: 35282c443a4fd9f6a3faec2d334db1245083be57
+    finding: PowerShell relative filesystem operations observed C:\\ fallback and failed closed
+  - candidate: ec644cd6fa09591c2b6de5040742a9598fc190fc
+    finding: SetLocation(Environment.CurrentDirectory) required PowerShell provider normalization through C:\\Users and was denied; no parent read/list ACL widening is acceptable
+  - candidate: ff9888b15f7083780e7a1f34cf4f239d6d30f08e
+    finding: native cwd diagnostic writes succeed via .NET, but sealed node descendant does not return before timeout
+latest_verification:
+  pr011_s03:
+    run_id: 37261509918
+    job_id: 111609538110
+    conclusion: failure
+    tests_passed: 21
+    tests_failed: 1
+    failure_test: test_profiled_scoped_execution_runs_real_node_npm_offline_and_bounds_evidence
+    result: timeout
+    timeout_seconds: 120
+    progress:
+      - start
+      - before-node-version
+    interpretation: script entered exact source cwd and reached first node invocation; node --version never returned
+  native_cwd_diagnostic:
+    run_id: 37261509917
+    job_id: 111609537813
+    conclusion: failure
+    tests_passed: 13
+    tests_failed: 1
+    failure_test: test_profiled_native_node_observes_exact_source_cwd
+  generic_ci: success
+  macos_agent: success
+  pr011_s01_regression: success
+  pr011_s02_regression: success
+  pr010_regressions_observed: success_or_in_progress_without_new_product_failure
 root_cause:
-  classification: windows_appcontainer_native_cwd_fallback
-  detail: "CreateProcessW was requested with exact-workspace/source, but the profiled PowerShell process observed Environment.CurrentDirectory as C:\\; the runner then SetLocation to that fallback value before executing the user script."
-  node_npm_or_capsule_failure: false
-  credential_or_proxy_leak_failure: false
-  network_fallback_failure: false
-parallel_head_reconciliation:
-  commit: ec644cd6fa09591c2b6de5040742a9598fc190fc
-  assessment: insufficient
-  reason: "it still sets PowerShell location from Environment.CurrentDirectory, which the failing physical test observed as C:\\"
-minimal_repair:
-  scope: S03 only
-  rule: "profiled runner must receive the already validated verification_cwd explicitly and SetLocation to that sealed path before executing user content; unprofiled runner argv/semantics remain unchanged"
-  local_candidate_prepared: true
-  local_candidate_persisted_to_remote: false
-  remote_overwrite_attempted: false
+  classification: windows_appcontainer_sealed_node_descendant_hang
+  disproven:
+    - native cwd materialization failure
+    - PowerShell relative progress-file diagnostic as the primary blocker
+    - generic CI or macOS regression
+    - credential/proxy leak as the observed failure
+  current_boundary: determine whether hang occurs in workspace-local node.cmd/cmd.exe shim dispatch or provider-owned node.exe initialization inside AppContainer before changing product authority
+next_diagnostic:
+  required:
+    - distinguish absolute provider-owned node.exe execution from workspace-local node.cmd shim execution inside the same existing AppContainer/Job
+    - preserve exact source cwd, no-breakaway Job, no network and stripped credentials
+    - capture bounded process/timeout evidence sufficient to identify which descendant fails to initialize/exit
+  forbidden_shortcuts:
+    - no C:\\Users or broad system parent read/list ACL grant
+    - no Host PATH fallback or Host npm.cmd/npm.ps1 discovery
+    - no network fallback
+    - no operator_unrestricted or allowlist expansion
+    - no duplicate executor or sandbox path
 safety:
   s04_executed: false
   slice_state_advanced: false
   completion_receipt_issued: false
   canonical_main_mutated: false
+  hub_modified: false
 continuation:
   mode: reenter_current_command
+  next_expected_actor: implementer
   canonical_next_action: "#开发执行 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
