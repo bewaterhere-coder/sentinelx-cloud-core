@@ -1,0 +1,84 @@
+schema_version: "1.0"
+kind: devforge_artifact_state_transition_receipt
+task_id: PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1
+source_command: "#开发评审 PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1"
+runtime:
+  repository: bewaterhere-coder/DevForge
+  version: 2.41.0
+  revision: 902a9d71b425753928c01904be1e9b2b60f0c3fe
+  workflow: project_development
+  workflow_version: "2.1"
+  review_contract: "1.3"
+  slicing_contract: "1.1"
+transition:
+  from_stage: plan_review
+  to_stage: implementation
+  decision: Approved
+  next_expected_actor: implementer
+lineage:
+  requirement_revision: 1
+  task_ref: docs/requirements/PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1.md
+  task_blob_sha_before: 568d21c6d47fae821a84108cd05e3eca02191b91
+  task_blob_sha_after: 011d337f20e3e9ff63c77fd1cea7ecb8627be83a
+  plan_ref: docs/plans/PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1-plan.md
+  plan_revision: 2
+  plan_blob_sha: e65fceea327df2820719d0feb74759e733955efb
+  review_ref: docs/reviews/PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1-plan-review-r2.md
+  review_blob_sha: 949edfab4773f3b94f88befa5e16b00ee214db23
+  slice_set_ref: docs/execution/PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1-slices.yaml
+  slice_set_blob_sha: b0231a9fe75a3a2ef2bbc83127dc79443533edc1
+repository_reality:
+  canonical_main: e7064c9bf4fcd15bdb6f5a2678414210c01d1c00
+  reviewed_task_head: 32cd89bdc3430596409329c676e18d36dddffc1b
+  transition_state_head_before_receipt: 6c1e0b117c4dbdbab5f8687f7e21bad0ac7a40ce
+  transport_pr: 13
+  transport_branch: task/host-runtime-repository-materialization-scoped-publication-bridge-v1
+  pr012_state: done_merged_canonical
+  pr011_state: open_implementation_s03_blocked
+  local_canonical_checkout:
+    branch: main
+    head: e7064c9bf4fcd15bdb6f5a2678414210c01d1c00
+    clean: false
+    observed_dirty_files: 24
+    observed_diff_class: line_ending_only_lf_to_crlf
+review_findings:
+  PR013_R1_F1_repository_transaction_scope_admission: closed
+  PR013_R1_F2_materialization_execution_identity: closed
+  PR013_R1_F3_publication_content_handoff_credential_boundary: closed
+  PR013_R1_F4_acceptance_downstream_authority_mixed_into_implementation: closed
+slice_compilation:
+  slice_count: 4
+  ordered_slices: [S01, S02, S03, S04]
+  current_slice: S01
+  current_slice_state: pending
+  one_slice_per_explicit_execute_invocation: true
+implementation_entry_guard:
+  canonical_checkout_main_clean_required: true
+  current_local_checkout_satisfies_guard: false
+  current_dirty_state_authorizes_cleanup: false
+  action_if_still_dirty_at_execute: block_before_material_mutation
+  overlap_revalidation_pr011_required_before_each_slice: true
+  host_firewall_sandbox_audit_revalidation_required: true
+acceptance_boundary:
+  live_agent_activation_is_implementation_slice: false
+  downstream_chatgpt_control_shell_requires_separate_authority: true
+postconditions:
+  requirement_ready: true
+  plan_approved: true
+  implementation_authorized: true
+  acceptance_approved: false
+  completion_verified: false
+  task_stage_read_back: implementation
+  next_expected_actor_read_back: implementer
+  current_slice_read_back: S01
+  current_slice_state_read_back: pending
+  review_read_back_verified: true
+  slice_set_read_back_verified: true
+  task_read_back_verified: true
+  product_implementation_executed: false
+  live_agent_mutated: false
+  hub_modified: false
+  downstream_task_executed: false
+completion_guard:
+  status: satisfied_after_receipt_readback
+  canonical_next_action: "#开发执行 PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1"
