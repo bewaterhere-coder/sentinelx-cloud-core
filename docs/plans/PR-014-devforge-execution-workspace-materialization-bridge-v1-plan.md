@@ -1,128 +1,347 @@
-# PR-014-devforge-execution-workspace-materialization-bridge-v1 — Plan R1
+# PR-014-devforge-execution-workspace-materialization-bridge-v1 — Plan R2
 
-Requirement: `docs/requirements/PR-014-devforge-execution-workspace-materialization-bridge-v1.md`, revision 1.
+Requirement: `docs/requirements/PR-014-devforge-execution-workspace-materialization-bridge-v1.md`, revision 1 (unchanged).
 
 Status: **Pending Plan Review**. No implementation authorization.
+
+Supersedes Plan R1 and remediates Plan Review R1 findings F1–F3 without changing Requirement semantics.
 
 ## 0. Planning baseline
 
 ```yaml
 sentinelx_main: e7064c9bf4fcd15bdb6f5a2678414210c01d1c00
 devforge_runtime:
-  version: 2.40.0
-  revision: 1dc76ed0bcc1a70a2c5a860cd7a99aedd5d7820a
+  version: 2.41.0
+  revision: 902a9d71b425753928c01904be1e9b2b60f0c3fe
   workflow: project_development@2.1
 pr012_explicit_execution_profile: merged_canonical
 pr010_canonical_repository_firewall: merged_canonical
 pr013_repository_materialization_publication:
   pr: 13
   state: open_draft
-  stage: plan_review
-  observed_head: 32cd89bdc3430596409329c676e18d36dddffc1b
-  relationship: overlapping_upstream_candidate
+  stage: implementation
+  current_slice: S01_pending
+  observed_head: 1d98951425b148f04d3981830996b2da24d97a60
+  current_changed_files: task_artifacts_only
+  relationship: canonical_dependency_owner_for_repository_transaction_materializer_and_operation_closure
+local_canonical_checkout:
+  path_role: canonical_source
+  branch: main
+  observed_head: e7064c9bf4fcd15bdb6f5a2678414210c01d1c00
+  dirty: true
+  note: observed_existing_line_ending_drift_only; no cleanup authorized by this Plan
 ```
 
-Canonical Host evidence observed during requirement review:
+Canonical Host evidence remains:
 
 ```text
 locations.devforge_workspace_root = D:\coco
 mutation_execution.workspace_root = D:\SentinelX\mutation-workspaces
 ```
 
-These values are Host execution evidence only. No machine path is persisted as project/runtime truth by this Plan.
+These concrete values are Host execution evidence only and are not persisted as Project or Runtime truth.
 
 ## 1. Planning objective
 
-Implement a SentinelX provider bridge that makes one DevForge execution workspace identity mean the same thing across:
+Implement only the DevForge-specific placement/receipt/root-binding bridge that is missing between the existing DevForge placement contract and SentinelX Host authority.
+
+Target composition:
 
 ```text
-DevForge layout/placement admission
-SentinelX Host placement
-MutationScopeStore authority
-Windows mutation sandbox activation
-repository materialization
-execute_scoped workspace resolution
-materialization receipt
-scope terminalization
+semantic repository + Task/Run/Attempt identity
+        ↓
+resolve effective Host DevForge workspace binding
+        ↓
+derive deterministic DevForge execution target
+        ↓
+persist + read back provider-owned Placement Receipt
+        ↓
+compare optional caller/DevForge placement evidence
+        ↓
+provider-owned DevForge sandbox-root binding
+        ↓
+provision/revalidate existing Host mutation scope
+        ↓
+[only after canonical PR-013 dependency exists]
+repository_transaction_v1 materialization + operation closure
+        ↓
+DevForge materialization receipt projection
+        ↓
+same-workspace scoped execution
+        ↓
+explicit terminalization/readback
 ```
 
-The bridge must not create a second executor, second scope store, second audit journal, second canonical-firewall implementation, or caller-controlled clone path.
+PR-014 does **not** own a repository source broker, repository transaction state machine, AppContainer source materializer, operation-closure primitive, credential transport, publication broker or CAS push path. Those shared primitives are owned by PR-013 and may be consumed only after they are canonical on `main`.
 
-The bridge is intentionally narrower than PR-013 publication work. PR-014 owns DevForge placement/materialization conformance and evidence; PR-013 owns general repository transaction acquisition/publication semantics. Equivalent repository-source materializer primitives that become canonical through PR-013 are reused, not copied.
+## 2. Plan Review R1 remediation summary
 
-## 2. Architecture decisions
+| Finding | R2 disposition |
+| --- | --- |
+| F1 Placement Receipt lifecycle | Closed in Plan: provider persists and read-backs an immutable DevForge-compatible Placement Receipt before any mutation scope mint/revalidation; optional caller evidence is comparison-only. |
+| F2 DevForge sandbox root not physically admitted | Closed in Plan: add a provider-generated `DevforgeSandboxRootBinding` derived only from the current Host binding; Windows sandbox root selection becomes provider-strategy based, legacy root remains default, and no caller root/path is accepted. |
+| F3 duplicate PR-013 fallback | Closed in Plan: all repository source acquisition/materializer and multi-operation transaction/operation-closure implementation fallback clauses are removed. S02/S03 have an explicit canonical dependency gate and stop before mutation while PR-013 is not merged/verified. |
 
-### D1 — Separate DevForge placement from legacy scoped-script placement without duplicating Host truth
+## 3. Architecture decisions
 
-Introduce a focused provider placement resolver for DevForge execution workspaces. Recommended new module:
+### D1 — Host-derived DevForge placement remains distinct from legacy mutation placement
+
+Add a focused module:
 
 ```text
 src/sentinelx_core/devforge_workspace_placement.py
 ```
 
-It consumes existing `Policy.locations` and existing `RepositoryIdentity` / semantic lineage primitives.
+It consumes only provider-owned current Host configuration plus normalized repository/semantic identity.
 
-Authoritative input:
+Authoritative Host input:
 
 ```text
-policy.locations["devforge_workspace_root"].path
+Policy.locations["devforge_workspace_root"].path
 ```
 
 Derived layout:
 
 ```text
-workspace_root = bound Host value
+workspace_root = current Host binding
 execution_root = workspace_root / "workspaces"
 exact_workspace = execution_root / owner / repository / task_or_evolution_id / attempt_id
 ```
 
 Rules:
 
-1. location missing/malformed/relative/platform-incompatible → fail closed;
-2. owner/repository/scope/attempt must each be one safe path segment;
-3. exact workspace must be a strict descendant of `execution_root`;
-4. provider independently derives the path; caller path evidence never changes it;
-5. existing `mutation_execution.workspace_root` remains unchanged for legacy/non-DevForge scoped mutation;
-6. no Host config rewrite is part of this Task.
+1. Host binding missing, malformed, relative or platform-incompatible → fail closed;
+2. owner/repository/scope/attempt are validated as single path segments;
+3. `execution_root` must be a strict descendant of `workspace_root`;
+4. `exact_workspace` must be a strict descendant of `execution_root`;
+5. caller paths never alter derivation;
+6. `mutation_execution.workspace_root` remains the legacy/non-DevForge scoped-mutation root and is not rewritten;
+7. no Host configuration mutation is part of this Task.
 
-The resolver emits a provider-owned `DevforgeWorkspacePlacementEvidence` (exact naming may vary) containing stable placement policy/version, normalized root/target evidence, repository identity digest and semantic/attempt binding.
+### D2 — Durable Placement Receipt is created and read back before scope minting
 
-### D2 — Scope binding gains an explicit DevForge placement strategy, not caller path authority
+This closes F1.
 
-Current `MutationScopeStore.provision_scope()` derives placement through the generic digest-based `resolve_placement()` path. PR-014 must allow a provider-selected placement strategy for the DevForge bridge while preserving all existing scope uniqueness/lifecycle semantics.
-
-Preferred design:
+Add an evidence-only provider store, conceptually:
 
 ```text
-MutationScopeStore
-  └─ receives provider-generated PlacementEvidence
-     OR a provider-owned placement resolver callback/strategy
+DevforgeWorkspacePlacementReceiptStore
 ```
 
-The caller must never submit `exact_workspace`, placement digest, operation-class set or placement strategy directly.
+The store lives under provider-owned SentinelX state, not under the repository, canonical checkout or execution workspace. Its location is provider configuration/internal state and is never caller input.
 
-The scope record continues to seal:
+A Placement Receipt contains equivalent immutable fields:
+
+```yaml
+receipt_id: <provider opaque id>
+policy: host-workspace-layout-repository-placement-v1
+state: PlacementResolved
+operation: execution_workspace
+repository: <normalized owner/repository>
+repository_identity_digest: <digest>
+semantic_identity_digest: <digest>
+placement_role: execution_root
+workspace_root_digest: <digest>
+execution_root_digest: <digest>
+target_path: <Host evidence only>
+target_digest: <digest>
+placement_compliant: true
+binding_generation: <provider generation>
+issued_at: <timestamp>
+```
+
+Exact sequence is frozen:
 
 ```text
+resolve current Host binding
+→ derive deterministic target
+→ validate strict-descendant and protected/canonical separation
+→ persist Placement Receipt atomically
+→ read back exact receipt id/digests/target
+→ compare optional DevForge/caller placement evidence
+→ only then provision/revalidate Host mutation scope
+```
+
+Caller placement evidence remains optional and non-authoritative. A mismatch returns `WorkspacePlacementMismatch` before scope creation. A stale provider receipt whose Host-binding generation/digest no longer matches current Host reality cannot be reused.
+
+Same exact semantic/Attempt retry may return the already persisted current Placement Receipt when all sealed inputs and current Host binding still match; it does not create a competing receipt/authority.
+
+### D3 — Provider-owned DevForge sandbox-root binding
+
+This closes the first half of F2.
+
+Add an internal immutable binding produced from the current Placement Receipt, conceptually:
+
+```yaml
+DevforgeSandboxRootBinding:
+  kind: devforge_execution_root_v1
+  placement_receipt_ref: <provider receipt id>
+  host_binding_digest: <digest>
+  execution_root: <provider-private Host path>
+  execution_root_digest: <digest>
+  exact_workspace_digest: <digest>
+```
+
+The model-facing request cannot supply this object, its kind, root, digest or strategy.
+
+For DevForge bridge operations the provider recomputes the root from current `locations.devforge_workspace_root/workspaces`, verifies it against the current Placement Receipt and emits the binding internally.
+
+For legacy `scoped_script` operations no DevForge binding exists; the effective sandbox root remains `mutation_execution.workspace_root` exactly as on canonical `main`.
+
+### D4 — Mutation scope seals placement strategy/root identity without caller authority
+
+The existing `MutationScopeStore` remains the only scope authority store.
+
+R2 permits a narrow provider-only placement seam so the store can consume a provider-generated placement/binding object rather than always calling the legacy digest placement resolver itself.
+
+The scope immutable authority must seal equivalent facts:
+
+```text
+placement_kind = devforge_execution_workspace_v1 | legacy_mutation_workspace_v1
+placement_receipt_ref (DevForge only)
 repository_identity_digest
 semantic_identity_digest
-placement_ref / generation / policy digest
-exact_workspace / digest
-protected inventory
-Attempt key
-unique lease key
-allowed operation classes
+exact_workspace / exact_workspace_digest
+sandbox_root_digest
+placement policy/generation digest
+protected/canonical inventory digest
+Attempt/lease identity
+provider-fixed operation authority
 ```
 
-A DevForge bridge scope is minted only after the provider has independently derived the current DevForge exact workspace. Revalidation recomputes the same provider strategy and fails on drift.
+The raw sandbox root is not accepted from caller JSON and need not be exposed as mutable scope input. Revalidation recomputes the provider strategy from current Host configuration and requires the same receipt/root/workspace digests.
 
-Legacy `scoped_script` scope provisioning remains byte/behavior compatible and continues using its existing placement path unless an explicit existing canonical provider contract says otherwise.
+For repository transaction operation classes and multi-operation scope state, PR-014 consumes canonical PR-013 semantics only after the dependency gate in D8 is satisfied.
 
-### D3 — Distinguish DevForge workspace purpose from SentinelX operation class
+### D5 — Windows sandbox root admission is provider-strategy based
 
-Add a bridge-specific provider admission object rather than overloading existing `purpose=scoped_script` with values such as `implementation` or `release`.
+This closes the physical contradiction identified by F2.
 
-The model-facing action may use a request shape equivalent to:
+Refactor `WindowsMutationSandbox` root resolution into an internal provider boundary equivalent to:
+
+```python
+resolve_sandbox_root(record, provider_binding) -> Path
+```
+
+Selection rules:
+
+```text
+legacy scope
+  → root = policy.mutation_execution.workspace_root
+
+DevForge bridge scope
+  → require provider-generated DevforgeSandboxRootBinding
+  → independently re-resolve current Host DevForge execution_root
+  → require root digest == scope/root binding digest
+  → require exact workspace strict descendant of that root
+```
+
+`WindowsMutationSandbox.activate()` receives only the provider-resolved binding through trusted internal composition. No model/local-api field carries a root/path selector.
+
+Before activation:
+
+- the selected execution root must exist and be a directory; PR-014 does not create/repair role roots or rewrite Host configuration;
+- root/final paths are canonicalized and checked for reparse/junction escape;
+- root must remain a strict descendant of the current Host workspace root;
+- exact workspace must not overlap a canonical repository root or protected root;
+- canonical-repository firewall classification remains determinate/non-canonical for the target.
+
+If the Host role root is absent or unsafe, return a bounded provider-unavailable/root-admission result. Do not fall back to `mutation_execution.workspace_root`.
+
+### D6 — Parent traversal and ACL authority stay operation-scoped
+
+This closes the second half of F2.
+
+The AppContainer must not receive general read/list/write access to `D:\coco`, repository roots, user profile or canonical checkout.
+
+The Windows implementation must first test whether the scope-derived AppContainer identity can traverse the already configured ancestor chain to the exact workspace while remaining unable to enumerate/read/write sibling protected roots.
+
+If existing ACLs are insufficient, the provider may install only operation-scoped **traverse-only** ancestor authority needed to reach the DevForge execution root/exact workspace, subject to all of these constraints:
+
+1. grant is provider-generated after durable operation START, never caller-requested;
+2. grant is non-inheriting or otherwise bounded so it cannot become read/list/write authority for sibling trees;
+3. no ACE grants repository/canonical root read/write authority;
+4. previous ACL state is captured before mutation;
+5. operation closure restores the exact previous ACL state;
+6. restoration is read back before the operation can be considered closed;
+7. cleanup failure revokes/terminalizes fail closed.
+
+If a platform cannot provide traverse without broader authority, DevForge-root sandbox activation fails closed. V1 must not widen `file_ops`, command allowlists, canonical ACLs or Host policy as a workaround.
+
+Physical negative tests must prove the sandbox process cannot enumerate/read `repository_root`/canonical siblings and cannot select another root despite having access to its exact execution workspace.
+
+### D7 — Exact source identity remains immutable
+
+`source_binding.expected_commit` remains a mandatory full Git commit SHA.
+
+Successful materialization must prove:
+
+```text
+materialized repository identity == admitted repository identity
+workspace HEAD == expected_commit
+```
+
+Logical ref/branch is only comparison/transport evidence.
+
+PR-014 does not implement source acquisition. It passes exact source identity into the canonical repository transaction materializer only after D8 is satisfied.
+
+### D8 — PR-013 is a hard canonical dependency for shared transaction/materializer primitives
+
+This closes F3.
+
+Current observed PR-013 state at remediation:
+
+```yaml
+pr: 13
+head: 1d98951425b148f04d3981830996b2da24d97a60
+stage: implementation
+current_slice: S01_pending
+plan_revision: 2
+plan_approved: true
+implementation_authorized: true
+```
+
+PR-013 owns and is the only planned implementation source for:
+
+```text
+repository_transaction_v1 admission/state
+provider source acquisition/snapshot
+AppContainer/Job repository materializer
+repository_execute multi-operation transaction lifecycle
+operation closure between bounded operations
+source credential boundary
+publication freezer/broker/CAS (not consumed by PR-014 except shared transaction state where unavoidable)
+```
+
+PR-014 is forbidden to implement substitutes for those primitives.
+
+#### Canonical dependency evidence required before S02/S03
+
+All must be true and read back immediately before the slice mutates product code:
+
+```text
+PR #13 is merged into sentinelx-cloud-core/main
+PR-013 canonical Task state reports acceptance_approved=true and completion_verified=true
+current main contains the accepted PR-013 merge/integration result
+current main exposes repository_transaction_v1 + provider materializer + operation-closure semantics required by the slice
+legacy scoped_script compatibility evidence from PR-013 remains canonical
+no Requirement/ownership change transfers those primitives away from PR-013
+```
+
+If any item is false:
+
+```text
+S02/S03 admission = BlockedByDependency
+product mutation for that slice = forbidden
+```
+
+No generic fallback, local reimplementation, cherry-pick/copy of unmerged PR-013 code, permission widening or provider switch is permitted.
+
+If PR-013 is cancelled or materially changes ownership, PR-014 must return to Plan remediation/re-review before scope can expand.
+
+### D9 — Bounded materialization action is an adapter over canonical transaction capability
+
+After D8 is satisfied, add/complete the DevForge-facing structured action, conceptually:
 
 ```yaml
 materialize_workspace:
@@ -131,95 +350,44 @@ materialize_workspace:
   workspace_purpose: implementation | fixing | verification | repair | resume | evolution | release | finalization
   source_binding:
     expected_commit: <full sha>
-    transport_ref: <optional evidence>
-  placement_expectation: <optional compare-only DevForge placement evidence>
+    transport_ref: <optional comparison evidence>
+  placement_expectation: <optional compare-only evidence>
 ```
 
-No Host path is accepted as mutation authority.
+Forbidden schema fields include any caller-controlled destination/root/cache/staging/operation-class/credential/Git-argv field.
 
-Provider-side fixed operation classes are derived internally. PR-014 must not expose an `allowed_operation_classes` request field.
-
-If PR-013 lands a canonical `repository_transaction_v1` scope lifecycle before implementation, compose that lifecycle and add only the DevForge placement/receipt bridge. If it has not landed, PR-014 may define only the minimum internal transaction abstraction needed for materialization and repeated scoped execution, but MUST NOT implement publication or copy PR-013 unmerged source-broker code.
-
-### D4 — Exact source commit is mandatory
-
-`source_binding.expected_commit` is a full immutable Git commit SHA.
-
-The source-materialization provider must prove:
+The action composes:
 
 ```text
-normalized materialized repository identity == admitted repository identity
-workspace HEAD == expected_commit
+provider Placement Receipt readback
+→ DevforgeSandboxRootBinding
+→ canonical repository_transaction_v1 provision/revalidation
+→ durable audit START
+→ canonical PR-013 materializer
+→ repository/HEAD/isolation readback
+→ DevForge materialization receipt projection
 ```
 
-A logical transport ref may be comparison evidence but is not sufficient source identity.
+No new executor or source broker is created.
 
-Source acquisition must use one canonical provider-owned repository materializer/broker. No materialization path may invoke generic `sentinel_git clone(dest=caller_path)`.
+### D10 — Materialization receipt projection
 
-### D5 — Repository materializer composition boundary
-
-PR-014 defines an internal provider seam such as:
-
-```python
-RepositoryWorkspaceMaterializer.materialize(
-    *, scope_record, repository, expected_commit, audit_context
-) -> MaterializationReadback
-```
-
-The seam is narrow and authority-bearing inputs are provider-owned.
-
-Implementation priority:
-
-1. if a repository source broker/materializer from PR-013 (or equivalent) is merged to current `main`, adapt/reuse it;
-2. otherwise implement only the smallest safe canonical provider component necessary for source acquisition/materialization, but do not duplicate publication, CAS push or credential-broker functionality owned by PR-013;
-3. if safe authenticated/private source acquisition cannot be composed without importing unmerged PR-013 work, return/retain a provider-unavailable boundary and do not broaden credentials/permissions.
-
-Any service-side source snapshot/capsule path remains provider-private and caller-invisible.
-
-### D6 — Materialization sequence reuses scope + audit + sandbox
-
-The model-facing `materialize_workspace` action sequence is frozen:
-
-```text
-validate closed request schema
-→ normalize repository + lineage + purpose + expected_commit
-→ derive current DevForge Host placement
-→ compare placement expectation if supplied
-→ canonical-firewall classify source/target roles
-→ provision or resolve exact current bridge scope
-→ revalidate exact scope + placement
-→ construct provider-owned materialization audit intent
-→ persist durable OPERATION_STARTED
-→ activate existing mutation sandbox for exact workspace
-→ invoke canonical repository materializer under admitted provider boundary
-→ verify repository root / identity / exact HEAD
-→ verify workspace final path / no reparse escape / isolation
-→ verify canonical checkout source-role evidence remains unchanged
-→ persist materialization FINISH/readback evidence
-→ persist provider transaction/materialization state
-→ return bounded materialization receipt
-```
-
-The first material mutation must occur after durable START.
-
-If current `WindowsMutationSandbox.activate()` creates the exact workspace directory during activation, that remains conforming only because activation is already bound to durable START; repository-source hydration still occurs after activation and remains scoped to the exact workspace.
-
-### D7 — Bounded materialization receipt is provider evidence, not new DevForge truth
-
-Add a receipt projection returned through `devforge_runtime` containing equivalent fields:
+Successful DevForge projection contains equivalent evidence:
 
 ```yaml
 state: Materialized
 capability: development.execution_workspace_materialize
 placement_policy: host-workspace-layout-repository-placement-v1
 placement_role: execution_root
-placement_ref: <provider ref>
+placement_receipt_ref: <provider ref>
+placement_ref: <scope/provider ref>
 target_path: <Host evidence only>
-repository_identity: <normalized>
-source_commit: <exact sha>
+repository_identity: <verified normalized identity>
+source_commit: <verified exact commit>
 scope_ref:
 scope_generation:
 scope_digest:
+sandbox_root_digest:
 audit_operation_id:
 scope_revalidated: true
 audit_started: true
@@ -233,57 +401,38 @@ generic_bypass_used: false
 operator_unrestricted_used: false
 ```
 
-Concrete paths are returned only as execution evidence. No registry/project binding persistence is performed by SentinelX.
+Concrete paths remain execution evidence only and are never persisted into Project Binding/Development Project Registry truth.
 
-### D8 — Multi-operation Attempt scope is explicit and provider-owned
+### D11 — Same-workspace lifecycle consumes canonical PR-013 operation closure
 
-The bridge must support:
+PR-014 does not implement a retained-scope lifecycle.
 
-```text
-materialized
-→ executing
-→ materialized/executed-current
-→ executing
-→ ...
-→ terminalizing
-→ terminal
-```
+After D8 is satisfied, the DevForge adapter binds later `execute_scoped` requests to the same canonical repository transaction/workspace and consumes PR-013 operation closure semantics.
 
-The exact state names may reuse a canonical transaction state machine that lands from PR-013.
+Required behavior:
 
-The provider, not the caller, decides whether a successful operation closes only its Job/process/temporary ACL authority while retaining the Attempt transaction.
+- transaction must already be materialized/current;
+- `execute_scoped` retains explicit `execution_profile=scoped_mutation`;
+- relative cwd remains beneath the sealed repository workspace and cannot target provider control state or another workspace;
+- each successful non-terminal operation must close Job/PID/temporary ACL authority before another operation begins;
+- provider transaction remains current only according to canonical transaction state;
+- nonzero/timeout/containment/audit/cleanup failure follows canonical fail-closed transaction behavior;
+- legacy non-transaction `scoped_script` continues its one-shot auto-terminalization unchanged.
 
-Requirements:
-
-- each successful non-terminal execution fully closes process/Job/operation-specific authority;
-- scope/transaction stays current only when provider state explicitly admits another bounded operation;
-- no generic `keep_open` / `cleanup=false` flag grants retained scope authority;
-- nonzero execution, timeout, containment/audit cleanup failure may revoke/terminalize fail closed;
-- TTL, placement generation drift and explicit revocation remain authoritative;
-- legacy one-shot `scoped_script` still auto-terminalizes exactly as before.
-
-`execute_scoped` must resolve cwd/workspace from the same provider transaction; caller relative cwd remains bounded beneath that workspace and cannot retarget to another workspace/control namespace.
-
-### D9 — Explicit terminalization and readback
-
-At terminal Attempt boundary:
+At the real Attempt boundary:
 
 ```text
-revalidate current bridge scope
-→ terminalize_scope
-→ inspect/read back exact same scope + generation
+revalidate same transaction/scope
+→ explicit terminalize_scope
+→ read back exact same scope + generation
 → require terminal | revoked | expired
 ```
 
-No completion receipt is valid while the scope reads `provisioned` or `active`.
+### D12 — Canonical source checkout preservation
 
-A terminal Attempt cannot mint fresh authority through retry with the same Attempt identity; existing Attempt-index guard remains authoritative.
+No step in PR-014 switches, resets, cleans, fetches into, checks out into, or uses the canonical checkout as a mutation workspace.
 
-### D10 — Canonical checkout preservation evidence
-
-PR-014 does not modify canonical checkout state to create an execution workspace.
-
-Acceptance/physical integration must snapshot canonical source evidence before and after:
+Acceptance must compare before/after:
 
 ```text
 repository identity
@@ -292,210 +441,164 @@ HEAD
 working-tree cleanliness
 ```
 
-Expected:
+A concurrent external canonical change invalidates preservation proof rather than being silently attributed to the bridge.
+
+The current local canonical checkout is observed dirty from pre-existing line-ending drift. This Plan does not authorize cleanup/reset. Any implementation entry contract that requires canonical `main + clean` remains a hard guard and may block execution until independently resolved.
+
+## 4. Planned change surface
+
+### Independently owned by PR-014
 
 ```text
-branch unchanged
-HEAD unchanged unless an independently authorized external canonical update occurred
-working tree clean
-workspace path != canonical checkout
+src/sentinelx_core/devforge_workspace_placement.py                 # new: derivation + Placement Receipt evidence/store
+src/sentinelx_core/devforge_workspace_materialization.py           # DevForge adapter/coordinator only
+src/sentinelx_core/mutation_scope.py                               # narrow provider-generated placement/root binding seam only if required
+src/sentinelx_core/windows_mutation_sandbox.py                     # provider root-selection/traverse binding seam only
+focused placement/root/scope tests
 ```
 
-If canonical state changes concurrently, the test must distinguish external drift from bridge mutation and fail closed rather than claim preservation without evidence.
-
-### D11 — PR-013 overlap admission is mandatory
-
-Current PR-013 observed head:
+### Allowed only after D8 canonical dependency gate
 
 ```text
-32cd89bdc3430596409329c676e18d36dddffc1b
+src/sentinelx_core/handlers/devforge_runtime.py                    # materialize_workspace projection/routing
+src/sentinelx_core/handlers/scoped_script.py                       # DevForge transaction lookup/composition only
+canonical repository-transaction/materializer modules              # consume/adapt; do not duplicate
+repository transaction tests                                       # adapter/regression only
+Windows physical materialization/lifecycle tests
 ```
 
-Before Plan approval, and again before every implementation Slice that touches any overlapping surface, re-read:
+### Explicitly not owned by PR-014
 
 ```text
-PR-013 state/head
-current changed-file set
-current Requirement/Plan disposition
-current main
-```
-
-Likely overlap surfaces include:
-
-```text
-src/sentinelx_core/handlers/devforge_runtime.py
-src/sentinelx_core/mutation_scope.py
-src/sentinelx_core/mutation_placement.py
-src/sentinelx_core/handlers/scoped_script.py
-src/sentinelx_core/windows_mutation_sandbox.py
-repository transaction/source materializer modules if created
-related tests
-```
-
-Rules:
-
-- unmerged PR-013 implementation cannot be copied/cherry-picked as authority;
-- equivalent merged primitives must be reused;
-- direct incompatible overlap stops before product mutation and requires Plan remediation/review rather than ad-hoc conflict resolution;
-- PR-014 does not add publication/push scope merely because PR-013 contains it.
-
-## 3. Planned change surface
-
-Expected primary product files, subject to Plan Review overlap reconciliation:
-
-```text
-src/sentinelx_core/devforge_workspace_placement.py                 # new
-src/sentinelx_core/devforge_workspace_materialization.py           # new bridge/coordinator
-src/sentinelx_core/handlers/devforge_runtime.py                    # bounded action/schema/projection
-src/sentinelx_core/mutation_scope.py                               # provider-selected placement/transaction binding seam
-src/sentinelx_core/mutation_placement.py                           # shared evidence/refactor only if required
-src/sentinelx_core/handlers/scoped_script.py                       # transaction composition only; preserve legacy path
-src/sentinelx_core/windows_mutation_sandbox.py                     # operation closure/composition only if canonical primitive absent
-```
-
-Possible canonical repository-materializer adapter files depend on the exact current main after PR-013 reconciliation. Do not pre-create a duplicate generic source broker.
-
-Tests:
-
-```text
-tests/test_devforge_workspace_placement.py                         # new
-tests/test_devforge_workspace_materialization.py                   # new
-tests/test_devforge_runtime_local_api.py                           # schema/routing regressions
-tests/test_mutation_scope.py                                       # exact placement/same-attempt authority
-tests/test_scoped_script_execution.py                              # same-workspace vs legacy one-shot behavior
-Windows physical sandbox/materialization integration tests         # exact existing suite location resolved at implementation
-```
-
-Documentation:
-
-```text
-docs/devforge-execution-workspace-materialization-bridge-v1.md
-config.example.windows.yaml                                       # documentation only if bridge binding/readiness needs explanation
+provider source snapshot/broker implementation
+AppContainer repository-source materializer implementation
+repository transaction state machine implementation
+operation-closure primitive implementation
+publication freezer/broker/CAS push
+credential transport implementation
 ```
 
 No DevForge repository file is changed by this Task.
 
-## 4. Slice proposal
+## 5. Slice proposal
 
-The canonical Execution Slice Set is created only after Plan approval. Proposed implementation partition:
+Execution Slice Set is compiled only after Plan approval.
 
-### S01 — DevForge Host placement alignment + scope binding seam
+### S01 — DevForge Placement Receipt + provider sandbox-root binding
+
+Independent of PR-013 product implementation.
 
 Owns:
 
-- Host `devforge_workspace_root` resolution/validation;
-- deterministic `<root>/workspaces/<owner>/<repo>/<scope>/<attempt>` derivation;
-- compare-only placement expectation;
-- provider-selected scope placement seam and revalidation;
-- no filesystem materialization yet;
-- focused unit tests and legacy placement regressions.
+- resolve/validate `devforge_workspace_root`;
+- derive deterministic DevForge execution target;
+- persist/read back provider-owned Placement Receipt before any scope minting;
+- optional external placement comparison;
+- define provider-generated DevForge sandbox-root binding and digest;
+- add the narrow provider-placement/root selection seams needed by scope/sandbox composition without repository materialization;
+- prove legacy placement/root behavior unchanged;
+- no repository source hydration and no multi-operation transaction implementation.
+
+Entry guard:
+
+- re-read current SentinelX main and PR-013 state/head/files;
+- if PR-013 has begun overlapping product mutation on the exact S01 lines, stop before conflicting mutation and reconcile/repair Plan rather than overwrite;
+- local canonical checkout mutation remains forbidden; use admitted execution workspace/provider path only.
 
 Exit evidence:
 
 ```text
-same semantic identity → deterministic DevForge path
-caller path cannot influence authority
-placement mismatch/escape fails closed
-scope record exact_workspace == provider-derived DevForge target
-legacy scoped_script placement unaffected
+Placement Receipt exists + readback before scope-admission seam is invoked
+same semantic identity/current Host binding → same target receipt
+caller path cannot retarget receipt/root
+DevForge root != legacy mutation root and both strategies remain distinct
+DevForge exact workspace validates beneath provider-selected execution root
+alternate/caller-selected root is rejected
+legacy scoped_script continues to resolve policy.workspace_root
+no repository transaction/materializer/operation-closure code added
 ```
 
-### S02 — Bounded materialization action + exact-source/readback receipt
+### S02 — DevForge materialization adapter over canonical PR-013 capability
 
-Owns:
+Hard dependency: D8 satisfied.
 
-- `devforge_runtime.materialize_workspace` closed schema/describe/call routing;
-- exact `expected_commit` source binding;
-- composition with canonical repository materializer/broker;
-- durable audit START before materialization;
-- exact sandbox/workspace source hydration;
-- exact HEAD/repository/isolation readback;
-- materialization state + receipt;
-- retry/non-empty/mismatch/partial-failure behavior.
+Owns only:
 
-Admission condition:
+- bind current Placement Receipt/root binding into canonical repository transaction scope;
+- expose bounded `materialize_workspace` schema/routing;
+- pass immutable expected commit to canonical materializer;
+- compose audit/sandbox/materialization/readback evidence;
+- project DevForge materialization receipt;
+- retry/readback adapter behavior.
 
-```text
-re-read PR-013 exact state/head/files
-reuse any equivalent canonical materializer that has reached main
-no unmerged-code import
-```
+Before any S02 product mutation, persist/read back dependency evidence that PR-013 is merged/accepted/completed and that required canonical primitives are present on current main.
 
-If no safe canonical source materializer can satisfy S02 without duplicating an active PR-013 implementation or widening credential authority, S02 stops `BlockedByContext/Tool` before product mutation beyond independently valid non-overlap work.
+If dependency is not satisfied, S02 stops `BlockedByDependency` with no substitute implementation.
 
-### S03 — Same-workspace bounded execution lifecycle + terminal proof
+### S03 — Same-workspace execution + explicit terminal proof adapter
 
-Owns:
+Hard dependency: D8 satisfied and S02 complete.
 
-- bridge transaction lookup from `execute_scoped`;
-- provider-selected retained-operation closure;
-- multiple successful bounded executions on same exact workspace;
-- relative cwd confinement;
-- fail-closed failure/timeout/cleanup behavior;
-- explicit terminalization/readback;
-- legacy one-shot scoped-script compatibility regressions;
-- Windows physical end-to-end fixture evidence.
+Owns only:
 
-Live Agent installation/restart is **not** an implementation Slice. Physical accepted-build activation and model-facing live proof belong to Acceptance after implementation evidence is complete.
+- resolve canonical repository transaction from DevForge workspace binding;
+- route repeated bounded `execute_scoped` operations to the same sealed workspace;
+- consume canonical operation closure between successful operations;
+- enforce relative cwd confinement;
+- explicit terminalize/readback at Attempt boundary;
+- regression proof that legacy one-shot `scoped_script` still terminalizes after one operation;
+- Windows physical integration fixture using canonical PR-013 primitives.
 
-## 5. Verification strategy
+PR-014 must not implement operation closure itself.
 
-### Static/schema/unit
+Live Agent installation/restart remains Acceptance-owned, not an implementation slice.
 
-- Host binding absent/relative/malformed/platform-invalid;
-- safe segment validation (`.`, `..`, separators, drive/UNC injection);
-- deterministic path derivation and strict descendant proof;
-- caller placement mismatch/path injection rejected;
-- source commit full-SHA validation;
-- `local_api.describe` contains bounded materialization schema and no destination-path authority;
-- operation-class authority cannot be caller-selected;
-- legacy `provision_scope(purpose=scoped_script)` / `execute_scoped` contract unchanged.
+## 6. Verification strategy
 
-### Scope/audit/sandbox integration
+### S01 placement/receipt/root
 
-- exact workspace stored in scope and read back;
-- generation/TTL/Attempt/semantic drift rejects;
-- audit START identity exactly matches current scope/workspace;
-- no workspace write on START failure;
-- AppContainer/Job/ACL closure evidence remains complete;
-- terminal scope cannot reactivate.
+- missing/relative/malformed Host binding fails closed;
+- segment traversal/separator/drive/UNC injection rejected;
+- deterministic target and strict-descendant proof;
+- provider Placement Receipt persisted/read back before scope seam call;
+- stale Host-binding generation invalidates receipt reuse;
+- optional external placement mismatch rejects before scope;
+- DevForge sandbox root derived only from Host binding/receipt;
+- caller root/path/strategy fields are absent from schema and internal APIs exposed to model;
+- alternate root binding fails;
+- reparse/final-path checks anchor to DevForge execution root;
+- parent traversal authority does not permit sibling canonical/repository enumeration/read/write;
+- transient traversal ACL, if required, restores exact prior ACL and is read back;
+- legacy sandbox root behavior remains unchanged.
 
-### Repository materialization
+### S02 materialization adapter
 
-- benign repository exact commit materializes and `rev-parse HEAD` equals admitted SHA;
-- wrong SHA/ref/repository fails;
-- pre-existing unbound non-empty target fails;
-- partial source acquisition/materialization never returns Materialized;
-- verified retry returns/readbacks prior durable result without duplicate creation;
-- credential unavailable has explicit bounded result and no fallback.
+- exact dependency receipt for canonical PR-013 is present before adapter mutation;
+- `local_api.describe` exposes bounded materialization schema without destination/root/credential/operation-class fields;
+- scope exact workspace/root/placement receipt are mutually consistent;
+- durable audit START precedes exact workspace materialization;
+- wrong repo/ref/SHA, stale/foreign scope, placement/root mismatch reject;
+- exact materialized repository HEAD equals expected commit;
+- pre-existing unbound/non-empty workspace fails closed;
+- verified retry converges by durable readback and does not repeat materialization;
+- credential unavailable returns bounded failure with no generic fallback;
+- canonical checkout before/after is unchanged by bridge operation.
 
-### Canonical preservation
-
-Before/after readback on fixture canonical checkout:
-
-```text
-branch
-HEAD
-working tree clean
-repository identity
-```
-
-No bridge-created state may require branch switching/reset/cleaning in canonical checkout.
-
-### Multi-operation lifecycle
+### S03 lifecycle
 
 - materialize once;
-- execute bounded operation A successfully;
-- verify process/Job/temporary authority closed while transaction remains current;
-- execute bounded operation B successfully on same exact workspace;
+- execute bounded operation A;
+- read back zero operation process/Job/temporary ACL authority while transaction remains current;
+- execute bounded operation B against the same workspace/scope/transaction;
+- caller cannot retarget cwd/workspace;
 - explicit terminalize;
-- terminal readback exact same scope/generation;
-- third execution attempt rejected;
-- legacy one-shot scope still terminal after one execution.
+- read back same scope/generation terminal/revoked/expired;
+- third execution rejected;
+- legacy one-shot scoped-script still terminal after one execution.
 
 ### Regression suites
 
-Run focused existing suites for:
+Focused regressions include:
 
 ```text
 mutation placement/scope
@@ -504,62 +607,88 @@ pre-execution audit lineage
 canonical repository firewall
 devforge_runtime local_api
 scoped script execution
-user-scoped Git/source transport where reused
+PR-012 explicit execution profile
+canonical PR-013 repository transaction/materialization/operation closure once dependency exists
 ```
 
-Plus repository generic CI/macOS checks appropriate to changed surfaces. Windows-only physical behavior must not be accepted from mocks alone.
+Windows-only physical claims require real Windows evidence; mocks are supporting evidence only.
 
-## 6. Acceptance boundary
+## 7. Acceptance boundary
 
-Implementation completion proves code/tests on exact Task transport.
+Implementation completion proves code/tests on exact Task transport only.
 
-Acceptance additionally requires an independently activated accepted Agent build and real connected-host evidence:
+Acceptance additionally requires an independently activated accepted Agent candidate and connected-host evidence:
 
 ```text
-local_api.describe shows materialize_workspace
+local_api.describe shows bounded materialize_workspace
 Host binding resolves current DevForge root
+provider Placement Receipt is durably read back before scope authority
 harmless fixture materializes at exact DevForge path
 HEAD/repository/isolation readback passes
+sandbox cannot read/list canonical sibling roots
 canonical source before/after unchanged
 2 sequential same-workspace scoped operations pass
+operation authority is closed between operations
 explicit terminalization/readback passes
-path injection/stale scope/wrong SHA/audit failure negatives fail before success
+path/root injection, stale scope, wrong SHA, audit failure negatives fail closed
 ```
 
-No production Hub change is required; the existing `sentinel_local_api` envelope remains transport.
+No production Hub change is required; existing `sentinel_local_api` transport remains the boundary.
 
-## 7. Safety / non-goals
+## 8. Safety / non-goals
 
-Forbidden during this Task:
+Forbidden:
 
-- generic shell/exec fallback;
-- direct caller-selected `sentinel_git clone` as materialization authority;
-- direct worktree creation bypass;
+- caller-selected sandbox/workspace root;
+- generic shell/exec/script fallback;
+- generic `sentinel_git clone(dest=...)` as DevForge authority;
+- direct worktree bypass;
 - `operator_unrestricted`;
-- file_ops/command allowlist widening;
+- `file_ops`/command allowlist widening;
+- permanent or broad ACL grant to `D:\coco`, canonical repository roots or user profile;
 - canonical checkout mutation/repair;
 - credential exposure to AppContainer/model;
 - provider switch;
-- production Hub source/deploy mutation;
-- publication/push/CAS features already owned by PR-013;
-- copying unmerged PR-013 implementation;
+- production Hub mutation;
+- source broker/materializer implementation owned by PR-013;
+- repository transaction/operation-closure implementation owned by PR-013;
+- publication/push/CAS implementation;
+- copy/cherry-pick of unmerged PR-013 code as implementation authority;
 - cross-repository DevForge contract mutation;
 - live Agent restart/install inside implementation slices;
 - independent Codex requirement;
 - new Development Gate/stage.
 
-## 8. Plan review questions
+## 9. Requirement traceability
 
-Plan Review must specifically decide whether R1 is implementable with the ownership split above and must reject if any of these remain unresolved:
+| Requirement | Planned coverage |
+| --- | --- |
+| R1–R3 | D1–D4, S01 placement/receipt/root binding |
+| R4 | D7, S02 exact source adapter |
+| R5 | D4 + D8 canonical transaction dependency + S02 |
+| R6 | D9/S02 audit-before-materialization composition |
+| R7–R8 | D8–D9; canonical PR-013 materializer only |
+| R9 | D10/S02 receipt projection |
+| R10–R11 | D11/S03 canonical operation closure + terminalization |
+| R12 | D12 + S02/S03 preservation evidence |
+| R13 | S02 durable retry/readback |
+| R14 | D8 + Safety/Non-goals |
+| AC1/AC3/AC5/AC7/AC8 | S01/S02 physical and durable evidence |
+| AC6/AC9/AC10/AC13 | S02/S03 only after PR-013 canonical dependency |
+| AC14 | global Plan invariants |
 
-1. Does the proposed provider-selected placement seam preserve existing legacy scope revalidation/generation semantics without caller path authority?
-2. Is `locations.devforge_workspace_root` consumed as Host configuration without silently rewriting `mutation_execution.workspace_root`?
-3. Is the PR-013 overlap boundary concrete enough to prevent duplicate repository source materializer / transaction implementation?
-4. Does multi-operation scope closure leave zero process/ACL authority between operations while preserving the Attempt transaction?
-5. Can exact source materialization satisfy private-source security without credential exposure or fallback?
-6. Are Acceptance physical proofs sufficient to distinguish provider materialization from a mock-only technical proxy?
+## 10. Plan review questions
 
-Canonical next action after this Plan is persisted and read back:
+Plan Review R2 must reject if any of these remain unresolved:
+
+1. Is the provider-owned Placement Receipt persisted/read back before scope minting, rather than merely projected after materialization?
+2. Does the DevForge sandbox-root strategy physically permit `<devforge_workspace_root>/workspaces/...` while preserving legacy `mutation_execution.workspace_root` behavior?
+3. Can parent traversal be provided/verified without giving the AppContainer sibling canonical/repository read/write authority or requiring Host policy/allowlist widening?
+4. Does S01 remain independently owned by PR-014 while S02/S03 hard-stop until canonical PR-013 transaction/materializer/operation-closure evidence exists?
+5. Is there any remaining clause allowing PR-014 to implement a substitute source broker/materializer or retained-scope transaction lifecycle? If yes, reject.
+6. Are Windows physical tests sufficient to prove root confinement, receipt-before-scope ordering and no mock-only substitution?
+
+Canonical next action after this remediated Plan is persisted and read back:
 
 ```text
 #开发评审 PR-014-devforge-execution-workspace-materialization-bridge-v1
