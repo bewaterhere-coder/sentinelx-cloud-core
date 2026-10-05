@@ -1,0 +1,100 @@
+schema_version: "1.0"
+kind: devforge_slice_completion_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1
+slice_id: S01
+source_command: "#开发执行 PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1"
+runtime:
+  repository: bewaterhere-coder/DevForge
+  version: 2.42.0
+  revision: 74ad7ce0a3ea345478f37f1c79bfdf8fb0ec8f4f
+lineage:
+  requirement_revision: 1
+  plan_revision: 2
+  plan_blob_sha: e65fceea327df2820719d0feb74759e733955efb
+  review_blob_sha: 949edfab4773f3b94f88befa5e16b00ee214db23
+  checkpoint_ref: docs/checkpoints/PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1-s01-completion-20261005.yaml
+  checkpoint_blob_sha: d51e7ba385abcf5bf6ffa30329c9297af7191fc4
+  slice_set_ref: docs/execution/PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1-slices.yaml
+  slice_set_blob_sha_after: 4c9524fbd1111f68b2551e9fad50a872e3783913
+  task_ref: docs/requirements/PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1.md
+  task_blob_sha_after: f1b6bfe378efccc4a4e786d34999267a5eab2747
+implementation:
+  exact_verified_product_candidate: 25ea1d8ebf2f3755f9d19ff1bb0af098ce6eb2e6
+  disposition: completed_verified
+  product_semantics:
+    - path-free purpose-discriminated repository transaction admission
+    - provider-owned exact ref/SHA verification before transaction scope creation
+    - fixed repository_materialize/repository_execute/repository_publish authority composition
+    - durable one-transaction-per-Attempt identity and exact retry convergence
+    - authority-changing same-Attempt conflict rejection
+    - exact repository/lineage/scope-generation inspection
+    - direct mutation_scope bypass prevention
+    - legacy scoped_script and PR-012 explicit execution-profile compatibility
+verification:
+  focused_windows:
+    workflow: pr013-s01-verification
+    run_id: 37297723819
+    job_id: 111722817108
+    conclusion: success
+    tests_passed: 129
+    tests_failed: 0
+  generic_ci:
+    run_id: 37297723795
+    conclusion: success
+  macos_agent:
+    run_id: 37297723910
+    conclusion: success
+  pr010_security_regressions:
+    s01_run_id: 37297723882
+    s01_result: success
+    s02_run_id: 37297723780
+    s02_result: success
+    s03_run_id: 37297723772
+    s03_result: success
+    s04_run_id: 37297724005
+    s04_result: success
+    s05_run_id: 37297723919
+    s05_result: success
+  initial_harness_failure:
+    run_id: 37297520156
+    classification: verification_environment_only
+    evidence: 113 tests passed; 16 existing async tests could not execute because pytest-asyncio was omitted
+    remediation_verified: true
+freshness:
+  canonical_main: e7064c9bf4fcd15bdb6f5a2678414210c01d1c00
+  canonical_local_checkout_main_clean: true
+  task_branch_behind_main: 0
+  devforge_main_unchanged_during_completion: true
+  pr011:
+    state: open
+    merged: false
+    current_slice: S03
+    disposition: blocked
+    observed_head: 9ef4e05279a1c35bdf12eef21736ea89d8b2b76d
+  host_security:
+    canonical_repository_mutation_firewall_v1_verified: true
+    host_mutation_sandbox_v1_verified: true
+    pre_execution_audit_lineage_v1_verified: true
+safety:
+  canonical_checkout_mutated: false
+  host_local_product_mutation_used_for_s01_bootstrap: false
+  source_hydration_executed: false
+  repository_execution_executed: false
+  publication_executed: false
+  live_agent_mutated: false
+  hub_modified: false
+  downstream_task_executed: false
+  generic_fallback_used: false
+  operator_unrestricted_used: false
+  permission_or_allowlist_widened: false
+postconditions:
+  task_stage: implementation
+  s01_state: completed
+  s02_state: pending
+  current_slice: S02
+  all_implementation_slices_complete: false
+  acceptance_approved: false
+  completion_verified: false
+  one_slice_limit_respected: true
+  canonical_next_action: "#开发执行 PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1"
