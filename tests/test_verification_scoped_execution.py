@@ -235,41 +235,48 @@ def test_profiled_scoped_execution_runs_real_node_npm_offline_and_bounds_evidenc
     monkeypatch.setenv("HTTPS_PROXY", "http://127.0.0.1:9")
 
     content = r"""
-$ErrorActionPreference='Stop'
-$progress=[IO.Path]::Combine([Environment]::CurrentDirectory,'progress.txt')
-function Mark([string]$Text) { [IO.File]::AppendAllText($progress,$Text + [Environment]::NewLine,[Text.Encoding]::UTF8) }
-[IO.File]::WriteAllText($progress,'start' + [Environment]::NewLine,[Text.Encoding]::UTF8)
-if ($env:GITHUB_TOKEN) { throw 'credential leaked' }
-if ($env:HTTPS_PROXY) { throw 'proxy leaked' }
-if ($env:NPM_CONFIG_OFFLINE -ne 'true') { throw 'npm offline mode missing' }
-Mark 'before-node-version'
-node --version
-Mark 'after-node-version'
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-Mark 'before-npm-version'
-npm --version
-Mark 'after-npm-version'
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-Mark 'before-npm-ci'
-npm ci --offline
-Mark 'after-npm-ci'
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-Mark 'before-npm-check'
-npm run check
-Mark 'after-npm-check'
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-Mark 'before-cache-miss'
-npm view sentinelx-pr011-s03-package-that-does-not-exist-6f43b9 version --offline *> $null
-Mark 'after-cache-miss'
-if ($LASTEXITCODE -eq 0) { throw 'offline cache miss unexpectedly succeeded' }
-Write-Output 'cache-miss-offline-ok'
-exit 0
+import os
+import subprocess
+
+progress = os.path.join(os.getcwd(), "progress.txt")
+def mark(text):
+    with open(progress, "a", encoding="utf-8") as handle:
+        handle.write(text + "\n")
+
+mark("start")
+if os.environ.get("GITHUB_TOKEN"):
+    raise SystemExit("credential leaked")
+if os.environ.get("HTTPS_PROXY"):
+    raise SystemExit("proxy leaked")
+if os.environ.get("NPM_CONFIG_OFFLINE") != "true":
+    raise SystemExit("npm offline mode missing")
+if os.environ.get("NODE_DISABLE_COMPILE_CACHE") != "1":
+    raise SystemExit("node compile cache must be provider-disabled")
+
+def run(label, command, *, expect_success=True):
+    mark("before-" + label)
+    completed = subprocess.run(command, cwd=os.getcwd(), capture_output=True, text=True, timeout=30)
+    mark("after-" + label)
+    output = (completed.stdout + "\n" + completed.stderr).strip()
+    if output:
+        print(output)
+    if expect_success and completed.returncode != 0:
+        raise SystemExit(completed.returncode)
+    if not expect_success and completed.returncode == 0:
+        raise SystemExit("offline cache miss unexpectedly succeeded")
+
+run("node-version", ["cmd.exe", "/d", "/s", "/c", "node --version"])
+run("npm-version", ["cmd.exe", "/d", "/s", "/c", "npm --version"])
+run("npm-ci", ["cmd.exe", "/d", "/s", "/c", "npm ci --offline"])
+run("npm-check", ["cmd.exe", "/d", "/s", "/c", "npm run check"])
+run("cache-miss", ["cmd.exe", "/d", "/s", "/c", "npm view sentinelx-pr011-s03-package-that-does-not-exist-6f43b9 version --offline"], expect_success=False)
+print("cache-miss-offline-ok")
 """
     result = _run(
         handler,
         context,
         {
-            "interpreter": "pwsh",
+            "interpreter": "python3",
             "content": content,
             "timeout": 120,
             "cleanup": True,
