@@ -2,9 +2,10 @@
 
 The S02 runtime keeps endpoint discovery side-effect free: source/materializer
 state is created only when ``materialize_repository`` is actually invoked.
-It also gives Windows ACL readback an explicit write-bit test and reuses the
+It also gives Windows ACL readback an explicit write-bit test, reuses the
 already-verified scoped-script environment sanitizer for AppContainer process
-creation instead of inventing a second Windows environment contract.
+creation, and persists nonterminal operation-authority closure after the OS
+sandbox has proved cleanup.
 """
 from __future__ import annotations
 
@@ -28,7 +29,7 @@ from sentinelx_core.repository_materialization import (
 from sentinelx_core.repository_transaction import RepositoryTransactionStore
 
 
-# Windows FILE/standard/generic write capabilities.  Do not include READ_CONTROL
+# Windows FILE/standard/generic write capabilities. Do not include READ_CONTROL
 # or SYNCHRONIZE: icacls ``(R)`` legitimately carries those standard rights.
 _SNAPSHOT_WRITE_MASK = (
     0x00000002  # FILE_WRITE_DATA
@@ -67,11 +68,43 @@ def _runtime_materializer_environment(workspace: Path) -> dict[str, str]:
     )
 
 
+_original_build_mutation_sandbox = _materialization.build_mutation_sandbox
+
+
+def _runtime_build_mutation_sandbox(*args, **kwargs):
+    """Persist operation cleanup without terminalizing the repository scope.
+
+    ``WindowsMutationSandbox._cleanup_runtime`` deliberately proves and removes
+    OS authority but leaves the durable scope marker untouched because normal
+    one-shot callers complete that transition inside ``terminalize_scope``.
+    Repository materialization is different: S02 must leave the scope current
+    for S03 while proving zero Job/PID/AppContainer write authority.  Reuse the
+    existing store primitive that can clear the marker only after Job/PID
+    bindings are already empty; legacy scoped-script composition is untouched.
+    """
+    sandbox = _original_build_mutation_sandbox(*args, **kwargs)
+    original_cleanup = sandbox._cleanup_runtime
+
+    def cleanup_and_persist(record):
+        closure = original_cleanup(record)
+        if record.sandbox_identity:
+            sandbox.scope_store.clear_sandbox_write_authority(
+                record.scope_id,
+                record.generation,
+                record.sandbox_identity,
+            )
+        return closure
+
+    sandbox._cleanup_runtime = cleanup_and_persist
+    return sandbox
+
+
 # RepositoryMaterializationService resolves these helpers through its module
-# globals.  Runtime composition narrows only S02-specific behavior while
+# globals. Runtime composition narrows only S02-specific behavior while
 # preserving the canonical generic Windows sandbox and scoped-script paths.
 _materialization._grant_snapshot_read = _runtime_grant_snapshot_read
 _materialization._materializer_environment = _runtime_materializer_environment
+_materialization.build_mutation_sandbox = _runtime_build_mutation_sandbox
 
 
 class RuntimeRepositorySourceSnapshotStore(RepositorySourceSnapshotStore):
