@@ -63,13 +63,13 @@ postconditions:
   implementation_authorized: true
   acceptance_approved: false
   completion_verified: false
-  task_stage_read_back_target: implementation
-  next_expected_actor_read_back_target: implementer
-  current_slice_read_back_target: S04
-  slice_set_read_back_required: true
-  review_read_back_required: true
-  task_read_back_required: true
+  task_stage_read_back: implementation
+  next_expected_actor_read_back: implementer
+  current_slice_read_back: S04
+  slice_set_read_back_verified: true
+  review_read_back_verified: true
+  task_read_back_verified: true
   product_implementation_executed: false
 completion_guard:
-  status: pending_final_readback
-  canonical_next_action_after_verified_readback: "#开发执行 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
+  status: satisfied_after_readback
+  canonical_next_action: "#开发执行 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
