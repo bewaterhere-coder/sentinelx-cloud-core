@@ -244,23 +244,28 @@ def _runner_argv(
         else ""
     )
     if materialize:
+        runner_text = "".join(
+            (
+                f"param([string]$Target,[string]$Stdout,[string]$Stderr,[string]$Result{cwd_parameter},[Parameter(ValueFromRemainingArguments=$true)][string[]]$ScriptArgs)\n",
+                "$ErrorActionPreference='Stop'\n",
+                "$utf8=New-Object System.Text.UTF8Encoding($false)\n",
+                "try {\n",
+                cwd_binding,
+                " $text=[System.IO.File]::ReadAllText($Target,$utf8); $sb=[ScriptBlock]::Create($text)\n",
+                " $global:LASTEXITCODE=$null; $records=& $sb @ScriptArgs *>&1; $ok=$?\n",
+                " if($null -ne $LASTEXITCODE){$code=[int]$LASTEXITCODE}elseif($ok){$code=0}else{$code=1}\n",
+                " $records|Out-File -LiteralPath $Stdout -Encoding utf8\n",
+                " [System.IO.File]::WriteAllText($Stderr,'',$utf8)\n",
+                " [System.IO.File]::WriteAllText($Result,[string]$code,[System.Text.Encoding]::ASCII)\n",
+                " exit $code\n",
+                "} catch {\n",
+                " [System.IO.File]::WriteAllText($Stderr,($_|Out-String),$utf8)\n",
+                " [System.IO.File]::WriteAllText($Result,'1',[System.Text.Encoding]::ASCII); exit 1\n",
+                "}\n",
+            )
+        )
         runner.write_text(
-            f"param([string]$Target,[string]$Stdout,[string]$Stderr,[string]$Result{cwd_parameter},[Parameter(ValueFromRemainingArguments=$true)][string[]]$ScriptArgs)\n"
-        "$ErrorActionPreference='Stop'\n"
-        "$utf8=New-Object System.Text.UTF8Encoding($false)\n"
-        "try {\n"
-        + cwd_binding
-        " $text=[System.IO.File]::ReadAllText($Target,$utf8); $sb=[ScriptBlock]::Create($text)\n"
-        " $global:LASTEXITCODE=$null; $records=& $sb @ScriptArgs *>&1; $ok=$?\n"
-        " if($null -ne $LASTEXITCODE){$code=[int]$LASTEXITCODE}elseif($ok){$code=0}else{$code=1}\n"
-        " $records|Out-File -LiteralPath $Stdout -Encoding utf8\n"
-        " [System.IO.File]::WriteAllText($Stderr,'',$utf8)\n"
-        " [System.IO.File]::WriteAllText($Result,[string]$code,[System.Text.Encoding]::ASCII)\n"
-        " exit $code\n"
-        "} catch {\n"
-        " [System.IO.File]::WriteAllText($Stderr,($_|Out-String),$utf8)\n"
-        " [System.IO.File]::WriteAllText($Result,'1',[System.Text.Encoding]::ASCII); exit 1\n"
-        "}\n",
+            runner_text,
             encoding="utf-8-sig" if interpreter == "powershell" else "utf-8",
         )
     return [
