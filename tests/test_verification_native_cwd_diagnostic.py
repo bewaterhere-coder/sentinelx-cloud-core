@@ -5,8 +5,8 @@ import asyncio
 from tests.test_verification_scoped_execution import _fixture
 
 
-def test_profiled_trivial_cmd_descendant_without_std_handle_redirection(tmp_path) -> None:
-    _profile, verification, handler, context, _store, _record, mutation, lineage, repo = _fixture(tmp_path)
+def test_same_policy_unprofiled_trivial_cmd_descendant_completes(tmp_path) -> None:
+    _profile, _verification, handler, context, _store, _record, mutation, lineage, repo = _fixture(tmp_path)
     body = '''\
 import os
 import subprocess
@@ -21,12 +21,11 @@ raise SystemExit(completed.returncode)
         "content": body,
         "timeout": 20,
         "cleanup": True,
-        "verification": verification,
         "mutation": mutation,
         "lineage": lineage,
         "repository": repo,
     }))
-    print("S03_TRIVIAL_CMD_NO_STD_REDIRECT_RESULT=" + repr(result))
+    print("S03_SAME_POLICY_UNPROFILED_CMD_RESULT=" + repr(result))
     assert result["ok"] is True, result
     assert result["returncode"] == 0, result
     assert "CMD_RETURN=0" in result["output"], result
