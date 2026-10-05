@@ -22,6 +22,14 @@ repository_baseline:
   reviewed_task_head: 32cd89bdc3430596409329c676e18d36dddffc1b
   pr012_state: done_merged_canonical
   pr011_state: open_implementation_s03_blocked
+execution_progress:
+  last_execution_runtime_version: 2.42.0
+  last_execution_runtime_revision: 74ad7ce0a3ea345478f37f1c79bfdf8fb0ec8f4f
+  current_slice: S02
+  current_slice_state: pending
+  completed_slices: [S01]
+  exact_s01_product_candidate: 25ea1d8ebf2f3755f9d19ff1bb0af098ce6eb2e6
+  s01_checkpoint: docs/checkpoints/PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1-s01-completion-20261005.yaml
 implementation_entry_guard:
   required_before_each_slice: true
   rules:
@@ -75,7 +83,15 @@ slices:
         - no source hydration, Git publication, live Agent restart or downstream Task side effect occurs in S01
     checkpoint:
       required: true
-    state: pending
+      ref: docs/checkpoints/PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1-s01-completion-20261005.yaml
+    verification_result:
+      focused_windows_run_id: 37297723819
+      focused_windows_tests_passed: 129
+      generic_ci: success
+      macos_agent: success
+      pr010_s01_s05: success
+    exact_product_candidate: 25ea1d8ebf2f3755f9d19ff1bb0af098ce6eb2e6
+    state: completed
 
   - slice_id: S02
     objective: Implement exact source acquisition into immutable provider-owned storage and materialize repository source bytes only through the scope-derived Windows AppContainer/Job materializer into the exact Host workspace.
