@@ -22,10 +22,21 @@ ProfiledScriptHandler = Callable[[RequestContext, dict[str, Any]], Awaitable[dic
 ScopedExecuteAdapter = Callable[[RequestContext, dict[str, Any]], Awaitable[dict[str, Any]]]
 
 _EXECUTE_SCOPED_ALLOWED = frozenset(
-    {"scope_ref", "repository", "lineage", "interpreter", "content", "args", "cwd", "env", "timeout"}
+    {
+        "scope_ref",
+        "repository",
+        "lineage",
+        "execution_profile",
+        "interpreter",
+        "content",
+        "args",
+        "cwd",
+        "env",
+        "timeout",
+    }
 )
 _EXECUTE_SCOPED_REQUIRED = frozenset(
-    {"scope_ref", "repository", "lineage", "interpreter", "content"}
+    {"scope_ref", "repository", "lineage", "execution_profile", "interpreter", "content"}
 )
 _EXECUTE_SCOPED_RESULT_FIELDS = (
     "ok",
@@ -123,11 +134,12 @@ _ACTION_SCHEMAS = {
     ),
     # S07 provides the real adapter; S06 only freezes admission/schema semantics.
     "execute_scoped": _schema(
-        ["scope_ref", "repository", "lineage", "interpreter", "content"],
+        ["scope_ref", "repository", "lineage", "execution_profile", "interpreter", "content"],
         {
             "scope_ref": _SCOPE_REF_SCHEMA,
             "repository": _REPOSITORY_SCHEMA,
             "lineage": _LINEAGE_SCHEMA,
+            "execution_profile": {"type": "string", "const": "scoped_mutation"},
             "interpreter": {"enum": ["python3", "powershell", "pwsh"]},
             "content": {"type": "string"},
             "args": {"type": "array", "items": {"type": "string"}},
@@ -182,6 +194,15 @@ def make_devforge_execute_scoped_adapter(
         if missing:
             raise HandlerError("invalid_payload", f"missing execute_scoped fields: {missing}")
 
+        execution_profile = params["execution_profile"]
+        if not isinstance(execution_profile, str):
+            raise HandlerError("invalid_payload", "execution_profile must be a string")
+        if execution_profile != "scoped_mutation":
+            raise HandlerError(
+                "invalid_payload",
+                f"unsupported execution_profile: {execution_profile}",
+            )
+
         scope_ref = _strict_mapping(
             params,
             "scope_ref",
@@ -202,7 +223,7 @@ def make_devforge_execute_scoped_adapter(
         )
 
         payload: dict[str, Any] = {
-            "execution_profile": "scoped_mutation",
+            "execution_profile": execution_profile,
             "cleanup": True,
             "mutation": {"scope_ref": scope_ref},
             "repository": repository,
@@ -220,7 +241,7 @@ def make_devforge_execute_scoped_adapter(
                 "scoped_mutation_failed",
                 "scoped executor returned an invalid result",
             )
-        if result.get("execution_profile") != "scoped_mutation":
+        if result.get("execution_profile") != execution_profile:
             raise HandlerError(
                 "scoped_mutation_failed",
                 "scoped executor returned an unexpected execution profile",

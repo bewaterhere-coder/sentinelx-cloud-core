@@ -480,6 +480,7 @@ def test_devforge_execute_scoped_adapter_reuses_existing_executor(tmp_path: Path
                 "scope_ref": mutation["scope_ref"],
                 "repository": repo,
                 "lineage": lineage,
+                "execution_profile": "scoped_mutation",
                 "interpreter": "python3",
                 "content": "print('devforge-s07-marker')",
                 "timeout": 30,

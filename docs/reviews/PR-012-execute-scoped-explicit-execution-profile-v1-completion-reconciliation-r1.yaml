@@ -1,0 +1,36 @@
+schema_version: "1.0"
+kind: devforge_post_merge_completion_reconciliation
+project_id: sentinelx-cloud-core
+task_id: PR-012-execute-scoped-explicit-execution-profile-v1
+source_command: "#开发完成 PR-012-execute-scoped-explicit-execution-profile-v1"
+reconciliation:
+  cause: workflow_state_mismatch
+  original_integration_ref: github-pr:12@29c724fdc6faed28018d60e61250d3f21b02c1b3
+  implementation_replayed: false
+  original_task_identity_preserved: true
+  replacement_development_pr_created: false
+  repaired_artifacts:
+    - docs/requirements/PR-012-execute-scoped-explicit-execution-profile-v1.md
+    - docs/plans/PR-012-execute-scoped-explicit-execution-profile-v1-plan.md
+    - docs/reviews/PR-012-execute-scoped-explicit-execution-profile-v1-integration-receipt-r1.yaml
+    - docs/reviews/PR-012-execute-scoped-explicit-execution-profile-v1-completion-r1.md
+    - docs/checkpoints/PR-012-execute-scoped-explicit-execution-profile-v1-completed-20261005.yaml
+  read_back_verified: false
+integration:
+  pr_number: 12
+  merged: true
+  merge_commit: 29c724fdc6faed28018d60e61250d3f21b02c1b3
+  canonical_main_before_reconciliation: 29c724fdc6faed28018d60e61250d3f21b02c1b3
+completion:
+  target_stage: done
+  target_completion_verified: true
+  next_expected_actor: none
+safety:
+  product_code_modified_by_reconciliation: false
+  hub_modified: false
+  canonical_local_checkout_mutated: false
+  implementation_replayed: false
+  new_development_task_created: false
+freshness:
+  generated_date: "2026-10-05"
+  merge_finalization_contract: v1.1
