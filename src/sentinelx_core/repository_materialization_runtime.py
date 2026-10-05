@@ -2,8 +2,9 @@
 
 The S02 runtime keeps endpoint discovery side-effect free: source/materializer
 state is created only when ``materialize_repository`` is actually invoked.
-It also gives Windows ACL readback an explicit write-bit test rather than
-mistaking READ_CONTROL/SYNCHRONIZE standard rights for write authority.
+It also gives Windows ACL readback an explicit write-bit test and reuses the
+already-verified scoped-script environment sanitizer for AppContainer process
+creation instead of inventing a second Windows environment contract.
 """
 from __future__ import annotations
 
@@ -11,8 +12,10 @@ from pathlib import Path
 from typing import Any
 
 import sentinelx_core.repository_materialization as _materialization
+from sentinelx_core.handlers.scoped_script import _scoped_environment
 from sentinelx_core.policy import Policy
 from sentinelx_core.repository_materialization import (
+    CONTROL_NAMESPACE,
     GitRepositorySourceBroker,
     RepositoryMaterializationFailed,
     RepositoryMaterializationProvider,
@@ -49,10 +52,26 @@ def _runtime_grant_snapshot_read(snapshot_root: Path, broker_sid: str, app_sid: 
         raise RepositoryMaterializationFailed("snapshot grant contains write authority")
 
 
-# RepositoryMaterializationService resolves this helper through its module
-# global.  Runtime composition narrows the ACL classifier without altering the
-# sealed snapshot verifier or the generic Windows sandbox implementation.
+def _runtime_materializer_environment(workspace: Path) -> dict[str, str]:
+    # Reuse the canonical scoped environment baseline: retain Windows process
+    # prerequisites, strip Git/SSH/token/profile authority, and place HOME /
+    # APPDATA inside the provider control namespace so source-tree readback
+    # never mistakes runtime profile bytes for repository content.
+    control_root = workspace / CONTROL_NAMESPACE
+    return _scoped_environment(
+        {
+            "PYTHONNOUSERSITE": "1",
+            "PYTHONDONTWRITEBYTECODE": "1",
+        },
+        control_root,
+    )
+
+
+# RepositoryMaterializationService resolves these helpers through its module
+# globals.  Runtime composition narrows only S02-specific behavior while
+# preserving the canonical generic Windows sandbox and scoped-script paths.
 _materialization._grant_snapshot_read = _runtime_grant_snapshot_read
+_materialization._materializer_environment = _runtime_materializer_environment
 
 
 class RuntimeRepositorySourceSnapshotStore(RepositorySourceSnapshotStore):
