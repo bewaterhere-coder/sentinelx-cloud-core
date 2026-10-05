@@ -193,9 +193,11 @@ def build_verification_environment(
     npm_prefix = runtime_root / "npm-prefix"
     for path in (runtime_root, home, temp, roaming, npm_prefix):
         path.mkdir(parents=True, exist_ok=True)
-    npmrc = runtime_root / "empty.npmrc"
-    if not npmrc.exists():
-        npmrc.write_text("", encoding="utf-8")
+    user_npmrc = runtime_root / "user.npmrc"
+    global_npmrc = runtime_root / "global.npmrc"
+    for npmrc in (user_npmrc, global_npmrc):
+        if not npmrc.exists():
+            npmrc.write_text("", encoding="utf-8")
 
     system_root = Path(os.environ.get("SystemRoot", r"C:\Windows"))
     safe_path = os.pathsep.join(
@@ -225,13 +227,14 @@ def build_verification_environment(
             "LOCALAPPDATA": str(local),
             "TEMP": str(temp),
             "TMP": str(temp),
+            "NODE_DISABLE_COMPILE_CACHE": "1",
             "NPM_CONFIG_CACHE": str(materialized.npm_cache_root.resolve(strict=True)),
             "NPM_CONFIG_OFFLINE": "true",
             "NPM_CONFIG_AUDIT": "false",
             "NPM_CONFIG_FUND": "false",
             "NPM_CONFIG_UPDATE_NOTIFIER": "false",
-            "NPM_CONFIG_USERCONFIG": str(npmrc),
-            "NPM_CONFIG_GLOBALCONFIG": str(npmrc),
+            "NPM_CONFIG_USERCONFIG": str(user_npmrc),
+            "NPM_CONFIG_GLOBALCONFIG": str(global_npmrc),
             "NPM_CONFIG_PREFIX": str(npm_prefix),
             "COREPACK_ENABLE_DOWNLOAD_PROMPT": "0",
             "CI": "true",
