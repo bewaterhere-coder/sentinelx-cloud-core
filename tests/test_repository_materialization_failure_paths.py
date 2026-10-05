@@ -219,7 +219,6 @@ def test_source_acquisition_failure_revokes_scope_and_terminalizes_transaction(t
         semantic,
         scope_id=scope.scope_id,
         generation=scope.generation,
-        require_current_scope=False,
     )
     assert persisted.transaction_id == transaction.transaction_id
     assert persisted.state == "terminal"
