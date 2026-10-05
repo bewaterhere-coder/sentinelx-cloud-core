@@ -21,22 +21,27 @@ def test_profiled_single_root_distinguishes_direct_node_from_shim(tmp_path: Path
     diagnostic = f'''\
 import json
 import os
+from pathlib import Path
 import subprocess
 
 DIRECT_NODE = {direct_node!r}
 COMSPEC = os.environ.get("COMSPEC", r"C:\\Windows\\System32\\cmd.exe")
+PROBE_ROOT = Path(os.environ["TEMP"])
 
 def probe(name, argv):
     observed = {{"argv0": argv[0], "timeout": False, "returncode": None}}
+    stdout_path = PROBE_ROOT / ("probe-" + name.lower() + ".stdout")
+    stderr_path = PROBE_ROOT / ("probe-" + name.lower() + ".stderr")
     try:
-        completed = subprocess.run(
-            argv,
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            timeout=10,
-            check=False,
-        )
+        with stdout_path.open("wb") as stdout, stderr_path.open("wb") as stderr:
+            completed = subprocess.run(
+                argv,
+                stdin=None,
+                stdout=stdout,
+                stderr=stderr,
+                timeout=10,
+                check=False,
+            )
         observed["returncode"] = completed.returncode
     except subprocess.TimeoutExpired:
         observed["timeout"] = True
