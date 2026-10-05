@@ -24,12 +24,14 @@ repository_baseline:
   pr011_state: open_implementation_s03_blocked
 execution_progress:
   last_execution_runtime_version: 2.42.0
-  last_execution_runtime_revision: 74ad7ce0a3ea345478f37f1c79bfdf8fb0ec8f4f
-  current_slice: S02
+  last_execution_runtime_revision: e9eb7a5d695bbd7db57cc64edbae7c8712dd9f46
+  current_slice: S03
   current_slice_state: pending
-  completed_slices: [S01]
+  completed_slices: [S01, S02]
   exact_s01_product_candidate: 25ea1d8ebf2f3755f9d19ff1bb0af098ce6eb2e6
   s01_checkpoint: docs/checkpoints/PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1-s01-completion-20261005.yaml
+  exact_s02_product_candidate: cda502a9c6cce0ea29d3a74894b5b1cbf78148fd
+  s02_checkpoint: docs/checkpoints/PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1-s02-completion-20261005.yaml
 implementation_entry_guard:
   required_before_each_slice: true
   rules:
@@ -124,7 +126,25 @@ slices:
         - revalidate PR-011 overlap before mutation; do not import its unmerged implementation
     checkpoint:
       required: true
-    state: pending
+      ref: docs/checkpoints/PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1-s02-completion-20261005.yaml
+    verification_result:
+      focused_windows_run_id: 37302754155
+      focused_windows_tests_passed: 117
+      focused_windows_tests_failed: 0
+      generic_ci_run_id: 37302753889
+      generic_ci: success
+      macos_agent_run_id: 37302753774
+      macos_agent: success
+      pr013_s01_run_id: 37302754165
+      pr013_s01: success
+      pr010_s01_run_id: 37302753893
+      pr010_s02_run_id: 37302754161
+      pr010_s03_run_id: 37302754173
+      pr010_s04_run_id: 37302753810
+      pr010_s05_run_id: 37302753876
+      pr010_s01_s05: success
+    exact_product_candidate: cda502a9c6cce0ea29d3a74894b5b1cbf78148fd
+    state: completed
 
   - slice_id: S03
     objective: Reuse the canonical execute_scoped path for repository_execute, add bounded operation closure without weakening legacy one-shot terminalization, and freeze exact post-execution publication content into an immutable provider-owned capsule.
