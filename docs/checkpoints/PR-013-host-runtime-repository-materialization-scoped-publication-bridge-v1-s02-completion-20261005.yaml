@@ -1,0 +1,137 @@
+schema_version: "1.1"
+kind: devforge_slice_completion_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1
+slice_id: S02
+source_command: "#开发执行 PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1"
+runtime:
+  repository: bewaterhere-coder/DevForge
+  version: 2.42.0
+  revision: e9eb7a5d695bbd7db57cc64edbae7c8712dd9f46
+  workflow: project_development
+  workflow_version: "2.1"
+plan_lineage:
+  requirement_revision: 1
+  plan_revision: 2
+  plan_blob_sha: e65fceea327df2820719d0feb74759e733955efb
+  review_blob_sha: 949edfab4773f3b94f88befa5e16b00ee214db23
+transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 13
+  branch: task/host-runtime-repository-materialization-scoped-publication-bridge-v1
+  canonical_main: e7064c9bf4fcd15bdb6f5a2678414210c01d1c00
+  exact_verified_product_candidate: cda502a9c6cce0ea29d3a74894b5b1cbf78148fd
+implementation:
+  disposition: completed_verified
+  semantics:
+    - exact source ref/SHA is re-resolved through provider-owned user-scoped Git before source acquisition
+    - repository bytes are sealed into immutable provider-owned snapshot storage with bounded manifests and digests
+    - source paths reject traversal, reparse/ADS-equivalent unsafe syntax, reserved device names, control namespace collisions and case-fold collisions
+    - source materialization START evidence precedes repository source writes
+    - repository source bytes enter only the exact scope-derived workspace through a provider-generated materializer running inside the existing Windows AppContainer and Job boundary
+    - snapshot AppContainer read authority is exact, read-only, transient and removed after operation
+    - successful materialization leaves the scope current for S03 while Job/PID/AppContainer write authority is durably proven zero
+    - materializer environment reuses the canonical scoped-script sanitizer instead of inheriting Host/User credential or profile state
+    - source/ref drift, foreign lineage and materialization failure fail closed; failed source acquisition revokes scope and terminalizes transaction with published=false
+    - canonical checkout is neither materialization source authority nor mutation target
+    - no repository publication, live Agent activation or S03 execution occurs in S02
+verification:
+  focused_windows:
+    workflow: pr013-s02-verification
+    run_id: 37302754155
+    job_id: 111739142794
+    result: success
+    tests_passed: 117
+    tests_failed: 0
+    duration_seconds: 19.09
+    physical_windows_appcontainer: true
+  exact_candidate_regressions:
+    generic_ci:
+      run_id: 37302753889
+      result: success
+    macos_agent:
+      run_id: 37302753774
+      result: success
+    pr013_s01:
+      run_id: 37302754165
+      result: success
+    pr010_s01:
+      run_id: 37302753893
+      result: success
+    pr010_s02:
+      run_id: 37302754161
+      result: success
+    pr010_s03:
+      run_id: 37302754173
+      result: success
+    pr010_s04:
+      run_id: 37302753810
+      result: success
+    pr010_s05:
+      run_id: 37302753876
+      result: success
+  repair_history:
+    - candidate: 64aa3c8107639e228e4a373aa403d9b52d063ee9
+      result: 112_passed_2_failed
+      repairs:
+        - correct snapshot ACL write-bit classification without weakening read-only grant
+        - restore side-effect-free endpoint discovery through lazy materialization state construction
+    - candidate: ecfa3c2df36384072b1b1571c3e4706803e87a3a
+      result: 113_passed_1_failed
+      repair: reuse canonical scoped environment sanitizer for AppContainer process creation
+    - candidate: 27f2f3f3041a39ce5704fefa26089051fa9250bd
+      result: 113_passed_1_failed
+      repair: persist nonterminal zero-authority closure using existing clear_sandbox_write_authority after physical cleanup
+    - candidate: 26c63f8c978c3418662de56b1ab1bc84da31ee1a
+      result: 114_passed_0_failed
+      note: later same-Slice failure-path tests were added without product changes
+    - candidate: b6836c1ba27fd697ea0389d90da59b2c000117d6
+      result: 116_passed_1_failed
+      repair: remove invalid test-only require_current_scope argument; existing inspect contract already supports sealed terminal readback
+repository_freshness:
+  canonical_checkout:
+    path: D:\\coco\\repos\\bewaterhere-coder\\sentinelx-cloud-core
+    branch: main
+    head: e7064c9bf4fcd15bdb6f5a2678414210c01d1c00
+    detached: false
+    ahead: 0
+    behind: 0
+    clean: true
+  pr011_parallel_task:
+    state: open
+    merged: false
+    current_slice: S04
+    current_slice_state: pending
+    observed_head: 3b2ff22e5c0fd9c483af6e43659e557e2a45e080
+    effect_on_s02_completion: none; no unmerged PR-011 code imported
+host_security_readback:
+  agent_version: 0.24.1.dev175+g1e4012d7d
+  canonical_repository_mutation_firewall_v1:
+    available: true
+    verified: true
+    inventory_ready: true
+    effective_surface_ready: true
+    uncovered_classes: []
+  host_mutation_sandbox_v1:
+    available: true
+    verified: true
+  pre_execution_audit_lineage_v1:
+    available: true
+    verified: true
+safety:
+  canonical_checkout_mutated: false
+  publication_executed: false
+  s03_execution_executed: false
+  live_agent_installed_or_restarted: false
+  hub_modified: false
+  downstream_chatgpt_control_shell_executed: false
+  generic_exec_shell_copy_fallback_used: false
+  operator_unrestricted_used: false
+  allowlist_or_permission_widening_used: false
+postconditions:
+  s02_verification_satisfied: true
+  s02_completion_eligible: true
+  s03_executed: false
+  next_slice: S03
+  next_slice_state: pending
+  completion_claimed_for_task: false
