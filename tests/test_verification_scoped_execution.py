@@ -236,29 +236,31 @@ def test_profiled_scoped_execution_runs_real_node_npm_offline_and_bounds_evidenc
 
     content = r"""
 $ErrorActionPreference='Stop'
-Set-Content -LiteralPath 'progress.txt' -Value 'start'
+$progress=[IO.Path]::Combine([Environment]::CurrentDirectory,'progress.txt')
+function Mark([string]$Text) { [IO.File]::AppendAllText($progress,$Text + [Environment]::NewLine,[Text.Encoding]::UTF8) }
+[IO.File]::WriteAllText($progress,'start' + [Environment]::NewLine,[Text.Encoding]::UTF8)
 if ($env:GITHUB_TOKEN) { throw 'credential leaked' }
 if ($env:HTTPS_PROXY) { throw 'proxy leaked' }
 if ($env:NPM_CONFIG_OFFLINE -ne 'true') { throw 'npm offline mode missing' }
-Add-Content -LiteralPath 'progress.txt' -Value 'before-node-version'
+Mark 'before-node-version'
 node --version
-Add-Content -LiteralPath 'progress.txt' -Value 'after-node-version'
+Mark 'after-node-version'
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-Add-Content -LiteralPath 'progress.txt' -Value 'before-npm-version'
+Mark 'before-npm-version'
 npm --version
-Add-Content -LiteralPath 'progress.txt' -Value 'after-npm-version'
+Mark 'after-npm-version'
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-Add-Content -LiteralPath 'progress.txt' -Value 'before-npm-ci'
+Mark 'before-npm-ci'
 npm ci --offline
-Add-Content -LiteralPath 'progress.txt' -Value 'after-npm-ci'
+Mark 'after-npm-ci'
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-Add-Content -LiteralPath 'progress.txt' -Value 'before-npm-check'
+Mark 'before-npm-check'
 npm run check
-Add-Content -LiteralPath 'progress.txt' -Value 'after-npm-check'
+Mark 'after-npm-check'
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-Add-Content -LiteralPath 'progress.txt' -Value 'before-cache-miss'
+Mark 'before-cache-miss'
 npm view sentinelx-pr011-s03-package-that-does-not-exist-6f43b9 version --offline *> $null
-Add-Content -LiteralPath 'progress.txt' -Value 'after-cache-miss'
+Mark 'after-cache-miss'
 if ($LASTEXITCODE -eq 0) { throw 'offline cache miss unexpectedly succeeded' }
 Write-Output 'cache-miss-offline-ok'
 exit 0

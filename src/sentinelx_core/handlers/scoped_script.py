@@ -245,7 +245,6 @@ def _runner_argv(
         "$ErrorActionPreference='Stop'\n"
         "$utf8=New-Object System.Text.UTF8Encoding($false)\n"
         "try {\n"
-        " $ExecutionContext.SessionState.Path.SetLocation([Environment]::CurrentDirectory)\n"
         " $text=[System.IO.File]::ReadAllText($Target,$utf8); $sb=[ScriptBlock]::Create($text)\n"
         " $global:LASTEXITCODE=$null; $records=& $sb @ScriptArgs *>&1; $ok=$?\n"
         " if($null -ne $LASTEXITCODE){$code=[int]$LASTEXITCODE}elseif($ok){$code=0}else{$code=1}\n"
@@ -524,6 +523,10 @@ async def _run_scoped(
             }
 
         if not result_path.exists():
+            # The requested runtime itself did not initialize far enough to run
+            # the trusted runner (observed with Windows PowerShell 5.1 under
+            # AppContainer on some hosts).  This is availability, never a reason
+            # to retry through unrestricted execution.
             terminal = sandbox.terminalize(scope_id, generation)
             terminalized = True
             audit.finish(
@@ -590,6 +593,8 @@ async def _run_scoped(
                     )
                 terminalized = True
             except (RuntimeError, OSError, ValueError):
+                # A failed closure read-back must leave START/SPAWN without a
+                # fabricated FINISH and the request remains externally failed.
                 terminal = None
         if start is not None and not finished and terminal is not None:
             try:
