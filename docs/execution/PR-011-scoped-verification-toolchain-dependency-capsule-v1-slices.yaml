@@ -129,9 +129,10 @@ slices:
         - unprofiled Python/PowerShell/Pwsh scoped execution remains regression-compatible
     checkpoint:
       required: true
-    state: pending
-    run_refs: []
-    completion_receipt_ref: null
+    state: completed
+    run_refs:
+      - docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s03-completed-20261005.yaml
+    completion_receipt_ref: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s03-completion-receipt.yaml
 
   - slice_id: S04
     objective: Add separately gated Node/npm verification readiness/capability, operator documentation and required real Windows/AppContainer physical proof.
@@ -199,7 +200,7 @@ slices:
     run_refs: []
     completion_receipt_ref: null
 execution_state:
-  current_slice: S03
+  current_slice: S04
   current_slice_state: pending
   all_slices_completed: false
 acceptance_boundary:
