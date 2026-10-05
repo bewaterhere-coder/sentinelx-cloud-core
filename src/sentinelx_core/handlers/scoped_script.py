@@ -143,9 +143,6 @@ def _scoped_environment(extra: dict[str, str], workspace: Path) -> dict[str, str
     """Build a child environment without broker profile/Git/secret authority."""
     result = {key: value for key, value in os.environ.items() if not _credential_like(key)}
 
-    # AppContainer process creation with a custom environment requires profile
-    # variables on real Windows.  Point them at an exact-workspace profile so
-    # the broker user's Git config and credential helpers cannot be inherited.
     profile = workspace / ".sandbox-profile"
     local = profile / "AppData" / "Local"
     roaming = profile / "AppData" / "Roaming"
@@ -203,6 +200,7 @@ def _runner_argv(
     result_path: Path,
     *,
     materialize: bool = True,
+    runner_cwd: Path | None = None,
 ) -> list[str]:
     """Create an in-sandbox runner that persists exit status before process close."""
     if interpreter == "bash":
@@ -239,12 +237,19 @@ def _runner_argv(
     if not executable:
         raise HandlerError("interpreter_missing", f"interpreter not found: {interpreter}")
     runner = workspace / "sentinelx_runner.ps1"
+    cwd_parameter = ",[string]$WorkingDirectory" if runner_cwd is not None else ""
+    cwd_binding = (
+        " $ExecutionContext.SessionState.Path.SetLocation($WorkingDirectory)\n"
+        if runner_cwd is not None
+        else ""
+    )
     if materialize:
         runner.write_text(
-            "param([string]$Target,[string]$Stdout,[string]$Stderr,[string]$Result,[Parameter(ValueFromRemainingArguments=$true)][string[]]$ScriptArgs)\n"
+            f"param([string]$Target,[string]$Stdout,[string]$Stderr,[string]$Result{cwd_parameter},[Parameter(ValueFromRemainingArguments=$true)][string[]]$ScriptArgs)\n"
         "$ErrorActionPreference='Stop'\n"
         "$utf8=New-Object System.Text.UTF8Encoding($false)\n"
         "try {\n"
+        + cwd_binding
         " $text=[System.IO.File]::ReadAllText($Target,$utf8); $sb=[ScriptBlock]::Create($text)\n"
         " $global:LASTEXITCODE=$null; $records=& $sb @ScriptArgs *>&1; $ok=$?\n"
         " if($null -ne $LASTEXITCODE){$code=[int]$LASTEXITCODE}elseif($ok){$code=0}else{$code=1}\n"
@@ -261,7 +266,7 @@ def _runner_argv(
     return [
         executable, "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
         "-File", str(runner), str(script_path), str(stdout_path), str(stderr_path),
-        str(result_path), *args,
+        str(result_path), *([str(runner_cwd)] if runner_cwd is not None else []), *args,
     ]
 
 
@@ -380,15 +385,18 @@ async def _run_scoped(
             )
         except ValueError as exc:
             raise HandlerError("HostMutationSandboxPathViolation", str(exc)) from exc
+        profiled_pwsh = verification is not None and interpreter in {"powershell", "pwsh"}
+        planned_spawn_cwd = planned_workspace if profiled_pwsh else run_cwd
         planned_argv = _runner_argv(
             interpreter, script_path, args, planned_workspace,
             stdout_path, stderr_path, result_path, materialize=False,
+            runner_cwd=run_cwd if profiled_pwsh else None,
         )
         process_intent = MutationProcessIntent(
             interpreter=interpreter,
             argv=tuple(planned_argv),
             executable_final_path=final_executable_path(Path(planned_argv[0])),
-            cwd_final_path=str(run_cwd),
+            cwd_final_path=str(planned_spawn_cwd),
         )
         requested_identity = requested_mutation_identity(record.unique_lease_key)
         if verification is None:
@@ -470,9 +478,12 @@ async def _run_scoped(
         else:
             run_cwd = _cwd(activation.workspace, payload.get("cwd"), materialize=True)
 
+        profiled_pwsh = verification_materialized is not None and prepared.interpreter in {"powershell", "pwsh"}
+        spawn_cwd = activation.workspace if profiled_pwsh else run_cwd
         argv = _runner_argv(
             prepared.interpreter, script_path, args, activation.workspace,
             stdout_path, stderr_path, result_path, materialize=True,
+            runner_cwd=run_cwd if profiled_pwsh else None,
         )
         if argv != planned_argv:
             raise RuntimeError("materialized runner argv differs from sealed process intent")
@@ -494,7 +505,7 @@ async def _run_scoped(
             audit=audit,
             audit_start=start,
             argv=argv,
-            cwd=run_cwd,
+            cwd=spawn_cwd,
             env=child_environment,
             verification=verification_materialized,
         )
@@ -523,10 +534,6 @@ async def _run_scoped(
             }
 
         if not result_path.exists():
-            # The requested runtime itself did not initialize far enough to run
-            # the trusted runner (observed with Windows PowerShell 5.1 under
-            # AppContainer on some hosts).  This is availability, never a reason
-            # to retry through unrestricted execution.
             terminal = sandbox.terminalize(scope_id, generation)
             terminalized = True
             audit.finish(
@@ -593,8 +600,6 @@ async def _run_scoped(
                     )
                 terminalized = True
             except (RuntimeError, OSError, ValueError):
-                # A failed closure read-back must leave START/SPAWN without a
-                # fabricated FINISH and the request remains externally failed.
                 terminal = None
         if start is not None and not finished and terminal is not None:
             try:
