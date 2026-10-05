@@ -18,9 +18,9 @@ development:
   blocking_findings: []
   execution_disposition: active
   next_expected_actor: implementer
-  current_slice: S02
+  current_slice: S03
   current_slice_state: pending
-  completed_slices: [S01]
+  completed_slices: [S01, S02]
   authorization:
     mode: legacy_command_scoped
 artifacts:
@@ -29,8 +29,8 @@ artifacts:
   prior_plan_review: docs/reviews/PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1-plan-review-r1.md
   latest_plan_remediation: docs/checkpoints/PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1-plan-remediation-r1.yaml
   execution_slice_set: docs/execution/PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1-slices.yaml
-  latest_slice_checkpoint: docs/checkpoints/PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1-s01-completion-20261005.yaml
-  latest_slice_completion_receipt: docs/reviews/PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1-s01-completion-receipt.yaml
+  latest_slice_checkpoint: docs/checkpoints/PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1-s02-completion-20261005.yaml
+  latest_slice_completion_receipt: docs/reviews/PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1-s02-completion-receipt.yaml
 transport:
   type: github-pr
   pr_number: 13
