@@ -94,8 +94,13 @@ def _fixture(
 
 
 def _binding(fx):
-    host_policy, _mutation, repository, semantic, receipt_store, *_rest = fx
-    return receipt_store.resolve_and_retain(host_policy, repository, semantic)
+    host_policy, _mutation, repository, semantic, receipt_store, _scopes, state_root, *_rest = fx
+    return receipt_store.resolve_and_retain(
+        host_policy,
+        repository,
+        semantic,
+        provider_protected_roots=(state_root.resolve(),),
+    )
 
 
 def test_devforge_placement_receipt_is_durable_before_scope_and_path_is_exact(tmp_path: Path) -> None:
@@ -185,6 +190,7 @@ def test_caller_placement_expectation_cannot_retarget_provider_authority(tmp_pat
             host_policy,
             repository,
             semantic,
+            provider_protected_roots=(state_root.resolve(),),
             placement_expectation=attacker_path,
         )
     assert not attacker_path.exists()
@@ -201,14 +207,19 @@ def test_semantic_path_injection_is_rejected_before_receipt_or_scope(
     fx = _fixture(tmp_path, task_id=task_id)
     _host, _mutation, repository, semantic, receipts, _scopes, state_root, *_ = fx
     with pytest.raises(DevforgeWorkspacePlacementError):
-        receipts.resolve_and_retain(fx[0], repository, semantic)
+        receipts.resolve_and_retain(
+            fx[0],
+            repository,
+            semantic,
+            provider_protected_roots=(state_root.resolve(),),
+        )
     assert not (state_root / "mutation-scopes" / "authority.json").exists()
 
 
 def test_host_binding_drift_invalidates_same_attempt_receipt(tmp_path: Path) -> None:
     fx = _fixture(tmp_path, host_root=tmp_path / "host-a")
     host_a, mutation, repository, semantic, receipts, scopes, state_root, *_ = fx
-    binding_a = receipts.resolve_and_retain(host_a, repository, semantic)
+    binding_a = _binding(fx)
     record = scopes.provision_devforge_scope(
         mutation,
         repository,
@@ -225,7 +236,12 @@ def test_host_binding_drift_invalidates_same_attempt_receipt(tmp_path: Path) -> 
         locations={"devforge_workspace_root": LocationSpec(path=str(host_b_root))},
     )
     with pytest.raises(WorkspacePlacementStale):
-        receipts.resolve_and_retain(host_b, repository, semantic)
+        receipts.resolve_and_retain(
+            host_b,
+            repository,
+            semantic,
+            provider_protected_roots=(state_root.resolve(),),
+        )
     assert Path(record.exact_workspace) == binding_a.exact_workspace
     assert not (host_b_root / "workspaces" / "bewaterhere-coder").exists()
 
@@ -249,8 +265,15 @@ def test_wrong_provider_root_binding_cannot_revalidate_existing_scope(tmp_path: 
         mutation_execution=mutation,
         locations={"devforge_workspace_root": LocationSpec(path=str(other_root))},
     )
-    other_receipts = DevforgeWorkspacePlacementReceiptStore(tmp_path / "other-state")
-    other_binding = other_receipts.resolve_and_retain(other_policy, repository, semantic)
+    other_state = tmp_path / "other-state"
+    other_state.mkdir()
+    other_receipts = DevforgeWorkspacePlacementReceiptStore(other_state)
+    other_binding = other_receipts.resolve_and_retain(
+        other_policy,
+        repository,
+        semantic,
+        provider_protected_roots=(other_state.resolve(),),
+    )
     with pytest.raises(HostMutationScopeBindingMismatch):
         scopes.revalidate_devforge_scope(
             record.scope_id,
