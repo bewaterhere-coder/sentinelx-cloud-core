@@ -1,0 +1,183 @@
+schema_version: "1.0"
+kind: devforge_execution_slice_set
+identity:
+  task_id: PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1
+  slice_set_id: PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1-plan-r2
+plan:
+  ref: docs/plans/PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1-plan.md
+  revision: 2
+  reviewed_blob_sha: e65fceea327df2820719d0feb74759e733955efb
+review:
+  ref: docs/reviews/PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1-plan-review-r2.md
+  blob_sha: 949edfab4773f3b94f88befa5e16b00ee214db23
+  decision: Approved
+runtime:
+  devforge_version: 2.41.0
+  devforge_revision: 902a9d71b425753928c01904be1e9b2b60f0c3fe
+  workflow: project_development
+  workflow_version: "2.1"
+  slicing_contract: "1.1"
+repository_baseline:
+  main_sha: e7064c9bf4fcd15bdb6f5a2678414210c01d1c00
+  reviewed_task_head: 32cd89bdc3430596409329c676e18d36dddffc1b
+  pr012_state: done_merged_canonical
+  pr011_state: open_implementation_s03_blocked
+implementation_entry_guard:
+  required_before_each_slice: true
+  rules:
+    - re-read current DevForge main/runtime semantics before acting
+    - re-read current sentinelx-cloud-core main and PR-013 remote task head before product mutation
+    - approved Requirement revision 1 and Plan revision 2 lineage must remain materially unchanged
+    - preserve PR #13 branch and transport identity; no replacement task/branch/PR
+    - local canonical checkout must be on main, non-detached, ahead=0, behind=0, and clean before first material product mutation
+    - current observed local CRLF-only dirty state does not authorize restore/reset; if still dirty, stop before mutation as blocked
+    - re-read PR-011 state and changed surfaces before every slice; if it merged or overlaps current slice baseline, perform same-task impact reconciliation before mutation
+    - PR-012 execution_profile=scoped_mutation contract is canonical baseline and must remain passing
+    - canonical repository firewall, Host mutation sandbox and pre-execution audit lineage must remain admitted and verified before Host-local mutation
+    - use Host-owned execution workspace only; canonical checkout is never an implementation workspace
+    - no generic exec/shell/Git/copy fallback, operator_unrestricted, allowlist widening, provider escalation, caller-selected Host path, or Hub mutation
+    - completed slices cannot be replayed; recoverable interruption resumes the same slice/run according to current DevForge Resume semantics
+    - one explicit #开发执行 invocation may complete at most one slice
+acceptance_boundary:
+  live_agent_activation:
+    implementation_slice: false
+    verifier_owned_acceptance: true
+  downstream_chatgpt_control_shell:
+    implementation_slice: false
+    requires_separate_canonical_command: "#开发执行 PR-013-manual-command-adoption-workflow-lineage-attachment-v1"
+    sentinelx_task_cannot_inherit_authority: true
+slices:
+  - slice_id: S01
+    objective: Implement repository_transaction_v1 admission, provider-owned fixed operation classes, durable repository transaction identity/state, and bounded local_api schema projection without source hydration or publication side effects.
+    depends_on: []
+    scope:
+      refs:
+        - src/sentinelx_core/handlers/devforge_runtime.py
+        - new focused repository_transaction.py model/store
+        - src/sentinelx_core/mutation_scope.py only where fixed operation-class composition is required
+        - Agent provider/capability wiring
+        - focused tests and directly related contract documentation
+      authorized_changes:
+        - extend provision_scope with purpose repository_transaction_v1 and closed repository_transaction source/publication ref+SHA inputs
+        - provider maps repository transaction purpose only to repository_materialize, repository_execute, repository_publish
+        - persist one transaction bound to repository identity, Task/Run/Attempt/slice, scope generation and workspace identity
+        - implement exact same-Attempt retry convergence and authority-changing conflict behavior
+        - add inspect_repository_transaction and bounded repository action schemas where required by Plan R2
+        - preserve legacy purpose=scoped_script and merged PR-012 explicit execution profile semantics
+    verification:
+      required:
+        - local_api.describe exposes purpose-discriminated path-free schema
+        - caller operation-class, Host-path, credential, Git-argv and remote-URL fields are rejected
+        - exact source/publication ref+SHA are independently verified before transaction admission
+        - same-Attempt exact retry is idempotent and changed authority inputs conflict
+        - stale, foreign, terminal, revoked and expired authority fail closed
+        - legacy scoped_script provisioning and execute_scoped execution_profile regressions pass
+        - no source hydration, Git publication, live Agent restart or downstream Task side effect occurs in S01
+    checkpoint:
+      required: true
+    state: pending
+
+  - slice_id: S02
+    objective: Implement exact source acquisition into immutable provider-owned storage and materialize repository source bytes only through the scope-derived Windows AppContainer/Job materializer into the exact Host workspace.
+    depends_on: [S01]
+    scope:
+      refs:
+        - provider source acquisition/snapshot module
+        - provider materializer module
+        - src/sentinelx_core/windows_mutation_sandbox.py
+        - src/sentinelx_core/mutation_audit.py only for bounded materialization evidence
+        - relevant repository transaction state composition
+        - security/integration/Windows tests
+      authorized_changes:
+        - resolve exact repository/ref/SHA through provider-owned user-scoped transport without canonical checkout mutation
+        - create immutable transaction source manifest/capsule at provider-owned path
+        - persist materialization START before repository source writes
+        - grant scope-derived AppContainer SID exact temporary read-only source-snapshot access and exact workspace write authority
+        - spawn provider-generated trusted materializer under existing AppContainer and Job boundary
+        - validate path traversal, reparse, ADS, special-file and resource ceilings
+        - close process/Job/ACL authority and read back exact source tree digest before state materialized
+    verification:
+      required:
+        - canonical checkout remains unchanged and unreadable/unwritable by AppContainer beyond existing authority
+        - materializer START precedes first repository source write
+        - repository bytes are written by AppContainer/Job materializer, not unrestricted service copy
+        - exact snapshot grant is read-only, transient, removed and read back
+        - wrong repo/ref/SHA, stale/foreign scope and unsafe path semantics fail before materialized
+        - materialization failure terminalizes/revokes and cannot publish
+        - physical Windows regression proves sandbox SID, Job and START/SPAWN/FINISH evidence
+        - revalidate PR-011 overlap before mutation; do not import its unmerged implementation
+    checkpoint:
+      required: true
+    state: pending
+
+  - slice_id: S03
+    objective: Reuse the canonical execute_scoped path for repository_execute, add bounded operation closure without weakening legacy one-shot terminalization, and freeze exact post-execution publication content into an immutable provider-owned capsule.
+    depends_on: [S02]
+    scope:
+      refs:
+        - src/sentinelx_core/handlers/scoped_script.py
+        - repository transaction state machine
+        - src/sentinelx_core/windows_mutation_sandbox.py operation closure
+        - provider control namespace composition
+        - immutable publication freezer/capsule module
+        - src/sentinelx_core/mutation_audit.py only for bounded closure/freeze evidence
+        - focused regression/security tests
+      authorized_changes:
+        - repository transaction execute_scoped requires state materialized and internal repository_execute operation authority
+        - retain explicit execution_profile=scoped_mutation and existing canonical executor
+        - reserve provider control namespace excluded from repository source/publication tree
+        - successful repository execution closes Job/PID/AppContainer write authority but leaves transaction nonterminal only for bounded publication successor
+        - failure, timeout, containment or cleanup failure terminalizes/revokes and forbids publication
+        - freeze exact repository source tree after zero-authority readback into immutable publication content with persisted digest
+        - detect post-freeze workspace drift fail closed
+        - preserve ordinary scoped_script automatic terminalization exactly as current main
+    verification:
+      required:
+        - no second process executor exists
+        - successful repository execution reaches executed only after zero live process/write authority
+        - provider runtime artifacts cannot enter publication tree
+        - publication content digest is immutable/persisted before credential-bearing Git exists
+        - nonzero, timeout, containment and cleanup failures cannot publish
+        - legacy scoped_script success/failure/timeout terminalization regressions pass unchanged
+        - merged PR-012 explicit execution_profile tests pass
+        - revalidate PR-011 overlap before mutation and reconcile if its changes became canonical
+    checkpoint:
+      required: true
+    state: pending
+
+  - slice_id: S04
+    objective: Implement fixed-plumbing user-scoped Git publication from immutable provider-owned publication content with produced-commit durability, non-force expected-remote-SHA CAS semantics, readback-first retry, and isolated candidate verification harnesses.
+    depends_on: [S03]
+    scope:
+      refs:
+        - focused publication broker module
+        - src/sentinelx_core/user_git.py only for bounded Git-specific primitives
+        - repository transaction publication state/evidence
+        - local_api publish_checkpoint integration
+        - fixture repository harness and Windows/CI tests
+        - operator/activation documentation
+      authorized_changes:
+        - build provider-owned ephemeral staging/object store from immutable publication capsule, never scoped workspace
+        - hash raw publication bytes and construct exact tree without repository clean/smudge filters
+        - create one commit with parent expected_remote_sha under provider-bounded identity/message semantics
+        - persist produced_commit_sha before push
+        - re-probe exact publication ref then push non-force produced commit to exact admitted ref
+        - read back remote and mark published only on exact produced commit match
+        - reconcile uncertain push by remote readback first and reuse same produced commit
+        - force empty provider hooks path and prohibit aliases, signing, editor, shell and repository executable config authority
+        - remove temporary broker staging/ACL authority and persist bounded receipt evidence
+    verification:
+      required:
+        - credential-bearing Git never receives scoped-workspace access
+        - staging/cache path is provider-owned and non-projectable
+        - hooks, filters, aliases, signing helpers, editor and shell are not executed
+        - commit parent exactly equals expected remote SHA
+        - non-force remote drift creates no overwrite
+        - verified retry performs no second push; uncertain retry is readback-first and reuses same produced commit
+        - credentials and interactive-user environment are absent from state/log/receipt
+        - affected full repository regression suite passes on exact candidate
+        - isolated Windows fixture proves materialize → scoped mutation → freeze → checkpoint → remote readback under the candidate
+        - S04 does not install/restart the live Agent and does not execute downstream ChatGPTControlShell Task
+    checkpoint:
+      required: true
+    state: pending
