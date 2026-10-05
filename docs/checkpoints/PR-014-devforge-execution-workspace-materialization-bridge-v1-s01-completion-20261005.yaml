@@ -1,0 +1,131 @@
+schema_version: "1.1"
+kind: devforge_slice_completion_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
+slice_id: S01
+source_command: "#开发执行 PR-014-devforge-execution-workspace-materialization-bridge-v1"
+runtime:
+  repository: bewaterhere-coder/DevForge
+  version: 2.42.0
+  revision: 74ad7ce0a3ea345478f37f1c79bfdf8fb0ec8f4f
+  workflow: project_development
+  workflow_version: "2.1"
+plan_lineage:
+  requirement_revision: 1
+  plan_revision: 2
+  plan_blob_sha: bf40efdd1c4804ea6ef5f858e22d2e558fdd8e70
+  review_blob_sha: 822263edcaa8edccc4acd6fe9141ca936d20840f
+  slice_set_blob_sha_at_admission: 5fcd74936733f28e8629dc2958b02002add1f57b
+transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 14
+  branch: task/devforge-execution-workspace-materialization-bridge-v1
+  canonical_main: e7064c9bf4fcd15bdb6f5a2678414210c01d1c00
+  exact_verified_product_candidate: a1a14908ff2a95c87b9a6eeb96d5e18e354b5548
+implementation:
+  disposition: completed_verified
+  files:
+    - src/sentinelx_core/devforge_workspace_placement.py
+    - src/sentinelx_core/devforge_workspace_materialization.py
+    - tests/test_devforge_workspace_placement.py
+    - .github/workflows/pr010-s03-verification.yml
+  semantics:
+    - current Host locations.devforge_workspace_root deterministically derives execution_root/workspace without caller path authority
+    - provider-owned Placement Receipt is atomically persisted and read back before the DevForge scope-admission seam is invoked
+    - receipt retry converges only for the same repository/semantic/Host-binding generation and fails stale on Host-binding drift
+    - DevforgeSandboxRootBinding seals Placement Receipt, Host binding, execution root and exact workspace digests as provider-only evidence
+    - DevforgeMutationScopeStore reuses the existing mutation-scopes authority database, Attempt/lease/workspace indexes and lifecycle rather than creating a second scope store
+    - DevforgeWindowsMutationSandbox reuses the canonical AppContainer/ACL/Job sandbox implementation through an immutable provider-selected DevForge execution-root view
+    - legacy mutation_execution.workspace_root placement and legacy scoped_script revalidation remain unchanged and independent
+    - caller placement/root/strategy cannot retarget the provider binding
+    - Windows physical verification proves exact DevForge workspace write authority while a canonical-like protected sibling cannot be enumerated/read/copied/written by the scoped identity
+    - no repository_transaction_v1, source broker/materializer, retained-operation lifecycle or publication implementation is added by S01
+verification:
+  focused_windows:
+    workflow: pr010-s03-verification
+    run_id: 37298434667
+    job_id: 111725149479
+    result: success
+    python: "3.12.10"
+    tests_passed: 49
+    tests_failed: 0
+    duration_seconds: 36.80
+  initial_candidate_attempt:
+    candidate: 46aab34405756eef8a2fd0aa929f98ed6fe60d4a
+    run_id: 37298154622
+    result: failed_new_tests_only
+    tests_passed: 43
+    tests_failed: 6
+    cause: initial test fixture created the Placement Receipt without provider-state protected inventory, then correctly changed the sealed inventory during scope revalidation and triggered WorkspacePlacementStale
+    remediation: test fixture now seals the same provider protected inventory at receipt creation; no fail-closed product authority was weakened
+  exact_candidate_regressions:
+    generic_ci:
+      run_id: 37298434715
+      result: success
+    macos_agent:
+      run_id: 37298434713
+      result: success
+    pr010_s01:
+      run_id: 37298434694
+      result: success
+    pr010_s02:
+      run_id: 37298434716
+      result: success
+    pr010_s03:
+      run_id: 37298434667
+      result: success
+    pr010_s04:
+      run_id: 37298434625
+      result: success
+    pr010_s05:
+      run_id: 37298434807
+      result: success
+repository_freshness:
+  canonical_checkout:
+    path: D:\\coco\\repos\\bewaterhere-coder\\sentinelx-cloud-core
+    branch: main
+    head: e7064c9bf4fcd15bdb6f5a2678414210c01d1c00
+    detached: false
+    ahead: 0
+    behind: 0
+    clean: true
+  remote_main:
+    head: e7064c9bf4fcd15bdb6f5a2678414210c01d1c00
+  task_branch:
+    verified_candidate_head: a1a14908ff2a95c87b9a6eeb96d5e18e354b5548
+    mergeable_at_readback: true
+  pr013_parallel_task:
+    state: open_draft
+    merged: false
+    observed_head: 2eb93384de77d67f5988048f1eb0b0223147107b
+    observed_product_files:
+      - src/sentinelx_core/handlers/devforge_runtime.py
+      - src/sentinelx_core/handlers/mutation_scope.py
+      - src/sentinelx_core/repository_transaction.py
+      - tests/test_repository_transaction.py
+    direct_overlap_with_pr014_s01_product_files: false
+    effect_on_s01_completion: none; no unmerged PR-013 implementation was imported or copied
+safety:
+  implementation_transport: github_repository_api
+  host_local_product_mutation_used: false
+  canonical_checkout_mutated: false
+  repository_source_materialized: false
+  repository_transaction_implemented_by_pr014: false
+  operation_closure_implemented_by_pr014: false
+  publication_executed: false
+  host_policy_mutated: false
+  broad_acl_or_allowlist_widening_used: false
+  live_agent_installed_or_restarted: false
+  production_hub_modified: false
+  generic_exec_shell_git_copy_fallback_used: false
+  operator_unrestricted_used: false
+  independent_codex_required: false
+postconditions:
+  s01_verification_satisfied: true
+  s01_completion_eligible: true
+  s02_executed: false
+  s02_dependency_satisfied: false
+  s02_dependency_reason: PR-013 is not yet merged, accepted and completion-verified on canonical main
+  next_slice: S02
+  next_slice_state: pending
+  completion_claimed_for_task: false
