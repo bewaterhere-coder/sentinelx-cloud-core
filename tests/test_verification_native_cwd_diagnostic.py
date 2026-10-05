@@ -2,11 +2,21 @@ from __future__ import annotations
 
 import asyncio
 
+from sentinelx_core.handlers import scoped_script as scoped_script_module
 from tests.test_verification_scoped_execution import _fixture
 
 
-def test_same_policy_unprofiled_trivial_cmd_descendant_completes(tmp_path) -> None:
-    _profile, _verification, handler, context, _store, _record, mutation, lineage, repo = _fixture(tmp_path)
+def test_profiled_materialization_with_base_environment_descendant(tmp_path, monkeypatch) -> None:
+    _profile, verification, handler, context, _store, _record, mutation, lineage, repo = _fixture(tmp_path)
+
+    def keep_base_environment(base_environment, _caller_environment, _materialized):
+        return dict(base_environment)
+
+    monkeypatch.setattr(
+        scoped_script_module,
+        "build_verification_environment",
+        keep_base_environment,
+    )
     body = '''\
 import os
 import subprocess
@@ -21,11 +31,12 @@ raise SystemExit(completed.returncode)
         "content": body,
         "timeout": 20,
         "cleanup": True,
+        "verification": verification,
         "mutation": mutation,
         "lineage": lineage,
         "repository": repo,
     }))
-    print("S03_SAME_POLICY_UNPROFILED_CMD_RESULT=" + repr(result))
+    print("S03_PROFILED_BASE_ENV_CMD_RESULT=" + repr(result))
     assert result["ok"] is True, result
     assert result["returncode"] == 0, result
     assert "CMD_RETURN=0" in result["output"], result
