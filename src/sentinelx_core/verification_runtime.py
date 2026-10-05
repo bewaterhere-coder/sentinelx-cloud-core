@@ -171,128 +171,146 @@ def _safe_member(root: Path, relative: str) -> Path:
         if _is_reparse_or_symlink(cursor):
             raise ValueError("verification payload member traverses a reparse point")
     candidate = cursor.resolve(strict=True)
-    if not candidate.is_relative_to(canonical_root):
-        raise ValueError("verification payload member escaped its root")
+    if candidate == canonical_root or not candidate.is_relative_to(canonical_root):
+        raise ValueError("verification payload member escaped provider root")
+    if not candidate.is_file():
+        raise ValueError("verification payload member is not a regular file")
     return candidate
 
 
-def _copy_and_verify_payload(
-    *,
+def _copy_entries(
     source_root: Path,
     destination_root: Path,
-    files: tuple[FileDigestEntry, ...],
-    max_total_bytes: int,
-    max_files: int,
-    max_single_file_bytes: int,
-    label: str,
+    entries: tuple[FileDigestEntry, ...],
 ) -> None:
-    if destination_root.exists():
-        raise ValueError(f"{label} destination is already reserved")
     destination_root.mkdir(parents=True, exist_ok=False)
-    copied_bytes = 0
-    copied_files = 0
-    try:
-        for entry in files:
-            if entry.size > max_single_file_bytes:
-                raise ValueError(f"{label} file exceeds configured maximum")
-            copied_bytes += entry.size
-            copied_files += 1
-            if copied_bytes > max_total_bytes or copied_files > max_files:
-                raise ValueError(f"{label} exceeds configured resource limits")
-            source = _safe_member(source_root, entry.path)
-            if not source.is_file():
-                raise ValueError(f"{label} payload member is not a regular file")
-            if source.stat().st_size != entry.size or _sha256_file(source) != entry.sha256:
-                raise ValueError(f"{label} payload changed after admission")
-            destination = destination_root / Path(entry.path)
-            destination.parent.mkdir(parents=True, exist_ok=True)
-            with source.open("rb") as source_handle, destination.open("xb") as destination_handle:
-                while block := source_handle.read(_COPY_CHUNK_BYTES):
-                    destination_handle.write(block)
-            if destination.stat().st_size != entry.size or _sha256_file(destination) != entry.sha256:
-                raise ValueError(f"{label} materialized payload digest mismatch")
-    except Exception:
-        shutil.rmtree(destination_root, ignore_errors=True)
-        raise
+    for entry in entries:
+        source = _safe_member(source_root, entry.path)
+        destination = destination_root / Path(*entry.path.split("/"))
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        digest = hashlib.sha256()
+        size = 0
+        with source.open("rb") as reader, destination.open("xb") as writer:
+            while True:
+                block = reader.read(_COPY_CHUNK_BYTES)
+                if not block:
+                    break
+                size += len(block)
+                if size > entry.size:
+                    raise ValueError("verification payload exceeded sealed file size during copy")
+                digest.update(block)
+                writer.write(block)
+            writer.flush()
+            os.fsync(writer.fileno())
+        if size != entry.size or digest.hexdigest() != entry.sha256:
+            raise ValueError("verification payload changed during broker copy")
 
 
-def _write_launchers(
-    *,
-    shim_root: Path,
-    launchers: tuple[tuple[str, bytes], ...],
-    expected_digest: str,
-) -> None:
-    if shim_root.exists():
-        raise ValueError("verification launcher destination is already reserved")
-    shim_root.mkdir(parents=True, exist_ok=False)
-    try:
-        for name, content in launchers:
-            if Path(name).name != name or name in {".", ".."}:
-                raise ValueError("verification launcher name is invalid")
-            (shim_root / name).write_bytes(content)
-        observed = launcher_digest(
-            (name, (shim_root / name).read_bytes()) for name, _content in launchers
-        )
-        if observed != expected_digest:
-            raise ValueError("verification launcher materialization digest mismatch")
-    except Exception:
-        shutil.rmtree(shim_root, ignore_errors=True)
-        raise
+def _npm_cache_entries(entries: tuple[FileDigestEntry, ...]) -> tuple[FileDigestEntry, ...]:
+    prefix = "npm-cache/"
+    projected: list[FileDigestEntry] = []
+    for entry in entries:
+        if not entry.path.casefold().startswith(prefix):
+            raise ValueError("dependency capsule V1 members must be rooted under npm-cache/")
+        relative = entry.path[len(prefix) :]
+        if not relative:
+            raise ValueError("dependency capsule V1 member path is empty after npm-cache/")
+        projected.append(FileDigestEntry(relative, entry.size, entry.sha256))
+    return tuple(projected)
+
+
+def _verify_entries(root: Path, entries: tuple[FileDigestEntry, ...]) -> None:
+    canonical_root = root.resolve(strict=True)
+    if _is_reparse_or_symlink(canonical_root):
+        raise ValueError("materialized verification root must not be a reparse point")
+    expected = {entry.path.casefold(): entry for entry in entries}
+    observed: dict[str, Path] = {}
+    for current, directories, names in os.walk(canonical_root, topdown=True, followlinks=False):
+        current_path = Path(current)
+        for name in directories:
+            item = current_path / name
+            if _is_reparse_or_symlink(item):
+                raise ValueError("materialized verification tree contains a reparse directory")
+        for name in names:
+            item = current_path / name
+            if _is_reparse_or_symlink(item) or not item.is_file():
+                raise ValueError("materialized verification tree contains a non-regular file")
+            relative = item.relative_to(canonical_root).as_posix()
+            observed[relative.casefold()] = item
+    if set(observed) != set(expected):
+        raise ValueError("materialized verification tree differs from sealed manifest")
+    for key, item in observed.items():
+        entry = expected[key]
+        if item.stat().st_size != entry.size or _sha256_file(item) != entry.sha256:
+            raise ValueError("materialized verification payload digest mismatch")
+
+
+def _write_launchers(root: Path, launchers: tuple[tuple[str, bytes], ...]) -> None:
+    root.mkdir(parents=True, exist_ok=False)
+    for name, content in launchers:
+        path = root / name
+        with path.open("xb") as handle:
+            handle.write(content)
+            handle.flush()
+            os.fsync(handle.fileno())
+        if path.read_bytes() != content:
+            raise ValueError("verification launcher read-back mismatch")
+
+
+def _assert_lock(path: Path, expected: str) -> None:
+    if not path.is_file() or _sha256_file(path) != expected:
+        raise ValueError("materialized package-lock digest mismatch")
 
 
 def materialize_verification_runtime(
     plan: VerificationRuntimePlan,
     workspace: Path,
 ) -> VerificationMaterialization:
-    exact_workspace = workspace.resolve(strict=True)
-    source_root = exact_workspace / _SOURCE_DIR
-    verification_root = exact_workspace / _VERIFICATION_DIR
-    cache_root = verification_root / _CACHE_DIR
-    shim_root = verification_root / _SHIM_DIR
-    verification_root.mkdir(parents=True, exist_ok=True)
-    limits = plan.profile.limits
+    workspace = workspace.resolve(strict=True)
+    source_target = workspace / _SOURCE_DIR
+    verification_root = workspace / _VERIFICATION_DIR
+    cache_target = verification_root / _CACHE_DIR
+    shim_target = verification_root / _SHIM_DIR
+    if source_target.exists() or verification_root.exists():
+        raise ValueError("verification materialization target already exists")
 
-    _copy_and_verify_payload(
-        source_root=plan.admission.source.payload_root,
-        destination_root=source_root,
-        files=plan.admission.source.files,
-        max_total_bytes=limits.source_max_total_bytes,
-        max_files=limits.source_max_files,
-        max_single_file_bytes=limits.max_single_file_bytes,
-        label="source snapshot",
+    source_store = plan.profile.source_snapshot_path(plan.admission.source.source_id)
+    capsule_store = plan.profile.dependency_capsule_path(plan.admission.capsule.capsule_id)
+    source = load_source_snapshot(
+        source_store,
+        limits=plan.profile.limits,
+        expected_manifest_sha256=plan.admission.source.source_manifest_digest,
+        expected_revision=plan.admission.source.transport.revision,
     )
+    capsule = load_dependency_capsule(
+        capsule_store,
+        limits=plan.profile.limits,
+        expected_capsule_id=plan.admission.capsule.capsule_id,
+    )
+    if source != plan.admission.source or capsule != plan.admission.capsule:
+        raise ValueError("verification provider stores changed after admission")
+    if source.package_lock_sha256 != capsule.package_lock_sha256:
+        raise ValueError("verification source/capsule lock binding changed")
+
+    cache_entries = _npm_cache_entries(capsule.files)
     try:
-        _copy_and_verify_payload(
-            source_root=plan.admission.capsule.cache_root,
-            destination_root=cache_root,
-            files=plan.admission.capsule.files,
-            max_total_bytes=limits.dependency_max_total_bytes,
-            max_files=limits.dependency_max_files,
-            max_single_file_bytes=limits.max_single_file_bytes,
-            label="dependency capsule",
+        _copy_entries(source_store / "payload", source_target, source.files)
+        verification_root.mkdir(parents=True, exist_ok=False)
+        _copy_entries(capsule_store / "npm-cache", cache_target, cache_entries)
+        _write_launchers(shim_target, plan.launchers)
+        materialized = VerificationMaterialization(
+            plan=plan,
+            workspace=workspace,
+            source_root=source_target,
+            npm_cache_root=cache_target,
+            shim_root=shim_target,
         )
-        _write_launchers(
-            shim_root=shim_root,
-            launchers=plan.launchers,
-            expected_digest=plan.audit_intent.launcher_digest,
-        )
+        revalidate_verification_before_spawn(materialized)
+        return materialized
     except Exception:
-        shutil.rmtree(source_root, ignore_errors=True)
+        shutil.rmtree(source_target, ignore_errors=True)
         shutil.rmtree(verification_root, ignore_errors=True)
         raise
-
-    return VerificationMaterialization(
-        plan=plan,
-        workspace=exact_workspace,
-        source_root=source_root,
-        npm_cache_root=cache_root,
-        shim_root=shim_root,
-    )
-
-
-def cleanup_verification_materialization(materialized: VerificationMaterialization) -> None:
-    shutil.rmtree(materialized.source_root, ignore_errors=True)
-    shutil.rmtree(materialized.workspace / _VERIFICATION_DIR, ignore_errors=True)
 
 
 def revalidate_verification_before_spawn(materialized: VerificationMaterialization) -> None:
@@ -300,27 +318,22 @@ def revalidate_verification_before_spawn(materialized: VerificationMaterializati
     current_toolchain = build_toolchain_manifest(plan.profile)
     if not _same_toolchain(current_toolchain, plan.toolchain):
         raise ValueError("verification toolchain changed before SPAWN")
-    source = load_source_snapshot(
-        plan.profile.source_snapshot_path(plan.admission.source.source_id),
-        limits=plan.profile.limits,
-        expected_manifest_sha256=plan.admission.source.source_manifest_digest,
-        expected_revision=plan.admission.source.transport.revision,
+    _verify_entries(materialized.source_root, plan.admission.source.files)
+    _verify_entries(
+        materialized.npm_cache_root,
+        _npm_cache_entries(plan.admission.capsule.files),
     )
-    if source != plan.admission.source:
-        raise ValueError("verification source snapshot changed before SPAWN")
-    capsule = load_dependency_capsule(
-        plan.profile.dependency_capsule_path(plan.admission.capsule.capsule_id),
-        limits=plan.profile.limits,
-        expected_capsule_id=plan.admission.capsule.capsule_id,
+    _assert_lock(
+        materialized.source_root / "package-lock.json",
+        plan.admission.expected_package_lock_sha256,
     )
-    if capsule != plan.admission.capsule:
-        raise ValueError("verification dependency capsule changed before SPAWN")
-    lock_path = _safe_member(materialized.source_root, "package-lock.json")
-    if _sha256_file(lock_path) != plan.admission.expected_package_lock_sha256:
-        raise ValueError("materialized package-lock digest changed before SPAWN")
-    observed_launcher_digest = launcher_digest(
+    if launcher_digest(
         (name, (materialized.shim_root / name).read_bytes())
         for name, _content in plan.launchers
-    )
-    if observed_launcher_digest != plan.audit_intent.launcher_digest:
-        raise ValueError("verification launcher changed before SPAWN")
+    ) != plan.audit_intent.launcher_digest:
+        raise ValueError("verification launcher identity changed before SPAWN")
+
+
+def cleanup_verification_materialization(materialized: VerificationMaterialization) -> None:
+    shutil.rmtree(materialized.source_root, ignore_errors=True)
+    shutil.rmtree(materialized.workspace / _VERIFICATION_DIR, ignore_errors=True)
