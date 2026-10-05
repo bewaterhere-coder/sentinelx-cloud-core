@@ -68,6 +68,9 @@ from sentinelx_core.operation_registry import (
     canonical_repository_mutation_firewall_feature,
 )
 from sentinelx_core.policy import Policy
+from sentinelx_core.repository_materialization_runtime import (
+    make_runtime_repository_materialization_provider,
+)
 
 Handler = Callable[[dict[str, Any]], Awaitable[dict[str, Any]]]
 
@@ -116,10 +119,14 @@ def build_registry(
         upload_base,
         config_path=config_path,
     )
-    devforge_runtime = make_devforge_runtime_provider(
+    devforge_runtime_base = make_devforge_runtime_provider(
         policy,
         mutation_scope_service,
         execute_scoped_adapter=make_devforge_execute_scoped_adapter(profiled_script_run),
+    )
+    devforge_runtime = make_runtime_repository_materialization_provider(
+        devforge_runtime_base,
+        policy,
     )
 
     registry: dict[str, Handler] = {
