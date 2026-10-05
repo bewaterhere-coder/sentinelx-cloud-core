@@ -1,391 +1,732 @@
-# PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1 — Plan R1
+# PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1 — Plan R2
 
-Requirement: `docs/requirements/PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1.md`, revision 1.
+Requirement: `docs/requirements/PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1.md`, revision 1 (unchanged).
 
 Status: **Pending Plan Review**. No implementation authorization.
 
-## 1. Planning objective
+Supersedes Plan R1 and remediates Plan Review R1 findings F1–F4 without changing Requirement semantics.
 
-Implement one bounded provider-owned repository transaction path that composes the existing SentinelX mutation scope, Windows AppContainer sandbox, canonical-repository firewall, audit lineage and user-scoped Git execution context.
+## 0. Repository reality and remediation baseline
 
-The target lifecycle is:
-
-```text
-exact repository + source ref/SHA + Task/Run/Attempt[/Slice]
-→ provider resolves current repository/transport evidence
-→ provision/revalidate Host-owned scope
-→ provider obtains an immutable exact-source snapshot/capsule
-→ durable materialization START
-→ hydrate exact Host-owned workspace inside the admitted scoped boundary
-→ verify exact source + isolation
-→ execute through the existing scoped executor
-→ publication_pending
-→ broker validates exact workspace delta + exact Task ref + expected remote SHA
-→ create bounded checkpoint commit
-→ push with CAS semantics
-→ remote readback
-→ durable publication receipt
-→ terminalize scope
-```
-
-The caller never supplies a Host workspace/cache/mirror path and never receives Git credentials or canonical-checkout authority.
-
-## 2. Architecture decisions
-
-### D1 — Repository transaction is an explicit scope profile, not generic Git
-
-Introduce an explicit repository-transaction semantic bound to the existing mutation authority rather than reusing generic `sentinel_git`, `script_run`, filesystem copy or caller-selected Git clone.
-
-The transaction record must bind at minimum:
+Planning/reconciliation baseline:
 
 ```yaml
-repository_identity
+sentinelx_main: e7064c9bf4fcd15bdb6f5a2678414210c01d1c00
+pr013_task_branch_reconciled_with_main: true
+pr013_reconciliation_commit: 855543abbaab79c1c2cef6c2a56642595f148b91
+pr010_firewall: merged_canonical_baseline
+pr011_verification_capsule: open_implementation_s03_pending
+pr012_explicit_execution_profile: done_merged_canonical
+pr012_merge_commit: 29c724fdc6faed28018d60e61250d3f21b02c1b3
+devforge_runtime_baseline:
+  execute_scoped_execution_profile_required: true
+  execution_profile: scoped_mutation
+```
+
+The task branch was reconciled with current canonical `main` on the same PR/branch before R2 was written. The reconciliation retained only PR-013 Task artifacts on top of current product code; it did not add PR-013 product implementation.
+
+PR-012 is now canonical baseline, not an external/unmerged dependency. R2 therefore builds on the merged explicit `execution_profile=scoped_mutation` contract.
+
+PR-011 remains unmerged and complementary. PR-013 may reuse canonical concepts only after they reach `main`; it MUST NOT copy PR-011 unmerged code or redefine its verification-profile/toolchain semantics.
+
+## 1. Planning objective
+
+Implement one bounded provider-owned repository transaction path that composes the existing mutation scope, Windows AppContainer sandbox, canonical-repository firewall, audit lineage, explicit scoped execution profile, and user-scoped Git transport.
+
+Target lifecycle:
+
+```text
+exact repository + Task/Run/Attempt[/Slice]
++ exact source ref/SHA
++ exact publication ref/expected remote SHA
+        ↓
+provision_scope(purpose=repository_transaction_v1)
+        ↓
+provider mints fixed operation classes
+        ↓
+provider-owned exact source snapshot
+        ↓
+scoped materializer under AppContainer/Job
+        ↓
+materialized
+        ↓
+execute_scoped(execution_profile=scoped_mutation)
+        ↓
+process authority fully quiesced
+        ↓
+immutable publication capsule/tree frozen by provider
+        ↓
+publication_pending
+        ↓
+fixed-plumbing user-scoped Git broker
+        ↓
+expected-remote-SHA CAS / non-force push
+        ↓
+remote readback
+        ↓
+published → terminal
+```
+
+The caller never supplies Host workspace/cache/mirror/staging paths, operation classes, Git argv, credential controls, or sandbox identity.
+
+## 2. Plan Review R1 remediation summary
+
+| Finding | R2 disposition |
+| --- | --- |
+| F1 repository transaction scope admission | Closed in plan: `purpose=repository_transaction_v1` is added to existing `provision_scope` and maps provider-side to a fixed operation-class set. |
+| F2 materializer execution identity | Closed in plan: repository bytes are written only by a provider-generated materializer process running under the scope-derived Windows AppContainer/Job with a temporary read-only snapshot grant. |
+| F3 publication content handoff | Closed in plan: after process quiescence, provider freezes the workspace source tree into an immutable publication capsule; credential-bearing Git consumes only provider-owned staging derived from that capsule, never the scoped workspace. |
+| F4 implementation/Acceptance authority mixing | Closed in plan: live Agent activation, service restart, physical accepted-candidate proof and downstream ChatGPTControlShell resume are removed from implementation slices and placed in Acceptance; downstream resume still requires its own canonical command. |
+
+## 3. Architecture decisions
+
+### D1 — Concrete repository-transaction scope admission
+
+R2 freezes the admission shape by extending the existing `devforge_runtime.provision_scope` action rather than adding a second scope minting primitive.
+
+`local_api.describe` schema becomes purpose-discriminated:
+
+```yaml
+provision_scope:
+  required: [purpose, repository, lineage]
+  purpose:
+    enum:
+      - scoped_script
+      - repository_transaction_v1
+```
+
+For `purpose=scoped_script`, current behavior remains unchanged and the provider mints exactly:
+
+```text
+scoped_script
+```
+
+For `purpose=repository_transaction_v1`, the request additionally requires a closed `repository_transaction` object:
+
+```yaml
+repository_transaction:
+  source_ref: string
+  expected_source_sha: full_commit_sha
+  publication_ref: refs/heads/<task-branch>
+  expected_remote_sha: full_commit_sha
+```
+
+No Host path, remote URL, Git argv, sandbox identity, cache identifier, staging path, operation class or credential field is accepted.
+
+The provider independently validates repository identity and resolves the source/publication refs. The source ref MUST resolve to `expected_source_sha` before transaction creation. The publication ref MUST resolve to `expected_remote_sha` at admission. A branch-name-only match is insufficient.
+
+The provider maps `repository_transaction_v1` to this fixed immutable operation-class set:
+
+```text
+repository_materialize
+repository_execute
+repository_publish
+```
+
+Callers cannot submit, remove, reorder or enlarge these classes.
+
+The repository transaction record is durable provider state bound one-to-one to the minted scope and records:
+
+```yaml
+transaction_id
+repository_identity_digest
 project_id
 task_id
 run_id
 attempt_id
-slice_id: optional
+slice_id
 scope_id
 scope_generation
 workspace_id
 source_ref
 expected_source_sha
-publication_ref: optional
-expected_remote_sha: optional
+publication_ref
+expected_remote_sha
 state
 materialization_evidence
 execution_evidence
 publication_evidence
 ```
 
-The record is provider-owned durable state. Caller fields are comparison inputs only where explicitly allowed.
+Mutable transaction progress stays in the repository-transaction store; the existing immutable mutation-scope digest is not repurposed as a mutable transaction journal.
 
-The preferred implementation is a new focused repository-transaction module composed with `MutationScopeStore`; do not overload the immutable mutation-scope digest with mutable transaction progress fields unless review proves a safe versioned migration.
+Same-Attempt retry behavior:
 
-### D2 — Source acquisition is broker-owned; workspace hydration remains scoped
+- the existing scope Attempt index remains authoritative;
+- retrying `repository_transaction_v1` with exactly the same sealed transaction inputs returns/reconciles the existing current transaction;
+- changing purpose, repository, lineage, ref/SHA, target ref, expected remote SHA or fixed authority on the same Attempt is a conflict;
+- a terminal/revoked/expired scope cannot be reactivated;
+- a previously provisioned `scoped_script` Attempt can never be upgraded into a repository transaction.
 
-Do not solve the downstream failure by granting AppContainer access to the canonical checkout or by running `git clone` inside AppContainer.
+This closes F1 and preserves AC10 legacy one-shot semantics.
 
-Use a two-boundary design:
+### D2 — Repository actions and operation gates
 
-```text
-Host broker boundary
-  └─ resolve exact remote repository + source SHA
-  └─ obtain immutable provider-owned source snapshot/capsule
-       ↓ read-only admitted artifact
-Scoped mutation boundary
-  └─ materialize verified snapshot into exact Host-owned workspace
-```
-
-The Host broker may use existing user-scoped Git execution to obtain source objects, but it must not expose the user environment, credential helper, SSH agent, token material, arbitrary repository config or a caller-selected cache path to the scoped process.
-
-The snapshot/capsule representation must be immutable for the transaction and integrity-bound to the verified source SHA. Its storage location is provider-owned. It must not be interpreted as executable authority.
-
-Workspace writes derived from the snapshot must occur only after scope revalidation and durable operation START, inside the same OS-enforced scoped mutation boundary used by current Host mutation semantics. This preserves DevForge's `development.execution_workspace_materialize` ordering rather than treating a broker copy as an unrestricted filesystem shortcut.
-
-### D3 — Materializer is provider code, not repository code
-
-Add a provider-controlled materialization helper that consumes only the admitted immutable source snapshot/capsule and writes only into the exact scoped workspace.
-
-It must validate before/while materializing:
-
-- exact source SHA/digest binding;
-- no absolute/traversal paths;
-- no escape through symlink/junction/reparse behavior;
-- no alternate-data-stream target semantics on Windows;
-- no special-file/device semantics outside the supported regular-file/directory/symlink policy;
-- deterministic file-mode/metadata handling where relevant;
-- final workspace root equals the scope-sealed exact workspace;
-- canonical/source checkout is not the target.
-
-A materialization result is successful only after exact-workspace existence/readback and exact-source evidence are persisted.
-
-### D4 — Extend `devforge_runtime` with bounded repository actions
-
-Extend the existing Agent-owned `devforge_runtime` local API contract with bounded repository-transaction actions. Proposed names:
+The existing `devforge_runtime` endpoint gains bounded actions:
 
 ```text
 materialize_repository
-publish_checkpoint
 inspect_repository_transaction
+publish_checkpoint
 ```
 
-Exact names may change during Plan Review, but the semantic split is mandatory:
+`execute_scoped` remains the only model-facing process execution action.
 
-- `materialize_repository`: exact repo/ref/SHA + current scope/lineage, no Host paths;
-- `inspect_repository_transaction`: read-only transaction/readback state;
-- `publish_checkpoint`: exact current transaction + target ref + expected remote SHA + bounded commit metadata, no arbitrary Git argv.
+Operation gates are provider-selected from transaction identity, never caller-selected:
 
-`execute_scoped` remains the sole scoped process execution action. No second generic executor is introduced.
+```text
+materialize_repository              → repository_materialize
+execute_scoped on repository tx     → repository_execute
+publish_checkpoint                  → repository_publish
+legacy execute_scoped               → scoped_script
+```
 
-`local_api.describe` must publish closed schemas dynamically from the Agent. Production Hub source/schema changes remain out of scope.
+`execute_scoped` keeps the merged PR-012 schema requirement:
 
-### D5 — Repository transaction lifecycle is multi-operation; legacy one-shot execution is unchanged
+```json
+{"execution_profile":"scoped_mutation"}
+```
 
-Current `execute_scoped` terminalizes its scope after one execution. Repository materialization + execution + publication requires an explicit longer transaction lifecycle.
+For a scope bound to a repository transaction, the provider resolves the transaction first, requires state `materialized`, then the same canonical scoped executor validates `repository_execute`. For a non-transaction legacy scope it continues to validate `scoped_script`.
 
-Add a repository-transaction lifecycle equivalent to:
+No second generic executor is introduced.
+
+### D3 — Broker-owned exact source acquisition
+
+Source network/credential work occurs outside caller script semantics through a focused provider repository-source broker.
+
+The broker:
+
+1. resolves repository identity to provider-owned transport configuration/inventory; caller does not supply a URL;
+2. independently probes `source_ref` and requires the exact `expected_source_sha`;
+3. obtains exactly that Git object/tree using existing user-scoped Git credential context under fixed broker verbs/configuration;
+4. exports an immutable source snapshot/capsule to a provider-owned store;
+5. validates and persists a manifest containing relative path, type/mode, size and content digest plus the exact source commit;
+6. marks the snapshot immutable for this transaction before any scoped workspace write begins.
+
+The snapshot path is never returned as authority and is never caller-selectable.
+
+Provider acquisition MUST NOT fetch, checkout, reset, commit or otherwise mutate the canonical checkout.
+
+V1 supports regular files, directories and explicitly validated Git symlink entries. Unsupported special-file/device, submodule/gitlink or unsafe path semantics fail closed unless implementation demonstrates an equally bounded representation and adds focused tests without widening Requirement scope.
+
+### D4 — Materialization runs as an OS-enforced scoped operation
+
+This decision closes F2.
+
+Repository source bytes MUST NOT be copied into the workspace by an unrestricted LocalSystem/service-side filesystem loop.
+
+`materialize_repository` sequence is frozen as follows:
+
+```text
+revalidate scope + transaction + repository + lineage
+→ require repository_materialize
+→ persist materialization START
+→ build existing Windows mutation sandbox for exact scope
+→ derive/reserve the same scope-owned AppContainer identity
+→ activate exact workspace authority
+→ install temporary READ-ONLY grant for that AppContainer SID to exactly one immutable source snapshot
+→ materialize provider-generated trusted materializer bootstrap into provider-reserved control area
+→ spawn trusted materializer under the AppContainer + Job
+→ materializer reads snapshot manifest/content and writes repository bytes only into exact workspace source tree
+→ wait/terminate through bounded Job semantics
+→ verify no surviving child/process
+→ remove temporary snapshot read grant
+→ clear sandbox write authority for this operation
+→ read back grant removal + process quiescence + exact source tree digest
+→ transaction state = materialized
+```
+
+The service may create only provider-generated control/bootstrap bytes required to start the sandbox after durable START. It MUST NOT write repository source bytes on behalf of the materializer.
+
+The materializer is SentinelX provider code, not repository code and not caller-supplied code. Its executable/module identity is sealed in START/SPAWN evidence before process resume.
+
+#### Exact filesystem authority
+
+The materializer identity receives:
+
+```text
+READ   immutable transaction source snapshot only
+WRITE  exact scope-owned workspace only
+DENY/NO GRANT canonical checkout
+DENY/NO GRANT mutation authority store
+DENY/NO GRANT user profile / Git credential material
+```
+
+Before each entry write it validates:
+
+- relative non-empty path;
+- no `..`, absolute, drive-relative or UNC target;
+- no ADS target syntax;
+- no traversal through symlink/junction/reparse points;
+- supported regular-file/directory/symlink semantics only;
+- resource/file-count/size ceilings;
+- target remains under the sealed source tree.
+
+Partial materialization failure terminalizes/revokes the transaction and cannot become `materialized`.
+
+A Windows physical regression test MUST prove successful materialization carries AppContainer SID + Job + START/SPAWN/FINISH evidence and MUST fail if a test implementation substitutes a direct unrestricted service copy without that evidence.
+
+### D5 — Exact workspace layout and provider control namespace
+
+Repository transactions reserve a provider-owned internal control namespace under the sealed exact workspace. The exact name is implementation-defined but fixed by provider policy and MUST be rejected if the admitted repository source already contains that reserved path.
+
+Conceptually:
+
+```text
+<exact_workspace>/
+  <repository_source_tree...>
+  <provider_control_namespace>/   # provider-only runtime scripts/output, never publishable
+```
+
+`execute_scoped` defaults its repository-transaction `cwd` to the repository source tree. Caller `cwd` remains relative and cannot target/escape into the provider control namespace.
+
+Runner scripts, stdout/stderr, return-code evidence and sandbox profile files are placed in the provider control namespace so publication never mistakes runtime artifacts for source changes.
+
+### D6 — Multi-operation scope lifecycle without weakening legacy one-shot execution
+
+Repository transaction state is:
 
 ```text
 provisioned
+→ materializing
 → materialized
 → executing
 → executed
+→ publication_freezing
 → publication_pending
+→ publishing
 → published
 → terminal
 ```
 
-Rules:
+Failure substates may be persisted, but no failed/terminal state can be reactivated by caller input.
 
-1. legacy `purpose=scoped_script` remains one-shot and retains existing automatic terminalization;
-2. repository-transaction scopes are explicitly admitted for the required operation classes only;
-3. successful repository-scoped execution does not silently terminalize before publication; instead it closes the process/Job, removes active process authority, and transitions durable transaction state to `publication_pending` while retaining only the minimum provider authority needed for bounded publication;
-4. no child/background process survives the execution boundary;
-5. execution failure/containment failure terminalizes or revokes the scope and publication is forbidden;
-6. TTL/revocation continues to fail closed;
-7. an expired/terminal transaction can never be reactivated by caller input.
+The mutation scope remains the unique Host authority envelope. To support multiple bounded operations, add an operation-closure primitive to the existing Windows sandbox composition that:
 
-The implementation must separate **process mutation authority** from the later **broker publication authority** so `publication_pending` does not imply a live AppContainer process or reusable arbitrary workspace write capability.
+1. terminates/waits the operation Job/process tree;
+2. releases durable Job/PID bindings;
+3. removes operation-specific AppContainer ACL grants;
+4. readbacks zero live process authority and zero sandbox write authority;
+5. leaves the current repository-transaction scope nonterminal only when the transaction state machine explicitly requires a successor operation.
 
-### D6 — Publication uses a dedicated fixed-semantics Git broker
+This operation closure is NOT a generic “keep sandbox open” switch and is not caller-selectable.
 
-Publication must not reuse generic model-facing Git mutation as authority. Add a focused provider-owned publication broker, preferably in a new module layered over existing user-scoped Git execution primitives.
+Materialization success closes all materializer process/ACL authority before `materialized`.
 
-The broker must consume only transaction-owned workspace/repository/ref state and fixed Git semantics. It must not accept arbitrary Git argv.
+Repository execution success closes all execution process/ACL authority before publication freezing. Non-zero execution, timeout, containment failure, audit failure or cleanup failure forbids publication and terminalizes/revokes fail closed.
 
-Required hardening:
+Legacy `scoped_script` does not use this multi-operation retention path and retains its current automatic terminalization exactly as on canonical `main`.
 
-- no shell;
-- no force push in V1;
-- no repository-controlled `pre-commit`, `commit-msg`, `pre-push` or other hooks;
-- disable/ignore local/global aliases that could rewrite fixed verbs;
-- disable external clean/smudge/process filters or reject repositories requiring them for publication correctness;
-- no signing helper/GPG/SSH signing invocation;
-- no interactive prompts;
-- sanitized bounded output;
-- no credential material in state/receipt;
-- fixed target branch/ref sealed to transaction admission;
-- exact expected remote SHA required before write;
-- remote re-probe immediately before push;
-- push and subsequent remote readback must resolve the exact expected produced commit.
+TTL/revocation/placement-generation drift remain authoritative at every operation boundary.
 
-Where ordinary porcelain semantics would execute repository-controlled behavior, prefer fixed Git plumbing or explicit safe config overrides.
+### D7 — Repository-scoped execution reuses the canonical executor
 
-### D7 — Publication is compare-and-swap and idempotent
+`execute_scoped` retains merged PR-012 explicit-profile semantics and routes through the existing profiled scoped execution implementation.
 
-Before creating/pushing a checkpoint:
+Repository-transaction differences are internal authority/lifecycle composition only:
 
-1. inspect transaction state and exact workspace;
-2. revalidate repository + lineage + scope generation + transport target;
-3. verify current remote ref equals `expected_remote_sha`;
-4. compute/stage the exact workspace delta under fixed broker semantics;
-5. create at most one intended checkpoint commit;
-6. persist produced commit SHA before remote write;
-7. push non-force from expected old SHA to produced commit;
-8. read back remote ref;
-9. mark `published` only when readback exactly equals the produced commit.
+- transaction must be `materialized`;
+- required operation class is `repository_execute`;
+- provider runtime artifacts live in the reserved control namespace;
+- successful return code 0 performs operation closure instead of final scope terminalization;
+- transaction advances to `executed`;
+- any failure terminalizes/revokes and cannot publish.
 
-Retry rules:
+No Git credential, canonical checkout ACL or source snapshot credential authority is inherited by the execution child.
 
-- if durable evidence already shows successful readback, return the existing result without a new commit/push;
-- if push result is uncertain, first read the exact remote ref; if it equals the produced commit, reconcile success without replay;
-- if remote remains at expected old SHA, a bounded retry may be considered only under the same current transaction authority and exact produced commit;
-- if remote is any third value, fail closed as transport drift/conflict;
-- never regenerate a different commit merely because response/readback was lost.
+### D8 — Freeze publication content before entering credential context
 
-### D8 — Failure semantics remain operation-scoped and fail closed
+This closes F3.
 
-Materialization failures produce no successful workspace binding and no publication.
-
-Execution failures produce no automatic publication.
-
-Publication outcomes classify at minimum:
+After successful repository execution, publication content is frozen before any credential-bearing Git process is launched:
 
 ```text
-remote head drift              → blocked/conflict
-credential unavailable/rejected→ blocked
-transport timeout/reset        → interrupted/uncertain
-push acknowledged + readback   → published
-push response lost             → publication_uncertain, readback-first resume
+execution process/job closes
+→ readback zero process authority and zero sandbox write authority
+→ revalidate scope + transaction + exact workspace
+→ persist publication-freeze START
+→ provider reads exact repository source tree under sealed transaction authority
+→ validate paths/reparse/ADS/special-file policy again
+→ construct immutable publication manifest/capsule/tree bytes
+→ compute publication_content_digest
+→ persist source SHA + publication tree intent + digest
+→ transaction state = publication_pending
 ```
 
-No failure broadens permissions, swaps provider, mutates canonical checkout or enables a generic fallback.
+The provider service may READ the transaction workspace after process quiescence to freeze content; it does not give the interactive user or Git broker direct reusable workspace access and does not mutate the canonical checkout.
 
-For a terminalized transaction with no verified external publication side effect, a later DevForge Resume may create a new Attempt under the same Run per DevForge Resume semantics; SentinelX itself must not mint replacement DevForge Run/Attempt identities.
+Once `publication_pending` is persisted, publication content for that transaction is immutable. Later workspace drift causes failure rather than silently changing the intended commit.
 
-### D9 — Audit lineage covers materialize, execute and publish as one transaction
+The publication capsule/staging location is provider-owned and not caller-visible as authority.
 
-Extend durable evidence so all repository-transaction operations correlate to the same repository + semantic lineage + scope generation.
+### D9 — Fixed-plumbing publication broker
 
-Materialization evidence should identify source/ref/SHA and integrity proof. Execution reuses current process audit. Publication records expected old SHA, produced commit, push outcome and readback SHA.
+The credential-bearing user-scoped Git broker consumes only the immutable publication capsule and a provider-owned ephemeral staging/object store. It never receives access to the scoped workspace.
 
-Receipt projection must omit provider cache paths, credential identifiers and raw interactive-user environment data.
+The broker resolves remote transport from repository identity/provider inventory; caller cannot supply a remote URL.
 
-### D10 — Parallel task overlap is reconciled at implementation admission
+V1 publication uses a fixed plumbing-oriented sequence equivalent to:
 
-PR-011 is complementary and must remain independently consumable: repository materialization may later provide the source workspace that PR-011's Node/npm verification profile consumes, but this Task must not duplicate dependency-capsule/toolchain semantics.
+```text
+probe publication_ref
+require exact expected_remote_sha
+obtain expected parent commit/object into provider staging
+hash-object raw publication bytes without clean/smudge filters
+construct tree with fixed validated modes
+commit-tree with parent = expected_remote_sha
+persist produced_commit_sha BEFORE push
+re-probe publication_ref == expected_remote_sha
+push non-force produced_commit_sha:publication_ref
+read back publication_ref
+require readback == produced_commit_sha
+```
 
-PR-012 overlaps `devforge_runtime.py`. Before S01 implementation, re-read canonical `main` and PR-012 status. If PR-012 has merged, build on its explicit `execution_profile` contract. If not merged, keep this Task's branch isolated and avoid importing unmerged task code merely to reduce conflicts.
+Hardening:
 
-PR-010 firewall semantics are mandatory baseline and must remain passing.
+- no shell;
+- no arbitrary Git argv;
+- no checkout/add/porcelain commit path that would invoke repository filters;
+- raw blob hashing does not use repository attributes/clean filters;
+- `core.hooksPath` is forced to a provider-owned empty hooks directory for network push;
+- no `-S`, signing helper, editor or interactive prompt;
+- aliases cannot replace the fixed built-in verbs;
+- repository-local config in the publication capsule is not execution authority;
+- credential helper/SSH authority exists only in the user-scoped broker process and is never persisted into transaction state/output;
+- author/committer identity is provider policy, not arbitrary repository config;
+- commit message is bounded/sanitized Task checkpoint metadata;
+- no force push in V1.
 
-## 3. Proposed implementation slices
+Because the produced commit has `expected_remote_sha` as its parent, a normal non-force push can only fast-forward from that parent. If the remote advances after the final probe, the push fails instead of overwriting the new head.
 
-Formal Execution Slice Set is compiled only after Plan approval.
+Temporary broker ACL/staging authority is removed after publication attempt and verified by readback.
 
-### S01 — Repository Transaction Model + Local API Admission
+### D10 — Publication CAS, persistence and retry semantics
 
-Objective: create durable repository-transaction identity/state, exact scope binding, closed local-api schemas and idempotent state transitions without yet performing source hydration or remote publication.
+Before remote write:
 
-Likely surfaces:
+1. transaction must be `publication_pending`;
+2. repository, lineage, scope generation and publication ref are revalidated;
+3. remote ref must equal sealed `expected_remote_sha`;
+4. immutable publication content digest must match persisted intent;
+5. exact produced commit is created once;
+6. `produced_commit_sha` is durably persisted before push.
 
-- new `src/sentinelx_core/repository_transaction.py`;
-- `src/sentinelx_core/mutation_scope.py` only for explicit operation-class/lifecycle composition where necessary;
+Outcome rules:
+
+```text
+verified remote readback == produced commit
+  → published; duplicate request returns existing evidence; no second push
+
+push response lost / timeout
+  → publication_uncertain; next invocation reads remote first
+
+remote == produced commit
+  → reconcile published without replay
+
+remote == expected old SHA
+  → bounded retry of the SAME produced commit may occur if current transaction authority remains valid
+
+remote == any third SHA
+  → conflict/drift; fail closed; no force, no regenerated commit
+```
+
+Never regenerate a different commit merely because push response/readback was lost.
+
+### D11 — Audit and durable receipts
+
+Materialization, execution, publication freeze and publication are correlated to one repository transaction and the same repository + Task/Run/Attempt/slice + scope generation.
+
+Evidence records at minimum:
+
+```yaml
+repository_identity_digest
+transaction_id
+source_ref
+verified_source_sha
+scope_id
+scope_generation
+workspace_id
+materialization_audit_operation_id
+materializer_sandbox_identity
+materializer_job_closure
+materialized_tree_digest
+execution_audit_operation_id
+execution_closure
+publication_content_digest
+publication_ref
+expected_remote_sha
+produced_commit_sha
+push_outcome
+remote_readback_sha
+canonical_checkout_mutated: false
+generic_bypass_used: false
+operator_unrestricted_used: false
+terminal_scope_state
+```
+
+Receipts MUST omit source snapshot/staging Host paths, credential identifiers, raw credential-helper output and raw interactive-user environment data.
+
+No verified receipt/readback means no completion claim.
+
+### D12 — Related-task composition
+
+#### PR-012
+
+PR-012 is now `done` and merged. Its explicit `execution_profile=scoped_mutation` requirement is canonical baseline. PR-013 directly extends current `main` and MUST preserve PR-012 regressions.
+
+#### PR-011
+
+PR-011 remains open at implementation S03. Its verification toolchain/dependency capsule is complementary but unmerged. PR-013 does not import PR-011 task-branch code. At each implementation-slice admission, re-read current `main` and PR-011 status; if PR-011 later merges, perform a same-task overlap impact check before modifying overlapping sandbox/materialization surfaces.
+
+#### PR-010
+
+Canonical repository firewall remains mandatory baseline and all affected firewall readiness/effect-class regressions remain required.
+
+## 4. Implementation slices
+
+Formal Execution Slice Set is compiled only after this R2 passes Plan Review.
+
+### S01 — Repository Transaction Admission + Durable State
+
+Objective: implement concrete `repository_transaction_v1` admission and durable transaction identity/state without source hydration or publication side effects.
+
+Expected surfaces:
+
 - `src/sentinelx_core/handlers/devforge_runtime.py`;
-- Agent wiring for the new bounded services;
-- `tests/test_devforge_runtime_local_api.py`;
-- new focused repository-transaction tests;
-- mutation-scope regression tests.
+- new focused `repository_transaction.py` store/model;
+- `mutation_scope.py` only for fixed operation-class composition where necessary;
+- Agent provider wiring/capability projection;
+- focused tests/docs.
 
-Verification:
+Required verification:
 
-- caller path fields rejected;
-- foreign/stale/terminal scope rejected;
-- exact repository/lineage binding enforced;
-- transaction state is durable/idempotent;
-- legacy `scoped_script` lifecycle unchanged;
-- `describe` exposes only bounded path-free schemas;
-- PR-012 overlap is explicitly reconciled against current main before mutation.
+- `describe` shows purpose-discriminated path-free schema;
+- provider maps repository purpose to exact fixed classes `repository_materialize`, `repository_execute`, `repository_publish`;
+- caller operation-class/path/credential fields rejected;
+- exact source/publication ref/SHA admission independently checked;
+- same-Attempt exact retry idempotent;
+- changed authority inputs conflict;
+- stale/foreign/terminal scope rejected;
+- legacy `scoped_script` provisioning unchanged;
+- current merged PR-012 explicit execution-profile tests remain passing.
 
-### S02 — Exact Source Snapshot + Scoped Workspace Materialization
+### S02 — Exact Source Snapshot + AppContainer Materializer
 
-Objective: obtain an integrity-bound exact source snapshot through provider-owned Git transport and hydrate it inside the exact scoped workspace without canonical-checkout access.
+Objective: acquire exact source into immutable provider storage and hydrate repository bytes only through the scope-owned Windows AppContainer materializer.
 
-Likely surfaces:
+Expected surfaces:
 
-- new provider source-snapshot/materializer module(s);
-- existing user-scoped Git helper only where fixed source acquisition can safely reuse it;
-- Windows sandbox/ACL code only where a narrow read-only snapshot grant is required;
-- mutation audit evidence;
-- integration/security tests.
+- provider source acquisition/snapshot module;
+- repository materializer module;
+- Windows sandbox/ACL operation-closure support;
+- audit evidence;
+- security/integration tests.
 
-Verification:
+Required verification:
 
-- exact source SHA verified independently;
-- materialization succeeds without AppContainer canonical-checkout access;
-- snapshot path cannot be caller-selected;
-- traversal/reparse/ADS escape tests fail closed;
-- wrong repo/ref/SHA or scope produces no successful materialization;
-- exact workspace readback/isolation proven;
-- canonical checkout remains unchanged and protected.
+- remote ref resolves exact admitted SHA;
+- canonical checkout unchanged;
+- source snapshot location not caller-controlled;
+- materializer START precedes workspace source write;
+- repository bytes are written by AppContainer/Job materializer, not direct service copy;
+- snapshot read grant is exact/read-only/transient and removed/read back;
+- AppContainer has no canonical checkout, authority-store or credential access;
+- traversal/reparse/ADS/special-file/resource-limit negatives fail closed;
+- exact source tree digest/readback proves materialization;
+- failed materialization terminalizes/revokes and cannot publish.
 
-### S03 — Repository-Scoped Execution Retention + CAS Publication Broker
+### S03 — Repository-Scoped Execution Lifecycle + Publication Freeze
 
-Objective: allow a successful repository-scoped execution to reach `publication_pending`, then publish one exact checkpoint with user-scoped Git credentials through fixed no-hook/no-filter/no-signing semantics.
+Objective: reuse `execute_scoped` with `repository_execute`, safely quiesce process authority without prematurely terminalizing the transaction, and freeze exact post-execution publication content.
 
-Likely surfaces:
+Expected surfaces:
 
 - scoped execution lifecycle composition;
-- repository transaction state machine;
-- new fixed publication broker module;
-- `src/sentinelx_core/user_git.py` only for bounded reusable primitives, without creating a generic run-as-user API;
-- audit/receipt projection;
-- remote/CAS/idempotency tests.
+- Windows operation closure/quiescence;
+- repository transaction state transitions;
+- provider control namespace;
+- immutable publication capsule/tree freezer;
+- audit/receipt tests.
 
-Verification:
+Required verification:
 
-- successful process exits leave no active child/Job authority;
-- legacy one-shot calls still terminalize exactly as before;
-- remote head CAS is mandatory;
-- malicious hooks/filters/aliases/signing helpers are not executed;
-- credentials never enter AppContainer/receipt;
-- duplicate/retry after verified push is no-op/readback reconciliation;
-- uncertain push is readback-first and never blindly replayed;
-- remote drift creates no overwrite.
+- `execute_scoped` still requires explicit `execution_profile=scoped_mutation`;
+- transaction must be materialized;
+- repository execution requires `repository_execute` internally;
+- provider runtime artifacts cannot enter publication tree;
+- success closes Job/PID/AppContainer write authority before freeze;
+- nonzero/timeout/containment failure forbids publication and terminalizes/revokes;
+- immutable publication digest persisted;
+- content changes after freeze are detected/fail closed;
+- legacy scoped-script successful/failed executions still auto-terminalize exactly as current main.
 
-### S04 — Windows Physical E2E + Activation + Downstream Unblock Proof
+### S04 — Fixed Git Publication Broker + Candidate Verification Harness
 
-Objective: prove the accepted capability on a real Windows Host and then prove it resolves the original downstream blocker without transferring downstream Task authority.
+Objective: publish one frozen checkpoint with fixed Git plumbing under user-scoped credentials and prove CAS/idempotency/security behavior in isolated fixture/CI environments.
 
-Verification sequence:
+Expected surfaces:
 
-1. install/activate the exact accepted SentinelX candidate through the approved Agent update path;
-2. `sentinel_capabilities` confirms firewall/sandbox/audit and repository transaction readiness;
-3. `local_api.describe devforge_runtime` exposes current bounded materialize/publish actions;
-4. controlled fixture: provision → materialize exact source → scoped mutation → publish checkpoint → remote readback → terminalize;
-5. negative physical tests: wrong SHA, stale scope, remote drift and no-hook guarantees;
-6. resume `ChatGPTControlShell` `run-pr013-s01-001` / S01 under its own explicit `#开发执行` authority and verify repository materialization now reaches the implementation/verification boundary without generic fallback.
+- focused publication broker module;
+- narrow reusable primitives in `user_git.py` only where Git-specific;
+- transaction publication state/evidence;
+- fixture repository harness and Windows/CI tests;
+- activation/operator documentation.
 
-The downstream PR-013 execution is acceptance evidence only; this SentinelX Task cannot mutate or complete the downstream Task without that Task's own command authority.
+Required verification:
 
-## 4. Write scope
+- credential-bearing Git never accesses scoped workspace;
+- publication staging path provider-owned and transient;
+- hooks/filters/aliases/signing/editor/shell execution prevented;
+- produced commit persists before push;
+- commit parent exactly expected remote SHA;
+- non-force CAS/fast-forward push only;
+- remote drift creates no overwrite;
+- verified retry is no-op;
+- uncertain push resumes readback-first and reuses same produced commit;
+- credential material absent from state/log/receipt;
+- full affected regression suite + isolated Windows fixture passes on exact candidate.
 
-Expected source write scope:
+S04 does **not** install/restart the live SentinelX service and does **not** execute any downstream ChatGPTControlShell Task.
+
+## 5. Acceptance boundary — not an implementation Slice
+
+This section closes F4.
+
+`#开发验收 PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1` owns the live proof after all implementation slices are complete.
+
+Acceptance sequence:
+
+1. verify exact implementation candidate and candidate-local/CI receipts;
+2. activate/install that exact accepted candidate through the approved SentinelX operator/update path;
+3. restart the live Agent only under Acceptance/operator authority;
+4. read back running candidate identity;
+5. verify capability readiness and `local_api.describe devforge_runtime` repository transaction schemas;
+6. execute a dedicated benign physical fixture transaction on Windows: provision → exact materialize → scoped mutation → freeze → checkpoint → non-force CAS push → remote readback → terminalize;
+7. run physical negative cases for wrong SHA, stale scope, remote drift, no-hook behavior and credential isolation;
+8. verify canonical checkout remains unchanged/protected and terminal scope has no residual authority.
+
+### AC13 downstream proof boundary
+
+Acceptance cannot synthesize or inherit ChatGPTControlShell Task authority.
+
+To satisfy AC13, SentinelX Acceptance may reach a waiting state that explicitly requires the operator/user to issue the downstream Task's own canonical command:
+
+```text
+#开发执行 PR-013-manual-command-adoption-workflow-lineage-attachment-v1
+```
+
+That command belongs to the ChatGPTControlShell Task and creates/resumes its own Attempt under its own DevForge authorization.
+
+After that separately authorized execution produces durable evidence, SentinelX Acceptance may read the downstream receipt/readback as cross-repository proof that materialization reached the implementation/verification boundary without generic fallback. SentinelX Acceptance MUST NOT send the command itself as a side effect of this Task, mutate downstream Task artifacts, or claim AC13 without the downstream receipt.
+
+## 6. Write scope
+
+Expected product write scope after approval:
 
 - `src/sentinelx_core/handlers/devforge_runtime.py`;
-- new focused repository transaction/materialization/publication modules;
-- `src/sentinelx_core/mutation_scope.py` where operation-class/lifecycle support is required;
-- `src/sentinelx_core/mutation_audit.py` only for new bounded evidence types;
-- `src/sentinelx_core/windows_mutation_sandbox.py` only for narrow snapshot-read/materialization enforcement;
-- `src/sentinelx_core/user_git.py` only for safe fixed Git primitives that remain Git-specific;
-- Agent composition/capability code required to wire the services;
-- focused unit/integration/Windows tests;
-- config example/README/operator docs required to activate or inspect the capability.
+- new focused repository transaction/source snapshot/materializer/publication modules;
+- `src/sentinelx_core/mutation_scope.py` only for explicit fixed operation-class/lifecycle support;
+- `src/sentinelx_core/handlers/scoped_script.py` only to compose repository-transaction execution with the existing executor without duplicating it;
+- `src/sentinelx_core/mutation_audit.py` only for bounded new evidence;
+- `src/sentinelx_core/windows_mutation_sandbox.py` / sandbox composition for operation closure and narrow snapshot grant;
+- `src/sentinelx_core/user_git.py` only for fixed Git-specific broker primitives;
+- Agent capability/composition wiring;
+- focused unit/integration/Windows/CI fixture tests;
+- config example/operator documentation.
 
-Forbidden write scope:
+Forbidden:
 
-- production Hub repository/source/deployment;
-- downstream ChatGPTControlShell source/task artifacts;
-- canonical Host checkouts as implementation workspaces;
-- unrelated SentinelX operations or allowlists.
+- production `mcp.sentinelx.app` Hub changes;
+- canonical checkout implementation writes;
+- downstream ChatGPTControlShell source/Task mutation;
+- generic shell/Git/copy wrapper;
+- caller-selected Host paths;
+- caller-selected operation classes;
+- `operator_unrestricted`;
+- allowlist widening as a workaround;
+- broad AppContainer canonical/user-profile credential access;
+- force push;
+- importing unmerged PR-011 task code.
 
-## 5. Security and correctness risks
+## 7. Security/correctness risk controls
 
-1. **Broker becomes a canonical-write bypass.** Materialization/publication code must consume scope/transaction authority and exact transport evidence, not arbitrary path/Git arguments.
-2. **Snapshot becomes executable authority.** Treat it as immutable content with integrity verification; never source scripts/config from it in broker context.
-3. **Archive/tree extraction escape.** Validate traversal, reparse/symlink/ADS semantics before successful hydration evidence.
-4. **Git config executes repository code.** Publication must neutralize hooks, aliases, filters and signing helpers or use safe plumbing.
-5. **Long-lived scope weakens containment.** No active process/Job survives execution; repository transaction state does not equal arbitrary write authority.
-6. **Uncertain push duplicates side effects.** Persist produced commit before push and reconcile by exact remote readback first.
-7. **PR-011/012 branch overlap causes hidden dependency.** Revalidate `main` and current task heads at every implementation slice; never assume unmerged code.
-8. **Credentials leak across boundary.** User-scoped Git stays broker-only and output/evidence is sanitized.
-9. **Materialization trusts branch names.** Exact SHA is mandatory and independently verified.
-10. **Legacy scoped calls regress.** Regression tests must prove unchanged one-shot terminalization and fail-closed behavior.
+1. **Authority inflation** — fixed purpose→operation-class mapping; same-Attempt mutation conflicts.
+2. **Direct service materialization bypass** — source bytes require AppContainer materializer START/SPAWN evidence.
+3. **Snapshot escape** — strict manifest/path/reparse/ADS/resource validation + exact read-only ACL.
+4. **Long-lived process authority** — every materialize/execute operation closes Job/PID/ACL authority before next state.
+5. **Legacy regression** — multi-operation retention applies only to repository transactions; ordinary scoped scripts still terminalize.
+6. **Publication workspace ACL widening** — user-scoped Git consumes frozen provider capsule/staging only, never scoped workspace.
+7. **Repository code execution during Git** — fixed plumbing/raw blob hashing + empty hooks path + no signing/shell/editor.
+8. **TOCTOU publication content** — immutable frozen publication digest before credential process.
+9. **Remote race** — produced commit parent=expected SHA + immediate re-probe + non-force push + readback.
+10. **Duplicate external side effect** — persist produced SHA before push; uncertain result reconciles by readback first.
+11. **Credential leakage** — credentials remain user-scoped broker-only; state/output redaction required.
+12. **Parallel task drift** — re-read canonical main/PR-011 at every slice admission; PR-012 is already canonical baseline.
 
-## 6. Verification strategy
+## 8. Requirement / Acceptance traceability
+
+| Requirement / AC | Planned proof |
+| --- | --- |
+| R1/R2, AC1–AC3 | S01 closed admission schema, exact ref/SHA binding, lineage/scope conflict tests |
+| R3/R6, AC2–AC5 | S02 AppContainer materializer + physical OS identity/ACL/Job evidence |
+| R4/R13, AC4/AC11 | canonical firewall regressions + zero canonical mutation + no fallback tests |
+| R5 | S02 broker-owned source acquisition + credential/snapshot path non-projection |
+| R7/R10, AC5/AC10 | S03 single executor + repository operation closure + legacy auto-terminal regression |
+| R8/R9, AC6–AC8 | S04 fixed-plumbing broker + no-hook/filter/signing + non-force CAS tests |
+| R10/R11, AC9 | durable transaction/push evidence + readback-first retry/idempotency tests |
+| R12 | S01/S04 dynamic `local_api.describe` and capability projection |
+| AC12 | S04 isolated Windows fixture plus Acceptance live physical fixture |
+| AC13 | Acceptance reads receipt from separately authorized downstream ChatGPTControlShell `#开发执行` |
+
+## 9. Verification strategy
 
 ### Unit/contract
 
-- repository transaction durable state and transition table;
-- repository/lineage/scope binding;
-- closed local-api schemas and invalid-field rejection;
-- source-ref/SHA verification;
-- snapshot integrity and extraction safety;
-- publication no-hook/no-alias/no-filter/no-signing configuration;
-- CAS and idempotency/uncertain-result reconciliation;
-- credential/output redaction.
+- purpose-discriminated provisioning schema;
+- fixed operation-class mapping and same-Attempt conflict behavior;
+- transaction state persistence/transition table;
+- exact ref/SHA/transport binding;
+- caller path/operation/credential field rejection;
+- snapshot manifest/integrity/path validation;
+- publication tree construction and content digest;
+- fixed Git command construction;
+- CAS/idempotency/uncertain-outcome reconciliation;
+- output/credential redaction.
 
 ### Existing regressions
 
 At minimum rerun affected suites covering:
 
 - `test_devforge_runtime_local_api.py`;
-- mutation scope admission/handler/registry;
+- mutation scope admission/handler/store/registry;
 - mutation audit;
-- scoped script execution;
+- scoped script execution including merged PR-012 profile semantics;
 - canonical repository firewall + structured firewall;
 - Windows mutation sandbox;
-- user-scoped Git + Git network failure classification.
+- user-scoped Git + Git network failure classification;
+- PR-011-compatible verification/runtime suites when/if their code is canonical at slice admission.
 
-Then run the applicable full repository test suite on the exact Task transport.
+Run the applicable full repository test suite on the exact Task candidate before implementation completion.
 
-### Physical Windows acceptance
+### Isolated Windows implementation verification
 
-Mocks do not satisfy materialization/publication acceptance. At S04, capture actual Host receipts for exact workspace materialization, AppContainer execution, user-scoped Git publication, remote CAS/readback and terminal scope closure.
+Implementation may run physical Windows fixture tests in an isolated test environment/workspace to prove materializer identity, operation closure and publication broker feasibility. This is candidate verification only: it MUST NOT replace live Agent activation Acceptance, mutate production canonical checkouts, or invoke downstream Task commands.
 
-## 7. Completion boundary
+### Live Acceptance
 
-This Plan does not authorize implementation, Agent installation, service restart, production deployment, Hub mutation or downstream ChatGPTControlShell execution.
+Live Agent installation/restart and accepted-candidate physical proof are Acceptance-owned as defined in section 5.
 
-Implementation begins only after `#开发评审 PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1` approves the current Plan and the formal execution Slice Set is compiled/read back.
+## 10. Completion boundary
+
+Plan R2 does not authorize:
+
+- product implementation;
+- Execution Slice creation before review approval;
+- live Agent installation/restart;
+- service mutation;
+- Hub mutation;
+- downstream ChatGPTControlShell execution;
+- merge/release/completion claims.
+
+If Plan Review approves R2, DevForge may compile the formal Execution Slice Set from S01–S04 and transition to implementation. One `#开发执行` still completes at most one admitted slice according to the current DevForge runtime.
