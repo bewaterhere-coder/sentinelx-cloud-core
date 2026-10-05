@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 import sentinelx_core.repository_transaction as repository_transaction
+from sentinelx_core.executor import HandlerError
 from sentinelx_core.handlers.devforge_runtime import make_devforge_runtime_provider
 from sentinelx_core.handlers.local_api import make_local_api_handler
 from sentinelx_core.handlers.mutation_scope import make_mutation_scope_handler, make_mutation_scope_service
@@ -297,19 +298,19 @@ def test_direct_mutation_scope_cannot_mint_repository_transaction(tmp_path: Path
         policy.upload_base,
         mutation_state_root=state,
     )
-    denied = _run(
-        handler,
-        _context("mutation_scope"),
-        {
-            "action": "provision",
-            "purpose": REPOSITORY_TRANSACTION_PURPOSE,
-            "repository": _repository(),
-            "lineage": _lineage(),
-        },
-    )
-    # Direct op handlers raise through dispatch in production; context-aware
-    # wrapper preserves HandlerError for direct unit invocation.
-    assert denied is not None
+    with pytest.raises(HandlerError) as excinfo:
+        _run(
+            handler,
+            _context("mutation_scope"),
+            {
+                "action": "provision",
+                "purpose": REPOSITORY_TRANSACTION_PURPOSE,
+                "repository": _repository(),
+                "lineage": _lineage(),
+            },
+        )
+    assert excinfo.value.code == "invalid_payload"
+    assert not (state / "mutation-scopes" / "authority.json").exists()
 
 
 def test_provider_ref_resolver_verifies_origin_identity_and_exact_single_ref(
