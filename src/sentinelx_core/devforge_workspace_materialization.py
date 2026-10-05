@@ -357,6 +357,7 @@ class DevforgeWindowsMutationSandbox(WindowsMutationSandbox):
         # This is an internal immutable policy view, not a Host config rewrite.
         # All AppContainer/ACL/Job code remains the canonical implementation;
         # only workspace_root is replaced by the already-admitted provider root.
+        self._base_mutation_policy = policy
         sandbox_policy = replace(policy, workspace_root=binding.execution_root)
         self.devforge_binding = binding
         super().__init__(
@@ -386,13 +387,15 @@ class DevforgeWindowsMutationSandbox(WindowsMutationSandbox):
         )
 
     def terminalize(self, scope_id: str, generation: int) -> MutationScopeRecord:
-        # Prove current DevForge placement before delegating closure to the one
-        # canonical MutationScopeStore terminalization implementation.
+        # Prove current DevForge placement, then close runtime authority through
+        # the one canonical scope terminalizer.  Passing the original legacy
+        # mutation policy keeps its Host-global placement generation untouched;
+        # _cleanup_runtime still uses the provider-selected sandbox policy view.
         self._revalidate(scope_id, generation)
         return self.devforge_scope_store.terminalize_scope(
             scope_id,
             generation,
-            self.policy,
+            self._base_mutation_policy,
             self.repository,
             self.semantic,
             provider_protected_roots=self.provider_protected_roots,
