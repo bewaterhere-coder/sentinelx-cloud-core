@@ -5,21 +5,26 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 1
 development:
-  stage: plan_review
+  stage: plan_review_rejected
   gates:
     requirement_ready: true
     plan_approved: false
     acceptance_approved: false
     completion_verified: false
   plan_revision: 1
+  latest_plan_review: rejected_round_1
   implementation_authorized: false
-  blocking_findings: []
-  next_expected_actor: plan_reviewer
+  blocking_findings:
+    - F1-placement-receipt-pre-scope
+    - F2-devforge-sandbox-root-admission
+    - F3-pr013-transaction-overlap
+  next_expected_actor: planner
   authorization:
     mode: legacy_command_scoped
 artifacts:
   requirement_review: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-requirement-review-r1.md
   plan: docs/plans/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan.md
+  latest_plan_review: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r1.md
 transport:
   type: github-pr
   pr_number: 14
@@ -44,11 +49,11 @@ SentinelX already has provider-owned mutation placement, durable mutation scope,
 
 ```text
 DevForge Host binding:
-locations.devforge_workspace_root = D:\\coco
-→ DevForge execution_root = D:\\coco\\workspaces
+locations.devforge_workspace_root = D:\coco
+→ DevForge execution_root = D:\coco\workspaces
 
 SentinelX scoped-mutation placement:
-mutation_execution.workspace_root = D:\\SentinelX\\mutation-workspaces
+mutation_execution.workspace_root = D:\SentinelX\mutation-workspaces
 → <workspace_root>/<repository-digest>/<semantic-digest>
 ```
 
@@ -464,11 +469,11 @@ The Plan and implementation must actively disconfirm at least these cases:
 Normal example:
 
 ```text
-Host binding D:\\coco
+Host binding D:\coco
 repository bewaterhere-coder/Example
 Task PR-014-example
 Attempt 1
-→ provider derives D:\\coco\\workspaces\\bewaterhere-coder\\Example\\PR-014-example\\1
+→ provider derives D:\coco\workspaces\bewaterhere-coder\Example\PR-014-example\1
 → exact commit C materializes there
 → readback HEAD=C
 → two scoped operations use the same sealed workspace
@@ -477,6 +482,6 @@ Attempt 1
 
 Boundary example: the same semantic request arrives with a DevForge receipt pointing to another path. Provider derivation wins; mismatch is rejected before filesystem creation.
 
-Counterexample: accepting `dest=D:\\tmp\\x` or silently using `D:\\SentinelX\\mutation-workspaces` would make the operation convenient but breaks the DevForge/Host authority binding, so it is non-conforming.
+Counterexample: accepting `dest=D:\tmp\x` or silently using `D:\SentinelX\mutation-workspaces` would make the operation convenient but breaks the DevForge/Host authority binding, so it is non-conforming.
 
 Readiness decision: **Ready**. The prior review's two material gaps are now frozen: exact immutable `source_binding.expected_commit`, and a provider-owned multi-operation Attempt lifecycle that preserves legacy one-shot behavior. No unresolved material decision remains before Planning.
