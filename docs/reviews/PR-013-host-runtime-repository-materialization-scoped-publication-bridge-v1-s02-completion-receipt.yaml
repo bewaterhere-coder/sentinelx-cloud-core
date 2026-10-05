@@ -1,0 +1,100 @@
+schema_version: "1.0"
+kind: devforge_slice_completion_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1
+slice_id: S02
+source_command: "#开发执行 PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1"
+runtime:
+  repository: bewaterhere-coder/DevForge
+  version: 2.42.0
+  revision: e9eb7a5d695bbd7db57cc64edbae7c8712dd9f46
+lineage:
+  requirement_revision: 1
+  plan_revision: 2
+  plan_blob_sha: e65fceea327df2820719d0feb74759e733955efb
+  review_blob_sha: 949edfab4773f3b94f88befa5e16b00ee214db23
+  checkpoint_ref: docs/checkpoints/PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1-s02-completion-20261005.yaml
+  checkpoint_blob_sha: 54e3113d3748e066598de7a986017dc73245e653
+  slice_set_ref: docs/execution/PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1-slices.yaml
+  slice_set_blob_sha_after: 7608e78ffd0f99e7823928b3daf1e16ad981eeda
+  task_ref: docs/requirements/PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1.md
+  task_blob_sha_after: 55317e8ce3fc850167a38928d448fbf76b3bc6b7
+implementation:
+  exact_verified_product_candidate: cda502a9c6cce0ea29d3a74894b5b1cbf78148fd
+  disposition: completed_verified
+  product_semantics:
+    - immutable provider-owned exact source snapshot and digest
+    - provider-owned exact ref/SHA re-resolution before source acquisition
+    - bounded path and source-object validation against traversal, ADS/reparse-equivalent unsafe syntax, reserved names and control namespace collisions
+    - materialization START before workspace source writes
+    - provider-generated materializer runs inside canonical Windows AppContainer and Job boundary
+    - transient exact read-only snapshot ACL and exact workspace write authority only
+    - successful materialization preserves current scope for S03 only after durable Job/PID/AppContainer write authority is zero
+    - canonical scoped environment sanitizer reused; Host/User credential profile state not inherited
+    - source drift, foreign lineage and materialization failure fail closed; failure revokes scope and terminalizes transaction without publication
+    - canonical checkout remains untouched
+verification:
+  focused_windows:
+    workflow: pr013-s02-verification
+    run_id: 37302754155
+    job_id: 111739142794
+    conclusion: success
+    tests_passed: 117
+    tests_failed: 0
+    physical_windows_appcontainer: true
+  generic_ci:
+    run_id: 37302753889
+    conclusion: success
+  macos_agent:
+    run_id: 37302753774
+    conclusion: success
+  pr013_s01:
+    run_id: 37302754165
+    conclusion: success
+  pr010_security_regressions:
+    s01_run_id: 37302753893
+    s01_result: success
+    s02_run_id: 37302754161
+    s02_result: success
+    s03_run_id: 37302754173
+    s03_result: success
+    s04_run_id: 37302753810
+    s04_result: success
+    s05_run_id: 37302753876
+    s05_result: success
+freshness:
+  canonical_main: e7064c9bf4fcd15bdb6f5a2678414210c01d1c00
+  canonical_local_checkout_main_clean: true
+  devforge_main: e9eb7a5d695bbd7db57cc64edbae7c8712dd9f46
+  devforge_version: 2.42.0
+  pr011:
+    state: open
+    merged: false
+    current_slice: S04
+    current_slice_state: pending
+    observed_head: 3b2ff22e5c0fd9c483af6e43659e557e2a45e080
+  host_security:
+    canonical_repository_mutation_firewall_v1_verified: true
+    host_mutation_sandbox_v1_verified: true
+    pre_execution_audit_lineage_v1_verified: true
+safety:
+  canonical_checkout_mutated: false
+  repository_publication_executed: false
+  s03_executed: false
+  live_agent_mutated: false
+  hub_modified: false
+  downstream_task_executed: false
+  generic_fallback_used: false
+  operator_unrestricted_used: false
+  permission_or_allowlist_widened: false
+postconditions:
+  task_stage: implementation
+  s01_state: completed
+  s02_state: completed
+  s03_state: pending
+  current_slice: S03
+  all_implementation_slices_complete: false
+  acceptance_approved: false
+  completion_verified: false
+  one_slice_limit_respected: true
+  canonical_next_action: "#开发执行 PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1"
