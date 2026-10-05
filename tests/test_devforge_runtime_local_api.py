@@ -102,6 +102,13 @@ def test_eligible_host_lists_bounded_builtin(tmp_path: Path) -> None:
         "terminalize_scope",
         "execute_scoped",
     }
+    execute = described["actions"]["execute_scoped"]
+    assert "execution_profile" in execute["params"]
+    assert "execution_profile" in execute["params_schema"]["required"]
+    assert execute["params_schema"]["properties"]["execution_profile"] == {
+        "type": "string",
+        "const": "scoped_mutation",
+    }
 
 
 def test_builtin_lifecycle_reuses_canonical_service(tmp_path: Path) -> None:
@@ -302,6 +309,7 @@ def _execute_params() -> dict[str, object]:
         "scope_ref": {"scope_id": "scope-s07", "generation": 1},
         "repository": _repository(),
         "lineage": {**_lineage(), "run_id": "s07", "slice_id": "S07"},
+        "execution_profile": "scoped_mutation",
         "interpreter": "python3",
         "content": "print('s07')",
         "args": ["arg"],
@@ -311,7 +319,7 @@ def _execute_params() -> dict[str, object]:
     }
 
 
-def test_execute_scoped_adapter_injects_fixed_authority_and_projects_result() -> None:
+def test_execute_scoped_adapter_propagates_explicit_profile_and_projects_result() -> None:
     captured: dict[str, object] = {}
 
     async def fake_profiled(context, payload):
@@ -366,6 +374,103 @@ def test_execute_scoped_adapter_injects_fixed_authority_and_projects_result() ->
     assert "unexpected" not in result
 
 
+def test_execute_scoped_adapter_rejects_missing_and_invalid_profiles_before_executor() -> None:
+    calls = 0
+
+    async def fake_profiled(_context, _payload):
+        nonlocal calls
+        calls += 1
+        return {"execution_profile": "scoped_mutation"}
+
+    adapter = make_devforge_execute_scoped_adapter(fake_profiled)
+    context = _context()
+
+    missing = _execute_params()
+    del missing["execution_profile"]
+    try:
+        _run(adapter, context, missing)
+    except HandlerError as exc:
+        assert exc.code == "invalid_payload"
+    else:
+        raise AssertionError("missing execution_profile was accepted")
+
+    for value in (None, 7, True, "read_only", "operator_unrestricted", "unknown"):
+        params = _execute_params()
+        params["execution_profile"] = value
+        try:
+            _run(adapter, context, params)
+        except HandlerError as exc:
+            assert exc.code == "invalid_payload"
+        else:
+            raise AssertionError(f"invalid execution_profile {value!r} was accepted")
+
+    assert calls == 0
+
+
+def test_execute_scoped_local_api_routes_explicit_profile_to_existing_executor(
+    tmp_path: Path,
+) -> None:
+    captured: dict[str, object] = {}
+
+    async def fake_lifecycle(_payload):
+        return {"ok": True}
+
+    async def fake_profiled(context, payload):
+        captured["context"] = context
+        captured["payload"] = payload
+        return {
+            "ok": True,
+            "execution_profile": "scoped_mutation",
+            "returncode": 0,
+            "output": "ok",
+        }
+
+    policy = _policy(tmp_path)
+    adapter = make_devforge_execute_scoped_adapter(fake_profiled)
+    provider = make_devforge_runtime_provider(
+        policy,
+        fake_lifecycle,
+        execute_scoped_adapter=adapter,
+    )
+    handler = make_local_api_handler(
+        policy,
+        builtin_providers={provider.name: provider},
+    )
+    context = _context()
+    response = _run(
+        handler,
+        context,
+        {
+            "operation": "call",
+            "endpoint": "devforge_runtime",
+            "action": "execute_scoped",
+            "params": _execute_params(),
+        },
+    )
+
+    assert response["result"]["execution_profile"] == "scoped_mutation"
+    assert captured["context"] is context
+    payload = captured["payload"]
+    assert isinstance(payload, dict)
+    assert payload["execution_profile"] == "scoped_mutation"
+
+
+def test_execute_scoped_adapter_rejects_unexpected_downstream_profile() -> None:
+    async def fake_profiled(_context, _payload):
+        return {
+            "ok": True,
+            "execution_profile": "read_only",
+        }
+
+    adapter = make_devforge_execute_scoped_adapter(fake_profiled)
+    try:
+        _run(adapter, _context(), _execute_params())
+    except HandlerError as exc:
+        assert exc.code == "scoped_mutation_failed"
+    else:
+        raise AssertionError("unexpected downstream execution_profile was accepted")
+
+
 def test_execute_scoped_adapter_rejects_caller_authority_overrides() -> None:
     called = False
 
@@ -378,7 +483,6 @@ def test_execute_scoped_adapter_rejects_caller_authority_overrides() -> None:
     context = _context()
     cases = [
         ("cleanup", False),
-        ("execution_profile", "operator_unrestricted"),
         ("workspace_id", "caller-workspace"),
         ("operation_classes", ["anything"]),
     ]
