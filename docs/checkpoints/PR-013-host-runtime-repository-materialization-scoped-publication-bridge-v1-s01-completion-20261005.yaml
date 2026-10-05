@@ -1,0 +1,135 @@
+schema_version: "1.1"
+kind: devforge_slice_completion_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1
+slice_id: S01
+source_command: "#开发执行 PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1"
+runtime:
+  repository: bewaterhere-coder/DevForge
+  version: 2.42.0
+  revision: 74ad7ce0a3ea345478f37f1c79bfdf8fb0ec8f4f
+  workflow: project_development
+  workflow_version: "2.1"
+plan_lineage:
+  requirement_revision: 1
+  plan_revision: 2
+  plan_blob_sha: e65fceea327df2820719d0feb74759e733955efb
+  review_blob_sha: 949edfab4773f3b94f88befa5e16b00ee214db23
+  slice_set_blob_sha_at_admission: b0231a9fe75a3a2ef2bbc83127dc79443533edc1
+transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 13
+  branch: task/host-runtime-repository-materialization-scoped-publication-bridge-v1
+  canonical_main: e7064c9bf4fcd15bdb6f5a2678414210c01d1c00
+  exact_verified_product_candidate: 25ea1d8ebf2f3755f9d19ff1bb0af098ce6eb2e6
+implementation:
+  disposition: completed_verified
+  files:
+    - src/sentinelx_core/repository_transaction.py
+    - src/sentinelx_core/handlers/devforge_runtime.py
+    - src/sentinelx_core/handlers/mutation_scope.py
+    - tests/test_repository_transaction.py
+    - .github/workflows/pr013-s01-verification.yml
+  semantics:
+    - purpose=repository_transaction_v1 is admitted only through devforge_runtime after provider-owned exact repository/ref/SHA verification
+    - repository transaction purpose maps to the fixed immutable authority set repository_materialize/repository_execute/repository_publish
+    - caller-selected operation classes, Host paths, remote URLs, Git argv and credential controls are not projected
+    - one durable repository transaction is bound to exact repository plus Task/Run/Attempt/slice plus scope generation/workspace identity
+    - exact same-Attempt retries converge; changed sealed authority conflicts
+    - inspect_repository_transaction revalidates exact repository, semantic lineage and scope generation
+    - direct mutation_scope transport remains scoped_script-only and cannot bypass repository transaction admission
+    - legacy scoped_script provisioning and PR-012 execution_profile=scoped_mutation semantics remain intact
+    - S01 performs no source hydration, repository execution, publication or live Agent activation
+verification:
+  focused_windows:
+    workflow: pr013-s01-verification
+    run_id: 37297723819
+    job_id: 111722817108
+    result: success
+    python: "3.12.10"
+    tests_passed: 129
+    tests_failed: 0
+    duration_seconds: 31.17
+  initial_harness_attempt:
+    run_id: 37297520156
+    result: failed_environment_only
+    tests_passed: 113
+    tests_failed: 16
+    cause: pytest-asyncio was omitted from the workflow install step, so existing async tests could not execute
+    remediation: workflow installation changed from pip install -e . pytest to pip install -e ".[dev]"; no product semantic repair was required for those 16 failures
+  exact_candidate_regressions:
+    generic_ci:
+      run_id: 37297723795
+      result: success
+    macos_agent:
+      run_id: 37297723910
+      result: success
+    pr010_s01:
+      run_id: 37297723882
+      result: success
+    pr010_s02:
+      run_id: 37297723780
+      result: success
+    pr010_s03:
+      run_id: 37297723772
+      result: success
+    pr010_s04:
+      run_id: 37297724005
+      result: success
+    pr010_s05:
+      run_id: 37297723919
+      result: success
+repository_freshness:
+  canonical_checkout:
+    path: D:\\coco\\repos\\bewaterhere-coder\\sentinelx-cloud-core
+    branch: main
+    head: e7064c9bf4fcd15bdb6f5a2678414210c01d1c00
+    detached: false
+    ahead: 0
+    behind: 0
+    clean: true
+  task_branch:
+    verified_candidate_head: 25ea1d8ebf2f3755f9d19ff1bb0af098ce6eb2e6
+    behind_main: 0
+  pr011_parallel_task:
+    state: open
+    merged: false
+    stage: implementation
+    current_slice: S03
+    disposition: blocked
+    observed_head: 9ef4e05279a1c35bdf12eef21736ea89d8b2b76d
+    effect_on_s01_completion: none; unmerged PR-011 code was not imported
+host_security_readback:
+  agent_version: 0.24.1.dev175+g1e4012d7d
+  canonical_repository_mutation_firewall_v1:
+    available: true
+    verified: true
+    inventory_ready: true
+    effective_surface_ready: true
+    uncovered_classes: []
+  host_mutation_sandbox_v1:
+    available: true
+    verified: true
+  pre_execution_audit_lineage_v1:
+    available: true
+    verified: true
+safety:
+  implementation_transport: github_repository_api
+  host_local_product_mutation_used: false
+  canonical_checkout_mutated: false
+  host_scope_provisioned_for_s01_bootstrap: false
+  source_materialization_executed: false
+  publication_executed: false
+  live_agent_installed_or_restarted: false
+  hub_modified: false
+  downstream_chatgpt_control_shell_executed: false
+  generic_exec_or_shell_fallback_used: false
+  operator_unrestricted_used: false
+  allowlist_or_permission_widening_used: false
+postconditions:
+  s01_verification_satisfied: true
+  s01_completion_eligible: true
+  s02_executed: false
+  next_slice: S02
+  next_slice_state: pending
+  completion_claimed_for_task: false
