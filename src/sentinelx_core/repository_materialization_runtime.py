@@ -1,23 +1,58 @@
 """Runtime composition for PR-013 S02 repository materialization.
 
-The S02 snapshot store deliberately treats an absent transaction snapshot as a
-cache miss while preserving fail-closed corruption handling for any snapshot
-that already exists.  Keeping that distinction in the runtime composition
-avoids weakening the sealed snapshot verifier itself.
+The S02 runtime keeps endpoint discovery side-effect free: source/materializer
+state is created only when ``materialize_repository`` is actually invoked.
+It also gives Windows ACL readback an explicit write-bit test rather than
+mistaking READ_CONTROL/SYNCHRONIZE standard rights for write authority.
 """
 from __future__ import annotations
 
 from pathlib import Path
 from typing import Any
 
+import sentinelx_core.repository_materialization as _materialization
 from sentinelx_core.policy import Policy
 from sentinelx_core.repository_materialization import (
     GitRepositorySourceBroker,
+    RepositoryMaterializationFailed,
     RepositoryMaterializationProvider,
     RepositoryMaterializationService,
     RepositorySourceSnapshotStore,
+    _dacl_entries,
+    _run_icacls,
+    _set_exact_acl,
 )
 from sentinelx_core.repository_transaction import RepositoryTransactionStore
+
+
+# Windows FILE/standard/generic write capabilities.  Do not include READ_CONTROL
+# or SYNCHRONIZE: icacls ``(R)`` legitimately carries those standard rights.
+_SNAPSHOT_WRITE_MASK = (
+    0x00000002  # FILE_WRITE_DATA
+    | 0x00000004  # FILE_APPEND_DATA
+    | 0x00000010  # FILE_WRITE_EA
+    | 0x00000100  # FILE_WRITE_ATTRIBUTES
+    | 0x00010000  # DELETE
+    | 0x00040000  # WRITE_DAC
+    | 0x00080000  # WRITE_OWNER
+    | 0x40000000  # GENERIC_WRITE
+)
+
+
+def _runtime_grant_snapshot_read(snapshot_root: Path, broker_sid: str, app_sid: str) -> None:
+    _set_exact_acl(snapshot_root, broker_sid, None)
+    _run_icacls([str(snapshot_root), "/grant:r", f"*{app_sid}:(OI)(CI)(R)", "/T", "/C"])
+    observed = {sid: mask for sid, mask, _flags in _dacl_entries(snapshot_root)}
+    if app_sid not in observed:
+        raise RepositoryMaterializationFailed("snapshot AppContainer read grant was not installed")
+    if observed[app_sid] & _SNAPSHOT_WRITE_MASK:
+        raise RepositoryMaterializationFailed("snapshot grant contains write authority")
+
+
+# RepositoryMaterializationService resolves this helper through its module
+# global.  Runtime composition narrows the ACL classifier without altering the
+# sealed snapshot verifier or the generic Windows sandbox implementation.
+_materialization._grant_snapshot_read = _runtime_grant_snapshot_read
 
 
 class RuntimeRepositorySourceSnapshotStore(RepositorySourceSnapshotStore):
@@ -65,15 +100,29 @@ class RuntimeRepositoryMaterializationService(RepositoryMaterializationService):
             )
 
 
+class LazyRuntimeRepositoryMaterializationService:
+    """No filesystem/state materialization until the bounded action is called."""
+
+    def __init__(self, *, base: Any, policy: Policy) -> None:
+        self._base = base
+        self._policy = policy
+
+    async def materialize(self, *args, **kwargs):
+        state_root = (self._policy.upload_base.parent / "state").resolve(strict=False)
+        service = RuntimeRepositoryMaterializationService(
+            policy=self._policy,
+            transaction_store=self._base._repository_transactions,
+            ref_resolver=self._base._repository_ref_resolver,
+            state_root=state_root,
+        )
+        return await service.materialize(*args, **kwargs)
+
+
 def make_runtime_repository_materialization_provider(
     base: Any,
     policy: Policy,
 ) -> RepositoryMaterializationProvider:
-    state_root = (policy.upload_base.parent / "state").resolve(strict=False)
-    service = RuntimeRepositoryMaterializationService(
-        policy=policy,
-        transaction_store=base._repository_transactions,
-        ref_resolver=base._repository_ref_resolver,
-        state_root=state_root,
+    return RepositoryMaterializationProvider(
+        base,
+        LazyRuntimeRepositoryMaterializationService(base=base, policy=policy),
     )
-    return RepositoryMaterializationProvider(base, service)
