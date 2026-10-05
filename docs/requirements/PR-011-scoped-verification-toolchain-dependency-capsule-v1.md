@@ -8,18 +8,18 @@ task_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1
 title: Scoped Verification Toolchain & Dependency Capsule V1
 requirement_revision: 2
 development:
-  stage: plan_review
+  stage: implementation
   gates:
     requirement_ready: true
-    plan_approved: false
+    plan_approved: true
     acceptance_approved: false
     completion_verified: false
   plan_revision: 4
-  implementation_authorized: false
-  next_expected_actor: reviewer
+  implementation_authorized: true
+  next_expected_actor: implementer
   blocking_findings: []
   current_slice: S04
-  current_slice_state: pending_plan_reapproval
+  current_slice_state: pending
   authorization:
     mode: legacy_command_scoped
 transport:
@@ -30,7 +30,7 @@ transport:
 artifacts:
   plan: docs/plans/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan.md
   execution_slice_set: docs/execution/PR-011-scoped-verification-toolchain-dependency-capsule-v1-slices.yaml
-  execution_slice_set_status: stale_requires_recompile_after_plan_r4_review
+  execution_slice_set_status: current_plan_r4_readback_verified
   prior_plan_revision: 3
   prior_plan_blob_sha: 048d3a56386f035cb723df18d4f55b67500bb16b
   prior_execution_slice_set_blob_sha: 8939452081926ea03c69044b3ef2537bf7050a9d
@@ -38,10 +38,12 @@ artifacts:
   latest_slice_completion_checkpoint: docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s03-completed-20261005.yaml
   latest_slice_completion_receipt: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s03-completion-receipt.yaml
   s04_blocked_checkpoint: docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s04-blocked-host-proof-20261005.yaml
-  latest_plan_review: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-review-r3.md
-  latest_plan_review_transition_receipt: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-review-r3-transition-receipt.yaml
-  latest_plan_review_disposition: stale_historical_after_requirement_r2
-  prior_plan_review: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-review-r2.md
+  latest_plan_review: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-review-r4.md
+  latest_plan_review_transition_receipt: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-review-r4-transition-receipt.yaml
+  latest_plan_review_disposition: approved_current
+  prior_plan_review: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-review-r3.md
+  prior_plan_review_transition_receipt: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-review-r3-transition-receipt.yaml
+  earlier_plan_review: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-review-r2.md
   latest_plan_remediation: docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-remediation-r3-state-persistence-20261004.yaml
   plan_remediation_transition_receipt: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-remediation-r3-transition-receipt.yaml
   prior_plan_remediation: docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-remediation-r2-20261003.yaml
