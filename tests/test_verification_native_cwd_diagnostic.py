@@ -26,7 +26,7 @@ import subprocess
 
 DIRECT_NODE = {direct_node!r}
 COMSPEC = os.environ.get("COMSPEC", r"C:\\Windows\\System32\\cmd.exe")
-PROBE_ROOT = Path(os.environ["TEMP"])
+PROBE_ROOT = Path.cwd()
 
 def probe(name, argv):
     observed = {{"argv0": argv[0], "timeout": False, "returncode": None}}
