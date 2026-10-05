@@ -16,7 +16,9 @@ development:
   latest_plan_review: approved_round_2
   latest_plan_remediation: plan_r2_remediation_r1
   blocking_findings: []
-  next_expected_actor: implementer
+  execution_disposition: blocked
+  execution_blocker: CanonicalCheckoutDirty
+  next_expected_actor: operator
   current_slice: S01
   current_slice_state: pending
   authorization:
@@ -27,6 +29,7 @@ artifacts:
   prior_plan_review: docs/reviews/PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1-plan-review-r1.md
   latest_plan_remediation: docs/checkpoints/PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1-plan-remediation-r1.yaml
   execution_slice_set: docs/execution/PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1-slices.yaml
+  latest_slice_checkpoint: docs/checkpoints/PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1-s01-blocked-canonical-checkout-dirty-20261005.yaml
 transport:
   type: github-pr
   pr_number: 13
@@ -257,7 +260,7 @@ PR-010 canonical repository firewall remains a mandatory security dependency and
 - repository-transaction scope semantics and durable transaction state;
 - provider-owned exact source/ref resolution;
 - safe repository materialization into exact scope workspace;
-- provider-owned source mirror/snapshot/capsule mechanics if required;
+- provider-owned source mirror/snapshot/cache/capsule mechanics if required;
 - scoped workspace publication/checkpoint broker;
 - expected-remote-SHA CAS and remote readback;
 - fixed no-hook/no-executable-repository-config Git semantics;
