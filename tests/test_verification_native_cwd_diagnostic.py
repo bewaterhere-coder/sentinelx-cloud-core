@@ -19,6 +19,8 @@ def _run_python_probe(tmp_path, *, mode: str):
             "--preserve-symlinks",
             "--preserve-symlinks-main",
             npm_cli,
+            "--prefix",
+            "__SEALED_SOURCE_CWD__",
             "--version",
         ]
     else:
@@ -27,12 +29,15 @@ def _run_python_probe(tmp_path, *, mode: str):
     content = (
         "import json, os, subprocess\n"
         f"argv = {argv!r}\n"
+        "argv = [os.getcwd() if item == '__SEALED_SOURCE_CWD__' else item for item in argv]\n"
         "print('PY_ROOT_CWD=' + os.getcwd())\n"
         "print('PROBE_ARGV=' + json.dumps(argv))\n"
         "try:\n"
         "    completed = subprocess.run(argv, cwd=os.getcwd(), capture_output=True, text=True, timeout=12)\n"
         "except subprocess.TimeoutExpired as exc:\n"
         "    print('PROBE_TIMEOUT=' + repr(exc))\n"
+        "    print('PROBE_TIMEOUT_STDOUT=' + repr(exc.stdout))\n"
+        "    print('PROBE_TIMEOUT_STDERR=' + repr(exc.stderr))\n"
         "    raise SystemExit(124)\n"
         "print('PROBE_RETURN=' + str(completed.returncode))\n"
         "print('PROBE_STDOUT=' + completed.stdout.strip())\n"
