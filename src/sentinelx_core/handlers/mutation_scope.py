@@ -23,6 +23,10 @@ from sentinelx_core.mutation_scope import (
     MutationScopeStore,
 )
 from sentinelx_core.policy import Policy
+from sentinelx_core.repository_transaction import (
+    REPOSITORY_TRANSACTION_OPERATION_CLASSES,
+    REPOSITORY_TRANSACTION_PURPOSE,
+)
 from sentinelx_core.request_context import MutationLineage, RequestContext, context_aware
 
 _PURPOSE_SCOPED_SCRIPT = "scoped_script"
@@ -33,6 +37,7 @@ _BOUND_KEYS = _COMMON_KEYS | {"scope_ref"}
 _REPOSITORY_KEYS = frozenset({"vcs", "authority", "path"})
 _LINEAGE_KEYS = frozenset({"project_id", "task_id", "run_id", "attempt_id", "slice_id"})
 _SCOPE_REF_KEYS = frozenset({"scope_id", "generation"})
+_REPOSITORY_OPERATION_SET = frozenset(REPOSITORY_TRANSACTION_OPERATION_CLASSES)
 
 
 def _strict_mapping(
@@ -117,12 +122,16 @@ def _parse_scope_ref(payload: Mapping[str, Any]) -> tuple[str, int]:
     return scope_id.strip(), generation
 
 
+def _purpose(record: MutationScopeRecord) -> str | None:
+    operations = frozenset(record.allowed_operation_classes)
+    if operations == frozenset({SCOPED_SCRIPT_OPERATION_CLASS}):
+        return _PURPOSE_SCOPED_SCRIPT
+    if operations == _REPOSITORY_OPERATION_SET:
+        return REPOSITORY_TRANSACTION_PURPOSE
+    return None
+
+
 def _project(record: MutationScopeRecord) -> dict[str, Any]:
-    purpose = (
-        _PURPOSE_SCOPED_SCRIPT
-        if SCOPED_SCRIPT_OPERATION_CLASS in record.allowed_operation_classes
-        else None
-    )
     return {
         "scope_id": record.scope_id,
         "generation": record.generation,
@@ -136,7 +145,7 @@ def _project(record: MutationScopeRecord) -> dict[str, Any]:
         "protected_inventory_digest": record.protected_inventory_digest,
         "repository_identity_digest": record.repository_identity_digest,
         "semantic_identity_digest": record.semantic_identity_digest,
-        "purpose": purpose,
+        "purpose": _purpose(record),
     }
 
 
@@ -176,27 +185,52 @@ def make_mutation_scope_service(
         protected = (state_root.resolve(strict=False),)
         try:
             if action == "provision":
-                if payload.get("purpose") != _PURPOSE_SCOPED_SCRIPT:
-                    raise HandlerError("invalid_payload", "mutation_scope provision supports only purpose=scoped_script")
+                purpose = payload.get("purpose")
+                if purpose == _PURPOSE_SCOPED_SCRIPT:
+                    operations = (SCOPED_SCRIPT_OPERATION_CLASS,)
+                elif purpose == REPOSITORY_TRANSACTION_PURPOSE:
+                    operations = REPOSITORY_TRANSACTION_OPERATION_CLASSES
+                else:
+                    raise HandlerError(
+                        "invalid_payload",
+                        "mutation_scope provision supports only provider-known bounded purposes",
+                    )
                 record = store.provision_scope(
                     mutation_policy,
                     repository,
                     semantic,
-                    allowed_operation_classes=(SCOPED_SCRIPT_OPERATION_CLASS,),
+                    allowed_operation_classes=operations,
                     provider_protected_roots=protected,
                 )
             else:
                 scope_id, generation = _parse_scope_ref(payload)
                 if action == "revalidate":
-                    record = store.revalidate_scope_for_operation(
-                        scope_id,
-                        generation,
-                        mutation_policy,
-                        repository,
-                        semantic,
-                        required_operation_class=SCOPED_SCRIPT_OPERATION_CLASS,
-                        provider_protected_roots=protected,
-                    )
+                    bound = store.read_bound_scope(scope_id, generation, repository, semantic)
+                    purpose = _purpose(bound)
+                    if purpose == _PURPOSE_SCOPED_SCRIPT:
+                        record = store.revalidate_scope_for_operation(
+                            scope_id,
+                            generation,
+                            mutation_policy,
+                            repository,
+                            semantic,
+                            required_operation_class=SCOPED_SCRIPT_OPERATION_CLASS,
+                            provider_protected_roots=protected,
+                        )
+                    elif purpose == REPOSITORY_TRANSACTION_PURPOSE:
+                        record = store.revalidate_scope(
+                            scope_id,
+                            generation,
+                            mutation_policy,
+                            repository,
+                            semantic,
+                            provider_protected_roots=protected,
+                        )
+                    else:
+                        raise HandlerError(
+                            "HostMutationScopeOperationNotAllowed",
+                            "scope has no recognized provider-owned purpose",
+                        )
                 elif action == "inspect":
                     record = store.read_bound_scope(scope_id, generation, repository, semantic)
                 else:
@@ -227,7 +261,12 @@ def make_mutation_scope_handler(
     mutation_state_root: Path | None = None,
     lifecycle_service=None,
 ):
-    """Build the direct mutation_scope transport adapter."""
+    """Build the direct mutation_scope transport adapter.
+
+    The direct op intentionally stays scoped-script-only. Repository transaction
+    authority is admitted only through ``devforge_runtime`` where exact remote
+    refs/SHAs are independently verified and durably sealed first.
+    """
     service = lifecycle_service or make_mutation_scope_service(
         policy,
         upload_base,
@@ -239,6 +278,15 @@ def make_mutation_scope_handler(
     async def handle(context: RequestContext, payload: dict[str, Any]) -> dict[str, Any]:
         if context.op != "mutation_scope":
             raise HandlerError("invalid_payload", "transport operation does not match mutation_scope")
+        if (
+            isinstance(payload, dict)
+            and payload.get("action") == "provision"
+            and payload.get("purpose") != _PURPOSE_SCOPED_SCRIPT
+        ):
+            raise HandlerError(
+                "invalid_payload",
+                "direct mutation_scope provision supports only purpose=scoped_script",
+            )
         return await service(payload)
 
     return handle

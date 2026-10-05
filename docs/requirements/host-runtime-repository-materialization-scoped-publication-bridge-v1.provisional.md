@@ -1,0 +1,5 @@
+# SentinelX Host Runtime Repository Materialization & Scoped Publication Bridge V1
+
+Provisional requirement; canonical Task ID awaits GitHub-assigned PR number.
+
+Add provider-owned repository materialization and scoped publication to the existing `devforge_runtime` Host Runtime path so an admitted repository/ref can be hydrated into the exact Host-owned mutation workspace, executed under the existing AppContainer/scope/audit/firewall boundary, and checkpointed/published with Host user-scoped Git credentials without exposing canonical-checkout write authority or credentials to the sandbox. Reuse the existing scope store, canonical repository inventory, scoped executor, audit lineage and structured Git execution context. No Hub modification, generic shell/Git fallback, caller-selected workspace path, `operator_unrestricted`, canonical checkout mutation, credential inheritance or permission widening.

@@ -1,0 +1,38 @@
+name: pr013-s02-verification
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  exact-source-appcontainer-materialization:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+      - name: Run PR-013 S02 materialization and security regressions
+        shell: pwsh
+        run: >-
+          python -m pytest -q
+          tests/test_repository_materialization.py
+          tests/test_repository_materialization_failure_paths.py
+          tests/test_repository_transaction.py
+          tests/test_devforge_runtime_local_api.py
+          tests/test_local_api.py
+          tests/test_mutation_scope_admission.py
+          tests/test_mutation_scope_handler.py
+          tests/test_mutation_scope_registry.py
+          tests/test_windows_mutation_sandbox.py
+          tests/test_canonical_repository_firewall.py
+          tests/test_canonical_repository_firewall_readiness.py

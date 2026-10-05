@@ -1,0 +1,100 @@
+schema_version: "1.1"
+kind: devforge_slice_continuation_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1
+slice_id: S01
+source_command: "#开发执行 PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1"
+runtime:
+  repository: bewaterhere-coder/DevForge
+  version: 2.42.0
+  revision: 74ad7ce0a3ea345478f37f1c79bfdf8fb0ec8f4f
+  workflow: project_development
+state:
+  stage: implementation
+  current_slice: S01
+  current_slice_state: pending
+  disposition: blocked
+  reason_code: CanonicalCheckoutDirty
+  completion_claimed: false
+  completion_receipt_issued: false
+transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 13
+  branch: task/host-runtime-repository-materialization-scoped-publication-bridge-v1
+  head_before_checkpoint: 1d98951425b148f04d3981830996b2da24d97a60
+  base_branch: main
+  base_sha: e7064c9bf4fcd15bdb6f5a2678414210c01d1c00
+plan_lineage:
+  requirement_revision: 1
+  plan_revision: 2
+  plan_blob_sha: e65fceea327df2820719d0feb74759e733955efb
+  review_blob_sha: 949edfab4773f3b94f88befa5e16b00ee214db23
+  slice_set_blob_sha: b0231a9fe75a3a2ef2bbc83127dc79443533edc1
+repository_reality:
+  canonical_checkout: D:\\coco\\repos\\bewaterhere-coder\\sentinelx-cloud-core
+  branch: main
+  detached: false
+  head: e7064c9bf4fcd15bdb6f5a2678414210c01d1c00
+  ahead: 0
+  behind: 0
+  clean: false
+  staged_files: 0
+  unstaged_files: 24
+  untracked_files: 0
+  diff_insertions: 2607
+  diff_deletions: 2607
+  observed_diff_class: line_ending_only_lf_to_crlf
+  semantic_product_change_observed: false
+entry_guard:
+  canonical_main_clean_required: true
+  satisfied: false
+  decision: block_before_material_product_mutation
+  cleanup_authorized_by_this_command: false
+  restore_or_reset_performed: false
+host_security_readback:
+  agent_version: 0.24.1.dev175+g1e4012d7d
+  canonical_repository_mutation_firewall_v1:
+    available: true
+    verified: true
+    inventory_ready: true
+    effective_surface_ready: true
+  host_mutation_sandbox_v1:
+    available: true
+    verified: true
+  pre_execution_audit_lineage_v1:
+    available: true
+    verified: true
+parallel_task_reconciliation:
+  pr011:
+    state: open
+    stage: implementation
+    current_slice: S03
+    current_slice_state: pending
+    disposition: blocked
+    observed_head: b91dc99854872627b9696502b3603838c7eec76e
+    mergeable: true
+  pr012:
+    state: done_merged_canonical
+    execution_profile_scoped_mutation_is_baseline: true
+execution_effects:
+  host_scope_provisioned: false
+  execution_workspace_materialized: false
+  product_files_mutated: false
+  tests_executed: false
+  commit_created: false
+  push_performed: false
+  canonical_checkout_mutated: false
+  live_agent_mutated: false
+  hub_modified: false
+  downstream_task_executed: false
+safety:
+  generic_exec_or_shell_fallback_used: false
+  generic_git_or_copy_fallback_used: false
+  operator_unrestricted_used: false
+  allowlist_or_permission_widening_used: false
+  slice_state_advanced: false
+continuation:
+  mode: reenter_current_command_after_external_checkout_repair
+  prerequisite: restore canonical checkout to main + clean without changing canonical commit or product semantics
+  next_expected_actor: operator
+  canonical_resume_action: "#开发执行 PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1"

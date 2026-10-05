@@ -1,0 +1,79 @@
+schema_version: "1.0"
+kind: devforge_plan_remediation_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1
+source_command: "#开发计划修复 PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1"
+runtime:
+  repository: bewaterhere-coder/DevForge
+  version: 2.40.0
+  revision: 1dc76ed0bcc1a70a2c5a860cd7a99aedd5d7820a
+  workflow: project_development
+  review_contract: "1.3"
+input:
+  requirement_revision: 1
+  requirement_blob_sha: 8daf0689f288650ab9278a22fd7612fad57a23b9
+  rejected_plan_revision: 1
+  rejected_plan_blob_sha: 7d46ff42a8eed971e0a5d284065420c6d17ab088
+  rejected_review_ref: docs/reviews/PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1-plan-review-r1.md
+  rejected_review_blob_sha: af4825c2191bc52a5245d3b3ebc59c1e90874d31
+repository_reality:
+  previous_planning_main: dbf4bfc9ebcdbde2374d41e6825b613d46aa87f2
+  current_main: e7064c9bf4fcd15bdb6f5a2678414210c01d1c00
+  task_branch_reconciliation_commit: 855543abbaab79c1c2cef6c2a56642595f148b91
+  task_branch_reconciled_with_current_main: true
+  pr010: done_merged_canonical
+  pr011: open_implementation_s03_pending
+  pr012: done_merged_canonical
+  pr012_merge_commit: 29c724fdc6faed28018d60e61250d3f21b02c1b3
+  pr012_execution_profile_contract_is_baseline: true
+output:
+  plan_revision: 2
+  plan_ref: docs/plans/PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1-plan.md
+  plan_blob_sha: e65fceea327df2820719d0feb74759e733955efb
+  implementation_authorized: false
+  execution_slice_set_compiled: false
+findings:
+  - id: PR013-R1-F1-repository-transaction-scope-admission
+    classification: plan_local
+    disposition: remediated
+    changes:
+      - froze purpose=repository_transaction_v1 on existing provision_scope
+      - provider maps purpose to fixed repository_materialize/repository_execute/repository_publish classes
+      - caller cannot supply or enlarge operation classes
+      - same-Attempt exact retry/idempotency and conflict behavior specified
+      - legacy scoped_script admission remains unchanged
+  - id: PR013-R1-F2-materialization-execution-identity
+    classification: plan_local
+    disposition: remediated
+    changes:
+      - repository source bytes are written only by provider-generated materializer under scope-derived Windows AppContainer and Job
+      - durable START precedes source writes
+      - temporary exact read-only snapshot grant and exact workspace-only write authority specified
+      - canonical checkout, authority store and user credential access remain absent
+      - operation closure removes Job/PID/ACL authority and reads it back
+      - physical Windows evidence must reject direct unrestricted service-copy substitution
+  - id: PR013-R1-F3-publication-content-handoff-credential-boundary
+    classification: plan_local
+    disposition: remediated
+    changes:
+      - post-execution workspace content is frozen into immutable provider-owned publication capsule after process quiescence
+      - credential-bearing Git never receives scoped-workspace access
+      - fixed Git plumbing/raw blob hashing/no hooks/no filters/no signing/no shell semantics specified
+      - produced commit persists before non-force push
+      - uncertain push is readback-first and reuses the same produced commit
+  - id: PR013-R1-F4-acceptance-downstream-authority-mixed-into-implementation
+    classification: plan_local
+    disposition: remediated
+    changes:
+      - implementation slices limited to product code, fixture harness and candidate verification
+      - live Agent activation/restart and accepted-candidate physical proof moved to Acceptance
+      - ChatGPTControlShell AC13 proof requires separately issued downstream canonical command
+      - SentinelX Acceptance may consume downstream receipt but cannot inherit or synthesize downstream authority
+requirement_semantics_changed: false
+transport_changed: false
+product_implementation_mutated: false
+live_agent_mutated: false
+hub_modified: false
+next_stage: plan_review
+next_expected_actor: plan_reviewer
+canonical_next_action: "#开发评审 PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1"
