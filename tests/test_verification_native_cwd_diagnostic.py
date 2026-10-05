@@ -5,32 +5,20 @@ import asyncio
 from sentinelx_core.handlers import scoped_script as scoped_script_module
 from tests.test_verification_scoped_execution import _fixture
 
-_PROFILE_PATH_KEYS = (
-    "HOME",
-    "USERPROFILE",
-    "HOMEDRIVE",
-    "HOMEPATH",
-    "APPDATA",
-    "LOCALAPPDATA",
-    "TEMP",
-    "TMP",
-)
 
-
-def test_profiled_descendant_with_base_profile_paths(tmp_path, monkeypatch) -> None:
+def test_profiled_descendant_with_base_localappdata(tmp_path, monkeypatch) -> None:
     _profile, verification, handler, context, _store, _record, mutation, lineage, repo = _fixture(tmp_path)
     real_builder = scoped_script_module.build_verification_environment
 
-    def keep_base_profile_paths(base_environment, caller_environment, materialized):
+    def keep_base_localappdata(base_environment, caller_environment, materialized):
         environment = real_builder(base_environment, caller_environment, materialized)
-        for key in _PROFILE_PATH_KEYS:
-            environment[key] = base_environment[key]
+        environment["LOCALAPPDATA"] = base_environment["LOCALAPPDATA"]
         return environment
 
     monkeypatch.setattr(
         scoped_script_module,
         "build_verification_environment",
-        keep_base_profile_paths,
+        keep_base_localappdata,
     )
     body = '''\
 import os
@@ -51,7 +39,7 @@ raise SystemExit(completed.returncode)
         "lineage": lineage,
         "repository": repo,
     }))
-    print("S03_BASE_PROFILE_PATHS_CMD_RESULT=" + repr(result))
+    print("S03_BASE_LOCALAPPDATA_CMD_RESULT=" + repr(result))
     assert result["ok"] is True, result
     assert result["returncode"] == 0, result
     assert "CMD_RETURN=0" in result["output"], result
