@@ -14,7 +14,13 @@ def _run_python_probe(tmp_path, *, mode: str):
     elif mode == "shim-node":
         argv = ["cmd.exe", "/d", "/s", "/c", "node --version"]
     elif mode == "direct-npm":
-        argv = [node, npm_cli, "--version"]
+        argv = [
+            node,
+            "--preserve-symlinks",
+            "--preserve-symlinks-main",
+            npm_cli,
+            "--version",
+        ]
     else:
         raise AssertionError(f"unsupported probe mode: {mode}")
 
