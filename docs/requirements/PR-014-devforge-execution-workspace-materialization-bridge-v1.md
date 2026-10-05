@@ -5,26 +5,25 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 1
 development:
-  stage: plan_review_rejected
+  stage: plan_review
   gates:
     requirement_ready: true
     plan_approved: false
     acceptance_approved: false
     completion_verified: false
-  plan_revision: 1
+  plan_revision: 2
   latest_plan_review: rejected_round_1
+  latest_plan_remediation: plan_r2_remediation_r1
   implementation_authorized: false
-  blocking_findings:
-    - F1-placement-receipt-pre-scope
-    - F2-devforge-sandbox-root-admission
-    - F3-pr013-transaction-overlap
-  next_expected_actor: planner
+  blocking_findings: []
+  next_expected_actor: plan_reviewer
   authorization:
     mode: legacy_command_scoped
 artifacts:
   requirement_review: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-requirement-review-r1.md
   plan: docs/plans/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan.md
   latest_plan_review: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r1.md
+  latest_plan_remediation: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-remediation-r1.yaml
 transport:
   type: github-pr
   pr_number: 14
