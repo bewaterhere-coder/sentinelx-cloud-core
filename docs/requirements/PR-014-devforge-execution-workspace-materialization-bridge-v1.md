@@ -16,7 +16,7 @@ development:
   latest_plan_remediation: plan_r2_remediation_r1
   implementation_authorized: true
   blocking_findings: []
-  current_slice: S01
+  current_slice: S02
   current_slice_state: pending
   next_expected_actor: implementer
   authorization:
@@ -28,6 +28,7 @@ artifacts:
   latest_plan_remediation: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-remediation-r1.yaml
   execution_slice_set: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-slices.yaml
   plan_review_transition_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r2-transition-receipt.yaml
+  latest_slice_checkpoint: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-s01-completion-20261005.yaml
 transport:
   type: github-pr
   pr_number: 14
