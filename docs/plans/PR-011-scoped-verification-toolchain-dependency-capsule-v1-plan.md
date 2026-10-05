@@ -3,497 +3,241 @@
 ## Plan State
 
 ```yaml
-plan_revision: 3
+plan_revision: 4
 task_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1
-requirement_revision: 1
+requirement_revision: 2
 status: proposed
 review_state: pending
 implementation_authorized: false
-remediates:
-  - PR011-R1-F1-source-under-test-materialization-pre-toolchain-binding
-  - PR011-R1-F2-toolchain-capsule-integrity-resource-bounds
-  - PR011-R2-F3-stale-main-baseline-pr007-merged-dependency-reconciliation
 transport:
   type: github-pr
   pr_number: 11
   branch: task/scoped-verification-toolchain-dependency-capsule-v1
   base_branch: main
-repository_baseline: df9252fd4305eed361d8dc84e04da90222cd622e
-ancestry_refresh_commit: 90121415ea0680c776bf4075f6bfd6c3f077836d
+repository_baseline: e7064c9bf4fcd15bdb6f5a2678414210c01d1c00
+task_head_before_requirement_r2: 8d0126ee81142411a3a08c10abb39b84f574e2af
+requirement_change_impact: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-requirement-r2-impact-analysis.md
 prior_plan:
-  revision: 2
-  ref: docs/plans/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-r2.md
-  blob_sha: c30d771ea5167db92f549bcb8e55589a7550dafd
+  revision: 3
+  blob_sha: 048d3a56386f035cb723df18d4f55b67500bb16b
+prior_execution_slice_set:
+  blob_sha: 8939452081926ea03c69044b3ef2537bf7050a9d
+  status: stale_requires_recompile_after_plan_r4_review
 ```
 
-## 1. Revision 3 Decision
+## 1. Revision 4 Decision
 
-Revision 3 preserves the security and verification design from Revision 2 and changes only the repository-reality assumptions invalidated by subsequent merges.
+Revision 4 is a narrow reconciliation for Requirement Revision 2. The immutable Revision 3 Plan identified by `prior_plan.blob_sha` is incorporated by reference for all security, verification, implementation and test semantics not explicitly changed here.
 
-The complete Revision 2 design is durably frozen at the `prior_plan` blob above and is incorporated by reference for all sections not explicitly replaced by this Revision 3 artifact. If a statement in Revision 2 conflicts with this artifact, Revision 3 controls.
+Revision 4 changes only the following material boundaries:
 
-The implementation remains a **provider-owned verification admission layer composed into the existing scoped executor**. It must not introduce a second executor, second scope authority, second audit journal, generic network access, arbitrary Host-path authority, or Hub modification.
+1. ChatGPTControlShell PR-015 is removed from PR-011 Acceptance/Completion gating. It remains optional downstream integration evidence after PR-011 independently completes.
+2. Repository/runtime reality is refreshed to current SentinelX `main@e7064c9bf4fcd15bdb6f5a2678414210c01d1c00` and DevForge 2.43.0.
+3. The old Plan R3 Execution Slice Set is stale because its exact Requirement/Plan binding changed. A replacement Slice Set may be compiled only after Plan R4 approval.
+4. Verified S01-S03 completion receipts remain valid no-replay evidence. They are not invalidated by the AC12 gate change.
+5. The only remaining implementation scope is `S04 -> S05`.
 
-The four integrity-bound concepts remain unchanged:
+No product implementation is authorized by this Plan revision itself.
+
+## 2. Current Canonical Reality
+
+Current SentinelX `main` already contains and owns these canonical seams:
+
+- PR-007 provider-owned `devforge_runtime` and MutationScope lifecycle;
+- PR-010 canonical repository mutation firewall;
+- PR-012 explicit `execution_profile=scoped_mutation` schema/admission/propagation contract;
+- existing Windows AppContainer + Job containment and MutationAuditJournal authority.
+
+Production `mcp.sentinelx.app` remains an immutable third-party transport boundary. Plan R4 does not require or authorize Hub changes.
+
+PR-011 remote head before Requirement Revision 2 was `8d0126ee81142411a3a08c10abb39b84f574e2af`. That head persists the S04 blocked Host-proof checkpoint. S04 is not completed and no S04 product candidate was published to the Task branch.
+
+The stopped S04 execution workspace:
 
 ```text
-VerificationProfile
-  = provider policy for a trusted Node/npm verification environment
-
-SourceUnderTestSnapshot
-  = immutable provider-owned source snapshot bound to exact repository/revision identity
-
-DependencyCapsule
-  = immutable provider-owned offline npm dependency payload bound to package-lock digest
-
-VerificationAdmission
-  = one operation's sealed profile + source + dependency + lockfile identity
+D:\coco\workspaces\bewaterhere-coder\sentinelx-cloud-core\pr011-s04-20261005
 ```
 
-Round-1 F1/F2 mechanisms from Revision 2 remain normative:
+was observed dirty with unpublished candidate work. Requirement/Plan reconciliation must not reset, clean, overwrite, publish, or replay that workspace before the revised Plan/Slice lineage is approved and revalidated.
 
-- exact source identity and source manifest binding;
-- broker materialization before process spawn;
-- mandatory pre-SPAWN `package-lock.json` verification;
-- complete deterministic toolchain manifest/digest;
-- provider-generated workspace-local Node/npm launcher shims;
-- pre-START and pre-SPAWN request-time toolchain revalidation;
-- bounded source/dependency materialization with hard ceilings and cleanup;
-- offline/no-network verification;
+## 3. Preserved Implementation and Evidence
+
+The Requirement Revision 2 change does not alter R1-R9 behavior or the implementation mechanisms already proven by S01-S03.
+
+The following remain valid no-replay evidence:
+
+### S01 — completed / preserved
+
+Provider-owned verification policy and pure integrity/admission contracts:
+
+- logical Node/npm verification profile;
+- SourceUnderTestSnapshot identity/manifest binding;
+- DependencyCapsule integrity and package-lock binding;
+- deterministic ToolchainManifest identity;
+- bounded resource/path/final-path validation.
+
+### S02 — completed / preserved
+
+Composition into the existing audit + AppContainer pre-SPAWN path:
+
+- verification intent sealed into existing audit START evidence;
+- admitted source/capsule materialization before SPAWN;
+- source/lock/toolchain validation before process creation;
+- minimum transient toolchain authority;
+- bounded cleanup and terminal authority removal.
+
+### S03 — completed / preserved
+
+Real offline Node/npm descendant execution through the existing scoped executor:
+
+- workspace-local sealed launchers;
+- offline npm cache/configuration;
 - credential/proxy/user-profile stripping;
-- post-run source/lock integrity readback before success projection.
+- exact-workspace cwd confinement;
+- Job containment;
+- post-run integrity readback;
+- regression compatibility for unprofiled Python/PowerShell/Pwsh execution.
 
-## 2. Current Repository Reality — F3 Replacement
+No S01-S03 side effect may be replayed merely because Requirement/Plan lineage advanced to R2/R4.
 
-Canonical remote `main` for this Plan revision is:
+## 4. Remaining Implementation Scope
 
-```text
-df9252fd4305eed361d8dc84e04da90222cd622e
-```
+### S04 — Node/npm readiness + real Windows physical proof
 
-This main already contains completed PR-007 through merge commit:
+Objective remains the prior Plan R3 Step D / Slice S04 behavior.
 
-```text
-26fe28bd5e2317d31e09d2055b191447c3f7ed37
-```
+Required completion evidence must prove on the real Windows Host under the admitted `D:\coco\workspaces` boundary:
 
-Therefore the following are now **canonical main seams**, not external/unmerged dependencies:
-
-- `src/sentinelx_core/handlers/devforge_runtime.py`;
-- builtin `devforge_runtime` provider lifecycle;
-- `devforge_runtime.execute_scoped` dynamic schema exposure through generic `sentinel_local_api`;
-- `make_devforge_execute_scoped_adapter(...)` composition into the existing profiled script handler;
-- provider-owned MutationScopeStore lifecycle used by the builtin endpoint.
-
-Current `devforge_runtime.execute_scoped` main contract accepts:
-
-```text
-scope_ref
-repository
-lineage
-interpreter
-content
-args?
-cwd?
-env?
-timeout?
-```
-
-and adapts those fields to the existing `scoped_mutation` script path. Revision 3 extends this canonical seam; it does not recreate it.
-
-### Branch ancestry reconciliation
-
-Before Revision 3 was written, the same PR-011 task branch was refreshed from current main by explicit two-parent merge commit:
-
-```text
-90121415ea0680c776bf4075f6bfd6c3f077836d
-```
-
-Read-back comparison against `main@df9252fd...` produced:
-
-```yaml
-status: ahead
-ahead_by: 28
-behind_by: 0
-merge_base: df9252fd4305eed361d8dc84e04da90222cd622e
-```
-
-No replacement Task, branch, or PR was created. The ancestry refresh preserved the existing PR-011 orchestration artifacts and incorporated canonical PR-007 product/runtime code.
-
-### PR-010 current relationship
-
-PR-010 Canonical Repository Mutation Firewall V1 is now **Accepted but not yet integrated** at the time of Revision 3 planning. It remains an implementation-entry reconciliation dependency, not a code-copy dependency.
-
-At every implementation entry:
-
-1. re-read remote `main` and PR-010 state;
-2. if PR-010 has merged, refresh PR-011 ancestry to the new canonical main before product mutation and consume its canonical firewall/inventory primitives;
-3. if PR-010 is still unmerged, do not copy its implementation into PR-011;
-4. verification toolchain/source/capsule stores must never become canonical-repository write authority;
-5. profiled verification remains process mutation routed through the physically constrained scoped path.
-
-## 3. Configuration and Integrity Contracts — Preserved from Revision 2
-
-The Revision 2 configuration model remains normative, including provider-owned logical profiles and these V1 default limits:
-
-```yaml
-source_max_total_bytes: 536870912
-source_max_files: 50000
-dependency_max_total_bytes: 1073741824
-dependency_max_files: 50000
-max_single_file_bytes: 268435456
-max_relative_path_chars: 512
-```
-
-Hard ceilings remain:
-
-```yaml
-source_max_total_bytes: 2147483648
-dependency_max_total_bytes: 4294967296
-source_max_files: 200000
-dependency_max_files: 200000
-max_single_file_bytes: 1073741824
-max_relative_path_chars: 1024
-```
-
-Caller-visible requests contain logical identifiers and integrity expectations only. Caller-selected toolchain roots, executable paths, source-store paths, dependency-store paths, ACL targets, cache roots, and network endpoints remain rejected.
-
-## 4. Source-Under-Test Contract — Preserved F1 Closure
-
-The immutable `SourceUnderTestSnapshot` remains mandatory for profiled Node/npm verification.
-
-It binds at least:
-
-```text
-repository identity
-+ exact transport/revision identity
-+ source subpath
-+ canonical file manifest
-+ source manifest digest
-+ package-lock SHA-256
-```
-
-The broker, not the verification script, materializes admitted source into:
-
-```text
-<exact-workspace>\source
-```
-
-Before the first profiled process can SPAWN, the provider must prove:
-
-```text
-materialized source manifest == sealed source manifest
-AND
-source/package-lock.json exists
-AND
-sha256(source/package-lock.json) == sealed expected lock digest
-AND
-source lock digest == dependency capsule lock digest
-```
-
-A post-run source/lock check remains tamper detection only; it does not replace the pre-SPAWN truth binding.
-
-## 5. Dependency Capsule Contract — Preserved F2 Closure
-
-The immutable Node/npm dependency capsule remains provider-owned and offline. Manifest validation includes normalized paths, file sizes/hashes, payload digest, package-lock digest, reparse rejection, unexpected-file rejection, configured resource limits, and final-path containment.
-
-Materialization target remains:
-
-```text
-<exact-workspace>\.sentinelx-verification\npm-cache
-```
-
-Missing package data, manifest mismatch, digest mismatch, oversized content, excessive file count, partial-copy failure, or tampering must fail closed. No network fallback is permitted.
-
-## 6. Toolchain Integrity and Launcher Contract — Preserved F2 Closure
-
-`ToolchainManifest V1` remains deterministic and covers every regular file under the admitted readable toolchain root that may influence execution.
-
-Request-time integrity sequence remains:
-
-```text
-profile resolution
-→ final-path validation
-→ toolchain manifest/hash recomputation before START
-→ durable START with sealed verification intent
-→ sandbox activation/materialization
-→ second toolchain manifest/hash verification before SPAWN
-→ only then root process creation
-```
-
-Cached readiness is never request-time execution authority.
-
-Host `npm.cmd`, `npm.ps1`, or PATH-discovered launchers are not authoritative. The provider creates deterministic workspace-local launcher shims that invoke exactly the sealed `node.exe + npm-cli.js` identity.
-
-## 7. Audit and Evidence Contract
-
-The existing `MutationAuditJournal` remains the only durable execution journal.
-
-START evidence seals at least:
-
-```yaml
-profile_id: node_npm
-profile_revision: 1
-source_repository_digest: <sha256>
-source_revision: <exact-revision>
-source_manifest_digest: <sha256>
-toolchain_kind: node_npm_v1
-toolchain_digest: <sha256>
-launcher_digest: <sha256>
-capsule_id: <logical-id>
-capsule_revision: 1
-capsule_payload_digest: <sha256>
-expected_package_lock_sha256: <sha256>
-network_mode: none
-resource_limits_digest: <sha256>
-```
-
-Successful result evidence must remain bounded and must expose logical identities/digests plus existing scope/audit identity and terminal state. It must not expose credentials, raw Host paths, package contents, or unrestricted environment data.
-
-## 8. Environment and Execution Semantics
-
-Existing scoped Python/PowerShell/Pwsh remain the root interpreters. Node/npm are available only as descendants under an admitted verification profile.
-
-For `node_npm_v1`:
-
-- working directory is confined beneath `<exact-workspace>\source`;
-- PATH uses the provider-generated workspace-local shim directory rather than Host launcher discovery;
-- `NPM_CONFIG_CACHE` points to the workspace-local admitted cache;
-- `NPM_CONFIG_OFFLINE=true` is mandatory;
-- proxy/registry overrides and npm/Git/SSH/GitHub credentials are removed/rejected;
-- temp/log/home/profile locations stay inside exact workspace;
-- npm descendants stay inside the existing no-breakaway Job;
-- direct canonical checkout access remains unavailable.
-
-## 9. Readiness and Capability
-
-Base `host_mutation_sandbox_v1` readiness remains independent.
-
-Add a separate physical readiness feature such as:
-
-```text
-host_runtime.scoped_verification_node_npm_v1
-```
-
-It is true only after a real Windows/AppContainer self-check proves the configured profile is physically usable. Request-time source/capsule/toolchain integrity still runs independently for every operation.
-
-## 10. Canonical `devforge_runtime` Integration — F3 Replacement
-
-Because PR-007 is merged, this is no longer dependency-gated.
-
-Modify canonical main seam `src/sentinelx_core/handlers/devforge_runtime.py` after the core verification contract exists.
-
-Extend `execute_scoped` with one optional bounded object:
-
-```yaml
-verification:
-  type: object
-  required:
-    - profile
-    - source_id
-    - source_manifest_sha256
-    - source_revision
-    - capsule_id
-    - package_lock_sha256
-  additionalProperties: false
-```
-
-Required adapter changes:
-
-1. add `verification` to the exact `_EXECUTE_SCOPED_ALLOWED` set;
-2. add the bounded schema to `_ACTION_SCHEMAS["execute_scoped"]`;
-3. validate/copy only that object into the canonical scoped-handler payload;
-4. do not permit Host-path, executable, cache, network, credential, or authority fields inside it;
-5. keep `execution_profile="scoped_mutation"`, the existing scope/repository/lineage bindings, and the existing single executor;
-6. project bounded verification evidence from the scoped-handler result without exposing raw Host paths or credentials;
-7. keep transport as generic `sentinel_local_api`; no Hub schema/source/deployment change is required.
-
-A `describe devforge_runtime` readback must expose the current verification selector directly from the Agent-owned schema.
-
-## 11. Implementation Sequence
-
-### Step A — policy + pure verification contracts
-
-Implement provider profile parsing, resource limits/hard ceilings, SourceUnderTestSnapshot validation, DependencyCapsule validation, ToolchainManifest canonical digest, and VerificationAdmission request/admission schemas.
-
-Expected seams include:
-
-- `src/sentinelx_core/policy.py`
-- new `src/sentinelx_core/verification_profile.py`
-- `config.example.windows.yaml`
-- pure tests.
-
-### Step B — audit + sandbox + pre-SPAWN materialization
-
-Compose verification intent into the existing audit START evidence and existing Windows sandbox.
-
-Implement:
-
-- exact source/cache/shim broker materialization after START and before SPAWN;
-- source manifest + lockfile verification before SPAWN;
-- read/execute-only toolchain ACL;
-- second toolchain integrity check before SPAWN;
-- bounded streaming copy and partial-copy cleanup;
-- terminal ACL cleanup.
-
-### Step C — scoped execution + real Node/npm verification
-
-Extend the canonical scoped handler/environment so a profiled script can run real offline Node/npm through sealed workspace-local shims while preserving Job containment, credential stripping, exact-workspace semantics, and post-run integrity checks.
-
-### Step D — readiness/capability/docs
-
-Add separately gated Node/npm verification readiness, physical Windows self-checks, capability projection, configuration/operator documentation, and regression coverage.
-
-### Step E — canonical `devforge_runtime` integration
-
-This step is now an ordinary implementation step against canonical main, not an external dependency checkpoint.
-
-Extend the merged PR-007 `devforge_runtime.execute_scoped` seam exactly as Section 10 specifies and validate live Agent-owned `describe` + `execute_scoped` readback.
-
-### Step F — downstream AC12 proof
-
-Requires separate ChatGPTControlShell PR-015 authority.
-
-Procedure remains:
-
-1. resolve exact current PR-015 head SHA;
-2. build/read back a SourceUnderTestSnapshot for exact PR-015 `mcp/` bytes;
-3. bind matching dependency capsule to that exact `mcp/package-lock.json` digest;
-4. resume the separately authorized PR-015 S01 continuation without replaying implementation side effects;
-5. run real offline `npm run typecheck` and `npm run check` through admitted scoped verification;
-6. receipt must identify PR-015 head, source manifest, lockfile, toolchain, capsule, scope and audit identities;
-7. PR-015 remains sole authority for its own Slice completion claim.
-
-## 12. Required Test Matrix
-
-### Pure/unit
-
-- profile absent/valid/malformed;
-- configured limits and hard-ceiling rejection;
-- toolchain traversal/final-path rejection;
-- ToolchainManifest deterministic digest;
-- source repository/revision/manifest validation;
-- wrong source head/revision/manifest;
-- dependency capsule tamper/lock mismatch;
-- size/file/path bounds;
-- symlink/reparse/unexpected-file rejection;
-- launcher shim deterministic identity;
-- reserved environment and credential/proxy stripping.
-
-### Scoped integration
-
-- existing unprofiled Python/PowerShell/Pwsh remain unchanged;
-- source copied only to exact workspace;
-- lockfile verified before first SPAWN;
-- Node/npm success through sealed shims;
-- Host launcher substitution cannot affect execution;
-- wrong source/capsule/lock fails before SPAWN;
-- post-readiness toolchain replacement fails request-time validation;
-- oversized capsule/source fails with partial-copy cleanup;
-- missing cache remains offline and fails;
-- toolchain write denied;
-- descendants remain Job-contained;
-- timeout/nonzero/activation failure closes transient authority.
-
-### `devforge_runtime` integration
-
-- `describe` exposes bounded verification schema from canonical Agent code;
-- valid verification object is forwarded to canonical scoped handler;
-- unknown/path/network/authority fields fail schema/admission;
-- returned evidence is bounded;
-- existing lifecycle actions and unprofiled `execute_scoped` remain regression-compatible.
-
-### Physical Windows
-
-- sealed `node --version` and `npm --version` inside AppContainer;
-- offline fixture `npm ci` and package scripts;
-- DNS/HTTP remains unavailable;
+- separately gated `host_runtime.scoped_verification_node_npm_v1` readiness (or exact approved equivalent);
+- valid provider-owned Node/npm profile and dependency capsule;
+- actual AppContainer `node` and `npm` execution;
+- deterministic offline dependency-backed verification;
+- DNS/HTTP/network fallback remains unavailable;
 - canonical/protected roots remain inaccessible/non-mutable;
-- source revision/manifest appears in evidence;
-- transient toolchain ACL is absent after terminalization.
+- no Git/SSH/GitHub/npm credential inheritance;
+- descendants remain in the existing no-breakaway Job;
+- transient toolchain ACL/authority is absent after terminalization;
+- post-readiness toolchain tamper fails request-time validation;
+- PR-010 firewall and PR-012 explicit execution-profile regressions remain passing.
 
-## 13. Requirement Traceability
+Before any S04 product mutation, the implementer must reconcile the unpublished stopped S04 candidate against current `main`, Requirement R2, approved Plan R4, and the newly compiled Slice Set. Only unaffected candidate work may be reused; verified S01-S03 work is never replayed.
 
-| Requirement | Plan coverage |
+### S05 — canonical `devforge_runtime` verification projection + live readback
+
+Objective remains the prior Plan R3 Step E / Slice S05 behavior.
+
+Extend only the existing canonical `devforge_runtime.execute_scoped` seam with the bounded verification selector. The caller may supply logical/integrity identifiers only; Host paths, executable locations, cache paths, network endpoints, credentials and authority fields remain forbidden.
+
+Required properties:
+
+- explicit `execution_profile=scoped_mutation` remains mandatory;
+- existing scope/repository/lineage bindings remain mandatory;
+- the one existing scoped executor, MutationScopeStore, Windows sandbox and audit journal are reused;
+- `sentinel_local_api describe devforge_runtime` projects the current selector from Agent-owned schema;
+- a live admitted call returns bounded source/toolchain/capsule/offline/audit/terminal evidence;
+- unprofiled `execute_scoped` and lifecycle actions remain regression-compatible;
+- no Hub modification, generic shell/exec fallback, permission widening, `operator_unrestricted`, caller-selected Host path, or duplicate execution authority is introduced.
+
+## 5. Downstream PR-015 Boundary
+
+ChatGPTControlShell PR-015 is a downstream consumer with separate Task authority.
+
+It is **not**:
+
+- a PR-011 implementation Slice;
+- a PR-011 Acceptance gate;
+- a PR-011 merge prerequisite;
+- a PR-011 Completion prerequisite.
+
+After PR-011 independently satisfies its own Acceptance/Completion requirements and an accepted Agent build is activated, a separately authorized PR-015 continuation may run `mcp npm run typecheck` and `mcp npm run check` through the accepted capability. That evidence belongs to PR-015's workflow and may be retained as downstream integration confidence only.
+
+No PR-011 Slice may execute, mutate, complete, or claim authority over PR-015.
+
+## 6. Security / Architecture Invariants
+
+Revision 4 preserves all prior security invariants:
+
+- no second process executor;
+- no second scope store;
+- no second audit journal;
+- no second sandbox implementation;
+- no canonical repository mutation workspace;
+- no caller-selected toolchain/source/cache/capsule Host path;
+- no arbitrary network/DNS fallback;
+- no Host credential inheritance;
+- no generic command-allowlist widening;
+- no `operator_unrestricted` fallback;
+- no production Hub mutation;
+- no duplication or bypass of canonical PR-007/PR-010/PR-012 seams.
+
+## 7. Verification Matrix
+
+Plan R3's pure/unit, scoped integration, `devforge_runtime` integration and physical Windows test matrix remains normative.
+
+For Revision 4 completion, the decisive remaining evidence is:
+
+```text
+S04:
+real Windows Host
++ admitted Node/npm profile
++ admitted dependency capsule
++ offline dependency-backed execution
++ AppContainer/Job containment
++ network/credential denial
++ protected-root denial
++ terminal authority cleanup
+
+S05:
+Agent-owned describe schema
++ explicit scoped_mutation profile
++ bounded verification selector
++ live execute_scoped evidence
++ scope/audit/terminal readback
++ legacy regression compatibility
+```
+
+PR-015 evidence is intentionally absent from this completion matrix.
+
+## 8. Requirement Traceability Delta
+
+| Requirement | Revision 4 disposition |
 |---|---|
-| R1 provider-owned profiles | Steps A/D; Sections 3/9 |
-| R2 read/execute toolchain only | Steps B/C; Sections 6/8 |
-| R3 integrity-bound offline capsule | Steps A/B/C; Section 5 |
-| R4 workspace-local materialization | Step B; Sections 4/5 |
-| R5 no network widening | Steps C/D; Sections 5/8/12 |
-| R6 one scoped executor | Steps B/C/E; Sections 1/10 |
-| R7 `devforge_runtime` integration | Step E; Section 10 |
-| R8 evidence/readiness | Steps B/D/E; Sections 7/9/10 |
-| R9 migration safety | Steps A/C/D plus regression matrix |
-| R10 downstream unblock | Step F |
+| R1-R6 | Preserved from Plan R3 and verified S01-S03 evidence |
+| R7 | Remaining S05 canonical `devforge_runtime` integration |
+| R8 | Remaining S04 readiness + S05 evidence/readback |
+| R9 | Preserved compatibility/security regression surface |
+| R10 | Non-gating downstream integration follow-up only |
+| AC1-AC8, AC10-AC11 | S04 plus preserved S01-S03 evidence as applicable |
+| AC9 | S05 live Agent schema/execution readback |
+| AC12 | Non-gating; not part of PR-011 Acceptance/Completion eligibility |
 
-## 14. Risks and Controls
+## 9. Post-Review Slice Compilation
 
-| Risk | Control |
-|---|---|
-| verifies wrong source | exact immutable SourceUnderTestSnapshot + pre-SPAWN source/lock binding |
-| toolchain receipt hashes a different launcher | complete ToolchainManifest + provider-generated sealed shim |
-| toolchain changes after readiness | request-time pre-START + pre-SPAWN revalidation |
-| source/capsule resource exhaustion | fixed defaults + hard ceilings + bounded copy + cleanup |
-| toolchain ACL becomes write authority | dedicated read/execute grant + negative test + closure readback |
-| source/capsule smuggles Host path | logical IDs + provider roots + normalized manifests + final-path containment |
-| npm silently networks | offline mode + environment sanitization + physical no-network probe |
-| credentials leak | explicit reserved/deny environment set |
-| npm descendant escapes | existing no-breakaway Job |
-| duplicate execution authority appears | extend canonical merged PR-007 adapter only; no second executor/store/journal |
-| PR-010 semantics drift underneath PR-011 | fresh main/PR-010 reconciliation at every implementation entry |
-| downstream PR-015 authority is crossed | Step F consumes only separately authorized PR-015 continuation evidence |
+If and only if Plan R4 is Approved, orchestration compiles a new exact Execution Slice Set bound to Requirement R2 + Plan R4.
 
-## 15. Explicitly Rejected Alternatives
+That Slice Set must:
 
-Rejected:
+- import S01, S02 and S03 as `completed` using their existing verified receipts/checkpoints;
+- mark those completed Slices as no-replay evidence;
+- expose S04 as the first pending Slice;
+- expose S05 as pending and dependent on S04;
+- remove the old `AC12_requires_separately_authorized_PR015_evidence` completion gate;
+- preserve one explicit `#开发执行` invocation → at most one Slice;
+- retain the current PR #11 / task branch transport identity.
 
-- mounting/reading the canonical checkout from AppContainer;
-- letting verification scripts choose/materialize source after SPAWN;
-- allowing profiled SPAWN before lockfile verification;
-- Host PATH `npm.cmd` / `npm.ps1` authority;
-- arbitrary network/DNS fallback;
-- broker credential inheritance;
-- caller-selected Host paths for toolchain/source/cache/capsule;
-- Node/npm generic allowlist widening;
-- running npm outside the scoped AppContainer;
-- second executor, scope store, audit journal, or sandbox;
-- `operator_unrestricted` fallback;
-- production Hub modification;
-- reimplementing the already-merged PR-007 lifecycle/executor bridge;
-- copying unmerged PR-010 code into PR-011.
+The old Plan R3 Slice Set remains historical evidence only and cannot authorize new implementation after Requirement R2.
 
-## 16. Finding Closure
+## 10. Revision 4 Review Questions
 
-### R1 F1 — Source-under-test truth binding
+The reviewer must explicitly determine:
 
-Preserved from Revision 2. Exact source/revision identity, broker pre-SPAWN materialization, source manifest readback and mandatory lockfile verification remain normative.
+1. Is the AC12/PR-015 proof now unambiguously non-gating and outside PR-011 implementation/completion scope?
+2. Are R1-R9 security and verification semantics preserved?
+3. Are canonical PR-007 scope/executor, PR-010 firewall and PR-012 explicit-profile seams reused rather than duplicated?
+4. Do S01-S03 completion receipts remain valid no-replay evidence under the narrow Requirement change?
+5. Is the stopped S04 candidate correctly treated as unpublished/incomplete and subject to reconciliation before reuse?
+6. Is the only remaining implementation sequence exactly `S04 -> S05`?
+7. Does the proposed post-review Slice compilation preserve completed evidence while invalidating only the stale Plan R3 execution binding?
+8. Can PR-011 be independently Accepted/Completed from SentinelX-owned real-Windows verification and live Agent readback evidence without invoking PR-015?
 
-### R1 F2 — Toolchain/capsule request-time integrity and bounds
-
-Preserved from Revision 2. Complete toolchain digest, sealed launcher, double request-time revalidation, explicit bounds/hard ceilings and partial-copy cleanup remain normative.
-
-### R2 F3 — Stale baseline / merged PR-007 reconciliation
-
-Remediated by Revision 3:
-
-- remote canonical baseline updated from `f7e878f...` to `df9252fd...`;
-- PR-007 is treated as completed/merged canonical main reality;
-- `devforge_runtime.py` is an ordinary canonical integration seam;
-- same PR-011 branch ancestry was refreshed through merge commit `90121415...`;
-- readback proves `behind_by=0` against the selected baseline;
-- Step E no longer waits for an external PR-007 admission;
-- PR-010 is tracked separately as accepted/unmerged and must be re-read at implementation entry.
-
-## 17. Revision 3 Review Questions
-
-Reviewer must re-evaluate the complete effective Plan (`Revision 3 + incorporated Revision 2 blob`) and explicitly confirm:
-
-1. F1/F2 closure remains intact after the baseline refresh;
-2. current canonical `devforge_runtime` seam is correctly reused rather than duplicated;
-3. branch ancestry refresh is sufficient for implementation against current main;
-4. PR-010 is handled as a fresh implementation-entry reconciliation, not silently copied;
-5. the planned verification observes the real source-under-test and real offline dependency-backed Node/npm behavior;
-6. Requirement R1-R10 remain traceable and no Requirement semantic change was introduced.
-
-Plan approval remains reviewer-owned. This remediation does not compile an Execution Slice Set and does not authorize implementation.
+Plan approval remains reviewer-owned. Plan R4 does not authorize implementation until current Plan Review approval and exact post-review Slice Set readback are complete.
