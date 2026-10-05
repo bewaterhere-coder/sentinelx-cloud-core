@@ -5,23 +5,28 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 1
 development:
-  stage: plan_review
+  stage: implementation
   gates:
     requirement_ready: true
-    plan_approved: false
+    plan_approved: true
     acceptance_approved: false
     completion_verified: false
   plan_revision: 2
-  latest_plan_review: rejected_round_1
+  implementation_authorized: true
+  latest_plan_review: approved_round_2
   latest_plan_remediation: plan_r2_remediation_r1
   blocking_findings: []
-  next_expected_actor: plan_reviewer
+  next_expected_actor: implementer
+  current_slice: S01
+  current_slice_state: pending
   authorization:
     mode: legacy_command_scoped
 artifacts:
   plan: docs/plans/PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1-plan.md
-  latest_plan_review: docs/reviews/PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1-plan-review-r1.md
+  latest_plan_review: docs/reviews/PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1-plan-review-r2.md
+  prior_plan_review: docs/reviews/PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1-plan-review-r1.md
   latest_plan_remediation: docs/checkpoints/PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1-plan-remediation-r1.yaml
+  execution_slice_set: docs/execution/PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1-slices.yaml
 transport:
   type: github-pr
   pr_number: 13
