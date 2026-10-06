@@ -309,6 +309,52 @@ def test_verification_toolchain_is_read_execute_only_and_revoked_at_terminal(tmp
     assert all(sid != app_sid for sid, _mask, _flags in _dacl_entries(fx.profile.toolchain_root))
 
 
+def test_verification_toolchain_acl_never_rewrites_parent_acls(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    toolchain_root = tmp_path / "protected-parent" / "provider-node-toolchain"
+    toolchain_root.mkdir(parents=True)
+    app_sid = "S-1-15-2-424242"
+    calls: list[tuple[str, ...]] = []
+
+    def record_icacls(args: list[str]) -> None:
+        calls.append(tuple(args))
+
+    monkeypatch.setattr(windows_sandbox, "_run_icacls", record_icacls)
+
+    windows_sandbox._grant_verification_toolchain_read(toolchain_root, app_sid)
+    windows_sandbox._remove_verification_toolchain_read(toolchain_root, app_sid)
+
+    assert calls == [
+        (str(toolchain_root), "/grant:r", f"*{app_sid}:(RX)", "/T", "/C"),
+        (str(toolchain_root), "/remove:g", f"*{app_sid}", "/T", "/C"),
+    ]
+
+
+def test_verification_toolchain_acl_grant_failure_cleans_only_exact_root(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    toolchain_root = tmp_path / "protected-parent" / "provider-node-toolchain"
+    toolchain_root.mkdir(parents=True)
+    app_sid = "S-1-15-2-434343"
+    calls: list[tuple[str, ...]] = []
+
+    def fail_grant(args: list[str]) -> None:
+        calls.append(tuple(args))
+        if "/grant:r" in args:
+            raise RuntimeError("simulated ACL grant failure")
+
+    monkeypatch.setattr(windows_sandbox, "_run_icacls", fail_grant)
+
+    with pytest.raises(RuntimeError, match="simulated ACL grant failure"):
+        windows_sandbox._grant_verification_toolchain_read(toolchain_root, app_sid)
+
+    assert calls == [
+        (str(toolchain_root), "/grant:r", f"*{app_sid}:(RX)", "/T", "/C"),
+        (str(toolchain_root), "/remove:g", f"*{app_sid}", "/T", "/C"),
+    ]
+
+
 def test_toolchain_tamper_fails_before_first_process_creation(tmp_path: Path, monkeypatch) -> None:
     fx = VerificationFixture(tmp_path, attempt_id="pre-spawn-toolchain-tamper")
     (fx.profile.toolchain_root / "runtime.dat").write_bytes(b"tampered")
