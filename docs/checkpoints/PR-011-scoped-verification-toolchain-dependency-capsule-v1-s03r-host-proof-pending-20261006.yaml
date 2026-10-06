@@ -120,10 +120,11 @@ verification_so_far:
     s04:
       run_id: 37416438928
       conclusion: success
+  pr011_s03:
+    run_id: 37416438920
+    conclusion: success
+    note: includes minimal python child, IsProcessInJob, USER32-linked whoami, Node/npm offline and lifecycle probes
   pending_at_checkpoint:
-    pr011_s03:
-      run_id: 37416438920
-      status: in_progress
     pr010_s05:
       run_id: 37416438849
       status: in_progress
