@@ -1,0 +1,105 @@
+schema_version: "1.0"
+kind: devforge_slice_execution_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1
+slice_id: S03R
+source_command: "#开发执行 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
+status: blocked_host_execution_surface_within_dcoco_boundary
+completion_claim: false
+
+lineage:
+  requirement_revision: 2
+  plan_revision: 6
+  pr_number: 11
+  pr_head_at_entry: 036dff4120a02b3e34313a088fa88ae8fa56c29d
+  task_blob_sha: fe6a60177d26a3e1a37491942526b509a5e8061a
+  slice_set_blob_sha: d0d92b5c4766f0520818403e885ab9a02951d451
+  current_slice: S03R
+  current_slice_state: pending
+
+execution_boundary:
+  allowed_host_root: 'D:\coco'
+  outside_allowed_host_root_forbidden: true
+  canonical_repository_path: 'D:\coco\repos\bewaterhere-coder\sentinelx-cloud-core'
+  execution_workspace_path: 'D:\coco\workspaces\bewaterhere-coder\sentinelx-cloud-core\pr011-s03r-root-cwd-v8'
+  canonical_main_required: main_clean
+  hub_mutation: forbidden
+  live_agent_install_upgrade_restart: forbidden
+  s04_started: false
+  s05_started: false
+  speculative_v9_v10_product_repair: forbidden
+
+facts:
+  canonical_repository:
+    branch: main
+    head: e7064c9bf4fcd15bdb6f5a2678414210c01d1c00
+    dirty: false
+    ahead: 0
+    behind: 0
+  pr:
+    state: open
+    draft: true
+    branch: task/scoped-verification-toolchain-dependency-capsule-v1
+    head: 036dff4120a02b3e34313a088fa88ae8fa56c29d
+  execution_workspace:
+    branch: task/scoped-verification-toolchain-dependency-capsule-v1
+    observed_head: 3bb7812e9284e79262f457f3dcba0b641ca15c88
+    tracked_staged: 0
+    tracked_unstaged: 0
+    untracked_count: 118
+    remote_head_delta:
+      commits: 6
+      product_file_changes: 0
+      durable_checkpoint_files_only: true
+  host_agent:
+    version: 0.24.1.dev175+g1e4012d7d
+    sentinel_exec_result: unsupported_op
+    sentinel_script_run_result: execution_profile_required
+    devforge_runtime_describe:
+      available: true
+      execute_scoped_requires_execution_profile: scoped_mutation
+
+evidence:
+  - the attempted sentinel_script_run was rejected before process execution with execution_profile_required
+  - no out-of-boundary D-drive diagnostic was executed by this command
+  - generic SYSTEM control under the D:\coco execution workspace produced a pytest body with 1 failed and a scoped root Timeout
+  - baseline-runner generic SYSTEM control under the same D:\coco execution workspace also produced 1 failed and a scoped root Timeout
+  - both corresponding PowerShell stage logs recorded PYTEST_PROCESS_EXIT=0 despite the pytest failure body
+  - generic diagnostic Python harness does not persist its own pytest exit receipt; the PowerShell stage trusts Process.ExitCode
+  - therefore the existing generic-control outer exit status is not completion-grade evidence
+  - the previously prepared D:\SentinelX\pr011-diagnostic-workspaces discriminator is outside the allowed Host root and is non-authorizing
+
+inference:
+  - current evidence does not justify another S03R product-code repair
+  - the next valid S03R proof must remain entirely under D:\coco and must use an independently persisted child pytest exit receipt
+  - a production-placement proof outside D:\coco cannot be used as the next execution action under the current Host boundary
+
+unknown:
+  - exact cause of the generic scoped-root timeout under D:\coco remains unresolved
+  - no current connected Host tool exposes a bounded SYSTEM execution surface that can run the corrected diagnostic entirely under D:\coco without Live Agent mutation
+  - S03R real-Host descendant-process completion criteria therefore remain unsatisfied
+
+blocked_by:
+  code: HOST_SYSTEM_EXECUTION_SURFACE_UNAVAILABLE_WITHIN_ALLOWED_ROOT
+  details:
+    - sentinel_exec is advertised in capability metadata but the connected Agent returns unsupported_op
+    - sentinel_script_run is rejected by explicit execution-profile policy before execution
+    - devforge_runtime.execute_scoped uses the Host mutation sandbox and is not a substitute for the required outer SYSTEM broker-context diagnostic
+    - Live Agent install, upgrade, or restart is forbidden for this task execution
+    - execution outside D:\coco is forbidden
+
+required_next_evidence:
+  - corrected diagnostic harness writes its own pytest exit receipt before process termination
+  - bounded SYSTEM-context execution is available without leaving D:\coco and without Live Agent lifecycle mutation
+  - rerun generic root discriminator under D:\coco
+  - only after a valid discriminator may S03R product mutation be reconsidered
+
+safety:
+  canonical_main_mutated: false
+  product_code_mutated_by_this_command: false
+  hub_mutated: false
+  live_agent_mutated: false
+  outside_dcoco_operation_executed: false
+  s04_started: false
+  s05_started: false
+  no_receipt_no_completion_claim: true
