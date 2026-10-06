@@ -1,14 +1,20 @@
 name: pr011-s04-verification
-# Windows/AppContainer regression coverage for PR-011 S04.  This workflow is
-# not the required Host-workspace acceptance proof; the S04 physical gate must
-# still execute under the configured Windows Host workspace rooted at D:\coco\workspaces.
+# Hosted Windows regression coverage for PR-011 S04.
+#
+# This workflow is intentionally NOT the authoritative real-Host acceptance
+# proof. The two readiness tests that require the configured provider Host
+# boundary are executed by the separate SYSTEM physical gate under the
+# configured Windows Host workspace rooted at D:\coco\workspaces.
+#
+# Hosted CI still covers the non-Host readiness contract plus the affected
+# Windows sandbox/materialization/runtime/profile/scoped-script regressions.
 
 on:
   pull_request:
     branches: [main]
 
 jobs:
-  s04-readiness-physical-proof:
+  s04-windows-regression-coverage:
     runs-on: windows-latest
     timeout-minutes: 30
     steps:
@@ -23,10 +29,12 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e . pytest
-      - name: Run PR-011 S04 readiness and physical regressions
+      - name: Run PR-011 S04 hosted Windows regressions
         run: >-
           python -m pytest -q
-          tests/test_verification_readiness.py
+          tests/test_verification_readiness.py::test_verification_readiness_fails_closed_off_windows
+          tests/test_verification_readiness.py::test_missing_profile_is_independent_from_base_readiness
+          tests/test_verification_readiness.py::test_verification_feature_never_projects_provider_paths
           tests/test_release_activation_boundary.py
           tests/test_verification_scoped_execution.py
           tests/test_verification_windows_materialization.py
