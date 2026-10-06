@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import json
 import os
 import shutil
 import sys
@@ -217,7 +218,7 @@ def _runner_argv(
         runner = workspace / "sentinelx_runner.py"
         if materialize:
             runner.write_text(
-                "import contextlib, pathlib, runpy, sys, time, traceback\n"
+                "import contextlib, json, os, pathlib, runpy, sys, time, traceback\n"
             "target,out_path,err_path,result_path,*script_args=sys.argv[1:]\n"
             "sys.argv=[target,*script_args]\n"
             "code=0\n"
@@ -232,6 +233,10 @@ def _runner_argv(
             "        while not (h/'authority-ready').exists():\n"
             "          if time.monotonic()>=deadline: raise RuntimeError('verification descendant authority handshake timed out')\n"
             "          time.sleep(0.05)\n"
+            "        env_path=h.parent/'environment.json'\n"
+            "        verification_env=json.loads(env_path.read_text(encoding='utf-8'))\n"
+            "        if not isinstance(verification_env,dict) or not all(isinstance(k,str) and isinstance(v,str) for k,v in verification_env.items()): raise RuntimeError('invalid verification environment capsule')\n"
+            "        os.environ.clear(); os.environ.update(verification_env)\n"
             "      runpy.run_path(target,run_name='__main__')\n"
             "    except SystemExit as exc: code=exc.code if isinstance(exc.code,int) else (0 if exc.code is None else 1)\n"
             "    except BaseException: traceback.print_exc(); code=1\n"
@@ -488,10 +493,20 @@ async def _run_scoped(
 
         child_environment = _scoped_environment(env_extra, activation.workspace)
         if verification_materialized is not None:
-            child_environment = build_verification_environment(
+            verification_environment = build_verification_environment(
                 child_environment,
                 env_extra,
                 verification_materialized,
+            )
+            environment_capsule = (
+                verification_materialized.workspace
+                / ".sentinelx-verification"
+                / "runtime"
+                / "environment.json"
+            )
+            environment_capsule.write_text(
+                json.dumps(verification_environment, sort_keys=True),
+                encoding="utf-8",
             )
         response_cwd = (
             verification_cwd_label(payload.get("cwd"))
