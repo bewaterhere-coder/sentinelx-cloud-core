@@ -477,6 +477,111 @@ class MutationExecutionPolicy:
         )
 
 
+# Closed set of operator-suppliable direct-codex keys. Anything else is a typo
+# and is warned about rather than silently accepted as provider policy.
+_DIRECT_CODEX_FIELDS = frozenset(
+    {
+        "enabled",
+        "workspace_root",
+        "supported_platform",
+        "timeout_seconds",
+        "max_result_bytes",
+        "codex_package",
+        "node_executable",
+    }
+)
+
+
+@dataclass(frozen=True)
+class DirectCodexPolicy:
+    """Host-owned direct-Codex development-host admission (PR-015/S01).
+
+    Every value is provider-owned: enabled/disabled, the DevForge execution
+    root reference, supported platform, bounded timeout/result limits and
+    optional executable-discovery constraints. Caller payloads never carry any
+    of them -- the devforge_direct_codex action schema is closed and rejects
+    executable, argv, shell, cwd, environment, model and credential fields.
+    """
+
+    configured: bool = False
+    enabled: bool = False
+    workspace_root: Path | None = None
+    supported_platform: str = "windows"
+    timeout_seconds: int = 1800
+    max_result_bytes: int = 65536
+    codex_package: str = "@openai/codex"
+    node_executable: Path | None = None
+
+    def missing_prerequisites(self, *, platform_name: str) -> tuple[str, ...]:
+        """Return non-empty reasons when policy admission is not satisfied."""
+        reasons: list[str] = []
+        if not self.configured or not self.enabled:
+            reasons.append("direct_codex_disabled")
+        if self.workspace_root is None:
+            reasons.append("direct_codex_workspace_root_missing")
+        if str(platform_name).strip().lower() != str(self.supported_platform).strip().lower():
+            reasons.append("direct_codex_unsupported_platform")
+        if self.timeout_seconds <= 0:
+            reasons.append("direct_codex_timeout_invalid")
+        if self.max_result_bytes <= 0:
+            reasons.append("direct_codex_result_limit_invalid")
+        return tuple(dict.fromkeys(reasons))
+
+    @classmethod
+    def from_block(cls, block: dict[str, Any] | None, *, configured: bool) -> "DirectCodexPolicy":
+        if not configured:
+            return cls(configured=False)
+        if block is None:
+            block = {}
+        if not isinstance(block, dict):
+            raise ValueError("direct_codex must be a mapping")
+
+        unknown = sorted(set(block) - _DIRECT_CODEX_FIELDS)
+        if unknown:
+            logger.warning(
+                "direct_codex_unknown_keys",
+                extra={"unknown_keys": unknown},
+            )
+
+        raw_workspace = block.get("workspace_root")
+        workspace_root = (
+            _canonical_host_root(raw_workspace, "workspace_root")
+            if raw_workspace not in (None, "")
+            else None
+        )
+        raw_node = block.get("node_executable")
+        node_executable: Path | None = None
+        if raw_node not in (None, ""):
+            candidate = Path(str(raw_node)).expanduser()
+            if not candidate.is_absolute():
+                raise ValueError("direct_codex.node_executable must be an absolute path")
+            try:
+                node_executable = candidate.resolve()
+            except OSError as exc:
+                raise ValueError(f"direct_codex.node_executable cannot be canonicalized: {exc}") from exc
+
+        try:
+            timeout_seconds = int(block.get("timeout_seconds", 1800))
+            max_result_bytes = int(block.get("max_result_bytes", 65536))
+        except (TypeError, ValueError) as exc:
+            raise ValueError("direct_codex timeout_seconds/max_result_bytes must be integers") from exc
+        if timeout_seconds <= 0:
+            raise ValueError("direct_codex.timeout_seconds must be positive")
+        if max_result_bytes <= 0:
+            raise ValueError("direct_codex.max_result_bytes must be positive")
+
+        return cls(
+            configured=True,
+            enabled=bool(block.get("enabled", False)),
+            workspace_root=workspace_root,
+            supported_platform=str(block.get("supported_platform") or "windows").strip().lower(),
+            timeout_seconds=timeout_seconds,
+            max_result_bytes=max_result_bytes,
+            codex_package=str(block.get("codex_package") or "@openai/codex").strip(),
+            node_executable=node_executable,
+        )
+
+
 @dataclass(frozen=True)
 class LocalApiAction:
     """One permitted action on a local endpoint.
@@ -599,6 +704,11 @@ class Policy:
     # historical unprofiled script_run behavior as internal compatibility;
     # it never implies the new scoped mutation capabilities are ready.
     mutation_execution: MutationExecutionPolicy = field(default_factory=MutationExecutionPolicy)
+
+    # Provider-owned direct-Codex development-host admission (PR-015/S01).
+    # Absent block means the devforge_direct_codex contract is not admitted on
+    # this host; it never implies direct-Codex execution is available.
+    direct_codex: DirectCodexPolicy = field(default_factory=DirectCodexPolicy)
 
     # service name -> ServiceSpec
     services: dict[str, ServiceSpec] = field(default_factory=dict)
@@ -798,6 +908,7 @@ class Policy:
             "exec_strict",
             "authenticated_git",
             "mutation_execution",
+            "direct_codex",
         }
         unknown = set(data.keys()) - KNOWN_KEYS - set(TYPO_HINTS.keys())
         if unknown:
@@ -821,6 +932,12 @@ class Policy:
         mutation_execution = MutationExecutionPolicy.from_block(
             data.get("mutation_execution"),
             configured=mutation_execution_present,
+        )
+
+        direct_codex_present = "direct_codex" in data
+        direct_codex = DirectCodexPolicy.from_block(
+            data.get("direct_codex"),
+            configured=direct_codex_present,
         )
         if not mutation_execution_present:
             logger.warning(
@@ -1116,6 +1233,7 @@ class Policy:
                 5, min(int(authenticated_git_block.get("timeout_seconds", 20)), 50)
             ),
             mutation_execution=mutation_execution,
+            direct_codex=direct_codex,
             services=services,
             local_apis=local_apis,
             locations=locations,
