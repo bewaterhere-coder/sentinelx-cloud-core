@@ -91,7 +91,8 @@ slices:
   - slice_id: S02R
     objective: Repair provider-toolchain minimum read/execute authority without protected/system ancestor ACL widening.
     depends_on: [S01]
-    state: pending
+    state: completed
+    evidence_disposition: completed_plan_r6_real_host_and_ci_verified
     scope:
       refs:
         - src/sentinelx_core/windows_mutation_sandbox.py
@@ -120,8 +121,9 @@ slices:
         - unaffected S02 materialization/integrity/audit regressions pass
     checkpoint:
       required: true
-    run_refs: []
-    completion_receipt_ref: null
+    run_refs:
+      - docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s02r-completion-20261006.yaml
+    completion_receipt_ref: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s02r-completion-receipt.yaml
 
   - slice_id: S03R
     objective: Repair real-Host descendant-process creation inside the existing AppContainer/Job scoped execution path without containment widening.
@@ -237,10 +239,10 @@ slices:
     completion_receipt_ref: null
 
 execution_state:
-  current_slice: S02R
+  current_slice: S03R
   current_slice_state: pending
-  completed_slices: [S01]
-  pending_slices: [S02R, S03R, S04, S05]
+  completed_slices: [S01, S02R]
+  pending_slices: [S03R, S04, S05]
   historical_partial_slices: [S02, S03]
   all_slices_completed: false
 acceptance_boundary:
