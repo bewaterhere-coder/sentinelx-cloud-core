@@ -263,27 +263,7 @@ def test_verification_toolchain_is_read_execute_only_and_revoked_at_terminal(tmp
     runtime_file = fx.profile.toolchain_root / "runtime.dat"
     app_sid = fx.activation.sandbox_identity
     session_key = (fx.record.scope_id, fx.record.generation)
-    window_station, desktop = fx.sandbox._verification_session_reads[session_key]
-    window_station_entries = {
-        sid: mask
-        for sid, mask, _flags in windows_sandbox._window_object_dacl_entries(
-            window_station, "window station"
-        )
-    }
-    desktop_entries = {
-        sid: mask
-        for sid, mask, _flags in windows_sandbox._window_object_dacl_entries(
-            desktop, "desktop"
-        )
-    }
-    assert (
-        window_station_entries.get(app_sid, 0)
-        & windows_sandbox.WINDOW_STATION_VERIFICATION_READ
-    ) == windows_sandbox.WINDOW_STATION_VERIFICATION_READ
-    assert (
-        desktop_entries.get(app_sid, 0)
-        & windows_sandbox.DESKTOP_VERIFICATION_READ
-    ) == windows_sandbox.DESKTOP_VERIFICATION_READ
+    assert session_key not in fx.sandbox._verification_session_reads
     for materialized_root in (
         fx.materialized.source_root,
         fx.materialized.npm_cache_root,
@@ -311,6 +291,27 @@ def test_verification_toolchain_is_read_execute_only_and_revoked_at_terminal(tmp
         cwd=fx.materialized.source_root,
         verification=fx.materialized,
     )
+    window_station, desktop = fx.sandbox._verification_session_reads[session_key]
+    window_station_entries = {
+        sid: mask
+        for sid, mask, _flags in windows_sandbox._window_object_dacl_entries(
+            window_station, "window station"
+        )
+    }
+    desktop_entries = {
+        sid: mask
+        for sid, mask, _flags in windows_sandbox._window_object_dacl_entries(
+            desktop, "desktop"
+        )
+    }
+    assert (
+        window_station_entries.get(app_sid, 0)
+        & windows_sandbox.WINDOW_STATION_VERIFICATION_READ
+    ) == windows_sandbox.WINDOW_STATION_VERIFICATION_READ
+    assert (
+        desktop_entries.get(app_sid, 0)
+        & windows_sandbox.DESKTOP_VERIFICATION_READ
+    ) == windows_sandbox.DESKTOP_VERIFICATION_READ
     assert process.wait(15), "verification ACL probe did not exit"
     assert workspace_write_marker.read_text(encoding="utf-8").strip() == "workspace-ok"
     status = read_status.read_text(encoding="utf-8").strip() if read_status.exists() else "<missing>"
