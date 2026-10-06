@@ -28,8 +28,9 @@ scope:
     - production_release
     - devforge_runtime_mutation
 bindings:
-  plan_ref: null
-  plan_revision: null
+  plan_ref: docs/plans/PR-015-direct-codex-development-host-invocation-bridge-v1-plan.md
+  plan_revision: 2
+  plan_blob_sha: b1414f58e31e69fd5718479d04eb6b7e9e8475bd
   transport_ref:
     type: github-pr
     repository: bewaterhere-coder/sentinelx-cloud-core
@@ -37,7 +38,9 @@ bindings:
     branch: task/direct-codex-development-host-invocation-bridge-v1
 lifecycle:
   state: active
-  revision: 1
+  revision: 2
 receipt:
   source_command: "#开发 SentinelX Direct Codex Development Host Invocation Bridge V1"
   readback_required: true
+  latest_narrowing_command: "#开发评审 PR-015-direct-codex-development-host-invocation-bridge-v1"
+  plan_binding_readback_required: true
