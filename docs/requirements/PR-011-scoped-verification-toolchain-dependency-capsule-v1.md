@@ -8,16 +8,16 @@ task_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1
 title: Scoped Verification Toolchain & Dependency Capsule V1
 requirement_revision: 2
 development:
-  stage: acceptance
+  stage: accepted
   gates:
     requirement_ready: true
     plan_approved: true
-    acceptance_approved: false
+    acceptance_approved: true
     completion_verified: false
   plan_revision: 6
-  acceptance_revision: 1
+  acceptance_revision: 2
   implementation_authorized: false
-  next_expected_actor: acceptance_verifier
+  next_expected_actor: completion_finalizer
   blocking_findings: []
   current_slice: null
   current_slice_state: completed
@@ -48,8 +48,11 @@ artifacts:
   prior_plan_review: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-review-r5.md
   latest_slice_completion_checkpoint: docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s05-completion-20261006.yaml
   latest_slice_completion_receipt: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s05-completion-receipt.yaml
-  latest_acceptance: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-acceptance-r1.md
-  latest_acceptance_transition_receipt: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-acceptance-r1-transition-receipt.yaml
+  latest_acceptance: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-acceptance-r2.md
+  latest_acceptance_checkpoint: docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-acceptance-r2-approved-20261006.yaml
+  latest_acceptance_transition_receipt: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-acceptance-r2-transition-receipt.yaml
+  prior_acceptance: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-acceptance-r1.md
+  prior_acceptance_transition_receipt: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-acceptance-r1-transition-receipt.yaml
   latest_acceptance_repair_impact_analysis: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-acceptance-r1-fix-impact-analysis.md
   latest_acceptance_repair_checkpoint: docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-acceptance-r1-repair-completed-20261006.yaml
   latest_acceptance_repair_transition_receipt: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-acceptance-r1-repair-transition-receipt.yaml
