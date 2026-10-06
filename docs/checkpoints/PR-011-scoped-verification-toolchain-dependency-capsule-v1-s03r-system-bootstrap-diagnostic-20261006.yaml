@@ -1,0 +1,78 @@
+schema_version: "1.0"
+kind: devforge_slice_diagnostic_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1
+slice_id: S03R
+source_command: "#开发执行 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
+status: diagnostic_ready_host_authorization_required
+completion_claim: false
+
+lineage:
+  requirement_revision: 2
+  plan_revision: 6
+  task_blob_sha: fe6a60177d26a3e1a37491942526b509a5e8061a
+  slice_set_blob_sha: d0d92b5c4766f0520818403e885ab9a02951d451
+  pr_head_at_entry: 3bb7812e9284e79262f457f3dcba0b641ca15c88
+  current_slice: S03R
+
+scope_of_this_execution:
+  product_code_mutation: false
+  s03r_completion_attempt: false
+  s04_started: false
+  objective: isolate SYSTEM bootstrap before pytest/AppContainer product-path diagnosis
+
+reason:
+  - prior SYSTEM proof reached AppContainer PROCESS_SPAWNED but root-ready remained absent
+  - root cwd, Session-0 ACE timing, and verification CreateProcess environment have each been separately disproved as sufficient explanations
+  - prior no-PYTHONPATH diagnostic created its temp root but produced an empty log and no exit receipt
+  - therefore the test harness itself must be staged before any further S03R product mutation
+
+prepared_diagnostic:
+  workspace: D:\coco\workspaces\bewaterhere-coder\sentinelx-cloud-core\pr011-s03r-root-cwd-v8
+  python_probe: .devforge-s03r-bootstrap-probe.py
+  system_stage_script: .devforge-s03r-bootstrap-stage.ps1
+  self_elevating_launcher: .devforge-s03r-launch-bootstrap-stage.ps1
+  expected_duration_seconds: 40
+  system_stage_timeout_seconds: 30
+  stage_sequence:
+    - SYSTEM_PROOF_START
+    - IDENTITY
+    - PYTHON_ENV_CLEARED
+    - PYTHON_EXISTS
+    - PYTHON_PROCESS_STARTED
+    - PYTHON_CODE_ENTERED
+    - PYTEST_IMPORT_OK_or_FAIL
+    - SENTINELX_CORE_IMPORT_OK_or_FAIL
+    - SCOPED_SCRIPT_IMPORT_OK_or_FAIL
+    - BOOTSTRAP_IMPORT_PROBE_PASS
+    - PYTHON_PROCESS_EXIT
+  durable_outputs:
+    - .devforge-s03r-bootstrap-stage.log
+    - .devforge-s03r-bootstrap-stage.stdout.log
+    - .devforge-s03r-bootstrap-stage.stderr.log
+    - .devforge-s03r-bootstrap-stage.exit
+
+decision_rules:
+  - if PYTHON_PROCESS_STARTED is absent, diagnose SYSTEM scheduled-task/Python launch harness only
+  - if PYTHON_PROCESS_STARTED exists but PYTHON_CODE_ENTERED is absent, diagnose SYSTEM Python startup only
+  - if PYTEST_IMPORT fails, diagnose proof-harness dependency loading only
+  - if SENTINELX_CORE_IMPORT or SCOPED_SCRIPT_IMPORT fails, diagnose candidate import/runtime loading only
+  - only after BOOTSTRAP_IMPORT_PROBE_PASS may S03R AppContainer root-start diagnosis resume
+  - no product mutation is authorized by this diagnostic result alone
+
+host_authorization_boundary:
+  requires: interactive UAC approval
+  reason: temporary SYSTEM scheduled-task execution cannot be created by the connected non-elevated control surface
+  action_after_approval: bounded diagnostic only
+  live_agent_install_restart_upgrade: false
+
+safety:
+  canonical_main_mutated: false
+  product_candidate_mutated_by_this_execution: false
+  live_agent_mutated: false
+  hub_mutated: false
+  job_breakaway_used: false
+  second_executor_added: false
+  network_or_credential_authority_widened: false
+  s04_started: false
+  no_receipt_no_completion_claim: true
