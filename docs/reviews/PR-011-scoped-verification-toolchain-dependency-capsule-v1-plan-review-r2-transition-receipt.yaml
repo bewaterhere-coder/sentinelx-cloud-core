@@ -1,0 +1,53 @@
+schema_version: "1.0"
+kind: devforge_artifact_state_transition_receipt
+task_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1
+source_command: "#开发评审 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
+runtime:
+  repository: bewaterhere-coder/DevForge
+  version: 2.35.0
+  revision: c6972894f187da7d41e384bfbc663a1ae06d1e35
+  workflow: project_development
+  workflow_version: "2.1"
+transition:
+  from_stage: plan_review
+  to_stage: plan_review_rejected
+  decision: Rejected
+  next_expected_actor: planner
+lineage:
+  requirement_revision: 1
+  requirement_before_blob_sha: d219c40b739c1ae2b4e478f72a7c195c25f8f7cc
+  requirement_after_blob_sha: 7ec2ae08dba2fbf4ff34fd6a39aeab33dd0998bb
+  plan_revision: 2
+  plan_blob_sha: c30d771ea5167db92f549bcb8e55589a7550dafd
+  review_ref: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-review-r2.md
+  review_blob_sha: 9d87eb5f82b78f83387f4f08f9ea74d3eb550b49
+repository_reality:
+  remote_main: df9252fd4305eed361d8dc84e04da90222cd622e
+  pr007_merge_commit: 26fe28bd5e2317d31e09d2055b191447c3f7ed37
+  pr011_reviewed_head: c0bff982ceadc34c0e5a27ee12c12b980559f4f1
+  compare_status: diverged
+  behind_by: 82
+  ahead_by: 24
+transport:
+  type: github-pr
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 11
+  branch: task/scoped-verification-toolchain-dependency-capsule-v1
+blocking_findings:
+  - id: PR011-R2-F3-stale-main-baseline-pr007-merged-dependency-reconciliation
+    classification: plan_local
+round1_findings:
+  - id: PR011-R1-F1-source-under-test-materialization-pre-toolchain-binding
+    disposition: closed_in_substance_pending_refreshed_baseline_review
+  - id: PR011-R1-F2-toolchain-capsule-integrity-resource-bounds
+    disposition: closed_in_substance_pending_refreshed_baseline_review
+postconditions:
+  requirement_ready: true
+  plan_approved: false
+  implementation_authorized: false
+  execution_slice_set_compiled: false
+  task_stage_read_back: plan_review_rejected
+  next_expected_actor_read_back: planner
+  review_read_back_verified: true
+  task_read_back_verified: true
+canonical_next_action: "#开发计划修复 PR-011-scoped-verification-toolchain-dependency-capsule-v1"

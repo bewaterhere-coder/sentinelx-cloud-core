@@ -33,6 +33,7 @@ _EXECUTE_SCOPED_ALLOWED = frozenset(
         "cwd",
         "env",
         "timeout",
+        "verification",
     }
 )
 _EXECUTE_SCOPED_REQUIRED = frozenset(
@@ -48,6 +49,35 @@ _EXECUTE_SCOPED_RESULT_FIELDS = (
     "audit_operation_id",
     "mutation_scope_ref",
     "terminal_state",
+)
+_VERIFICATION_FIELDS = frozenset(
+    {
+        "profile",
+        "source_id",
+        "source_manifest_sha256",
+        "source_revision",
+        "capsule_id",
+        "package_lock_sha256",
+    }
+)
+_VERIFICATION_RESULT_FIELDS = (
+    "profile_id",
+    "profile_revision",
+    "source_repository_digest",
+    "source_revision",
+    "source_manifest_digest",
+    "toolchain_kind",
+    "toolchain_digest",
+    "launcher_digest",
+    "capsule_id",
+    "capsule_revision",
+    "capsule_payload_digest",
+    "expected_package_lock_sha256",
+    "network_mode",
+    "resource_limits_digest",
+    "source_id",
+    "verified_package_lock_sha256",
+    "offline",
 )
 
 _LIFECYCLE_ACTIONS = {
@@ -86,6 +116,32 @@ _SCOPE_REF_SCHEMA = {
     "properties": {
         "scope_id": {"type": "string"},
         "generation": {"type": "integer", "minimum": 1},
+    },
+}
+_VERIFICATION_SCHEMA = {
+    "type": "object",
+    "required": [
+        "profile",
+        "source_id",
+        "source_manifest_sha256",
+        "source_revision",
+        "capsule_id",
+        "package_lock_sha256",
+    ],
+    "additionalProperties": False,
+    "properties": {
+        "profile": {"type": "string"},
+        "source_id": {"type": "string"},
+        "source_manifest_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+        },
+        "source_revision": {"type": "string", "minLength": 1},
+        "capsule_id": {"type": "string"},
+        "package_lock_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+        },
     },
 }
 
@@ -146,6 +202,7 @@ _ACTION_SCHEMAS = {
             "cwd": {"type": "string"},
             "env": {"type": "object", "additionalProperties": {"type": "string"}},
             "timeout": {"type": "integer"},
+            "verification": _VERIFICATION_SCHEMA,
         },
     ),
 }
@@ -221,6 +278,20 @@ def make_devforge_execute_scoped_adapter(
             allowed=frozenset({"project_id", "task_id", "run_id", "attempt_id", "slice_id"}),
             required=frozenset({"project_id", "task_id", "run_id", "attempt_id"}),
         )
+        verification: dict[str, Any] | None = None
+        if "verification" in params:
+            verification = _strict_mapping(
+                params,
+                "verification",
+                allowed=_VERIFICATION_FIELDS,
+                required=_VERIFICATION_FIELDS,
+            )
+            for name, value in verification.items():
+                if not isinstance(value, str) or not value.strip():
+                    raise HandlerError(
+                        "invalid_payload",
+                        f"verification.{name} must be a non-empty string",
+                    )
 
         payload: dict[str, Any] = {
             "execution_profile": execution_profile,
@@ -234,6 +305,8 @@ def make_devforge_execute_scoped_adapter(
         for name in ("args", "cwd", "env", "timeout"):
             if name in params:
                 payload[name] = params[name]
+        if verification is not None:
+            payload["verification"] = verification
 
         result = await profiled_script_handler(context, payload)
         if not isinstance(result, dict):
@@ -247,11 +320,24 @@ def make_devforge_execute_scoped_adapter(
                 "scoped executor returned an unexpected execution profile",
             )
 
-        return {
+        projected = {
             key: result[key]
             for key in _EXECUTE_SCOPED_RESULT_FIELDS
             if key in result
         }
+        if "verification" in result:
+            evidence = result["verification"]
+            if not isinstance(evidence, dict):
+                raise HandlerError(
+                    "scoped_mutation_failed",
+                    "scoped executor returned invalid verification evidence",
+                )
+            projected["verification"] = {
+                key: evidence[key]
+                for key in _VERIFICATION_RESULT_FIELDS
+                if key in evidence
+            }
+        return projected
 
     return execute_scoped
 

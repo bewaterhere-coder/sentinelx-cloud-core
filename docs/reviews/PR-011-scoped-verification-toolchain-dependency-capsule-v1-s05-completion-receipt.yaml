@@ -1,0 +1,61 @@
+schema_version: "1.0"
+kind: devforge_slice_completion_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1
+slice_id: S05
+source_command: "#开发执行 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
+
+lineage:
+  requirement_revision: 2
+  plan_revision: 6
+  product_candidate_commit: "9948eb4d481ca773b2ea14cf2571e0cf6342f213"
+  completion_checkpoint_ref: docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s05-completion-20261006.yaml
+  completion_checkpoint_blob_sha: "940d2d96cf5389017b1c910fc097cbde958b9822"
+  slice_set_blob_sha_after: "44089a4d3ac1c7966f0b40f7e5e6220fe033ecd6"
+
+verification:
+  describe_verification_selector: passed
+  unknown_authority_path_network_fields_fail_closed: passed
+  explicit_execution_profile_required: passed
+  canonical_scoped_handler_forwarding: passed
+  bounded_verification_evidence_projection: passed
+  unprofiled_execute_scoped_regression: passed
+  lifecycle_regressions: passed
+  focused_ci:
+    conclusion: success
+    passed: 66
+  live_windows_host:
+    readiness: passed
+    profiled_execution: passed
+    audit_evidence: passed
+    terminal_readback: passed
+    offline: true
+    network_mode: none
+  restoration:
+    prior_config: restored
+    service_restart: passed
+    temporary_provider_root_absent: true
+
+safety:
+  canonical_checkout_mutated: false
+  canonical_main_mutated: false
+  hub_modified: false
+  allowlist_or_permission_widened: false
+  operator_unrestricted_used: false
+  generic_shell_or_exec_fallback_used: false
+  duplicate_executor_scope_store_sandbox_or_audit_path: false
+
+postconditions:
+  slice_state_read_back: completed
+  completed_slice_read_back: S05
+  pending_slices_read_back: []
+  all_current_plan_slices_completed: true
+  acceptance_approved: false
+  task_completion_verified: false
+
+completion_guard:
+  status: satisfied
+  no_receipt_no_completion_claim: satisfied
+  this_command_completed_at_most_one_slice: true
+  acceptance_not_executed_by_this_command: true
+  canonical_next_action: "#开发验收 PR-011-scoped-verification-toolchain-dependency-capsule-v1"

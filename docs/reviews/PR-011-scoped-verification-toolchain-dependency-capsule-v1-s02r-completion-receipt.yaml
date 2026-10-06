@@ -1,0 +1,139 @@
+schema_version: "1.0"
+kind: devforge_slice_completion_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1
+slice_id: S02R
+source_command: "#开发执行 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  version: "2.51.0"
+  revision: 7e5a098473d89f88a69066a9bc88d1213b2f7e49
+  workflow: project_development
+  workflow_version: "2.1"
+
+lineage:
+  requirement_revision: 2
+  plan_revision: 6
+  plan_blob_sha: fc59575081f3d35b7195711961ed387bc7a56fb2
+  plan_review_blob_sha: 7c166bae043228f4c6e2c8bb643cfe4b3fc2fa78
+  checkpoint_ref: docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s02r-completion-20261006.yaml
+  checkpoint_blob_sha: 448b7842e082a1616b96a52f3a8641f5d4efaaaf
+  task_blob_sha_after: fe6a60177d26a3e1a37491942526b509a5e8061a
+  slice_set_blob_sha_after: d0d92b5c4766f0520818403e885ab9a02951d451
+  state_transition_commit: 85febf327532b345c2edf21d3905e2ada6f92316
+
+implementation:
+  verified_candidate_head: f41f291b9d96090742895a36f7840e9b57a0c865
+  candidate_base_head: 2a3775857a8d57eed6fa49a3a04b121a58ba456b
+  disposition: completed_selective_repair_without_replay
+  changed_files:
+    - src/sentinelx_core/windows_mutation_sandbox.py
+    - tests/test_verification_windows_materialization.py
+  candidate_diff:
+    files: 2
+    additions: 55
+    deletions: 14
+  semantics:
+    - verification toolchain authority is granted only on the exact admitted root
+    - protected/system ancestors are never rewritten merely for toolchain reachability
+    - exact-root RX grant failure cleans only exact-root transient authority and fails closed
+    - exact-root transient grant is revoked at terminalization
+    - workspace-traverse authority behavior remains unchanged
+    - unaffected S02 materialization, audit and integrity behavior is preserved
+
+verification:
+  pr011_s02:
+    run_id: 37411613626
+    job_id: 112101078709
+    result: success
+    tests_passed: 61
+    tests_failed: 0
+    duration_seconds: 144.51
+  generic_ci:
+    run_id: 37411613587
+    result: success
+  macos_agent:
+    run_id: 37411613813
+    result: success
+  pr010_regressions:
+    s01_run_id: 37411613627
+    s01_result: success
+    s02_run_id: 37411613580
+    s02_result: success
+    s03_run_id: 37411613586
+    s03_result: success
+    s04_run_id: 37411613593
+    s04_result: success
+  additional_non_gating:
+    pr011_s01_run_id: 37411613581
+    pr011_s01_result: success
+    pr011_s03_run_id: 37411613578
+    pr011_s03_result: success
+    pr011_s03_native_cwd_run_id: 37411613596
+    pr011_s03_native_cwd_result: success
+  physical_real_host:
+    source: prior S04 diagnostic execution reused only as evidence for the reopened S02 toolchain ACL seam
+    basetemp: ".devforge-pytest-r4-toolchain-acl-20261006-105713"
+    stable_provider_toolchain: true
+    prior_c_program_files_acl_handler_error_recurred: false
+    appcontainer_root_process_spawned: true
+    audit_operation_id: mao_pAzuAvPYsseMvyzxZIvcqm6b
+    job_contained: true
+    breakaway_allowed: false
+    process_tree_quiescent_after_terminalization: true
+    residual_process_ids: []
+    residual_job_ids: []
+    scope_state: terminal
+    sandbox_write_authority_present_after_terminalization: false
+    downstream_failure: NODE_START timeout
+    downstream_failure_disposition: belongs_to_S03R_not_S02R
+
+root_cause_reconciliation:
+  invalidated_prior_assumption:
+    prior_S02_behavior: grant traverse ACEs to every toolchain ancestor
+    real_host_failure: protected ancestor C:\Program Files rejected ACL mutation
+  repair:
+    - remove ancestor ACL mutation from verification-toolchain authority grant/revoke
+    - preserve only exact admitted toolchain-root RX
+    - preserve fail-closed cleanup and no-write semantics
+  disconfirmation:
+    - after repair, the real Host no longer fails at C:\Program Files ACL admission
+    - execution reaches AppContainer PROCESS_SPAWNED and fails only at the separate descendant-process boundary
+  no_scope_expansion:
+    - no breakaway
+    - no second executor
+    - no network widening
+    - no credential widening
+    - no canonical repository authority
+
+safety:
+  canonical_checkout_mutated: false
+  canonical_main_mutated: false
+  hub_modified: false
+  live_agent_modified: false
+  permission_or_allowlist_widened: false
+  operator_unrestricted_used: false
+  generic_exec_fallback_used: false
+  duplicate_executor_store_sandbox_or_audit_introduced: false
+  dirty_s04_candidate_published: false
+  prior_verified_side_effects_replayed: false
+  s03r_executed: false
+
+postconditions:
+  task_stage_read_back: implementation
+  slice_state_read_back: completed
+  completed_slice_read_back: S02R
+  next_slice_read_back: S03R
+  next_slice_state_read_back: pending
+  task_read_back_verified: true
+  slice_set_read_back_verified: true
+  checkpoint_read_back_verified: true
+  acceptance_approved: false
+  completion_verified: false
+
+completion_guard:
+  status: satisfied
+  this_command_completed_at_most_one_slice: true
+  next_slice_executed_by_this_command: false
+  canonical_next_action: "#开发执行 PR-011-scoped-verification-toolchain-dependency-capsule-v1"

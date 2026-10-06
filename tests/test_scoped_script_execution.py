@@ -11,6 +11,7 @@ import pytest
 from sentinelx_core.executor import HandlerError
 from sentinelx_core.handlers.devforge_runtime import make_devforge_execute_scoped_adapter
 from sentinelx_core.handlers.mutation_scope import make_mutation_scope_handler
+from sentinelx_core.handlers import scoped_script as scoped_script_handler
 from sentinelx_core.handlers.scoped_script import make_profiled_script_run_handler
 from sentinelx_core.mutation_audit import (
     EVENT_FINISHED,
@@ -135,6 +136,35 @@ def _fixture(
 
 def _run(handler, context, payload):
     return asyncio.run(handler(context, payload))
+
+
+def test_python_runner_uses_base_interpreter_not_venv_launcher(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    base = tmp_path / "base" / "python.exe"
+    base.parent.mkdir()
+    base.write_text("", encoding="utf-8")
+    monkeypatch.setattr(
+        scoped_script_handler.sys,
+        "_base_executable",
+        str(base),
+        raising=False,
+    )
+
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    argv = scoped_script_handler._runner_argv(
+        "python3",
+        workspace / "script.py",
+        [],
+        workspace,
+        workspace / "stdout.bin",
+        workspace / "stderr.bin",
+        workspace / "returncode.txt",
+    )
+
+    assert argv[0] == str(base)
+    assert Path(argv[1]).name == "sentinelx_runner.py"
 
 
 def test_scoped_python_preserves_unicode_cwd_and_drops_host_credentials(tmp_path: Path, monkeypatch) -> None:

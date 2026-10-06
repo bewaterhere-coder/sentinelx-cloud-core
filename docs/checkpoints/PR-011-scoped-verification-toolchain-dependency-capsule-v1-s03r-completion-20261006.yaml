@@ -1,0 +1,110 @@
+schema_version: "1.0"
+kind: devforge_slice_completion_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1
+slice_id: S03R
+source_command: "#开发执行 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
+
+lineage:
+  requirement_revision: 2
+  plan_revision: 6
+  product_commit: 50e080959cc703b08b2acd893cc0e8c48ea62eab
+  slice_set_blob_sha_before: d0d92b5c4766f0520818403e885ab9a02951d451
+  slice_set_blob_sha_after: 640fb8dcf2f5842f8c7ab7a9f9973c61c3e0c124
+
+implementation:
+  disposition: focused_real_host_root_cause_repair
+  changed_files:
+    - src/sentinelx_core/handlers/scoped_script.py
+    - src/sentinelx_core/windows_mutation_sandbox.py
+    - tests/test_scoped_script_execution.py
+  diff_summary:
+    files: 3
+    additions: 97
+    deletions: 4
+  root_causes:
+    - Windows venv python launcher could create a child before the trusted AppContainer runner reached the provider-owned descendant handshake
+    - broker-side workspace ancestor traversal used icacls child processes; the physical SYSTEM probe observed that helper stalling on D:\coco
+  repair:
+    - choose sys._base_executable for the trusted scoped Python root, with sys.executable fallback
+    - merge and revoke non-inheriting FILE_TRAVERSE ACEs in-process through Win32 ACL APIs instead of spawning icacls for workspace ancestors
+  containment_preserved:
+    - no Job breakaway
+    - no descendant outside AppContainer
+    - no second executor or sandbox
+    - no generic Host shell/exec fallback
+    - no network or credential widening
+
+real_host_evidence:
+  host_context: NT AUTHORITY\SYSTEM
+  allowed_host_root: D:\coco
+  generic_root_control:
+    result: pass
+    tests_passed: 1
+    tests_failed: 0
+    duration_seconds: 78.66
+    execution_profile: scoped_mutation
+    root_executable: C:\Python314\python.exe
+    terminal_state: terminal
+    output_marker: generic-root-ok
+    scope_id: mss_AFivcHHStwElP9214dquGsQ1
+    audit_operation_id: mao_pgVdUav1vsqtNqEOV4sMvZOw
+  focused_s03r_proof:
+    result: pass
+    exit_code: 0
+    tests_passed: 6
+    tests_skipped: 1
+    tests_failed: 0
+    duration_seconds: 347.14
+    pythonpath_env: absent
+    skipped:
+      - test_scoped_pwsh_preserves_unicode_when_installed: pwsh not installed on Host
+    covered:
+      - base-interpreter root selection regression
+      - unprofiled scoped Python
+      - Windows PowerShell scoped regression/fail-closed compatibility
+      - exact verification-toolchain RX and terminal revocation
+      - AppContainer Python-to-Python descendant creation in same no-breakaway Job
+      - admitted Node execution
+      - admitted npm CLI execution
+      - npm ci --offline and package-script descendants
+      - offline cache-miss remains offline
+      - caller proxy/authority fields rejected before execution
+      - credential environment remains absent
+      - process tree quiesces and scope terminalizes
+
+acceptance_mapping:
+  minimal_appcontainer_python_child:
+    status: satisfied
+  same_no_breakaway_job:
+    status: satisfied
+  direct_node:
+    status: satisfied
+  direct_npm:
+    status: satisfied
+  offline_npm_package_scripts:
+    status: satisfied
+  network_fallback_unavailable:
+    status: satisfied
+  credentials_absent:
+    status: satisfied
+  terminal_zero_residual_authority:
+    status: satisfied
+  unprofiled_regressions:
+    status: satisfied_with_pwsh_host_unavailable_skip
+
+safety:
+  canonical_main_mutated: false
+  hub_modified: false
+  live_agent_modified: false
+  operation_outside_D_coco_executed: false
+  operator_unrestricted_used: false
+  generic_exec_fallback_used: false
+  s04_started: false
+  s05_started: false
+
+completion_candidate:
+  required_real_host_proof_satisfied: true
+  slice_completion_eligible: true
+  next_slice_after_completion: S04
+  next_slice_executed_by_this_command: false

@@ -1,0 +1,149 @@
+schema_version: "1.0"
+kind: devforge_slice_diagnostic_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1
+slice_id: S03R
+status: generic_root_regression_isolation
+completion_claim: false
+
+evidence:
+  system_identity: NT AUTHORITY\SYSTEM
+  pythonpath_env: ""
+  candidate_generic_control:
+    result: failed
+    handler_result:
+      ok: false
+      timed_out: true
+      returncode: -1
+      output: Timeout
+    audit_operation_id: mao_kf5YFw1CUnTsTOoKq5-y4lWb
+    process_spawned: true
+    appcontainer: true
+    job_contained: true
+    breakaway_allowed: false
+    root_pid: 41376
+    terminal_state: terminal
+    process_tree_quiescent: true
+    residual_write_authority: false
+  interpretation:
+    - failure is not verification-specific
+    - the same candidate branch generic scoped Python root also fails to initialize under the SYSTEM proof harness
+    - PYTHONPATH inheritance is not the cause
+    - verification-specific materialization is therefore not yet the correct repair surface
+    - compare candidate runner with baseline main runner before any further product mutation
+
+next_discriminator:
+  kind: diagnostic_only
+  objective: run the same generic SYSTEM control while materializing the main-baseline Python runner text
+  product_code_mutation: false
+  prepared:
+    - devforge_s03r_generic_baseline_control_test.py
+    - .devforge-s03r-generic-baseline-control-harness.py
+    - .devforge-s03r-generic-baseline-control.ps1
+    - .devforge-s03r-launch-generic-baseline-control.ps1
+  decision:
+    baseline_runner_pass:
+      meaning: candidate runner instrumentation is the regression surface
+    baseline_runner_fail:
+      meaning: regression is below the runner, in sandbox/runtime behavior or branch-level spawn changes
+
+
+baseline_runner_control:
+  result: failed
+  handler_result:
+    ok: false
+    timed_out: true
+    returncode: -1
+    output: Timeout
+  audit_operation_id: mao_iZa-xtdtxofbG8G2WGzL7SlE
+  process_spawned: true
+  appcontainer: true
+  job_contained: true
+  breakaway_allowed: false
+  root_pid: 45680
+  terminal_state: terminal
+  process_tree_quiescent: true
+  residual_write_authority: false
+  interpretation:
+    - replacing only the candidate Python runner text with the main baseline runner does not restore generic scoped execution
+    - runner instrumentation is therefore not the sufficient cause
+    - remaining discriminator must compare full main baseline sandbox/runtime code under the same SYSTEM proof harness
+
+main_baseline_full_control:
+  status: prepared
+  checkout: D:\coco\workspaces\bewaterhere-coder\sentinelx-cloud-core\pr011-s03r-main-control
+  ref: main
+  expected_main_sha: e7064c9bf4fcd15bdb6f5a2678414210c01d1c00
+  test: tests/test_scoped_script_execution.py::test_scoped_python_preserves_unicode_cwd_and_drops_host_credentials
+  launcher: .devforge-pr011-launch-main-control.ps1
+  environment:
+    system_identity: NT AUTHORITY\SYSTEM
+    pythonpath_removed: true
+    same_service_venv_python: true
+  decision:
+    pass: branch sandbox/runtime changes introduced the regression
+    fail: SYSTEM proof workspace/environment itself is incompatible with the main baseline and the branch is not yet implicated
+  product_code_mutation: false
+
+
+full_main_harness_control:
+  result: failed
+  environment:
+    system_identity: NT AUTHORITY\SYSTEM
+    pythonpath_env: ""
+    checkout: D:\coco\workspaces\bewaterhere-coder\sentinelx-cloud-core\pr011-s03r-main-control
+    ref: main
+    main_sha: e7064c9bf4fcd15bdb6f5a2678414210c01d1c00
+  test: tests/test_scoped_script_execution.py::test_scoped_python_preserves_unicode_cwd_and_drops_host_credentials
+  interpretation:
+    - the clean main checkout also fails when its tmp/workspace tree is nested under D:\coco
+    - therefore the D:\coco SYSTEM pytest harness cannot be used to attribute this root-start failure to PR-011
+
+live_production_placement_control:
+  result: passed
+  transport: devforge_runtime.execute_scoped
+  live_agent_version: 0.24.1.dev175+g1e4012d7d
+  scope_id: mss_ZANoLRPfQb1CTyJM9eR4FX73
+  audit_operation_id: mao_5nsFR4gJ-rA_Lg-qnWU70eRl
+  output_marker: LIVE_GENERIC_ROOT_OK
+  returncode: 0
+  terminal_state: terminal
+  observed_workspace: D:\SentinelX\mutation-workspaces\4fab8923f2df571a\47c603e3422d02ce
+  runtime_prefix: C:\ProgramData\SentinelX\.venv
+  interpretation:
+    - the same Host service context and Python runtime execute generic scoped Python successfully at the real production workspace placement
+    - current root-start failures are placement-sensitive
+    - further S03R physical proof must use production-equivalent workspace placement rather than D:\coco tmp placement
+    - no PR-011 regression claim is authorized from the invalid D:\coco controls
+
+next_discriminator:
+  kind: diagnostic_only
+  objective: execute the PR-011 branch generic scoped root with a unique exact workspace under the production mutation-workspaces placement
+  product_code_mutation: false
+  s04_started: false
+
+
+sentinelx_placement_candidate_control:
+  status: prepared
+  branch_workspace: D:\coco\workspaces\bewaterhere-coder\sentinelx-cloud-core\pr011-s03r-root-cwd-v8
+  diagnostic_workspace_root: D:\SentinelX\pr011-diagnostic-workspaces
+  rationale:
+    - preserve the SentinelX host placement ancestry while avoiding the live mutation-workspaces directory itself
+    - keep pytest harness files and receipts under the isolated PR-011 execution workspace
+    - exercise the current PR-011 branch sandbox/runtime without installing or restarting the Live Agent
+  prepared_files:
+    - devforge_s03r_sentinelx_placement_control_test.py
+    - .devforge-s03r-sentinelx-placement-harness.py
+    - .devforge-s03r-sentinelx-placement.ps1
+    - .devforge-s03r-launch-sentinelx-placement.ps1
+  expected_marker: CANDIDATE_SENTINELX_ROOT_OK
+  product_code_mutation: false
+  live_agent_mutation: false
+  s04_started: false
+
+safety:
+  canonical_main_mutated: false
+  product_code_mutated_by_diagnostic: false
+  live_agent_mutated: false
+  s04_started: false
+  no_receipt_no_completion_claim: true

@@ -12,6 +12,7 @@ import hashlib
 import os
 import subprocess
 import sys
+import time
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from ctypes import wintypes
@@ -42,6 +43,13 @@ from sentinelx_core.mutation_scope import (
     MutationScopeStore,
 )
 from sentinelx_core.policy import MutationExecutionPolicy
+from sentinelx_core.verification_runtime import (
+    VerificationMaterialization,
+    VerificationRuntimePlan,
+    cleanup_verification_materialization,
+    materialize_verification_runtime,
+    revalidate_verification_before_spawn,
+)
 from sentinelx_core.winspawn import (
     SuspendedJobProcess,
     create_suspended_appcontainer_job_process,
@@ -57,13 +65,27 @@ TOKEN_APPCONTAINER_SID = 31
 TH32CS_SNAPPROCESS = 0x00000002
 INVALID_HANDLE_VALUE = ctypes.c_void_p(-1).value
 FILE_ALL_ACCESS = 0x001F01FF
+FILE_TRAVERSE = 0x0020
 OBJECT_INHERIT_ACE = 0x1
 CONTAINER_INHERIT_ACE = 0x2
 INHERITED_ACE = 0x10
+GRANT_ACCESS = 1
 SET_ACCESS = 2
+REVOKE_ACCESS = 4
 SE_FILE_OBJECT = 1
+SE_WINDOW_OBJECT = 7
 DACL_SECURITY_INFORMATION = 0x00000004
 PROTECTED_DACL_SECURITY_INFORMATION = 0x80000000
+READ_CONTROL = 0x00020000
+WINSTA_ENUMDESKTOPS = 0x0001
+WINSTA_READATTRIBUTES = 0x0002
+WINSTA_ENUMERATE = 0x0100
+DESKTOP_READOBJECTS = 0x0001
+DESKTOP_ENUMERATE = 0x0040
+WINDOW_STATION_VERIFICATION_READ = (
+    READ_CONTROL | WINSTA_ENUMDESKTOPS | WINSTA_READATTRIBUTES | WINSTA_ENUMERATE
+)
+DESKTOP_VERIFICATION_READ = READ_CONTROL | DESKTOP_READOBJECTS | DESKTOP_ENUMERATE
 ACL_SIZE_INFORMATION_CLASS = 2
 ACCESS_ALLOWED_ACE_TYPE = 0
 FILE_ATTRIBUTE_REPARSE_POINT = 0x00000400
@@ -155,6 +177,8 @@ def _windows_only() -> tuple[ctypes.WinDLL, ctypes.WinDLL, ctypes.WinDLL]:
     userenv = ctypes.WinDLL("userenv", use_last_error=True)
 
     k32.GetCurrentProcess.restype = wintypes.HANDLE
+    k32.GetCurrentThreadId.argtypes = []
+    k32.GetCurrentThreadId.restype = wintypes.DWORD
     k32.LocalFree.argtypes = [ctypes.c_void_p]
     k32.LocalFree.restype = ctypes.c_void_p
     k32.CloseHandle.argtypes = [wintypes.HANDLE]
@@ -244,6 +268,27 @@ def _windows_only() -> tuple[ctypes.WinDLL, ctypes.WinDLL, ctypes.WinDLL]:
         ctypes.POINTER(ctypes.c_void_p),
     ]
     advapi.GetNamedSecurityInfoW.restype = wintypes.DWORD
+    advapi.GetSecurityInfo.argtypes = [
+        wintypes.HANDLE,
+        ctypes.c_int,
+        wintypes.DWORD,
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.POINTER(ctypes.c_void_p),
+        ctypes.c_void_p,
+        ctypes.POINTER(ctypes.c_void_p),
+    ]
+    advapi.GetSecurityInfo.restype = wintypes.DWORD
+    advapi.SetSecurityInfo.argtypes = [
+        wintypes.HANDLE,
+        ctypes.c_int,
+        wintypes.DWORD,
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+    ]
+    advapi.SetSecurityInfo.restype = wintypes.DWORD
     advapi.GetAclInformation.argtypes = [
         ctypes.c_void_p,
         ctypes.c_void_p,
@@ -733,6 +778,315 @@ def _remove_runtime_read(root: Path, app_sid: str) -> None:
         _run_icacls([str(root), "/remove:g", f"*{app_sid}"])
 
 
+def _verification_toolchain_traverse_ancestors(root: Path) -> tuple[Path, ...]:
+    """Return existing parents that need only FILE_TRAVERSE for AppContainer reachability."""
+    canonical = root.resolve(strict=True)
+    anchor = Path(canonical.anchor)
+    ancestors: list[Path] = []
+    current = canonical.parent
+    while current != anchor and current != current.parent:
+        ancestors.append(current)
+        current = current.parent
+    return tuple(reversed(ancestors))
+
+
+def _user32_window_objects() -> tuple[int, int]:
+    """Return the broker process window station and current thread desktop."""
+    k32, _, _ = _windows_only()
+    user32 = ctypes.WinDLL("user32", use_last_error=True)
+    user32.GetProcessWindowStation.argtypes = []
+    user32.GetProcessWindowStation.restype = wintypes.HANDLE
+    user32.GetThreadDesktop.argtypes = [wintypes.DWORD]
+    user32.GetThreadDesktop.restype = wintypes.HANDLE
+
+    window_station = user32.GetProcessWindowStation()
+    if not window_station:
+        raise _win32_error("GetProcessWindowStation failed")
+    desktop = user32.GetThreadDesktop(k32.GetCurrentThreadId())
+    if not desktop:
+        raise _win32_error("GetThreadDesktop failed")
+    return int(window_station), int(desktop)
+
+
+def _window_object_dacl_entries(handle: int, label: str) -> list[tuple[str, int, int]]:
+    """Read allow ACEs from a window-station/desktop DACL for bounded proof."""
+    k32, advapi, _ = _windows_only()
+    dacl = ctypes.c_void_p()
+    descriptor = ctypes.c_void_p()
+    result = advapi.GetSecurityInfo(
+        wintypes.HANDLE(handle),
+        SE_WINDOW_OBJECT,
+        DACL_SECURITY_INFORMATION,
+        None,
+        None,
+        ctypes.byref(dacl),
+        None,
+        ctypes.byref(descriptor),
+    )
+    if result != ERROR_SUCCESS:
+        raise HostMutationSandboxAclViolation(
+            f"GetSecurityInfo failed for {label}: WinError {result}"
+        )
+    try:
+        info = _ACL_SIZE_INFORMATION()
+        if not advapi.GetAclInformation(
+            dacl, ctypes.byref(info), ctypes.sizeof(info), ACL_SIZE_INFORMATION_CLASS
+        ):
+            raise _win32_error(f"GetAclInformation failed for {label}")
+        entries: list[tuple[str, int, int]] = []
+        for index in range(info.AceCount):
+            ace_pointer = ctypes.c_void_p()
+            if not advapi.GetAce(dacl, index, ctypes.byref(ace_pointer)):
+                raise _win32_error(f"GetAce({index}) failed for {label}")
+            header = ctypes.cast(ace_pointer, ctypes.POINTER(_ACE_HEADER)).contents
+            if header.AceType != ACCESS_ALLOWED_ACE_TYPE:
+                continue
+            ace = ctypes.cast(ace_pointer, ctypes.POINTER(_ACCESS_ALLOWED_ACE)).contents
+            sid_pointer = int(ace_pointer.value) + _ACCESS_ALLOWED_ACE.SidStart.offset
+            entries.append(
+                (_sid_to_string(sid_pointer), int(ace.Mask), int(ace.Header.AceFlags))
+            )
+        return entries
+    finally:
+        if descriptor:
+            k32.LocalFree(descriptor)
+
+
+def _merge_window_object_access(
+    handle: int,
+    label: str,
+    app_sid: str,
+    *,
+    mode: int,
+    mask: int,
+) -> None:
+    """Merge/revoke one unique AppContainer ACE while preserving the shared DACL."""
+    k32, advapi, _ = _windows_only()
+    dacl = ctypes.c_void_p()
+    descriptor = ctypes.c_void_p()
+    new_acl = ctypes.c_void_p()
+    result = advapi.GetSecurityInfo(
+        wintypes.HANDLE(handle),
+        SE_WINDOW_OBJECT,
+        DACL_SECURITY_INFORMATION,
+        None,
+        None,
+        ctypes.byref(dacl),
+        None,
+        ctypes.byref(descriptor),
+    )
+    if result != ERROR_SUCCESS:
+        raise HostMutationSandboxAclViolation(
+            f"GetSecurityInfo failed for {label}: WinError {result}"
+        )
+    try:
+        entries = (_EXPLICIT_ACCESS_W * 1)()
+        with _string_sid(app_sid) as sid:
+            entries[0].grfAccessPermissions = int(mask)
+            entries[0].grfAccessMode = int(mode)
+            entries[0].grfInheritance = 0
+            advapi.BuildTrusteeWithSidW(ctypes.byref(entries[0].Trustee), ctypes.c_void_p(sid))
+            result = advapi.SetEntriesInAclW(1, entries, dacl, ctypes.byref(new_acl))
+            if result != ERROR_SUCCESS:
+                raise HostMutationSandboxAclViolation(
+                    f"SetEntriesInAclW failed for {label}: WinError {result}"
+                )
+            result = advapi.SetSecurityInfo(
+                wintypes.HANDLE(handle),
+                SE_WINDOW_OBJECT,
+                DACL_SECURITY_INFORMATION,
+                None,
+                None,
+                new_acl,
+                None,
+            )
+            if result != ERROR_SUCCESS:
+                raise HostMutationSandboxAclViolation(
+                    f"SetSecurityInfo failed for {label}: WinError {result}"
+                )
+    finally:
+        if new_acl:
+            k32.LocalFree(new_acl)
+        if descriptor:
+            k32.LocalFree(descriptor)
+
+
+def _grant_verification_session_read(app_sid: str) -> tuple[int, int]:
+    """Grant read-only access to the service session's window objects.
+
+    USER32-linked descendants created by a LocalSystem service AppContainer
+    need read access to the non-interactive session window station/desktop.
+    This grant is verification-only, SID-scoped, non-inheriting, and revoked
+    during terminalization.
+    """
+    window_station, desktop = _user32_window_objects()
+    objects = (
+        (window_station, "window station", WINDOW_STATION_VERIFICATION_READ),
+        (desktop, "desktop", DESKTOP_VERIFICATION_READ),
+    )
+    granted: list[tuple[int, str]] = []
+    try:
+        for handle, label, mask in objects:
+            if any(
+                sid == app_sid
+                for sid, _ace_mask, _flags in _window_object_dacl_entries(handle, label)
+            ):
+                raise HostMutationSandboxAclViolation(
+                    f"{label} already contains the scope AppContainer SID"
+                )
+            _merge_window_object_access(
+                handle, label, app_sid, mode=GRANT_ACCESS, mask=mask
+            )
+            granted.append((handle, label))
+            observed = {
+                sid: ace_mask
+                for sid, ace_mask, _flags in _window_object_dacl_entries(handle, label)
+            }
+            if observed.get(app_sid, 0) & mask != mask:
+                raise HostMutationSandboxAclViolation(
+                    f"{label} did not retain the required verification read ACE"
+                )
+        return window_station, desktop
+    except Exception:
+        for handle, label in reversed(granted):
+            try:
+                _merge_window_object_access(
+                    handle, label, app_sid, mode=REVOKE_ACCESS, mask=0
+                )
+            except Exception:
+                pass
+        raise
+
+
+def _remove_verification_session_read(
+    handles: tuple[int, int], app_sid: str
+) -> None:
+    window_station, desktop = handles
+    for handle, label in (
+        (desktop, "desktop"),
+        (window_station, "window station"),
+    ):
+        _merge_window_object_access(
+            handle, label, app_sid, mode=REVOKE_ACCESS, mask=0
+        )
+        if any(
+            sid == app_sid
+            for sid, _ace_mask, _flags in _window_object_dacl_entries(handle, label)
+        ):
+            raise HostMutationSandboxResidualAuthority(
+                f"{label} DACL still contains the mutation AppContainer SID"
+            )
+
+
+def _grant_verification_toolchain_read(root: Path, app_sid: str) -> None:
+    """Grant RX only on the sealed provider-owned toolchain tree.
+
+    Provider toolchains may live beneath protected system parents such as
+    C:\\Program Files. Verification must never widen authority by rewriting
+    ACLs on those ancestors. Existing Host traversal policy is a prerequisite;
+    if it is insufficient, readiness fails closed instead of mutating a
+    broader parent directory.
+    """
+    _assert_no_reparse(root, root)
+    _assert_final_path(root)
+    try:
+        _run_icacls([str(root), "/grant:r", f"*{app_sid}:(RX)", "/T", "/C"])
+    except Exception:
+        if root.exists():
+            try:
+                _run_icacls([str(root), "/remove:g", f"*{app_sid}", "/T", "/C"])
+            except Exception:
+                pass
+        raise
+
+
+def _remove_verification_toolchain_read(root: Path, app_sid: str) -> None:
+    """Revoke transient RX from the provider-owned toolchain tree."""
+    if root.exists():
+        _run_icacls([str(root), "/remove:g", f"*{app_sid}", "/T", "/C"])
+
+
+def _merge_file_access(path: Path, app_sid: str, *, mode: int, mask: int) -> None:
+    """Merge/revoke one non-inheriting file ACE without spawning icacls."""
+    k32, advapi, _ = _windows_only()
+    dacl = ctypes.c_void_p()
+    descriptor = ctypes.c_void_p()
+    new_acl = ctypes.c_void_p()
+    result = advapi.GetNamedSecurityInfoW(
+        str(path),
+        SE_FILE_OBJECT,
+        DACL_SECURITY_INFORMATION,
+        None,
+        None,
+        ctypes.byref(dacl),
+        None,
+        ctypes.byref(descriptor),
+    )
+    if result != ERROR_SUCCESS:
+        raise HostMutationSandboxAclViolation(
+            f"GetNamedSecurityInfoW failed for {path}: WinError {result}"
+        )
+    try:
+        entries = (_EXPLICIT_ACCESS_W * 1)()
+        with _string_sid(app_sid) as sid:
+            entries[0].grfAccessPermissions = int(mask)
+            entries[0].grfAccessMode = int(mode)
+            entries[0].grfInheritance = 0
+            advapi.BuildTrusteeWithSidW(
+                ctypes.byref(entries[0].Trustee), ctypes.c_void_p(sid)
+            )
+            result = advapi.SetEntriesInAclW(1, entries, dacl, ctypes.byref(new_acl))
+            if result != ERROR_SUCCESS:
+                raise HostMutationSandboxAclViolation(
+                    f"SetEntriesInAclW failed for {path}: WinError {result}"
+                )
+            result = advapi.SetNamedSecurityInfoW(
+                str(path),
+                SE_FILE_OBJECT,
+                DACL_SECURITY_INFORMATION,
+                None,
+                None,
+                new_acl,
+                None,
+            )
+            if result != ERROR_SUCCESS:
+                raise HostMutationSandboxAclViolation(
+                    f"SetNamedSecurityInfoW failed for {path}: WinError {result}"
+                )
+    finally:
+        if new_acl:
+            k32.LocalFree(new_acl)
+        if descriptor:
+            k32.LocalFree(descriptor)
+
+
+def _grant_workspace_traverse(workspace: Path, app_sid: str) -> tuple[Path, ...]:
+    """Grant only FILE_TRAVERSE on parents needed to reach an exact workspace."""
+    granted: list[Path] = []
+    try:
+        for ancestor in _verification_toolchain_traverse_ancestors(workspace):
+            _assert_final_path(ancestor)
+            _merge_file_access(
+                ancestor, app_sid, mode=GRANT_ACCESS, mask=FILE_TRAVERSE
+            )
+            granted.append(ancestor)
+        return tuple(granted)
+    except Exception:
+        for ancestor in reversed(granted):
+            try:
+                _merge_file_access(
+                    ancestor, app_sid, mode=REVOKE_ACCESS, mask=0
+                )
+            except Exception:
+                pass
+        raise
+
+
+def _remove_workspace_traverse(ancestors: Sequence[Path], app_sid: str) -> None:
+    for ancestor in reversed(tuple(ancestors)):
+        _merge_file_access(ancestor, app_sid, mode=REVOKE_ACCESS, mask=0)
+
+
 def _pid_alive(pid: int) -> bool:
     k32, _, _ = _windows_only()
     handle = k32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | SYNCHRONIZE, False, int(pid))
@@ -841,6 +1195,9 @@ class WindowsMutationSandbox:
         self.semantic = semantic
         self.provider_protected_roots = tuple(provider_protected_roots)
         self._processes: dict[str, ManagedMutationProcess] = {}
+        self._verification_toolchain_reads: dict[tuple[str, int], Path] = {}
+        self._verification_session_reads: dict[tuple[str, int], tuple[int, int]] = {}
+        self._workspace_traverse_reads: dict[tuple[str, int], tuple[Path, ...]] = {}
         # Fail early if the required APIs are absent.
         _windows_only()
         self.broker_sid = _current_process_sid()
@@ -929,10 +1286,14 @@ class WindowsMutationSandbox:
             appcontainer_name=profile_name,
             broker_identity=self.broker_sid,
         )
+        scope_key = (current.scope_id, current.generation)
         granted_runtime: list[Path] = []
+        workspace_traverse: tuple[Path, ...] = ()
         try:
             _set_exact_acl(workspace, self.broker_sid, app_sid)
             _assert_exact_workspace_acl(workspace, self.broker_sid, app_sid)
+            workspace_traverse = _grant_workspace_traverse(workspace, app_sid)
+            self._workspace_traverse_reads[scope_key] = workspace_traverse
             for root in self.policy.runtime_read_roots:
                 runtime_root = _normal_path(root)
                 if not runtime_root.exists() or not runtime_root.is_dir():
@@ -946,6 +1307,11 @@ class WindowsMutationSandbox:
             return activation
         except (RuntimeError, OSError, ValueError) as activation_error:
             cleanup_errors: list[str] = []
+            traverse = self._workspace_traverse_reads.pop(scope_key, workspace_traverse)
+            try:
+                _remove_workspace_traverse(traverse, app_sid)
+            except (RuntimeError, OSError, ValueError) as cleanup_error:
+                cleanup_errors.append(f"workspace traverse grant: {cleanup_error}")
             for runtime_root in reversed(granted_runtime):
                 try:
                     _remove_runtime_read(runtime_root, app_sid)
@@ -995,6 +1361,56 @@ class WindowsMutationSandbox:
         )
         return record
 
+    def materialize_verification(
+        self,
+        activation: ActivatedMutationSandbox,
+        audit_start: MutationAuditStart,
+        plan: VerificationRuntimePlan,
+    ) -> VerificationMaterialization:
+        """Broker-materialize sealed verification inputs after START, before SPAWN."""
+        self._assert_activation_current(activation, audit_start)
+        if audit_start.verification_intent is None:
+            raise HostMutationSandboxBindingMismatch(
+                "verification materialization requires a sealed START verification intent"
+            )
+        if audit_start.verification_intent != plan.audit_intent:
+            raise HostMutationSandboxBindingMismatch(
+                "verification runtime plan differs from sealed START intent"
+            )
+        key = (activation.scope_id, activation.generation)
+        if key in self._verification_toolchain_reads or key in self._verification_session_reads:
+            raise HostMutationSandboxBindingMismatch(
+                "verification runtime authority already exists for this scope generation"
+            )
+
+        materialized: VerificationMaterialization | None = None
+        toolchain_root = _normal_path(plan.profile.toolchain_root)
+        try:
+            materialized = materialize_verification_runtime(plan, activation.workspace)
+            _grant_verification_toolchain_read(toolchain_root, activation.sandbox_identity)
+            self._verification_toolchain_reads[key] = toolchain_root
+            revalidate_verification_before_spawn(materialized)
+            return materialized
+        except Exception:
+            cleanup_errors: list[str] = []
+            try:
+                _remove_verification_toolchain_read(toolchain_root, activation.sandbox_identity)
+            except (RuntimeError, OSError, ValueError) as cleanup_error:
+                cleanup_errors.append(f"verification toolchain read: {cleanup_error}")
+                # Keep the tracked root so terminalize() can retry revocation and
+                # fail closed if residual read/execute authority cannot be removed.
+                if key not in self._verification_toolchain_reads:
+                    self._verification_toolchain_reads[key] = toolchain_root
+            else:
+                self._verification_toolchain_reads.pop(key, None)
+            if materialized is not None:
+                cleanup_verification_materialization(materialized)
+            if cleanup_errors:
+                raise HostMutationSandboxResidualAuthority(
+                    "; ".join(cleanup_errors)
+                )
+            raise
+
     def spawn(
         self,
         activation: ActivatedMutationSandbox,
@@ -1004,6 +1420,7 @@ class WindowsMutationSandbox:
         argv: list[str],
         cwd: Path | None = None,
         env: dict[str, str] | None = None,
+        verification: VerificationMaterialization | None = None,
     ) -> ManagedMutationProcess:
         """Create suspended -> bind Job -> durable SPAWN -> only then resume."""
         self._assert_activation_current(activation, audit_start)
@@ -1014,6 +1431,39 @@ class WindowsMutationSandbox:
             raise HostMutationSandboxPathViolation("sandbox cwd is not an existing directory")
         _assert_no_reparse(activation.workspace, spawn_cwd)
         _assert_final_path(spawn_cwd)
+
+        if verification is not None:
+            key = (activation.scope_id, activation.generation)
+            if audit_start.verification_intent != verification.plan.audit_intent:
+                raise HostMutationSandboxBindingMismatch(
+                    "verification materialization differs from sealed START intent"
+                )
+            if verification.workspace.resolve(strict=True) != activation.workspace.resolve(strict=True):
+                raise HostMutationSandboxBindingMismatch(
+                    "verification materialization belongs to a different exact workspace"
+                )
+            granted_root = self._verification_toolchain_reads.get(key)
+            if granted_root is None or granted_root != _normal_path(verification.toolchain_root):
+                raise HostMutationSandboxBindingMismatch(
+                    "verification toolchain read authority is absent or mismatched"
+                )
+            handshake_root = (
+                verification.workspace
+                / ".sentinelx-verification"
+                / "runtime"
+                / "descendant-session"
+            )
+            handshake_root.mkdir(parents=True, exist_ok=True)
+            for marker_name in ("root-ready", "authority-ready"):
+                marker = handshake_root / marker_name
+                if marker.exists():
+                    marker.unlink()
+            (handshake_root / "request").write_text("required", encoding="ascii")
+            revalidate_verification_before_spawn(verification)
+        elif audit_start.verification_intent is not None:
+            raise HostMutationSandboxBindingMismatch(
+                "sealed START verification intent requires pre-SPAWN materialization"
+            )
 
         with _appcontainer_sid_pointer(activation.appcontainer_name) as sid_pointer:
             raw = create_suspended_appcontainer_job_process(
@@ -1027,6 +1477,8 @@ class WindowsMutationSandbox:
             raise HostMutationSandboxContainmentFailed(
                 "suspended root did not read back as no-breakaway Job-contained"
             )
+
+
         try:
             self.scope_store.bind_runtime_process(
                 activation.scope_id,
@@ -1082,6 +1534,75 @@ class WindowsMutationSandbox:
             raise
         return managed
 
+    def enable_verification_descendants(
+        self,
+        activation: ActivatedMutationSandbox,
+        process: ManagedMutationProcess,
+        verification: VerificationMaterialization,
+        *,
+        timeout_seconds: float = 10.0,
+    ) -> None:
+        """Enable minimum Session-0 read authority after trusted root startup.
+
+        The verification root first initializes without the extra
+        window-station/desktop ACE and enters the provider-owned runner. The
+        runner writes root-ready and blocks. Only then does the broker grant
+        the unique AppContainer SID read-only Session-0 authority and release
+        the runner to create descendants.
+        """
+        if process._owner is not self or process.activation != activation:
+            raise HostMutationSandboxBindingMismatch(
+                "verification descendant handshake process/activation mismatch"
+            )
+        key = (activation.scope_id, activation.generation)
+        if key in self._verification_session_reads:
+            raise HostMutationSandboxBindingMismatch(
+                "verification descendant session authority already exists"
+            )
+        granted_root = self._verification_toolchain_reads.get(key)
+        if granted_root is None or granted_root != _normal_path(verification.toolchain_root):
+            raise HostMutationSandboxBindingMismatch(
+                "verification toolchain read authority is absent or mismatched"
+            )
+        handshake_root = (
+            verification.workspace
+            / ".sentinelx-verification"
+            / "runtime"
+            / "descendant-session"
+        )
+        request = handshake_root / "request"
+        root_ready = handshake_root / "root-ready"
+        authority_ready = handshake_root / "authority-ready"
+        if not request.exists():
+            raise HostMutationSandboxBindingMismatch(
+                "verification descendant handshake request is absent"
+            )
+
+        deadline = time.monotonic() + max(0.1, float(timeout_seconds))
+        while not root_ready.exists():
+            if process.wait(0):
+                raise HostMutationSandboxUnavailable(
+                    "verification root exited before descendant authority handshake"
+                )
+            if time.monotonic() >= deadline:
+                raise HostMutationSandboxUnavailable(
+                    "verification root did not reach trusted descendant handshake"
+                )
+            time.sleep(0.05)
+
+        session_handles = _grant_verification_session_read(activation.sandbox_identity)
+        self._verification_session_reads[key] = session_handles
+        try:
+            authority_ready.write_text("ready", encoding="ascii")
+        except Exception:
+            try:
+                _remove_verification_session_read(
+                    session_handles, activation.sandbox_identity
+                )
+            finally:
+                self._verification_session_reads.pop(key, None)
+            raise
+
     def _cleanup_runtime(self, record: MutationScopeRecord) -> MutationRuntimeClosure:
         for job_id in record.active_job_ids:
             managed = self._processes.pop(job_id, None)
@@ -1123,8 +1644,19 @@ class WindowsMutationSandbox:
                     raise HostMutationSandboxResidualAuthority(
                         "workspace DACL still contains the mutation AppContainer SID"
                     )
+            key = (record.scope_id, record.generation)
+            session_handles = self._verification_session_reads.pop(key, None)
+            if session_handles is not None:
+                _remove_verification_session_read(session_handles, app_sid)
+            verification_root = self._verification_toolchain_reads.pop(key, None)
+            if verification_root is not None:
+                _remove_verification_toolchain_read(verification_root, app_sid)
             for root in self.policy.runtime_read_roots:
                 _remove_runtime_read(_normal_path(root), app_sid)
+            workspace_traverse = self._workspace_traverse_reads.pop(
+                (record.scope_id, record.generation), ()
+            )
+            _remove_workspace_traverse(workspace_traverse, app_sid)
             _delete_appcontainer_profile(_profile_name(record.unique_lease_key))
 
         return MutationRuntimeClosure(

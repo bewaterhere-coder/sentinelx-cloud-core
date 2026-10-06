@@ -244,6 +244,27 @@ class MutationProcessIntent:
 
 
 @dataclass(frozen=True)
+class MutationVerificationIntent:
+    profile_id: str
+    profile_revision: int
+    source_repository_digest: str
+    source_revision: str
+    source_manifest_digest: str
+    toolchain_kind: str
+    toolchain_digest: str
+    launcher_digest: str
+    capsule_id: str
+    capsule_revision: int
+    capsule_payload_digest: str
+    expected_package_lock_sha256: str
+    network_mode: str
+    resource_limits_digest: str
+
+    def audit_dict(self) -> dict[str, Any]:
+        return {key: value for key, value in vars(self).items()}
+
+
+@dataclass(frozen=True)
 class MutationOsIdentityEvidence:
     process_user_sid: str
     appcontainer_sid: str
@@ -328,6 +349,7 @@ class MutationAuditStart:
     authority: MutationAuthorityEvidence
     process_intent: MutationProcessIntent
     requested_identity: RequestedMutationIdentity
+    verification_intent: MutationVerificationIntent | None
     start_evidence_digest: str
     started_at: str
 
@@ -497,6 +519,7 @@ class MutationAuditJournal:
         authority: MutationAuthorityEvidence,
         process_intent: MutationProcessIntent,
         requested_identity: RequestedMutationIdentity,
+        verification_intent: MutationVerificationIntent | None = None,
         now: datetime | None = None,
     ) -> MutationAuditStart:
         now = now or _utcnow()
@@ -510,6 +533,8 @@ class MutationAuditJournal:
             "process_intent": process_intent.audit_dict(),
             "requested_identity": requested_identity.audit_dict(),
         }
+        if verification_intent is not None:
+            start_evidence["verification_intent"] = verification_intent.audit_dict()
         start_evidence_digest = _canonical_digest(start_evidence)
         event = {
             "version": JOURNAL_VERSION,
@@ -533,6 +558,7 @@ class MutationAuditJournal:
             authority=authority,
             process_intent=process_intent,
             requested_identity=requested_identity,
+            verification_intent=verification_intent,
             start_evidence_digest=start_evidence_digest,
             started_at=_iso(now),
         )
@@ -547,6 +573,8 @@ class MutationAuditJournal:
             "process_intent": start.process_intent.audit_dict(),
             "requested_identity": start.requested_identity.audit_dict(),
         }
+        if start.verification_intent is not None:
+            current["verification_intent"] = start.verification_intent.audit_dict()
         if _canonical_digest(current) != start.start_evidence_digest:
             raise MutationAuditIdentityMismatch("sealed START evidence changed after durable commit")
 

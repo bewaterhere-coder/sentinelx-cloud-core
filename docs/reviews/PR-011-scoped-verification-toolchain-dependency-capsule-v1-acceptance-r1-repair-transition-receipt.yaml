@@ -1,0 +1,56 @@
+schema_version: "1.0"
+kind: devforge_gate_transition_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1
+source_command: "#开发执行 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
+
+transition:
+  from: fixing
+  to: acceptance
+  result: applied
+  reason: AcceptanceRepairVerified
+
+lineage:
+  requirement_revision: 2
+  plan_revision: 6
+  acceptance_revision: 1
+  acceptance_ref: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-acceptance-r1.md
+  repair_checkpoint_ref: docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-acceptance-r1-repair-completed-20261006.yaml
+  repair_checkpoint_blob_sha: f0d21f5d7ab0e967ca677d1ce7fb87098818a5a2
+
+transport:
+  type: github-pr
+  pr_number: 11
+  branch: task/scoped-verification-toolchain-dependency-capsule-v1
+  repair_commit: e02ae617860d8181ec9946ecae41c9ac81d3d2dc
+  canonical_main: e7064c9bf4fcd15bdb6f5a2678414210c01d1c00
+  transport_drift: false
+
+verification:
+  repaired_s04_run_id: 37467396706
+  repaired_s04_job_id: 112281796516
+  repaired_s04_result: success
+  repaired_s04_pytest_passed: 53
+  generic_ci_run_id: 37467396768
+  generic_ci_result: success
+  macos_run_id: 37467396785
+  macos_result: success
+  pr011_s05_run_id: 37467396747
+  pr011_s05_result: success
+  existing_real_host_evidence_preserved_by_impact_analysis: true
+
+safety:
+  requirement_revision_changed: false
+  plan_revision_changed: false
+  hub_mutation_authorized: false
+  host_policy_widening_authorized: false
+  permission_or_allowlist_expansion_authorized: false
+  operator_unrestricted_authorized: false
+  implementation_slices_replayed: false
+  canonical_main_mutated_by_repair: false
+
+continuation:
+  current_gate: acceptance
+  next_action: "#开发验收 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
+  acceptance_approved: false
+  completion_verified: false

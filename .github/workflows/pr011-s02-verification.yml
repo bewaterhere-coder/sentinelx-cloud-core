@@ -1,0 +1,28 @@
+name: pr011-s02-verification
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  s02-verification-materialization:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e . pytest
+      - name: Run PR-011 S02 verification contracts
+        run: >-
+          python -m pytest -q
+          tests/test_verification_profile_contracts.py
+          tests/test_verification_runtime.py
+          tests/test_verification_windows_materialization.py
+          tests/test_mutation_audit.py
+          tests/test_windows_mutation_sandbox.py
+          tests/test_scoped_script_execution.py

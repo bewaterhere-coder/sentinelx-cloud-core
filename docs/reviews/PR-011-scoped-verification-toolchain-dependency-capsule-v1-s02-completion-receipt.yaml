@@ -1,0 +1,84 @@
+schema_version: "1.0"
+kind: devforge_slice_completion_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1
+slice_id: S02
+source_command: "#开发执行 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
+lineage:
+  requirement_revision: 1
+  plan_revision: 3
+  checkpoint_ref: docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s02-completion-20261005.yaml
+  checkpoint_blob_sha: ffddaad0fa6237d6c0e9bddb8646fc2dbf865942
+  task_blob_sha_after: 37f4d473e3f25381d6a9650444205a19cf99f3f7
+  slice_set_blob_sha_after: d2dc241fd41a2e536e3ddb85e04f957e6f8d4ac0
+  state_transition_commit: 58808f8651a8d04b7d06f7ee9cdeaa8e1facfa08
+implementation:
+  verified_candidate_head: b91760f1b57e85eb1015094d37a2d4d1f99809ca
+  disposition: completed_without_replay
+  semantics:
+    - verification_intent sealed into existing durable START evidence
+    - admitted source and dependency capsule broker-materialized before SPAWN
+    - source manifest and package-lock revalidated before SPAWN
+    - deterministic workspace-local launcher shims materialized and verified
+    - toolchain receives transient read/execute authority only; writes remain denied
+    - provider stores and canonical/protected roots remain non-writable by AppContainer
+    - transient toolchain authority is removed during terminalization
+verification:
+  exact_pr_merge_ref: c52e874abc9f058f3a5d4cf598fb528a13d52df5
+  pr011_s02:
+    run_id: 37221717094
+    job_id: 111493219557
+    result: success
+    tests_passed: 59
+    tests_failed: 0
+  generic_ci:
+    run_id: 37221717032
+    result: success
+  macos_agent:
+    run_id: 37221717073
+    result: success
+  pr010_regressions:
+    s01_run_id: 37221717071
+    s01_result: success
+    s02_run_id: 37221717103
+    s02_result: success
+    s03_run_id: 37221717083
+    s03_result: success
+    s04_run_id: 37221717113
+    s04_result: success
+    s05_run_id: 37221717065
+    s05_result: success
+root_cause_reconciliation:
+  initial_failure: toolchain read probe failed in Windows AppContainer verification fixture
+  product_repair:
+    - recursively apply RX to sealed toolchain descendants
+    - grant only traverse authority to required toolchain ancestors
+    - fail-closed cleanup/revocation of transient grants
+  diagnostic_correction:
+    - materialized source/cache/shim retained AppContainer authority
+    - relative workspace write succeeded
+    - final residual failure was cmd.exe probe quoting/redirection syntax, not missing sandbox authority
+    - corrected probe then passed with product authority unchanged
+safety:
+  canonical_checkout_mutated: false
+  canonical_main_mutated: false
+  hub_modified: false
+  permission_or_allowlist_widened: false
+  operator_unrestricted_used: false
+  unrestricted_fallback_used: false
+  duplicate_executor_store_sandbox_or_audit_introduced: false
+  s03_executed: false
+postconditions:
+  task_stage_read_back: implementation
+  slice_state_read_back: completed
+  next_slice_read_back: S03
+  next_slice_state_read_back: pending
+  task_read_back_verified: true
+  slice_set_read_back_verified: true
+  checkpoint_read_back_verified: true
+  receipt_read_back_verified: true
+  acceptance_approved: false
+  completion_verified: false
+completion_guard:
+  status: satisfied
+  canonical_next_action: "#开发执行 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
