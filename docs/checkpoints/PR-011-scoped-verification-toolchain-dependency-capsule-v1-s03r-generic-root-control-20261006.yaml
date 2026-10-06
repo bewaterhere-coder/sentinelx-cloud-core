@@ -1,0 +1,55 @@
+schema_version: "1.0"
+kind: devforge_slice_diagnostic_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1
+slice_id: S03R
+status: generic_root_regression_isolation
+completion_claim: false
+
+evidence:
+  system_identity: NT AUTHORITY\SYSTEM
+  pythonpath_env: ""
+  candidate_generic_control:
+    result: failed
+    handler_result:
+      ok: false
+      timed_out: true
+      returncode: -1
+      output: Timeout
+    audit_operation_id: mao_kf5YFw1CUnTsTOoKq5-y4lWb
+    process_spawned: true
+    appcontainer: true
+    job_contained: true
+    breakaway_allowed: false
+    root_pid: 41376
+    terminal_state: terminal
+    process_tree_quiescent: true
+    residual_write_authority: false
+  interpretation:
+    - failure is not verification-specific
+    - the same candidate branch generic scoped Python root also fails to initialize under the SYSTEM proof harness
+    - PYTHONPATH inheritance is not the cause
+    - verification-specific materialization is therefore not yet the correct repair surface
+    - compare candidate runner with baseline main runner before any further product mutation
+
+next_discriminator:
+  kind: diagnostic_only
+  objective: run the same generic SYSTEM control while materializing the main-baseline Python runner text
+  product_code_mutation: false
+  prepared:
+    - devforge_s03r_generic_baseline_control_test.py
+    - .devforge-s03r-generic-baseline-control-harness.py
+    - .devforge-s03r-generic-baseline-control.ps1
+    - .devforge-s03r-launch-generic-baseline-control.ps1
+  decision:
+    baseline_runner_pass:
+      meaning: candidate runner instrumentation is the regression surface
+    baseline_runner_fail:
+      meaning: regression is below the runner, in sandbox/runtime behavior or branch-level spawn changes
+
+safety:
+  canonical_main_mutated: false
+  product_code_mutated_by_diagnostic: false
+  live_agent_mutated: false
+  s04_started: false
+  no_receipt_no_completion_claim: true
