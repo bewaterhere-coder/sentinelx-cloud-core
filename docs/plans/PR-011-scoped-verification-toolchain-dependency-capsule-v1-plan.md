@@ -310,12 +310,12 @@ D:\coco\workspaces\bewaterhere-coder\sentinelx-cloud-core\pr011-s04-20261005
 
 contains exploratory unpublished repairs produced during physical diagnosis.
 
-R5 rules:
+R6 rules (preserving R5 substance):
 
 - do not reset or clean it before evidence capture/reconciliation;
 - do not publish it wholesale;
 - do not treat its current product diff as an approved implementation;
-- S02R/S03R implementers may selectively reuse minimal changes only after exact comparison against current remote Task head, current main and the approved R5 Slice;
+- S02R/S03R implementers may selectively reuse minimal changes only after exact comparison against current remote Task head, current main and the approved R6 Slice;
 - generated `.devforge-*`, pytest temp trees and copied toolchain fixtures are never product artifacts.
 
 ## 7. Downstream PR-015 Boundary
@@ -326,7 +326,7 @@ PR-011 may be Accepted/Completed from SentinelX-owned evidence after S02R, S03R,
 
 ## 8. Requirement Traceability
 
-| Requirement / AC | R5 disposition |
+| Requirement / AC | R6 disposition |
 |---|---|
 | R1 | S01 preserved |
 | R2 | S02R repairs minimum toolchain authority |
@@ -361,9 +361,9 @@ The post-review Slice Set must:
 - retain PR #11 and the existing Task branch;
 - fail closed on material main/Task/Host runtime drift.
 
-No new R5 Slice Set may be compiled before Plan Review approval.
+No new R6 Slice Set may be compiled before Plan Review approval.
 
-## 10. Revision 5 Review Questions
+## 10. Revision 6 Review Questions
 
 The reviewer must explicitly determine:
 
@@ -376,4 +376,7 @@ The reviewer must explicitly determine:
 7. Is the only authorized post-review sequence `S02R -> S03R -> S04 -> S05`?
 8. Does the Plan fail closed back to Requirement review if descendant execution cannot be made compatible with the existing security invariants?
 
-Plan approval remains reviewer-owned. Revision 5 does not authorize implementation until Plan Review approval and exact R5 Slice Set readback are complete.
+9. Is the remediation now bound to current DevForge 2.51.0 provenance and the exact rejected R5 review?
+10. Is the current Task transition provenance valid for `plan_review_rejected -> plan_review`, with no self-approval or Slice compilation?
+
+Plan approval remains reviewer-owned. Revision 6 does not authorize implementation until Plan Review approval and exact R6 Slice Set readback are complete.
