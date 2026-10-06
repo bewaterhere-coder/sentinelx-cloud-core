@@ -1,0 +1,43 @@
+schema_version: "1.0"
+kind: devforge_development_authorization
+authorization_id: AUTH-PR-015-DIRECT-CODEX-BRIDGE-V1
+subject:
+  repository:
+    vcs: git
+    authority: github.com
+    path: bewaterhere-coder/sentinelx-cloud-core
+  task_id: PR-015-direct-codex-development-host-invocation-bridge-v1
+authority:
+  source_command: "#开发"
+  granted_by: human
+scope:
+  workflow: project_development
+  requirement_ref: docs/requirements/PR-015-direct-codex-development-host-invocation-bridge-v1.md
+  requirement_revision: 1
+  allowed_actions:
+    - orchestration
+    - implementation
+    - verification
+  forbidden_actions:
+    - new_task_creation_outside_subject
+    - material_requirement_decision
+    - destructive_operation
+    - transport_migration
+    - permission_expansion
+    - credential_mutation
+    - production_release
+    - devforge_runtime_mutation
+bindings:
+  plan_ref: null
+  plan_revision: null
+  transport_ref:
+    type: github-pr
+    repository: bewaterhere-coder/sentinelx-cloud-core
+    pr_number: 15
+    branch: task/direct-codex-development-host-invocation-bridge-v1
+lifecycle:
+  state: active
+  revision: 1
+receipt:
+  source_command: "#开发 SentinelX Direct Codex Development Host Invocation Bridge V1"
+  readback_required: true
