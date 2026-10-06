@@ -1,0 +1,187 @@
+schema_version: "1.0"
+kind: devforge_execution_slice_set
+identity:
+  task_id: PR-015-direct-codex-development-host-invocation-bridge-v1
+  slice_set_id: PR-015-direct-codex-development-host-invocation-bridge-v1-plan-r2
+plan:
+  ref: docs/plans/PR-015-direct-codex-development-host-invocation-bridge-v1-plan.md
+  revision: 2
+  blob_sha: b1414f58e31e69fd5718479d04eb6b7e9e8475bd
+  requirement_revision: 1
+review:
+  ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r2.md
+  blob_sha: 56d8179f97d10c5737220b2f2c2e7085f262c920
+  decision: Approved
+repository_baseline:
+  main_sha: 018b78ca20984176d53fbe90039dc795a7f2742f
+  reviewed_task_head: a0060f236be471cfe330dad56f3900c9d4ff2c59
+runtime_provenance:
+  devforge_version: "2.69.0"
+  devforge_main_sha: a32dc7cc533bc5d9cb1b52b3477c654951b6d0cb
+bootstrap_entry:
+  required_before_first_slice: true
+  intended_target:
+    provider: direct
+    adapter: codebuddy
+  explicit_command: "#开发引导执行 PR-015-direct-codex-development-host-invocation-bridge-v1 direct:codebuddy"
+  project_binding_mutation: forbidden
+  fallback: forbidden
+  active_override_required_for_slice_execution: true
+implementation_entry_guard:
+  required_before_each_slice: true
+  rules:
+    - re-read current remote main, PR #15 head, Approved Plan R2 and this Slice Set before product mutation
+    - require exact canonical repository bewaterhere-coder/sentinelx-cloud-core, PR #15 and branch task/direct-codex-development-host-invocation-bridge-v1
+    - require the exact active Task-scoped bootstrap override bound to Approved Plan R2 and this Slice Set
+    - preserve persistent project binding direct/codex
+    - preserve canonical checkout main + clean and never use it as implementation cwd
+    - fail closed on Requirement, Plan, Slice Set, transport, bootstrap override or security-boundary drift
+    - preserve PR-010 canonical repository firewall and PR-011 verification semantics
+    - do not use generic exec, shell wrapper, operator_unrestricted, arbitrary run-as-user, permission widening or provider fallback
+    - one explicit #开发执行 completes at most one Slice
+acceptance_boundary:
+  live_agent_activation:
+    implementation_slice: false
+    verifier_owned: true
+  final_direct_codex_live_proof:
+    implementation_side_candidate_proof: required_in_S03
+    deployed_acceptance_proof: verifier_owned
+
+slices:
+  - slice_id: S01
+    objective: Establish the bounded devforge_direct_codex builtin provider contract, Host policy/readiness, and complete provider-wide local_api repository-effect/firewall composition.
+    depends_on: []
+    state: pending
+    scope:
+      refs:
+        - src/sentinelx_core/handlers/devforge_runtime.py
+        - src/sentinelx_core/handlers/local_api.py
+        - src/sentinelx_core/handlers/__init__.py
+        - src/sentinelx_core/operation_registry.py
+        - src/sentinelx_core/policy.py
+        - config.example.windows.yaml
+        - tests/test_devforge_runtime_local_api.py
+        - tests/test_local_api.py
+        - tests/test_policy.py
+        - focused capability/readiness tests
+      authorized_changes:
+        - add a dedicated bounded builtin provider identity for direct Codex
+        - add closed execute_task schema with no executable, shell, argv, cwd, environment, arbitrary prompt or credential fields
+        - add explicit Host policy opt-in and fail-closed readiness prerequisites
+        - add deterministic repository_effect metadata for all effective builtin actions
+        - make the exact effective builtin provider map feed both local_api dispatch and canonical repository firewall feature/readiness
+        - preserve current devforge_runtime lifecycle and execute_scoped semantics while making their effect metadata explicit
+        - add regression coverage for unknown or omitted builtin process effects
+      forbidden:
+        - product implementation of workspace bootstrap or Codex process execution beyond test seams
+        - generic exec enablement
+        - operator_unrestricted enablement
+        - generic run-as-user projection
+        - Hub changes
+        - project binding changes
+    verification:
+      required:
+        - provider absent or unavailable when policy opt-in is absent
+        - describe exposes only closed bounded fields
+        - caller executable, argv, shell, cwd, environment, credentials and arbitrary prompt are rejected
+        - devforge_runtime effect metadata remains compatible with scoped mutation semantics
+        - devforge_direct_codex.execute_task classifies as process mutation and is not readiness-positive without proven containment
+        - missing or invalid builtin repository_effect metadata makes effective-surface readiness fail closed
+        - the same builtin provider map is used by dispatch and canonical_repository_mutation_firewall_v1 readiness
+        - existing script_run, devforge_runtime, local_api and policy regression suites pass
+    checkpoint:
+      required: true
+
+  - slice_id: S02
+    objective: Implement provider-derived isolated workspace bootstrap, exact canonical PR transport admission, active-user Codex execution and bounded Windows process lifecycle.
+    depends_on: [S01]
+    state: pending
+    scope:
+      refs:
+        - direct-Codex provider/runner modules established by S01
+        - src/sentinelx_core/user_git.py
+        - src/sentinelx_core/winspawn.py
+        - focused Windows process/user-token helpers
+        - focused Git transport/bootstrap tests
+        - tests/test_user_scoped_git.py
+        - relevant Windows sandbox/isolation tests
+      authorized_changes:
+        - derive execution workspace only from Host-owned workspace policy plus repository/task/run/attempt/slice identity
+        - resolve and verify the active-user Codex package and fixed Node plus codex.js execution chain
+        - use active-user identity without exposing credential or environment secrets
+        - bootstrap only the exact existing PR #15 branch after expected remote head verification
+        - create an independent execution checkout that does not mutate canonical checkout worktree metadata
+        - compile deterministic DevForge handoff from canonical structured fields
+        - invoke Codex non-interactively with provider-owned bounded sandbox settings
+        - enforce timeout, process-tree cleanup and bounded result capture
+      forbidden:
+        - caller-selected absolute workspace path
+        - git worktree metadata mutation in canonical checkout
+        - replacement branch or PR
+        - force push
+        - caller Git argv or remote URL override
+        - cmd or PowerShell shell wrapper as execution boundary
+        - arbitrary run-as-user API
+        - credential readback or logging
+        - sandbox or approval bypass flags
+    verification:
+      required:
+        - expected remote head mismatch fails before Codex mutation
+        - independent execution checkout is exact canonical task branch and head
+        - canonical checkout branch/head/index/worktree metadata remain unchanged
+        - fixed verified Node plus codex.js chain is used rather than caller-selected shell/executable
+        - exact workspace write succeeds in physical Windows fixture
+        - protected sibling or canonical-like write fails in physical Windows fixture
+        - credentials and raw active-user environment are not returned or persisted
+        - timeout and failure close the process tree with no detached long-lived child
+        - no provider fallback occurs
+    external_availability_rule: real Windows physical sandbox proof is required for completion
+    checkpoint:
+      required: true
+
+  - slice_id: S03
+    objective: Validate structured direct/Codex receipt, exact transport readback and exact-candidate self-host recovery through the newly delivered bridge.
+    depends_on: [S02]
+    state: pending
+    scope:
+      refs:
+        - direct-Codex provider/runner/result modules from S01-S02
+        - focused local_api integration tests
+        - direct adapter receipt validation tests
+        - candidate-local Windows self-host fixture
+      authorized_changes:
+        - normalize bounded direct/Codex result and receipt fields
+        - validate exact Task/Run/Attempt/Slice identity
+        - validate canonical versus actual repository/PR/branch identity
+        - perform remote branch readback before successful execution result
+        - add malformed receipt, transport drift and incomplete-local-only result negatives
+        - run exact-candidate direct-Codex bridge proof as product-under-test without changing project binding
+      forbidden:
+        - production/live Agent install or restart
+        - treating bootstrap CodeBuddy completion as direct-Codex recovery proof
+        - replacement transport
+        - Acceptance or completion approval
+    verification:
+      required:
+        - successful candidate receipt reports provider direct and adapter codex
+        - exact Task/Run/Attempt/Slice identities match
+        - canonical and actual PR/branch match with no migration
+        - remote readback is consistent with the claimed resulting head
+        - malformed or missing receipt fails
+        - transport drift fails
+        - local-only unpersisted implementation cannot be reported as successful canonical execution
+        - exact-candidate direct-Codex bridge can perform one bounded fixture execution under the existing direct/codex project identity
+        - persistent project binding remains unchanged
+    external_availability_rule: exact-candidate direct-Codex physical proof is required; deployed live-Agent activation remains Acceptance-owned
+    checkpoint:
+      required: true
+
+execution_state:
+  current_slice: S01
+  current_slice_state: pending
+  completed_slices: []
+  pending_slices: [S01, S02, S03]
+  all_slices_completed: false
+acceptance_boundary:
+  all_current_plan_slices_must_be_completed: true
+  acceptance_command: "#开发验收 PR-015-direct-codex-development-host-invocation-bridge-v1"
