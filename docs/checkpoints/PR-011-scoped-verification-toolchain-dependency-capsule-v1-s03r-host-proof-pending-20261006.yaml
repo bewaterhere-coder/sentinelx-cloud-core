@@ -152,6 +152,63 @@ safety:
   network_or_credential_authority_widened: false
   next_slice_executed: false
 
+
+host_proof_attempt_2:
+  workspace: D:\coco\workspaces\bewaterhere-coder\sentinelx-cloud-core\pr011-s03r-session-object-v4
+  basetemp: .devforge-s03r-system-proof-20261006-131704
+  scheduled_identity: SYSTEM
+  scheduled_session: session_0
+  result:
+    physical_acl_test: passed
+    scoped_node_npm_test: failed_timeout
+    pytest_summary: "1 failed, 1 passed, 1 warning"
+  audit:
+    operation_id: mao_X_vEz0vLCx49nNUa7jzwrScp
+    root_process_spawned: true
+    appcontainer: true
+    job_contained: true
+    breakaway_allowed: false
+    root_pid: 26756
+    process_spawned_at: "2026-10-06T05:19:28.759017Z"
+    terminalized_at: "2026-10-06T05:21:28.794551Z"
+    finish_status: timeout
+    process_tree_quiescent: true
+    residual_process_ids: []
+    residual_job_ids: []
+    sandbox_write_authority_present_after_terminalization: false
+  decisive_artifacts:
+    progress_file_created: false
+    stdout_file_created: false
+    stderr_file_created: false
+    returncode_file_created: false
+  interpretation: >
+    The root AppContainer process existed and was Job-contained but never entered
+    sentinelx_runner.py. This is a regression introduced by granting the Session-0
+    window-station/desktop SID ACE before CreateProcess. The timeout is therefore
+    upstream of Python child, whoami, Node and npm descendants.
+
+timing_repair:
+  candidate_head: 31678bcc2f1495336fcb1041c8e49e3d682f5919
+  design:
+    - verification materialization grants only the exact toolchain RX authority
+    - create the AppContainer root suspended using the previously proven root-process path
+    - prove the suspended root is no-breakaway Job-contained
+    - only then grant the unique verification AppContainer SID Session-0 read ACE
+    - commit durable PROCESS_SPAWNED evidence and resume the root
+    - revoke Session-0 ACE during fail-closed cleanup and terminalization
+  rationale: >
+    Session-0 read authority is needed by USER32-linked descendants, but must not
+    perturb root CreateProcess initialization. Delaying the grant until after the
+    root exists suspended preserves the prior proven creation boundary while still
+    making the authority available before any descendant can run.
+  verification_update:
+    - physical ACL test now asserts Session-0 authority is absent before spawn
+    - physical ACL test asserts it is present after suspended-root creation/spawn
+    - terminalization still requires complete ACE revocation
+  prepared_workspace: D:\coco\workspaces\bewaterhere-coder\sentinelx-cloud-core\pr011-s03r-session-object-v5
+  prepared_proof_script: .devforge-s03r-system-proof.ps1
+  host_proof_status: pending
+
 completion_guard:
   s03r_completed: false
   s04_started: false
