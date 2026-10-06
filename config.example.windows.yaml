@@ -377,5 +377,7 @@ upload_base: 'C:\Users\Public\sentinelx-uploads'
 #   max_result_bytes: 65536
 #   # Optional provider-owned executable discovery constraints. Package identity
 #   # is verified by the provider; these values are never caller data.
+#   # S02 executes the fixed chain node.exe <verified package>/bin/codex.js
+#   # as the active user, never a .cmd shim through a shell.
 #   codex_package: '@openai/codex'
 #   node_executable: null  # e.g. 'C:\Program Files\nodejs\node.exe'
