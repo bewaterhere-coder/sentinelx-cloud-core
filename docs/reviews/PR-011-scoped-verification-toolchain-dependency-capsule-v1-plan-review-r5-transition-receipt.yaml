@@ -1,0 +1,59 @@
+schema_version: "1.0"
+kind: devforge_plan_review_transition_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1
+source_command: "#开发评审 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  version: "2.51.0"
+  runtime_blob_sha: 54eb9e4f0c79620357bc2cf1b8d06d6af9771d6d
+  workflow: project_development
+  workflow_version: "2.1"
+  review_contract_version: "1.3"
+
+input:
+  requirement_revision: 2
+  requirement_blob_sha_before_review: 6ef21e9e1dde16212142d1c60be8a1ea34eae567
+  plan_revision: 5
+  plan_blob_sha: 39e2056c924b4ca9ba73211921001aff408e99a6
+  reviewed_pr_head: 1b51d7db3e6d573230bf673342d2c63de9621779
+  canonical_main: e7064c9bf4fcd15bdb6f5a2678414210c01d1c00
+  prior_slice_set_blob_sha: b0e92968c7a082cba6dce251bc3ff5ba50b334e8
+
+review:
+  ref: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-review-r5.md
+  blob_sha: 889a632e21b1b3bfeda4e72dd06bb6ee37fb7dad
+  decision: Rejected
+  classification: inconsistent_evidence
+  finding:
+    id: PR011-R5-F1-remediation-provenance-and-gate-transition-inconsistent
+    plan_content_assessment: substantively_acceptable_but_not_authorizable
+
+transition:
+  from_stage: plan_review
+  to_stage: plan_review_rejected
+  task_blob_sha_after_transition: 9a419a370b45e5ab2349324bbab42773d111e701
+  plan_approved: false
+  implementation_authorized: false
+  next_expected_actor: planner
+  current_slice: null
+
+slice_authority:
+  old_plan_r4_slice_set: stale_non_authorizing
+  new_plan_r5_slice_set_compiled: false
+  reason: rejected Plan Review cannot grant implementation execution authority
+
+safety:
+  product_implementation_executed: false
+  canonical_main_mutated: false
+  live_agent_mutated: false
+  dirty_s04_candidate_published: false
+  prior_slice_side_effects_replayed: false
+  network_or_permission_widening_used: false
+
+completion_guard:
+  task_stage_read_back: plan_review_rejected
+  next_expected_actor_read_back: planner
+  rejected_review_durable: true
+  canonical_next_action: "#开发计划修复 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
