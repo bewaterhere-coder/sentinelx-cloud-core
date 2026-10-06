@@ -19,7 +19,7 @@ authority:
 result:
   slice_state: completed
   implementation_landed: true
-  product_candidate_sha: 354a08964b90fe32a53adc7e651bc00b1ab13eb3
+  product_candidate_sha: 9803afae1fe5b6746f3f87f968d213bf30ee042e
   completed_slice_count: 2
   one_execute_one_slice_preserved: true
   verified_side_effect_replay: none

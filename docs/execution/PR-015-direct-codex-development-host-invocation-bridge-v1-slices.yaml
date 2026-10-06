@@ -185,7 +185,7 @@ execution_state:
   last_completion:
     slice_id: S02
     completed_at: "2026-10-07"
-    product_candidate_sha: 354a08964b90fe32a53adc7e651bc00b1ab13eb3
+    product_candidate_sha: 9803afae1fe5b6746f3f87f968d213bf30ee042e
     checkpoint_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-s02-completion-20261007.yaml
     receipt_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-s02-completion-receipt.yaml
 acceptance_boundary:

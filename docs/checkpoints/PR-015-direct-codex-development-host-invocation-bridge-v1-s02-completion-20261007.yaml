@@ -37,7 +37,7 @@ execution:
   provider_fallback_used: false
   persistent_project_binding: direct/codex
   project_binding_mutated: false
-  product_candidate_sha: 354a08964b90fe32a53adc7e651bc00b1ab13eb3
+  product_candidate_sha: 9803afae1fe5b6746f3f87f968d213bf30ee042e
 
 admission:
   canonical_main_before: 018b78ca20984176d53fbe90039dc795a7f2742f
