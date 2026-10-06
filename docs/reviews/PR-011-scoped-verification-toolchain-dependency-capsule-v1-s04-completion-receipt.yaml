@@ -1,0 +1,71 @@
+schema_version: "1.0"
+kind: devforge_slice_completion_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1
+slice_id: S04
+source_command: "#开发执行 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
+
+lineage:
+  requirement_revision: 2
+  plan_revision: 6
+  product_commit: 14617443547b813460ecd31a43473efb1fb12d5f
+  checkpoint_ref: docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s04-completion-20261006.yaml
+  checkpoint_blob_sha: 67cbb6b4706ce904320dbaba72e165cfd26849e8
+  slice_set_blob_sha_after: 6ae69c51a432981c59f5aa81b779b38767617856
+
+verification:
+  final_system_physical_gate:
+    status: passed
+    host_identity: NT AUTHORITY\SYSTEM
+    exit_code: 0
+    passed: 35
+    failed: 0
+    warnings: 1
+    duration_seconds: 474.24
+  required_s04_behaviors:
+    readiness_absent_or_unusable_false: passed
+    base_scoped_readiness_independent: passed
+    real_appcontainer_node_npm: passed
+    offline_verification: passed
+    dns_http_denied: passed
+    protected_provider_state_denied: passed
+    credentials_absent: passed
+    transient_authority_absent_after_terminalization: passed
+    post_readiness_toolchain_tamper_rejected_before_start: passed
+    pr010_regressions: passed
+    pr012_explicit_execution_profile_regressions: passed
+    bounded_path_safe_capability_projection: passed
+
+publication:
+  product_commit: 14617443547b813460ecd31a43473efb1fb12d5f
+  candidate_published_selectively: true
+  dirty_historical_s04_workspace_published_wholesale: false
+  diagnostic_harness_published: false
+
+safety:
+  canonical_checkout_mutated: false
+  canonical_main_mutated: false
+  hub_modified: false
+  live_agent_modified: false
+  permission_or_allowlist_widened: false
+  network_or_credential_widened: false
+  operator_unrestricted_used: false
+  generic_exec_fallback_used: false
+  duplicate_executor_store_sandbox_or_audit_introduced: false
+  s05_executed: false
+
+postconditions:
+  task_stage_read_back: implementation
+  slice_state_read_back: completed
+  completed_slice_read_back: S04
+  next_slice_read_back: S05
+  next_slice_state_read_back: pending
+  acceptance_approved: false
+  task_completion_verified: false
+
+completion_guard:
+  status: satisfied
+  no_receipt_no_completion_claim: satisfied
+  this_command_completed_at_most_one_slice: true
+  next_slice_executed_by_this_command: false
+  canonical_next_action: "#开发执行 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
