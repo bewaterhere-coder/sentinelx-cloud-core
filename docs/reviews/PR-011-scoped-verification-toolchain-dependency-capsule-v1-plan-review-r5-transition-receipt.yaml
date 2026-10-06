@@ -33,7 +33,7 @@ review:
 transition:
   from_stage: plan_review
   to_stage: plan_review_rejected
-  task_blob_sha_after_transition: 9a419a370b45e5ab2349324bbab42773d111e701
+  task_blob_sha_after_transition: 5f2739faa4d924f96359698e35176457b0a77afb
   plan_approved: false
   implementation_authorized: false
   next_expected_actor: planner
