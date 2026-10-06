@@ -262,6 +262,28 @@ def test_verification_toolchain_is_read_execute_only_and_revoked_at_terminal(tmp
     canonical_write = fx.canonical / "tamper.txt"
     runtime_file = fx.profile.toolchain_root / "runtime.dat"
     app_sid = fx.activation.sandbox_identity
+    session_key = (fx.record.scope_id, fx.record.generation)
+    window_station, desktop = fx.sandbox._verification_session_reads[session_key]
+    window_station_entries = {
+        sid: mask
+        for sid, mask, _flags in windows_sandbox._window_object_dacl_entries(
+            window_station, "window station"
+        )
+    }
+    desktop_entries = {
+        sid: mask
+        for sid, mask, _flags in windows_sandbox._window_object_dacl_entries(
+            desktop, "desktop"
+        )
+    }
+    assert (
+        window_station_entries.get(app_sid, 0)
+        & windows_sandbox.WINDOW_STATION_VERIFICATION_READ
+    ) == windows_sandbox.WINDOW_STATION_VERIFICATION_READ
+    assert (
+        desktop_entries.get(app_sid, 0)
+        & windows_sandbox.DESKTOP_VERIFICATION_READ
+    ) == windows_sandbox.DESKTOP_VERIFICATION_READ
     for materialized_root in (
         fx.materialized.source_root,
         fx.materialized.npm_cache_root,
@@ -307,6 +329,18 @@ def test_verification_toolchain_is_read_execute_only_and_revoked_at_terminal(tmp
     terminal = fx.sandbox.terminalize(fx.record.scope_id, fx.record.generation)
     assert terminal.state == "terminal"
     assert all(sid != app_sid for sid, _mask, _flags in _dacl_entries(fx.profile.toolchain_root))
+    assert all(
+        sid != app_sid
+        for sid, _mask, _flags in windows_sandbox._window_object_dacl_entries(
+            window_station, "window station"
+        )
+    )
+    assert all(
+        sid != app_sid
+        for sid, _mask, _flags in windows_sandbox._window_object_dacl_entries(
+            desktop, "desktop"
+        )
+    )
 
 
 def test_verification_toolchain_acl_never_rewrites_parent_acls(
