@@ -109,6 +109,17 @@ def test_eligible_host_lists_bounded_builtin(tmp_path: Path) -> None:
         "type": "string",
         "const": "scoped_mutation",
     }
+    verification = execute["params_schema"]["properties"]["verification"]
+    assert verification["additionalProperties"] is False
+    assert set(verification["required"]) == {
+        "profile",
+        "source_id",
+        "source_manifest_sha256",
+        "source_revision",
+        "capsule_id",
+        "package_lock_sha256",
+    }
+    assert set(verification["properties"]) == set(verification["required"])
 
 
 def test_builtin_lifecycle_reuses_canonical_service(tmp_path: Path) -> None:
@@ -304,6 +315,17 @@ def test_disabled_local_api_removes_outer_op(tmp_path: Path) -> None:
     assert "local_api" not in build_registry(policy=policy)
 
 
+def _verification_params() -> dict[str, str]:
+    return {
+        "profile": "node_npm",
+        "source_id": "source-1",
+        "source_manifest_sha256": "a" * 64,
+        "source_revision": "4" * 40,
+        "capsule_id": "capsule-1",
+        "package_lock_sha256": "b" * 64,
+    }
+
+
 def _execute_params() -> dict[str, object]:
     return {
         "scope_ref": {"scope_id": "scope-s07", "generation": 1},
@@ -374,6 +396,91 @@ def test_execute_scoped_adapter_propagates_explicit_profile_and_projects_result(
     assert "unexpected" not in result
 
 
+def test_execute_scoped_adapter_forwards_bounded_verification_and_projects_evidence() -> None:
+    captured: dict[str, object] = {}
+
+    async def fake_profiled(context, payload):
+        captured["context"] = context
+        captured["payload"] = payload
+        return {
+            "ok": True,
+            "interpreter": "python3",
+            "execution_profile": "scoped_mutation",
+            "returncode": 0,
+            "audit_operation_id": "audit-s05",
+            "mutation_scope_ref": {"scope_id": "scope-s07", "generation": 1},
+            "terminal_state": "terminal",
+            "verification": {
+                "profile_id": "node_npm",
+                "profile_revision": 1,
+                "source_repository_digest": "c" * 64,
+                "source_revision": "4" * 40,
+                "source_manifest_digest": "a" * 64,
+                "toolchain_kind": "node_npm_v1",
+                "toolchain_digest": "d" * 64,
+                "launcher_digest": "e" * 64,
+                "capsule_id": "capsule-1",
+                "capsule_revision": 1,
+                "capsule_payload_digest": "f" * 64,
+                "expected_package_lock_sha256": "b" * 64,
+                "network_mode": "none",
+                "resource_limits_digest": "1" * 64,
+                "source_id": "source-1",
+                "verified_package_lock_sha256": "b" * 64,
+                "offline": True,
+                "provider_path": "D:/provider/private/toolchain",
+                "credential": "must-not-project",
+            },
+        }
+
+    adapter = make_devforge_execute_scoped_adapter(fake_profiled)
+    params = _execute_params()
+    params["verification"] = _verification_params()
+    result = _run(adapter, _context(), params)
+
+    payload = captured["payload"]
+    assert isinstance(payload, dict)
+    assert payload["verification"] == _verification_params()
+    evidence = result["verification"]
+    assert evidence["profile_id"] == "node_npm"
+    assert evidence["toolchain_kind"] == "node_npm_v1"
+    assert evidence["capsule_id"] == "capsule-1"
+    assert evidence["offline"] is True
+    assert "provider_path" not in evidence
+    assert "credential" not in evidence
+
+
+def test_execute_scoped_adapter_rejects_unbounded_verification_fields_before_executor() -> None:
+    calls = 0
+
+    async def fake_profiled(_context, _payload):
+        nonlocal calls
+        calls += 1
+        return {"execution_profile": "scoped_mutation"}
+
+    adapter = make_devforge_execute_scoped_adapter(fake_profiled)
+    context = _context()
+
+    for field, value in (
+        ("toolchain_root", "D:/caller/toolchain"),
+        ("cache_root", "D:/caller/cache"),
+        ("network_endpoint", "https://registry.npmjs.org"),
+        ("credential", "secret"),
+    ):
+        params = _execute_params()
+        verification: dict[str, object] = dict(_verification_params())
+        verification[field] = value
+        params["verification"] = verification
+        try:
+            _run(adapter, context, params)
+        except HandlerError as exc:
+            assert exc.code == "invalid_payload"
+        else:
+            raise AssertionError(f"unbounded verification field {field} was accepted")
+
+    assert calls == 0
+
+
 def test_execute_scoped_adapter_rejects_missing_and_invalid_profiles_before_executor() -> None:
     calls = 0
 
@@ -423,6 +530,7 @@ def test_execute_scoped_local_api_routes_explicit_profile_to_existing_executor(
             "execution_profile": "scoped_mutation",
             "returncode": 0,
             "output": "ok",
+            "verification": {"profile_id": "node_npm", "offline": True},
         }
 
     policy = _policy(tmp_path)
@@ -444,7 +552,10 @@ def test_execute_scoped_local_api_routes_explicit_profile_to_existing_executor(
             "operation": "call",
             "endpoint": "devforge_runtime",
             "action": "execute_scoped",
-            "params": _execute_params(),
+            "params": {
+                **_execute_params(),
+                "verification": _verification_params(),
+            },
         },
     )
 
@@ -453,6 +564,8 @@ def test_execute_scoped_local_api_routes_explicit_profile_to_existing_executor(
     payload = captured["payload"]
     assert isinstance(payload, dict)
     assert payload["execution_profile"] == "scoped_mutation"
+    assert payload["verification"] == _verification_params()
+    assert response["result"]["verification"] == {"profile_id": "node_npm", "offline": True}
 
 
 def test_execute_scoped_adapter_rejects_unexpected_downstream_profile() -> None:
