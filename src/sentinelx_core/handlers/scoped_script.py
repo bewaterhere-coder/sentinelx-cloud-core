@@ -217,13 +217,22 @@ def _runner_argv(
         runner = workspace / "sentinelx_runner.py"
         if materialize:
             runner.write_text(
-                "import contextlib, runpy, sys, traceback\n"
+                "import contextlib, pathlib, runpy, sys, time, traceback\n"
             "target,out_path,err_path,result_path,*script_args=sys.argv[1:]\n"
             "sys.argv=[target,*script_args]\n"
             "code=0\n"
             "with open(out_path,'w',encoding='utf-8',errors='replace') as out, open(err_path,'w',encoding='utf-8',errors='replace') as err:\n"
             "  with contextlib.redirect_stdout(out),contextlib.redirect_stderr(err):\n"
-            "    try: runpy.run_path(target,run_name='__main__')\n"
+            "    try:\n"
+            "      h=pathlib.Path(target).parent/'.sentinelx-verification'/'runtime'/'descendant-session'\n"
+            "      request=h/'request'\n"
+            "      if request.exists():\n"
+            "        (h/'root-ready').write_text('ready',encoding='ascii')\n"
+            "        deadline=time.monotonic()+15.0\n"
+            "        while not (h/'authority-ready').exists():\n"
+            "          if time.monotonic()>=deadline: raise RuntimeError('verification descendant authority handshake timed out')\n"
+            "          time.sleep(0.05)\n"
+            "      runpy.run_path(target,run_name='__main__')\n"
             "    except SystemExit as exc: code=exc.code if isinstance(exc.code,int) else (0 if exc.code is None else 1)\n"
             "    except BaseException: traceback.print_exc(); code=1\n"
             "open(result_path,'w',encoding='ascii').write(str(code))\n"
@@ -498,6 +507,12 @@ async def _run_scoped(
             env=child_environment,
             verification=verification_materialized,
         )
+        if verification_materialized is not None:
+            sandbox.enable_verification_descendants(
+                activation,
+                process,
+                verification_materialized,
+            )
         done = await asyncio.to_thread(process.wait, float(timeout))
         if not done:
             process.terminate()
