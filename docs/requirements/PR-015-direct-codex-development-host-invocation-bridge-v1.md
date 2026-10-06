@@ -5,7 +5,7 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 1
 development:
-  stage: plan_review
+  stage: plan_review_rejected
   gates:
     requirement_ready: true
     plan_approved: false
@@ -13,12 +13,18 @@ development:
     completion_verified: false
   plan_revision: 1
   implementation_authorized: false
-  next_expected_actor: reviewer
+  latest_plan_review: rejected_round_1
+  review_disposition: plan_local
+  blocking_findings:
+    - BootstrapExecutionStrategyIncomplete
+    - DirectCodexFirewallCompositionIncomplete
+  next_expected_actor: planner
   authorization:
     mode: durable
     ref: docs/authorizations/PR-015-direct-codex-development-host-invocation-bridge-v1-development-authorization.yaml
 artifacts:
   plan: docs/plans/PR-015-direct-codex-development-host-invocation-bridge-v1-plan.md
+  latest_plan_review: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r1.md
 transport:
   type: github-pr
   pr_number: 15
