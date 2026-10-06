@@ -55,6 +55,7 @@ from sentinelx_core.verification_execution import (
     verification_cwd_label,
     verification_evidence,
 )
+from sentinelx_core.verification_readiness import cached_node_npm_toolchain_digest
 from sentinelx_core.windows_mutation_sandbox import (
     final_executable_path,
     requested_mutation_identity,
@@ -387,6 +388,19 @@ async def _run_scoped(
             if verification is not None:
                 if not bool(payload.get("cleanup", True)):
                     raise ValueError("profiled verification requires cleanup=true")
+                expected_toolchain_digest = cached_node_npm_toolchain_digest(
+                    mutation_policy,
+                    state_root,
+                    verification.profile.profile_id,
+                )
+                if (
+                    expected_toolchain_digest is not None
+                    and verification.admission.toolchain.toolchain_digest
+                    != expected_toolchain_digest
+                ):
+                    raise ValueError(
+                        "verification toolchain changed since the verified readiness self-check"
+                    )
                 validate_verification_environment_request(env_extra)
         except ValueError as exc:
             raise HandlerError("HostMutationVerificationAdmissionFailed", str(exc)) from exc

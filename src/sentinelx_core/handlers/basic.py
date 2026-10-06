@@ -19,6 +19,10 @@ from sentinelx_core.handlers.progressive_help import (
 )
 from sentinelx_core.mutation_readiness import MutationRuntimeReadiness, probe_mutation_runtime
 from sentinelx_core.policy import Policy
+from sentinelx_core.verification_readiness import (
+    VerificationRuntimeReadiness,
+    probe_node_npm_verification_runtime,
+)
 
 
 async def handle_ping(payload: dict[str, Any]) -> dict[str, Any]:
@@ -160,6 +164,7 @@ def make_capabilities_handler(
             }
 
         readiness: MutationRuntimeReadiness
+        verification_readiness: VerificationRuntimeReadiness
         state_parent = (
             Path(config_path).parent
             if config_path is not None
@@ -171,13 +176,26 @@ def make_capabilities_handler(
                 "provider state root cannot be derived",
                 {},
             )
+            verification_readiness = VerificationRuntimeReadiness(
+                False,
+                "provider state root cannot be derived",
+                {},
+            )
         else:
+            state_root = state_parent / "state"
             readiness = await asyncio.to_thread(
                 probe_mutation_runtime,
                 policy.mutation_execution,
-                state_parent / "state",
+                state_root,
+            )
+            verification_readiness = await asyncio.to_thread(
+                probe_node_npm_verification_runtime,
+                policy.mutation_execution,
+                state_root,
+                base_readiness=readiness,
             )
         mutation_feature = readiness.feature()
+        verification_feature = verification_readiness.feature()
         firewall_feature = (
             canonical_firewall_feature()
             if canonical_firewall_feature is not None
@@ -241,6 +259,7 @@ def make_capabilities_handler(
                     "deprecated": True,
                 },
                 "host_mutation_sandbox_v1": mutation_feature,
+                "host_runtime.scoped_verification_node_npm_v1": verification_feature,
                 "pre_execution_audit_lineage_v1": {
                     **mutation_feature,
                     "bound_to": "host_mutation_sandbox_v1",
