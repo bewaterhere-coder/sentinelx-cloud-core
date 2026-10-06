@@ -85,6 +85,43 @@ main_baseline_full_control:
     fail: SYSTEM proof workspace/environment itself is incompatible with the main baseline and the branch is not yet implicated
   product_code_mutation: false
 
+
+full_main_harness_control:
+  result: failed
+  environment:
+    system_identity: NT AUTHORITY\SYSTEM
+    pythonpath_env: ""
+    checkout: D:\coco\workspaces\bewaterhere-coder\sentinelx-cloud-core\pr011-s03r-main-control
+    ref: main
+    main_sha: e7064c9bf4fcd15bdb6f5a2678414210c01d1c00
+  test: tests/test_scoped_script_execution.py::test_scoped_python_preserves_unicode_cwd_and_drops_host_credentials
+  interpretation:
+    - the clean main checkout also fails when its tmp/workspace tree is nested under D:\coco
+    - therefore the D:\coco SYSTEM pytest harness cannot be used to attribute this root-start failure to PR-011
+
+live_production_placement_control:
+  result: passed
+  transport: devforge_runtime.execute_scoped
+  live_agent_version: 0.24.1.dev175+g1e4012d7d
+  scope_id: mss_ZANoLRPfQb1CTyJM9eR4FX73
+  audit_operation_id: mao_5nsFR4gJ-rA_Lg-qnWU70eRl
+  output_marker: LIVE_GENERIC_ROOT_OK
+  returncode: 0
+  terminal_state: terminal
+  observed_workspace: D:\SentinelX\mutation-workspaces\4fab8923f2df571a\47c603e3422d02ce
+  runtime_prefix: C:\ProgramData\SentinelX\.venv
+  interpretation:
+    - the same Host service context and Python runtime execute generic scoped Python successfully at the real production workspace placement
+    - current root-start failures are placement-sensitive
+    - further S03R physical proof must use production-equivalent workspace placement rather than D:\coco tmp placement
+    - no PR-011 regression claim is authorized from the invalid D:\coco controls
+
+next_discriminator:
+  kind: diagnostic_only
+  objective: execute the PR-011 branch generic scoped root with a unique exact workspace under the production mutation-workspaces placement
+  product_code_mutation: false
+  s04_started: false
+
 safety:
   canonical_main_mutated: false
   product_code_mutated_by_diagnostic: false
