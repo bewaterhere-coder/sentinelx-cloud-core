@@ -16,7 +16,7 @@ development:
   latest_plan_review: approved_round_2
   latest_plan_remediation: r2_applied
   review_disposition: approved
-  next_expected_actor: bootstrap_operator
+  next_expected_actor: implementer
   authorization:
     mode: durable
     ref: docs/authorizations/PR-015-direct-codex-development-host-invocation-bridge-v1-development-authorization.yaml
@@ -29,7 +29,11 @@ artifacts:
 implementation_entry:
   bootstrap_required: true
   intended_target: direct:codebuddy
-  override_state: absent_until_explicit_command
+  override_state: active
+  override_ref: docs/overrides/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-execution-override.yaml
+  effective_provider:
+    provider: direct
+    adapter: codebuddy
   explicit_command: "#开发引导执行 PR-015-direct-codex-development-host-invocation-bridge-v1 direct:codebuddy"
 transport:
   type: github-pr
