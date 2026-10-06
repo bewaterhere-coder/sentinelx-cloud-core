@@ -122,6 +122,25 @@ next_discriminator:
   product_code_mutation: false
   s04_started: false
 
+
+sentinelx_placement_candidate_control:
+  status: prepared
+  branch_workspace: D:\coco\workspaces\bewaterhere-coder\sentinelx-cloud-core\pr011-s03r-root-cwd-v8
+  diagnostic_workspace_root: D:\SentinelX\pr011-diagnostic-workspaces
+  rationale:
+    - preserve the SentinelX host placement ancestry while avoiding the live mutation-workspaces directory itself
+    - keep pytest harness files and receipts under the isolated PR-011 execution workspace
+    - exercise the current PR-011 branch sandbox/runtime without installing or restarting the Live Agent
+  prepared_files:
+    - devforge_s03r_sentinelx_placement_control_test.py
+    - .devforge-s03r-sentinelx-placement-harness.py
+    - .devforge-s03r-sentinelx-placement.ps1
+    - .devforge-s03r-launch-sentinelx-placement.ps1
+  expected_marker: CANDIDATE_SENTINELX_ROOT_OK
+  product_code_mutation: false
+  live_agent_mutation: false
+  s04_started: false
+
 safety:
   canonical_main_mutated: false
   product_code_mutated_by_diagnostic: false
