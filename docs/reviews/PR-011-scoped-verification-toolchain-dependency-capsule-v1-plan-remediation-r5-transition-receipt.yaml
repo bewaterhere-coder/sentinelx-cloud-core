@@ -1,0 +1,78 @@
+schema_version: "1.0"
+kind: devforge_plan_remediation_transition_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1
+source_command: "#开发计划修复 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  version: "2.43.0"
+  revision: 91ea3c93f8a9daf1afa08c8a889f6790286ccf97
+  workflow: project_development
+  workflow_version: "2.1"
+
+input:
+  requirement_revision: 2
+  prior_stage: implementation
+  prior_plan_revision: 4
+  prior_plan_blob_sha: 860d59747c8e965bc9d7932ef8f4842e0daa2bbf
+  prior_execution_slice_set_blob_sha: b0e92968c7a082cba6dce251bc3ff5ba50b334e8
+  prior_pr_head: 51fff4e3fd5de769c5a8add58275c0a9eaac195b
+
+cause:
+  classification: real_host_evidence_invalidated_plan_assumptions
+  impact_analysis_ref: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-r5-real-host-descendant-process-impact-analysis.md
+  s02_invalidated_seam: provider_toolchain_protected_ancestor_acl_widening
+  s03_invalidated_seam: real_host_descendant_process_execution
+  requirement_semantics_changed: false
+
+output:
+  plan_revision: 5
+  plan_ref: docs/plans/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan.md
+  plan_blob_sha: 39e2056c924b4ca9ba73211921001aff408e99a6
+  remediation_checkpoint_ref: docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-remediation-r5-20261006.yaml
+  task_blob_sha_after_transition: c355faa0a48b70d21c87178b3aab19a05ca8141e
+
+transition:
+  from_stage: implementation
+  to_stage: plan_review
+  plan_approved: false
+  implementation_authorized: false
+  next_expected_actor: reviewer
+  current_slice: null
+  current_slice_state: not_authorized_until_plan_r5_review
+
+evidence_disposition:
+  S01: preserved_no_replay
+  S02: partial_evidence_preserved_repair_required
+  S03: partial_evidence_preserved_completion_authority_invalidated
+  S04: incomplete_unpublished
+  S05: not_started
+
+future_slice_compilation:
+  allowed_now: false
+  after_plan_r5_approval:
+    ordered_sequence:
+      - S02R
+      - S03R
+      - S04
+      - S05
+    preserve_s01_without_replay: true
+    preserve_s02_s03_partial_historical_evidence: true
+    old_plan_r4_slice_set_authority: stale
+
+safety:
+  product_implementation_mutated_by_plan_remediation: false
+  dirty_s04_candidate_published: false
+  canonical_main_mutated: false
+  live_agent_mutated: false
+  hub_mutated: false
+  permission_widening_used: false
+  operator_unrestricted_used: false
+  network_widened: false
+
+completion_guard:
+  plan_r5_read_back_required: true
+  task_plan_review_state_read_back_required: true
+  new_execution_slice_set_absent_by_design: true
+  canonical_next_action: "#开发评审 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
