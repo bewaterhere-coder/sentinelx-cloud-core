@@ -8,24 +8,26 @@ task_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1
 title: Scoped Verification Toolchain & Dependency Capsule V1
 requirement_revision: 2
 development:
-  stage: accepted
+  stage: done
   gates:
     requirement_ready: true
     plan_approved: true
     acceptance_approved: true
-    completion_verified: false
+    completion_verified: true
   plan_revision: 6
   acceptance_revision: 2
+  completion_revision: 1
   implementation_authorized: false
   finalization:
-    ready_for_merge: true
+    ready_for_merge: false
     canonical_state_verified: true
     plan_execution_state_verified: true
     evidence_verified: true
     transport_preconditions_verified: true
-    integration_verified: false
-    merge_pending: true
-  next_expected_actor: integration
+    integration_verified: true
+    integration_ref: 1ca5f2762928916293385640d751568a721d6aa8
+    merge_pending: false
+  next_expected_actor: none
   blocking_findings: []
   current_slice: null
   current_slice_state: completed
@@ -60,6 +62,9 @@ artifacts:
   latest_acceptance_checkpoint: docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-acceptance-r2-approved-20261006.yaml
   latest_acceptance_transition_receipt: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-acceptance-r2-transition-receipt.yaml
   completion_finalization: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-completion-finalization-r1.yaml
+  integration_receipt: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-integration-receipt-r1.yaml
+  completion_review: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-completion-r1.md
+  completion_checkpoint: docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-completed-20261006.yaml
   prior_acceptance: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-acceptance-r1.md
   prior_acceptance_transition_receipt: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-acceptance-r1-transition-receipt.yaml
   latest_acceptance_repair_impact_analysis: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-acceptance-r1-fix-impact-analysis.md
