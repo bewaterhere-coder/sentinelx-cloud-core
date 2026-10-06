@@ -218,25 +218,31 @@ def _runner_argv(
         runner = workspace / "sentinelx_runner.py"
         if materialize:
             runner.write_text(
-                "import contextlib, json, os, pathlib, runpy, sys, time, traceback\n"
+                "import contextlib, runpy, sys, time, traceback\n"
             "target,out_path,err_path,result_path,*script_args=sys.argv[1:]\n"
             "sys.argv=[target,*script_args]\n"
             "code=0\n"
             "with open(out_path,'w',encoding='utf-8',errors='replace') as out, open(err_path,'w',encoding='utf-8',errors='replace') as err:\n"
             "  with contextlib.redirect_stdout(out),contextlib.redirect_stderr(err):\n"
             "    try:\n"
-            "      h=pathlib.Path(target).parent/'.sentinelx-verification'/'runtime'/'descendant-session'\n"
-            "      request=h/'request'\n"
-            "      if request.exists():\n"
-            "        (h/'root-ready').write_text('ready',encoding='ascii')\n"
+            "      base=target.rsplit('\\\\',1)[0]\n"
+            "      h=base+'\\\\.sentinelx-verification\\\\runtime\\\\descendant-session'\n"
+            "      request=h+'\\\\request'\n"
+            "      try: open(request,'rb').close(); handshake=True\n"
+            "      except FileNotFoundError: handshake=False\n"
+            "      if handshake:\n"
+            "        open(h+'\\\\root-ready','w',encoding='ascii').write('ready')\n"
             "        deadline=time.monotonic()+15.0\n"
-            "        while not (h/'authority-ready').exists():\n"
-            "          if time.monotonic()>=deadline: raise RuntimeError('verification descendant authority handshake timed out')\n"
-            "          time.sleep(0.05)\n"
-            "        env_path=h.parent/'environment.json'\n"
-            "        verification_env=json.loads(env_path.read_text(encoding='utf-8'))\n"
+            "        while True:\n"
+            "          try: open(h+'\\\\authority-ready','rb').close(); break\n"
+            "          except FileNotFoundError:\n"
+            "            if time.monotonic()>=deadline: raise RuntimeError('verification descendant authority handshake timed out')\n"
+            "            time.sleep(0.05)\n"
+            "        import json, os\n"
+            "        with open(base+'\\\\.sentinelx-verification\\\\runtime\\\\environment.json','r',encoding='utf-8') as env_handle: verification_env=json.load(env_handle)\n"
             "        if not isinstance(verification_env,dict) or not all(isinstance(k,str) and isinstance(v,str) for k,v in verification_env.items()): raise RuntimeError('invalid verification environment capsule')\n"
             "        os.environ.clear(); os.environ.update(verification_env)\n"
+            "        with open(base+'\\\\.sentinelx-verification\\\\runtime\\\\cwd.txt','r',encoding='utf-8') as cwd_handle: os.chdir(cwd_handle.read())\n"
             "      runpy.run_path(target,run_name='__main__')\n"
             "    except SystemExit as exc: code=exc.code if isinstance(exc.code,int) else (0 if exc.code is None else 1)\n"
             "    except BaseException: traceback.print_exc(); code=1\n"
@@ -392,6 +398,7 @@ async def _run_scoped(
                 if verification is not None
                 else _cwd(planned_workspace, payload.get("cwd"), materialize=False)
             )
+            process_cwd = planned_workspace if verification is not None else run_cwd
         except ValueError as exc:
             raise HandlerError("HostMutationSandboxPathViolation", str(exc)) from exc
         planned_argv = _runner_argv(
@@ -402,7 +409,7 @@ async def _run_scoped(
             interpreter=interpreter,
             argv=tuple(planned_argv),
             executable_final_path=final_executable_path(Path(planned_argv[0])),
-            cwd_final_path=str(run_cwd),
+            cwd_final_path=str(process_cwd),
         )
         requested_identity = requested_mutation_identity(record.unique_lease_key)
         if verification is None:
@@ -479,10 +486,12 @@ async def _run_scoped(
                     verification_materialized,
                     payload.get("cwd"),
                 )
+                process_cwd = activation.workspace
             except ValueError as exc:
                 raise HandlerError("HostMutationSandboxPathViolation", str(exc)) from exc
         else:
             run_cwd = _cwd(activation.workspace, payload.get("cwd"), materialize=True)
+            process_cwd = run_cwd
 
         argv = _runner_argv(
             prepared.interpreter, script_path, args, activation.workspace,
@@ -508,6 +517,12 @@ async def _run_scoped(
                 json.dumps(verification_environment, sort_keys=True),
                 encoding="utf-8",
             )
+            (
+                verification_materialized.workspace
+                / ".sentinelx-verification"
+                / "runtime"
+                / "cwd.txt"
+            ).write_text(str(run_cwd), encoding="utf-8")
         response_cwd = (
             verification_cwd_label(payload.get("cwd"))
             if verification_materialized is not None
@@ -518,7 +533,7 @@ async def _run_scoped(
             audit=audit,
             audit_start=start,
             argv=argv,
-            cwd=run_cwd,
+            cwd=process_cwd,
             env=child_environment,
             verification=verification_materialized,
         )
