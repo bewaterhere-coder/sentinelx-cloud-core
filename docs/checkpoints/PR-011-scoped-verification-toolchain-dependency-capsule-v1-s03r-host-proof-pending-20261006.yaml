@@ -209,6 +209,62 @@ timing_repair:
   prepared_proof_script: .devforge-s03r-system-proof.ps1
   host_proof_status: pending
 
+
+host_proof_attempt_3:
+  workspace: D:\coco\workspaces\bewaterhere-coder\sentinelx-cloud-core\pr011-s03r-session-object-v5
+  basetemp: .devforge-s03r-system-proof-20261006-150448
+  scheduled_identity: SYSTEM
+  scheduled_session: session_0
+  result:
+    physical_acl_test: passed
+    scoped_node_npm_test: failed_timeout
+    pytest_summary: "1 failed, 1 passed, 1 warning"
+  audit:
+    operation_id: mao_iKdNtYMr35YUvj4eNrC9Wmcb
+    root_pid: 35500
+    root_process_spawned: true
+    appcontainer: true
+    job_contained: true
+    breakaway_allowed: false
+    process_spawned_at: "2026-10-06T07:07:05.695282Z"
+    terminalized_at: "2026-10-06T07:09:05.732047Z"
+    finish_status: timeout
+    process_tree_quiescent: true
+    residual_process_ids: []
+    residual_job_ids: []
+    sandbox_write_authority_present_after_terminalization: false
+  decisive_artifacts:
+    progress_file_created: false
+    stdout_file_created: false
+    stderr_file_created: false
+    returncode_file_created: false
+  interpretation: >
+    Moving the Session-0 read ACE from pre-CreateProcess to the suspended-root
+    boundary is still too early. USER32/DLL initialization occurs after resume;
+    the root Python is therefore still perturbed before the trusted runner can
+    execute. The authority must be gated on a trusted root-ready handshake.
+
+trusted_runner_handshake_repair:
+  candidate_head: a7ef0c29eaefef00619864f2b0d1ea7a03450861
+  design:
+    - create the verification root without Session-0 read ACEs
+    - bind the root to the existing no-breakaway Job and durably record PROCESS_SPAWNED
+    - resume the root with the previously proven environment/creation path
+    - provider-owned sentinelx_runner writes root-ready before runpy/user script execution
+    - root waits on provider-owned authority-ready marker
+    - broker observes root-ready, then grants the unique AppContainer SID Session-0 read ACE
+    - broker writes authority-ready and the trusted runner proceeds
+    - descendants execute under the same AppContainer/Job
+    - terminalization revokes Session-0 ACE and verifies absence
+  security_properties:
+    - user script cannot run before root-ready/authority-ready handshake completes
+    - caller cannot mint or select Session-0 authority
+    - no second executor
+    - no Job breakaway
+    - no network or credential widening
+    - no generic Host shell fallback
+  host_proof_status: pending
+
 completion_guard:
   s03r_completed: false
   s04_started: false
