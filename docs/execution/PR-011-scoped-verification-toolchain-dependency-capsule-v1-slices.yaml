@@ -242,6 +242,7 @@ slices:
     run_refs:
       - docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s05-live-activation-blocked-20261006.yaml
       - docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s05-live-profile-unconfigured-20261006.yaml
+      - docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s05-dcoco-policy-conflict-20261006.yaml
     completion_receipt_ref: null
 
 execution_state:
