@@ -17,7 +17,15 @@ development:
   plan_revision: 6
   acceptance_revision: 2
   implementation_authorized: false
-  next_expected_actor: completion_finalizer
+  finalization:
+    ready_for_merge: true
+    canonical_state_verified: true
+    plan_execution_state_verified: true
+    evidence_verified: true
+    transport_preconditions_verified: true
+    integration_verified: false
+    merge_pending: true
+  next_expected_actor: integration
   blocking_findings: []
   current_slice: null
   current_slice_state: completed
@@ -36,7 +44,7 @@ artifacts:
   prior_plan_blob_sha: 39e2056c924b4ca9ba73211921001aff408e99a6
   prior_plan_archive: docs/plans/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-r5.md
   execution_slice_set: docs/execution/PR-011-scoped-verification-toolchain-dependency-capsule-v1-slices.yaml
-  execution_slice_set_status: all_current_plan_slices_completed_acceptance_rejected_repair_local
+  execution_slice_set_status: all_current_plan_slices_completed_acceptance_approved
   execution_slice_set_blob_sha: 44089a4d3ac1c7966f0b40f7e5e6220fe033ecd6
   prior_execution_slice_set_blob_sha: b0e92968c7a082cba6dce251bc3ff5ba50b334e8
   latest_plan_change_impact: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-r5-real-host-descendant-process-impact-analysis.md
@@ -51,6 +59,7 @@ artifacts:
   latest_acceptance: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-acceptance-r2.md
   latest_acceptance_checkpoint: docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-acceptance-r2-approved-20261006.yaml
   latest_acceptance_transition_receipt: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-acceptance-r2-transition-receipt.yaml
+  completion_finalization: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-completion-finalization-r1.yaml
   prior_acceptance: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-acceptance-r1.md
   prior_acceptance_transition_receipt: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-acceptance-r1-transition-receipt.yaml
   latest_acceptance_repair_impact_analysis: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-acceptance-r1-fix-impact-analysis.md

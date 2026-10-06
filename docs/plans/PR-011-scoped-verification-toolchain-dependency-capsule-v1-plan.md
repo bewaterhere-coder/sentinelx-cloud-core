@@ -6,9 +6,11 @@
 plan_revision: 6
 task_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1
 requirement_revision: 2
-status: proposed
-review_state: pending
+status: completed
+review_state: approved
 implementation_authorized: false
+execution_state: all_slices_completed
+acceptance_state: approved
 transport:
   type: github-pr
   pr_number: 11
