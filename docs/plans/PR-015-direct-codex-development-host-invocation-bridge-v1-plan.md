@@ -1,4 +1,4 @@
-# PR-015-direct-codex-development-host-invocation-bridge-v1 — Plan R1
+# PR-015-direct-codex-development-host-invocation-bridge-v1 — Plan R2
 
 Requirement: `docs/requirements/PR-015-direct-codex-development-host-invocation-bridge-v1.md`, revision 1.
 
@@ -8,7 +8,7 @@ Status: **Pending Plan Review**. No implementation authorization.
 
 ```yaml
 sentinelx_main: 018b78ca20984176d53fbe90039dc795a7f2742f
-devforge_main: edfdaf33fc5e54964ea134b4b89ae408f52d7afd
+devforge_main: a13b1113fb3b5938199bad1bf45539eb311ae531
 project_execution_binding:
   provider: direct
   adapter: codex
@@ -21,6 +21,8 @@ live_windows_evidence:
   active_user_codex_installed: true
   observed_package: "@openai/codex 0.154.0"
   shim_shape: "codex.cmd -> node + @openai/codex/bin/codex.js"
+  bootstrap_codebuddy_installation_detected: true
+  bootstrap_codebuddy_devforge_user_rule_detected: true
 current_failure:
   code: DirectCodexExecutionSurfaceUnavailable
 related_tasks:
@@ -29,6 +31,86 @@ related_tasks:
 ```
 
 The observed Codex version is evidence only. V1 must discover a compatible installed Codex at runtime and fail closed if its supported invocation contract is unavailable.
+
+## R2 remediation delta
+
+Plan R2 makes only the two corrections required by Plan Review R1. Requirement Revision 1 and the rest of the architecture remain unchanged.
+
+### R2-F1 — Concrete self-host bootstrap path
+
+The one intended bootstrap execution target is:
+
+```text
+direct:codebuddy
+```
+
+Rationale:
+
+- DevForge already defines the direct CodeBuddy Development Adapter;
+- current Windows Host Reality has a CodeBuddy installation and a current-user DevForge rule surface;
+- the CodeBuddy adapter is bound to the same canonical transport enforcement contract as Codex and therefore can preserve the exact existing PR #15 / branch rather than creating a replacement transport;
+- CodeBuddy is used only as a Task-scoped bootstrap Development Host for this self-host repair. The persistent project binding remains `direct/codex`.
+
+Plan approval does not create this override.
+
+After Plan R2 approval and Slice Set compilation, the only admitted bootstrap request is:
+
+```text
+#开发引导执行 PR-015-direct-codex-development-host-invocation-bridge-v1 direct:codebuddy
+```
+
+That command must freshly prove, before any implementation mutation:
+
+1. Task remains at `implementation` and Plan R2 is the exact Approved Plan;
+2. the current Slice Set is exact and readable;
+3. `direct:codebuddy` is still a registered DevForge execution target;
+4. current Host Reality still exposes an available CodeBuddy Development Host;
+5. exact Requirement/Plan/current Slice pointers can be handed off;
+6. canonical transport remains repository `bewaterhere-coder/sentinelx-cloud-core`, PR #15 and branch `task/direct-codex-development-host-invocation-bridge-v1`;
+7. the target can write only the exact canonical task transport and cannot create a replacement branch/PR;
+8. no permission, write-scope, credential or project-binding expansion is required;
+9. durable bootstrap override read-back succeeds.
+
+Failure returns the exact bootstrap contract failure such as `BootstrapTargetUnavailable`, `BootstrapTargetUnregistered`, `BootstrapTransportConflict` or `BootstrapScopeExpansion`.
+
+There is no automatic fallback to Host Runtime, Harness, Codex-through-shell, Cursor, another direct adapter, generic Git or another PR.
+
+The active bootstrap override may remain authoritative for S01-S03. S03 must nevertheless exercise the newly implemented direct-Codex bridge as the **product under test** so the repaired canonical provider path is proven before the override expires when all bound slices complete.
+
+### R2-F2 — Provider-wide firewall/effect composition
+
+The new builtin provider is part of the effective model-facing `local_api` surface and therefore must be represented in PR-010 provider-wide repository-effect readiness.
+
+S01 must use the existing `operation_registry` builtin-provider effect protocol rather than create a second safety inventory.
+
+Required composition:
+
+```text
+effective builtin provider map
+  ├─ devforge_runtime
+  └─ devforge_direct_codex
+        ↓
+same map supplied to local_api dispatch
+AND same map supplied to canonical_repository_mutation_firewall_feature/readiness
+        ↓
+make_local_api_effect_inventory / classifier
+        ↓
+provider.repository_effect(action)
+        ↓
+unknown or uncovered action => readiness false
+```
+
+S01 must make the current builtin providers explicit participants in this protocol. In particular:
+
+- `devforge_runtime` must expose deterministic repository-effect metadata for every currently available action;
+- lifecycle-only scope actions classify as non-repository mutation;
+- `devforge_runtime.execute_scoped` classifies as process mutation with proven coverage only through its existing scoped-mutation containment;
+- `devforge_direct_codex.execute_task` classifies as process mutation and may be effective/ready only when its exact sandbox/canonical-checkout containment path is proven;
+- a missing/invalid `repository_effect` implementation remains fail-closed;
+- adding a future builtin process action without effect metadata must make provider-wide effective-surface readiness false;
+- the exact builtin provider map used for model-reachable `local_api` dispatch must also be the map consumed by canonical firewall feature/readiness computation.
+
+This is a composition repair, not a weakening of PR-010 readiness.
 
 ## 1. Architecture
 
@@ -247,9 +329,15 @@ If Codex changed only local state and did not persist the canonical branch, resu
 
 No uncertain run is automatically replayed.
 
-### D12 — Existing security composition
+### D12 — Existing security composition and builtin effect inventory
 
 Existing PR-010 firewall semantics continue to govern SentinelX's registered mutation surfaces.
+
+The effective builtin `local_api` provider map MUST be single-source for both dispatch and firewall effect projection. `handlers/__init__.py` must not construct a model-reachable builtin provider set that is absent from `canonical_repository_mutation_firewall_feature(..., builtin_local_api_providers=...)`.
+
+Every builtin provider must expose deterministic `repository_effect(action)` semantics understood by `operation_registry._builtin_effect`. Unknown/missing metadata is intentionally fail-closed.
+
+The existing `devforge_runtime` provider and the new `devforge_direct_codex` provider must both participate. No new parallel operation inventory is introduced.
 
 Because Codex is an external Development Host process, this Task additionally relies on exact workspace isolation and physical sandbox verification to prevent canonical checkout writes by the Codex child itself.
 
@@ -279,7 +367,12 @@ Required verification:
 - active-user and Codex package identity discovery;
 - fixed Node + codex.js resolution;
 - generic `exec` remains disabled where policy disables it;
-- legacy `script_run`/devforge_runtime behavior unchanged.
+- one exact builtin provider map drives both `local_api` dispatch and canonical firewall effect projection;
+- `devforge_runtime` actions expose deterministic effect metadata and preserve existing scoped-mutation semantics;
+- `devforge_direct_codex.execute_task` is process mutation and is not effective/ready until its required containment is proven;
+- unknown/missing builtin effect metadata makes provider-wide readiness fail closed;
+- regression fixture proves a future process-mutating builtin cannot be silently omitted from effective-surface inventory;
+- legacy `script_run`/devforge_runtime behavior otherwise remains unchanged.
 
 ### S02 — Workspace/transport bootstrap + bounded Codex execution
 
@@ -324,21 +417,47 @@ The acceptance proof SHOULD use the completed bridge to run one bounded direct/C
 
 ## 3. Bootstrap execution boundary
 
-This Task is self-hosting: the project binding requires direct/Codex, while the missing bridge prevents direct/Codex invocation.
+This Task is self-hosting: the persistent project binding requires `direct/codex`, while the missing bridge prevents the current ChatGPT/DevForge path from invoking Codex.
 
-After Plan approval, normal implementation MUST NOT pretend the blocker disappeared.
+The Plan freezes exactly one bootstrap target: `direct:codebuddy`.
 
-DevForge MUST evaluate `system/task-scoped-bootstrap-execution-override-contract.md`.
+This is not a project rebinding. It is eligible only as a Task-scoped override governed by `system/task-scoped-bootstrap-execution-override-contract.md`.
 
-A bootstrap target is admissible only through an explicit:
+After Plan R2 is Approved and its Slice Set is compiled, bootstrap authority can be requested only through:
 
 ```text
-#开发引导执行 PR-015-direct-codex-development-host-invocation-bridge-v1 <registered-target>
+#开发引导执行 PR-015-direct-codex-development-host-invocation-bridge-v1 direct:codebuddy
 ```
 
-with a verified target that can preserve this exact Task/Plan/PR/write-scope boundary.
+The command must re-read current DevForge Runtime, Task, Approved Plan R2, Slice Set, PR #15 transport and current CodeBuddy Host availability before persisting an override.
 
-Plan approval itself does not choose or authorize the bootstrap target.
+Required target binding:
+
+```yaml
+target:
+  provider: direct
+  adapter: codebuddy
+scope:
+  stages: [implementation]
+  max_slice_completions_per_execute: 1
+  replacement_branch: forbidden
+  replacement_pr: forbidden
+  fallback: forbidden
+  requirement_change: forbidden
+  plan_change: forbidden
+  gate_change: forbidden
+  acceptance_authority: forbidden
+  permission_expansion: forbidden
+  write_scope_expansion: forbidden
+```
+
+If `direct:codebuddy` is no longer registered/available or cannot preserve the exact PR #15 branch/write boundary, the bootstrap command fails closed. It must not substitute Host Runtime, Harness, Cursor, Codex shell execution, generic Git or another adapter.
+
+The project registry remains `provider: direct / adapter: codex` byte-for-byte unchanged.
+
+During implementation, CodeBuddy is the bootstrap Development Host only. The product being implemented remains the bounded SentinelX bridge to the direct Codex Development Host.
+
+S03 must perform exact-candidate direct-Codex bridge verification before all slices can be treated as complete; successful CodeBuddy implementation alone is not proof that the self-host objective was recovered.
 
 ## 4. Acceptance boundary
 
@@ -358,7 +477,7 @@ Acceptance MUST NOT use a production Hub modification, generic exec, operator_un
 
 ## 5. Plan invariants
 
-1. Codex remains the Development Host; SentinelX is the bounded invocation transport.
+1. For the delivered bridge, Codex remains the Development Host and SentinelX is the bounded invocation transport; the temporary implementation bootstrap may use only the exact Task-scoped `direct:codebuddy` override.
 2. Project binding remains `direct/codex`.
 3. Hub remains immutable.
 4. No generic run-as-user API.
