@@ -753,15 +753,17 @@ def _verification_toolchain_traverse_ancestors(root: Path) -> tuple[Path, ...]:
 
 
 def _grant_verification_toolchain_read(root: Path, app_sid: str) -> None:
-    """Grant ancestor traverse-only authority plus RX on the sealed toolchain tree."""
+    """Grant RX only on the sealed provider-owned toolchain tree.
+
+    Provider toolchains may live beneath protected system parents such as
+    C:\\Program Files. Verification must never widen authority by rewriting
+    ACLs on those ancestors. Existing Host traversal policy is a prerequisite;
+    if it is insufficient, readiness fails closed instead of mutating a
+    broader parent directory.
+    """
     _assert_no_reparse(root, root)
     _assert_final_path(root)
-    granted_ancestors: list[Path] = []
     try:
-        for ancestor in _verification_toolchain_traverse_ancestors(root):
-            _assert_final_path(ancestor)
-            _run_icacls([str(ancestor), "/grant:r", f"*{app_sid}:(X)"])
-            granted_ancestors.append(ancestor)
         _run_icacls([str(root), "/grant:r", f"*{app_sid}:(RX)", "/T", "/C"])
     except Exception:
         if root.exists():
@@ -769,20 +771,13 @@ def _grant_verification_toolchain_read(root: Path, app_sid: str) -> None:
                 _run_icacls([str(root), "/remove:g", f"*{app_sid}", "/T", "/C"])
             except Exception:
                 pass
-        for ancestor in reversed(granted_ancestors):
-            try:
-                _run_icacls([str(ancestor), "/remove:g", f"*{app_sid}"])
-            except Exception:
-                pass
         raise
 
 
 def _remove_verification_toolchain_read(root: Path, app_sid: str) -> None:
-    """Revoke transient RX plus every traverse-only ancestor ACE."""
+    """Revoke transient RX from the provider-owned toolchain tree."""
     if root.exists():
         _run_icacls([str(root), "/remove:g", f"*{app_sid}", "/T", "/C"])
-        for ancestor in reversed(_verification_toolchain_traverse_ancestors(root)):
-            _run_icacls([str(ancestor), "/remove:g", f"*{app_sid}"])
 
 
 def _grant_workspace_traverse(workspace: Path, app_sid: str) -> tuple[Path, ...]:
