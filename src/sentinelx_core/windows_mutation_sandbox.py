@@ -12,6 +12,7 @@ import hashlib
 import os
 import subprocess
 import sys
+import time
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from ctypes import wintypes
@@ -1387,6 +1388,18 @@ class WindowsMutationSandbox:
                 raise HostMutationSandboxBindingMismatch(
                     "verification toolchain read authority is absent or mismatched"
                 )
+            handshake_root = (
+                verification.workspace
+                / ".sentinelx-verification"
+                / "runtime"
+                / "descendant-session"
+            )
+            handshake_root.mkdir(parents=True, exist_ok=True)
+            for marker_name in ("root-ready", "authority-ready"):
+                marker = handshake_root / marker_name
+                if marker.exists():
+                    marker.unlink()
+            (handshake_root / "request").write_text("required", encoding="ascii")
             revalidate_verification_before_spawn(verification)
         elif audit_start.verification_intent is not None:
             raise HostMutationSandboxBindingMismatch(
@@ -1406,20 +1419,6 @@ class WindowsMutationSandbox:
                 "suspended root did not read back as no-breakaway Job-contained"
             )
 
-        # Preserve the already-proven root-process creation path. Session-0
-        # USER32 authority is verification-only and is granted only after the
-        # AppContainer root exists suspended and has been proven Job-contained,
-        # but before it can resume and create descendants.
-        if verification is not None:
-            key = (activation.scope_id, activation.generation)
-            try:
-                session_handles = _grant_verification_session_read(
-                    activation.sandbox_identity
-                )
-            except Exception:
-                raw.close()
-                raise
-            self._verification_session_reads[key] = session_handles
 
         try:
             self.scope_store.bind_runtime_process(
@@ -1475,6 +1474,75 @@ class WindowsMutationSandbox:
                 terminate_suspended()
             raise
         return managed
+
+    def enable_verification_descendants(
+        self,
+        activation: ActivatedMutationSandbox,
+        process: ManagedMutationProcess,
+        verification: VerificationMaterialization,
+        *,
+        timeout_seconds: float = 10.0,
+    ) -> None:
+        """Enable minimum Session-0 read authority after trusted root startup.
+
+        The verification root first initializes without the extra
+        window-station/desktop ACE and enters the provider-owned runner. The
+        runner writes root-ready and blocks. Only then does the broker grant
+        the unique AppContainer SID read-only Session-0 authority and release
+        the runner to create descendants.
+        """
+        if process._owner is not self or process.activation != activation:
+            raise HostMutationSandboxBindingMismatch(
+                "verification descendant handshake process/activation mismatch"
+            )
+        key = (activation.scope_id, activation.generation)
+        if key in self._verification_session_reads:
+            raise HostMutationSandboxBindingMismatch(
+                "verification descendant session authority already exists"
+            )
+        granted_root = self._verification_toolchain_reads.get(key)
+        if granted_root is None or granted_root != _normal_path(verification.toolchain_root):
+            raise HostMutationSandboxBindingMismatch(
+                "verification toolchain read authority is absent or mismatched"
+            )
+        handshake_root = (
+            verification.workspace
+            / ".sentinelx-verification"
+            / "runtime"
+            / "descendant-session"
+        )
+        request = handshake_root / "request"
+        root_ready = handshake_root / "root-ready"
+        authority_ready = handshake_root / "authority-ready"
+        if not request.exists():
+            raise HostMutationSandboxBindingMismatch(
+                "verification descendant handshake request is absent"
+            )
+
+        deadline = time.monotonic() + max(0.1, float(timeout_seconds))
+        while not root_ready.exists():
+            if process.wait(0):
+                raise HostMutationSandboxUnavailable(
+                    "verification root exited before descendant authority handshake"
+                )
+            if time.monotonic() >= deadline:
+                raise HostMutationSandboxUnavailable(
+                    "verification root did not reach trusted descendant handshake"
+                )
+            time.sleep(0.05)
+
+        session_handles = _grant_verification_session_read(activation.sandbox_identity)
+        self._verification_session_reads[key] = session_handles
+        try:
+            authority_ready.write_text("ready", encoding="ascii")
+        except Exception:
+            try:
+                _remove_verification_session_read(
+                    session_handles, activation.sandbox_identity
+                )
+            finally:
+                self._verification_session_reads.pop(key, None)
+            raise
 
     def _cleanup_runtime(self, record: MutationScopeRecord) -> MutationRuntimeClosure:
         for job_id in record.active_job_ids:
