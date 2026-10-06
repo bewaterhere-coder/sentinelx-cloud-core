@@ -142,7 +142,7 @@ slices:
   - slice_id: S03
     objective: Validate structured direct/Codex receipt, exact transport readback and exact-candidate self-host recovery through the newly delivered bridge.
     depends_on: [S02]
-    state: pending
+    state: completed
     scope:
       refs:
         - direct-Codex provider/runner/result modules from S01-S02
@@ -178,16 +178,16 @@ slices:
 
 execution_state:
   current_slice: S03
-  current_slice_state: pending
-  completed_slices: [S01, S02]
-  pending_slices: [S03]
-  all_slices_completed: false
+  current_slice_state: completed
+  completed_slices: [S01, S02, S03]
+  pending_slices: []
+  all_slices_completed: true
   last_completion:
-    slice_id: S02
+    slice_id: S03
     completed_at: "2026-10-07"
-    product_candidate_sha: 9803afae1fe5b6746f3f87f968d213bf30ee042e
-    checkpoint_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-s02-completion-20261007.yaml
-    receipt_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-s02-completion-receipt.yaml
+    product_candidate_sha: a84db15a8770599718a665fd9c201c7b82b3dd91
+    checkpoint_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-s03-completion-20261007.yaml
+    receipt_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-s03-completion-receipt.yaml
 acceptance_boundary:
   all_current_plan_slices_must_be_completed: true
   acceptance_command: "#开发验收 PR-015-direct-codex-development-host-invocation-bridge-v1"
