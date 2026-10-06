@@ -1,0 +1,97 @@
+schema_version: "1.0"
+kind: devforge_task_scoped_bootstrap_execution_override
+state: active
+
+authority:
+  command: "#开发引导执行"
+  capability: development.bootstrap_execution_override
+  task_id: PR-015-direct-codex-development-host-invocation-bridge-v1
+
+bootstrap_relation:
+  blocked_provider:
+    provider: direct
+    adapter: codex
+  missing_capability: bounded_direct_codex_development_host_invocation_surface
+  task_delivers_missing_capability: true
+  evidence_refs:
+    - docs/requirements/PR-015-direct-codex-development-host-invocation-bridge-v1.md
+    - docs/plans/PR-015-direct-codex-development-host-invocation-bridge-v1-plan.md
+    - docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r2.md
+    - docs/execution/PR-015-direct-codex-development-host-invocation-bridge-v1-slices.yaml
+
+target:
+  provider: direct
+  adapter: codebuddy
+  registration_evidence:
+    - bewaterhere-coder/DevForge@6fa162ff829cd1082c769908b5f85e23cd164a19:adapters/development/codebuddy.md
+    - bewaterhere-coder/DevForge@6fa162ff829cd1082c769908b5f85e23cd164a19:contracts/development/project-binding.md
+  host_availability_evidence:
+    platform: windows
+    codebuddy_executable_present: true
+    codebuddy_cli_present: true
+    devforge_user_rule_present: true
+    devforge_user_rule_enabled: true
+    devforge_user_rule_always_apply: true
+    agent_rpc_claimed: false
+    availability_semantics: external_direct_development_host_thin_handoff
+
+binding:
+  requirement_ref: docs/requirements/PR-015-direct-codex-development-host-invocation-bridge-v1.md
+  requirement_revision: 1
+  plan_ref: docs/plans/PR-015-direct-codex-development-host-invocation-bridge-v1-plan.md
+  plan_revision: 2
+  plan_digest: b1414f58e31e69fd5718479d04eb6b7e9e8475bd
+  slice_set_ref: docs/execution/PR-015-direct-codex-development-host-invocation-bridge-v1-slices.yaml
+  slice_set_digest: a02a4be5aeb4ae3f9f15b9108068576ea9ba165e
+  canonical_transport:
+    type: github-pr
+    repository: bewaterhere-coder/sentinelx-cloud-core
+    pr: 15
+    branch: task/direct-codex-development-host-invocation-bridge-v1
+  project_binding:
+    provider: direct
+    adapter: codex
+    mutation: forbidden
+
+scope:
+  stages: [implementation]
+  max_slice_completions_per_execute: 1
+  replacement_branch: forbidden
+  replacement_pr: forbidden
+  fallback: forbidden
+  requirement_change: forbidden
+  plan_change: forbidden
+  gate_change: forbidden
+  acceptance_authority: forbidden
+  permission_expansion: forbidden
+  write_scope_expansion: forbidden
+  transport_migration: forbidden
+  devforge_runtime_mutation: forbidden
+  host_policy_mutation: forbidden
+
+expiry:
+  on_all_bound_plan_slices_completed: true
+  on_plan_semantic_change: true
+  on_task_cancelled: true
+  on_task_leaves_implementation: true
+  on_explicit_revoke: true
+
+admission:
+  devforge_runtime:
+    version: "2.69.0"
+    revision: 6fa162ff829cd1082c769908b5f85e23cd164a19
+  task_stage: implementation
+  plan_approved: true
+  current_slice: S01
+  pr_head_before_override: 80172bcdec778edfe5c0dc5e091fabf5aa81febc
+  canonical_main: 018b78ca20984176d53fbe90039dc795a7f2742f
+  self_host_relation_verified: true
+  target_registered: true
+  target_available: true
+  transport_preserved: true
+  authority_widened: false
+
+receipt:
+  created_at: "2026-10-06"
+  readback_verified: false
+  readback_ref: pending
