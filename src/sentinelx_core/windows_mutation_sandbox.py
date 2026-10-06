@@ -65,6 +65,7 @@ TOKEN_APPCONTAINER_SID = 31
 TH32CS_SNAPPROCESS = 0x00000002
 INVALID_HANDLE_VALUE = ctypes.c_void_p(-1).value
 FILE_ALL_ACCESS = 0x001F01FF
+FILE_TRAVERSE = 0x0020
 OBJECT_INHERIT_ACE = 0x1
 CONTAINER_INHERIT_ACE = 0x2
 INHERITED_ACE = 0x10
@@ -1005,19 +1006,77 @@ def _remove_verification_toolchain_read(root: Path, app_sid: str) -> None:
         _run_icacls([str(root), "/remove:g", f"*{app_sid}", "/T", "/C"])
 
 
+def _merge_file_access(path: Path, app_sid: str, *, mode: int, mask: int) -> None:
+    """Merge/revoke one non-inheriting file ACE without spawning icacls."""
+    k32, advapi, _ = _windows_only()
+    dacl = ctypes.c_void_p()
+    descriptor = ctypes.c_void_p()
+    new_acl = ctypes.c_void_p()
+    result = advapi.GetNamedSecurityInfoW(
+        str(path),
+        SE_FILE_OBJECT,
+        DACL_SECURITY_INFORMATION,
+        None,
+        None,
+        ctypes.byref(dacl),
+        None,
+        ctypes.byref(descriptor),
+    )
+    if result != ERROR_SUCCESS:
+        raise HostMutationSandboxAclViolation(
+            f"GetNamedSecurityInfoW failed for {path}: WinError {result}"
+        )
+    try:
+        entries = (_EXPLICIT_ACCESS_W * 1)()
+        with _string_sid(app_sid) as sid:
+            entries[0].grfAccessPermissions = int(mask)
+            entries[0].grfAccessMode = int(mode)
+            entries[0].grfInheritance = 0
+            advapi.BuildTrusteeWithSidW(
+                ctypes.byref(entries[0].Trustee), ctypes.c_void_p(sid)
+            )
+            result = advapi.SetEntriesInAclW(1, entries, dacl, ctypes.byref(new_acl))
+            if result != ERROR_SUCCESS:
+                raise HostMutationSandboxAclViolation(
+                    f"SetEntriesInAclW failed for {path}: WinError {result}"
+                )
+            result = advapi.SetNamedSecurityInfoW(
+                str(path),
+                SE_FILE_OBJECT,
+                DACL_SECURITY_INFORMATION,
+                None,
+                None,
+                new_acl,
+                None,
+            )
+            if result != ERROR_SUCCESS:
+                raise HostMutationSandboxAclViolation(
+                    f"SetNamedSecurityInfoW failed for {path}: WinError {result}"
+                )
+    finally:
+        if new_acl:
+            k32.LocalFree(new_acl)
+        if descriptor:
+            k32.LocalFree(descriptor)
+
+
 def _grant_workspace_traverse(workspace: Path, app_sid: str) -> tuple[Path, ...]:
     """Grant only FILE_TRAVERSE on parents needed to reach an exact workspace."""
     granted: list[Path] = []
     try:
         for ancestor in _verification_toolchain_traverse_ancestors(workspace):
             _assert_final_path(ancestor)
-            _run_icacls([str(ancestor), "/grant:r", f"*{app_sid}:(X)"])
+            _merge_file_access(
+                ancestor, app_sid, mode=GRANT_ACCESS, mask=FILE_TRAVERSE
+            )
             granted.append(ancestor)
         return tuple(granted)
     except Exception:
         for ancestor in reversed(granted):
             try:
-                _run_icacls([str(ancestor), "/remove:g", f"*{app_sid}"])
+                _merge_file_access(
+                    ancestor, app_sid, mode=REVOKE_ACCESS, mask=0
+                )
             except Exception:
                 pass
         raise
@@ -1025,7 +1084,7 @@ def _grant_workspace_traverse(workspace: Path, app_sid: str) -> tuple[Path, ...]
 
 def _remove_workspace_traverse(ancestors: Sequence[Path], app_sid: str) -> None:
     for ancestor in reversed(tuple(ancestors)):
-        _run_icacls([str(ancestor), "/remove:g", f"*{app_sid}"])
+        _merge_file_access(ancestor, app_sid, mode=REVOKE_ACCESS, mask=0)
 
 
 def _pid_alive(pid: int) -> bool:

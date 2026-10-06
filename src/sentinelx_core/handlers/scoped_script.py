@@ -212,7 +212,11 @@ def _runner_argv(
             "scoped bash is outside the Windows V1 interpreter contract",
         )
     if interpreter == "python3":
-        executable = Path(sys.executable)
+        # Use the base interpreter for the trusted AppContainer root. A Windows
+        # venv launcher may create a child process before sentinelx_runner.py
+        # can enter the provider-owned descendant-authority handshake.
+        base_executable = getattr(sys, "_base_executable", None) or sys.executable
+        executable = Path(base_executable)
         if executable.name.lower() == "pythonw.exe":
             executable = executable.with_name("python.exe")
         runner = workspace / "sentinelx_runner.py"
