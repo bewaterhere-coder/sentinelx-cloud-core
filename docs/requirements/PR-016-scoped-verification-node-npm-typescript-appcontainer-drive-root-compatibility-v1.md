@@ -22,6 +22,8 @@ development:
   current_slice_state: pending
   authorization:
     mode: legacy_command_scoped
+  continuation_checkpoint:
+    ref: docs/checkpoints/PR-016-scoped-verification-node-npm-typescript-appcontainer-drive-root-compatibility-v1-s01-window-1-blocked-direct-codex-unavailable-20261006.yaml
 transport:
   type: github-pr
   pr_number: 16
