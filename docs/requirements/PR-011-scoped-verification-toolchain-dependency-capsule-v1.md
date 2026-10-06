@@ -8,19 +8,18 @@ task_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1
 title: Scoped Verification Toolchain & Dependency Capsule V1
 requirement_revision: 2
 development:
-  stage: plan_review_rejected
+  stage: plan_review
   gates:
     requirement_ready: true
     plan_approved: false
     acceptance_approved: false
     completion_verified: false
-  plan_revision: 5
+  plan_revision: 6
   implementation_authorized: false
-  next_expected_actor: planner
-  blocking_findings:
-    - PR011-R5-F1-remediation-provenance-and-gate-transition-inconsistent
+  next_expected_actor: reviewer
+  blocking_findings: []
   current_slice: null
-  current_slice_state: not_authorized
+  current_slice_state: not_authorized_until_plan_r6_review
   authorization:
     mode: legacy_command_scoped
 transport:
@@ -30,21 +29,20 @@ transport:
   base_branch: main
 artifacts:
   plan: docs/plans/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan.md
-  plan_revision: 5
-  plan_blob_sha: 39e2056c924b4ca9ba73211921001aff408e99a6
-  prior_plan_revision: 4
-  prior_plan_blob_sha: 860d59747c8e965bc9d7932ef8f4842e0daa2bbf
-  prior_plan_archive: docs/plans/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-r4.md
+  plan_revision: 6
+  plan_blob_sha: fc59575081f3d35b7195711961ed387bc7a56fb2
+  prior_plan_revision: 5
+  prior_plan_blob_sha: 39e2056c924b4ca9ba73211921001aff408e99a6
+  prior_plan_archive: docs/plans/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-r5.md
   execution_slice_set: docs/execution/PR-011-scoped-verification-toolchain-dependency-capsule-v1-slices.yaml
-  execution_slice_set_status: stale_after_plan_r5_real_host_disproof
+  execution_slice_set_status: stale_non_authorizing_pending_plan_r6_review
   prior_execution_slice_set_blob_sha: b0e92968c7a082cba6dce251bc3ff5ba50b334e8
   latest_plan_change_impact: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-r5-real-host-descendant-process-impact-analysis.md
-  latest_plan_remediation: docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-remediation-r5-20261006.yaml
-  latest_plan_remediation_transition_receipt: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-remediation-r5-transition-receipt.yaml
+  latest_plan_remediation: docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-remediation-r6-20261006.yaml
+  latest_plan_remediation_transition_receipt: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-remediation-r6-transition-receipt.yaml
   latest_plan_review: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-review-r5.md
   latest_plan_review_blob_sha: 889a632e21b1b3bfeda4e72dd06bb6ee37fb7dad
-  latest_plan_review_disposition: rejected_current
-  latest_plan_review_transition_receipt: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-review-r5-transition-receipt.yaml
+  latest_plan_review_disposition: rejected_resolved_by_r6_remediation_pending_re_review
   prior_plan_review: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-review-r4.md
   latest_slice_completion_checkpoint: docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s03-completed-20261005.yaml
   latest_slice_completion_receipt: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s03-completion-receipt.yaml
