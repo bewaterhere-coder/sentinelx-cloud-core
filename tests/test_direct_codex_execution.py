@@ -3,6 +3,7 @@ chain discovery, bounded active-user execution and the direct/Codex receipt."""
 from __future__ import annotations
 
 import asyncio
+import json
 import os
 import subprocess
 import sys
@@ -446,6 +447,20 @@ def _params(
     }
 
 
+def _receipt_kwargs(**overrides: Any) -> dict[str, Any]:
+    """The exact admitted identity the receipt must echo (PR-015/S03)."""
+    kwargs: dict[str, Any] = {
+        "task_id": "PR-015",
+        "run_id": "run-1",
+        "attempt_id": "attempt-1",
+        "slice_id": "S02",
+        "canonical_pr": 15,
+        "canonical_repository": "git://github.com/o/r",
+    }
+    kwargs.update(overrides)
+    return kwargs
+
+
 def test_local_only_run_is_not_a_success_receipt() -> None:
     payload = normalize_result(
         params=_params(),
@@ -459,7 +474,7 @@ def test_local_only_run_is_not_a_success_receipt() -> None:
     assert payload["transport"]["published"] is False
     assert payload["receipt"]["valid"] is False
     assert payload["receipt"]["incomplete_reason"] == "implementation_not_persisted"
-    ok, reason = validate_receipt(payload, task_id="PR-015", slice_id="S02")
+    ok, reason = validate_receipt(payload, **_receipt_kwargs())
     assert ok is False and reason == "receipt_not_valid"
 
 
@@ -477,8 +492,123 @@ def test_persisted_consistent_run_produces_valid_receipt() -> None:
     assert payload["execution"]["adapter"] == "codex"
     assert payload["receipt"]["valid"] is True
     assert payload["receipt"]["acceptance_claim"] is False
-    assert validate_receipt(payload, task_id="PR-015", slice_id="S02") == (True, "ok")
-    assert validate_receipt(payload, task_id="PR-015", slice_id="S03")[0] is False
+    assert validate_receipt(payload, **_receipt_kwargs()) == (True, "ok")
+    assert validate_receipt(payload, **_receipt_kwargs(slice_id="S03"))[0] is False
+
+
+def test_receipt_echoes_exact_run_attempt_pr_and_repository() -> None:
+    payload = normalize_result(
+        params=_params(),
+        bootstrap=_Bootstrap(),  # type: ignore[arg-type]
+        process=_Process(),  # type: ignore[arg-type]
+        handoff_digest="d" * 64,
+        actual_branch="task/bridge",
+        local_head="b" * 40,
+        remote_head_readback="b" * 40,
+    )
+    assert payload["repository"] == "git://github.com/o/r"
+    assert payload["transport"]["canonical_pr"] == 15
+    assert validate_receipt(payload, **_receipt_kwargs()) == (True, "ok")
+    assert (
+        validate_receipt(payload, **_receipt_kwargs(run_id="run-2"))[1]
+        == "receipt_run_mismatch"
+    )
+    assert (
+        validate_receipt(payload, **_receipt_kwargs(attempt_id="attempt-2"))[1]
+        == "receipt_attempt_mismatch"
+    )
+    assert (
+        validate_receipt(payload, **_receipt_kwargs(canonical_pr=16))[1]
+        == "receipt_pr_mismatch"
+    )
+    assert (
+        validate_receipt(
+            payload,
+            **_receipt_kwargs(canonical_repository="git://github.com/o/other"),
+        )[1]
+        == "receipt_repository_mismatch"
+    )
+
+
+def test_claimed_consistent_receipt_with_branch_drift_fails_closed() -> None:
+    """A forged receipt claiming consistency while the actual branch drifted."""
+    payload = normalize_result(
+        params=_params(),
+        bootstrap=_Bootstrap(),  # type: ignore[arg-type]
+        process=_Process(),  # type: ignore[arg-type]
+        handoff_digest="d" * 64,
+        actual_branch="task/bridge",
+        local_head="b" * 40,
+        remote_head_readback="b" * 40,
+    )
+    payload["transport"]["actual_branch"] = "task/replacement"
+    assert payload["transport"]["consistent"] is True  # forged claim
+    ok, reason = validate_receipt(payload, **_receipt_kwargs())
+    assert ok is False and reason == "receipt_branch_mismatch"
+
+
+def test_remote_readback_drift_is_not_a_success_receipt() -> None:
+    payload = normalize_result(
+        params=_params(),
+        bootstrap=_Bootstrap(),  # type: ignore[arg-type]
+        process=_Process(),  # type: ignore[arg-type]
+        handoff_digest="d" * 64,
+        actual_branch="task/bridge",
+        local_head="b" * 40,
+        remote_head_readback="c" * 40,
+    )
+    assert payload["transport"]["consistent"] is False
+    assert payload["receipt"]["persisted"] is False
+    assert payload["receipt"]["valid"] is False
+    assert payload["receipt"]["incomplete_reason"] == "implementation_not_persisted"
+    assert validate_receipt(payload, **_receipt_kwargs())[0] is False
+
+
+def test_malformed_receipt_shapes_fail_closed() -> None:
+    """PR-015/S03 negatives: a malformed receipt must never validate."""
+    base = normalize_result(
+        params=_params(),
+        bootstrap=_Bootstrap(),  # type: ignore[arg-type]
+        process=_Process(),  # type: ignore[arg-type]
+        handoff_digest="d" * 64,
+        actual_branch="task/bridge",
+        local_head="b" * 40,
+        remote_head_readback="b" * 40,
+    )
+
+    def drop(field: str) -> Any:
+        payload = json.loads(json.dumps(base))
+        payload.pop(field)
+        return payload
+
+    def set_execution(field: str, value: Any) -> Any:
+        payload = json.loads(json.dumps(base))
+        payload["execution"][field] = value
+        return payload
+
+    def set_block(block: str, field: str, value: Any) -> Any:
+        payload = json.loads(json.dumps(base))
+        payload[block][field] = value
+        return payload
+
+    cases: list[tuple[Any, str]] = [
+        ("not-an-object", "receipt_not_object"),
+        (drop("transport"), "receipt_missing_fields:transport"),
+        (drop("workspace"), "receipt_missing_fields:workspace"),
+        (set_execution("provider", "codex"), "receipt_provider_mismatch"),
+        (set_execution("adapter", "codebuddy"), "receipt_provider_mismatch"),
+        (set_execution("task_id", "PR-016"), "receipt_task_mismatch"),
+        (set_execution("run_id", "run-x"), "receipt_run_mismatch"),
+        (set_execution("attempt_id", "attempt-x"), "receipt_attempt_mismatch"),
+        (set_execution("slice_id", "S99"), "receipt_slice_mismatch"),
+        (set_block("transport", "consistent", False), "receipt_transport_inconsistent"),
+        (set_block("transport", "replacement_transport_created", True), "receipt_replacement_transport"),
+        (set_block("workspace", "isolated", False), "receipt_workspace_not_isolated"),
+        (set_block("workspace", "canonical_checkout_mutated", True), "receipt_canonical_checkout_mutated"),
+        (set_block("receipt", "valid", False), "receipt_not_valid"),
+    ]
+    for payload, expected in cases:
+        assert validate_receipt(payload, **_receipt_kwargs()) == (False, expected)
 
 
 def test_replacement_branch_is_inconsistent() -> None:
@@ -492,7 +622,7 @@ def test_replacement_branch_is_inconsistent() -> None:
         remote_head_readback="b" * 40,
     )
     assert payload["transport"]["consistent"] is False
-    assert validate_receipt(payload, task_id="PR-015", slice_id="S02")[0] is False
+    assert validate_receipt(payload, **_receipt_kwargs())[0] is False
 
 
 # ── end-to-end execute_task with a fixture Codex ─────────────────────────

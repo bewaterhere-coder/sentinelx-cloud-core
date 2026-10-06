@@ -11,6 +11,7 @@ import json
 from typing import Any
 
 from sentinelx_core.direct_codex_transport import TransportBootstrap
+from sentinelx_core.mutation_placement import RepositoryIdentity
 from sentinelx_core.user_process import UserProcessResult
 
 RECEIPT_VERSION = 1
@@ -60,6 +61,11 @@ def normalize_result(
     lineage = params["lineage"]
     transport = params["transport"]
     development = params["development"]
+    repository = RepositoryIdentity(
+        vcs=str(params["repository"]["vcs"]),
+        authority=str(params["repository"]["authority"]),
+        path=str(params["repository"]["path"]),
+    )
 
     exit_disposition = (
         "timeout" if process.timed_out else ("completed" if process.returncode == 0 else "failed")
@@ -77,6 +83,7 @@ def normalize_result(
     )
 
     payload: dict[str, Any] = {
+        "repository": repository.canonical,
         "execution": {
             "provider": "direct",
             "adapter": "codex",
@@ -133,13 +140,30 @@ def normalize_result(
     return payload
 
 
-def validate_receipt(payload: Any, *, task_id: str, slice_id: str | None) -> tuple[bool, ...]:
-    """Validate a direct/Codex receipt shape and its exact identity echo."""
+def validate_receipt(
+    payload: Any,
+    *,
+    task_id: str,
+    run_id: str,
+    attempt_id: str,
+    slice_id: str | None,
+    canonical_pr: int,
+    canonical_repository: str,
+) -> tuple[bool, ...]:
+    """Validate a direct/Codex receipt shape and its exact identity echo.
+
+    The receipt must echo the exact Task/Run/Attempt/Slice identity that was
+    admitted and the exact canonical repository and PR. A receipt whose
+    actual branch differs from the canonical branch is transport drift and
+    fails closed even when it claims to be consistent.
+    """
     if not isinstance(payload, dict):
         return (False, "receipt_not_object")
     missing = [field for field in _REQUIRED_RECEIPT_FIELDS if field not in payload]
     if missing:
         return (False, f"receipt_missing_fields:{','.join(missing)}")
+    if payload.get("repository") != canonical_repository:
+        return (False, "receipt_repository_mismatch")
     execution = payload.get("execution")
     if not isinstance(execution, dict):
         return (False, "receipt_execution_invalid")
@@ -147,11 +171,19 @@ def validate_receipt(payload: Any, *, task_id: str, slice_id: str | None) -> tup
         return (False, "receipt_provider_mismatch")
     if execution.get("task_id") != task_id:
         return (False, "receipt_task_mismatch")
+    if execution.get("run_id") != run_id:
+        return (False, "receipt_run_mismatch")
+    if execution.get("attempt_id") != attempt_id:
+        return (False, "receipt_attempt_mismatch")
     if (execution.get("slice_id") or None) != (slice_id or None):
         return (False, "receipt_slice_mismatch")
     transport = payload.get("transport")
     if not isinstance(transport, dict) or transport.get("consistent") is not True:
         return (False, "receipt_transport_inconsistent")
+    if transport.get("canonical_pr") != canonical_pr:
+        return (False, "receipt_pr_mismatch")
+    if transport.get("canonical_branch") != transport.get("actual_branch"):
+        return (False, "receipt_branch_mismatch")
     if transport.get("replacement_transport_created") is not False:
         return (False, "receipt_replacement_transport")
     workspace = payload.get("workspace")

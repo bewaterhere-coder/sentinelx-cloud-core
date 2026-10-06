@@ -169,6 +169,7 @@ def _run_windows_user_git(root: Path, args: tuple[str, ...], timeout: float) -> 
     kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
     advapi32 = ctypes.WinDLL("advapi32", use_last_error=True)
     wtsapi32 = ctypes.WinDLL("wtsapi32", use_last_error=True)
+    userenv = ctypes.WinDLL("userenv", use_last_error=True)
     INVALID_SESSION = 0xFFFFFFFF
     CREATE_NO_WINDOW = 0x08000000
     CREATE_UNICODE_ENVIRONMENT = 0x00000400

@@ -81,3 +81,30 @@ def test_feature_names() -> None:
 
 def test_support_is_windows_only() -> None:
     assert user_scoped_git_supported() is (sys.platform == "win32")
+
+
+@pytest.mark.skipif(not sys.platform.startswith("win"), reason="Windows runner internals")
+def test_windows_runner_fails_at_the_true_privilege_boundary() -> None:
+    """PR-015/S03 regression: the runner must never die on a Python NameError.
+
+    The S02 correction refactor extracted ``active_user_base_environment`` and
+    accidentally dropped the local ``userenv`` DLL binding, so every real
+    user-scoped Git call failed with ``name 'userenv' is not defined`` wrapped
+    as ``GitExecutionContextUnavailable``. The exact-candidate bridge proof
+    exposed it. The runner must now fail only at its real Windows boundary
+    (missing SE_TCB_NAME privilege for WTSQueryUserToken on a normal shell) or
+    succeed outright — never on a refactor artifact.
+    """
+    from pathlib import Path
+
+    from sentinelx_core import user_git
+
+    root = Path.cwd()
+    if not user_git.user_scoped_git_supported():
+        pytest.skip("windows only")
+    try:
+        code, _out, _err = user_git._run_windows_user_git(root, ("rev-parse", "HEAD"), 30.0)
+        assert code in (0, 128)  # a real git invocation happened
+    except user_git.UserScopedGitError as exc:
+        assert exc.code == "GitExecutionContextUnavailable"
+        assert "not defined" not in str(exc)  # no Python NameError leakage

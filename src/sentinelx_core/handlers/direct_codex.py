@@ -4,9 +4,10 @@ PR-015/S01 owns the provider contract, Host policy admission, closed action
 schema and the repository-effect/readiness projection. PR-015/S02 adds the
 provider-owned execution path: derived isolated workspace, fixed canonical
 transport bootstrap, verified Codex chain, bounded active-user process
-execution and the structured direct/Codex result contract. The live
-direct-Codex recovery proof remains S03 and Acceptance/Acceptance-proof
-ownership remains untouched.
+execution and the structured direct/Codex result contract. PR-015/S03
+validates the exact Task/Run/Attempt/Slice and canonical repository/PR/branch
+echo and runs the exact-candidate live self-host recovery proof through the
+delivered bridge. Acceptance/acceptance-proof ownership remains untouched.
 
 Nothing here widens generic ``exec`` or ``script_run``: the action schema is
 closed and provider-owned values (executable, sandbox settings, workspace
@@ -773,7 +774,11 @@ class DevforgeDirectCodexProvider:
         ok, reason = validate_receipt(
             payload,
             task_id=str(lineage["task_id"]),
+            run_id=str(lineage["run_id"]),
+            attempt_id=str(lineage["attempt_id"]),
             slice_id=str(lineage["slice_id"]) if lineage.get("slice_id") else None,
+            canonical_pr=int(transport["pr_number"]),
+            canonical_repository=repository.canonical,
         )
         payload["ok"] = bool(ok)
         payload["operation"] = EXECUTE_TASK_ACTION
