@@ -265,6 +265,51 @@ trusted_runner_handshake_repair:
     - no generic Host shell fallback
   host_proof_status: pending
 
+
+host_proof_attempt_4:
+  workspace: D:\coco\workspaces\bewaterhere-coder\sentinelx-cloud-core\pr011-s03r-trusted-runner-v6
+  basetemp: .devforge-s03r-system-proof-20261006-152603
+  scheduled_identity: SYSTEM
+  scheduled_session: session_0
+  result:
+    physical_acl_test: passed
+    scoped_node_npm_test: failed_before_trusted_runner_handshake
+    pytest_summary: "1 failed, 1 passed, 1 warning"
+  failure:
+    type: HostMutationSandboxUnavailable
+    message: verification root did not reach trusted descendant handshake
+    root_ready_observed: false
+  interpretation: >
+    The Session-0 ACE was no longer present during CreateProcess/resume, yet the
+    verification root still did not enter the provider-owned runner. This
+    disproves Session-0 ACE timing as the root-start blocker. The remaining
+    material difference from the known-good generic scoped Python root is the
+    verification-specific environment being supplied to the root interpreter.
+
+verification_environment_capsule_repair:
+  candidate_head: 8f48249f1202fb3dfd22b514edd8698325a9f95d
+  design:
+    - launch trusted root Python with the known-good sanitized base scoped environment
+    - root runner writes root-ready before any caller script executes
+    - broker grants the unique AppContainer SID Session-0 read authority
+    - broker writes authority-ready
+    - trusted runner loads a provider-written verification environment capsule
+    - trusted runner replaces os.environ with the deterministic verification environment
+    - only then run the caller verification script and descendants
+  security_properties:
+    - caller credentials remain stripped before root startup
+    - verification environment capsule contains only provider-composed string environment values
+    - caller script cannot execute before authority and environment transition
+    - no second executor or Job breakaway
+    - no network/credential authority widening
+  rationale: >
+    Real-host generic scoped Python and verification-like child environment probes
+    both succeed, but the profiled root stalls before Python runner entry when the
+    verification environment is passed at CreateProcess. Applying that environment
+    from the trusted runner after Python initialization isolates interpreter startup
+    from verification descendant configuration while preserving descendant semantics.
+  host_proof_status: pending
+
 completion_guard:
   s03r_completed: false
   s04_started: false
