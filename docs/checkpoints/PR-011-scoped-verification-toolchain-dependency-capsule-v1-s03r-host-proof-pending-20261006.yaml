@@ -310,6 +310,58 @@ verification_environment_capsule_repair:
     from verification descendant configuration while preserving descendant semantics.
   host_proof_status: pending
 
+
+host_proof_attempt_5:
+  workspace: D:\coco\workspaces\bewaterhere-coder\sentinelx-cloud-core\pr011-s03r-env-capsule-v7
+  basetemp: .devforge-s03r-system-proof-20261006-154019
+  scheduled_identity: SYSTEM
+  scheduled_session: session_0
+  result:
+    physical_acl_test: passed
+    scoped_node_npm_test: failed_before_trusted_runner_handshake
+    pytest_summary: "1 failed, 1 passed, 1 warning"
+  failure:
+    type: HostMutationSandboxUnavailable
+    message: verification root did not reach trusted descendant handshake
+    root_ready_observed: false
+  audit:
+    operation_id: mao_XKws9aSsQ8b5j5lUd_DlPK9s
+    root_pid: 25948
+    root_process_spawned: true
+    job_contained: true
+    breakaway_allowed: false
+    terminalized: true
+    process_tree_quiescent: true
+    residual_process_ids: []
+    residual_job_ids: []
+    sandbox_write_authority_present_after_terminalization: false
+  interpretation: >
+    Launching the root with the base scoped environment still does not reach the
+    trusted runner. This disproves the verification environment passed at
+    CreateProcess as the remaining root-start blocker. The material CreateProcess
+    difference still present is verification root cwd=source versus generic
+    scoped root cwd=exact workspace; the expanded handshake runner imports are
+    also unnecessary startup differences.
+
+root_start_isolation_repair:
+  candidate_head: 886a9c89fc434cceaea2b45d1823bd8db861d2f7
+  design:
+    - root process starts from the exact workspace, matching the known-good generic scoped path
+    - sealed process intent binds the exact-workspace root cwd
+    - provider-selected verification source cwd is persisted separately as runtime/cwd.txt
+    - trusted runner performs handshake first, then loads verification environment and chdirs to the sealed source cwd
+    - user script still observes the expected verification cwd=source
+    - pre-handshake runner imports are reduced to the original known-good Python runner set plus builtin time
+    - json/os are imported only after authority-ready
+  security_properties:
+    - process cwd remains inside exact provider workspace
+    - user verification cwd remains inside admitted source snapshot
+    - no caller-selected Host path authority
+    - no second executor
+    - no Job breakaway
+    - no network or credential widening
+  host_proof_status: pending
+
 completion_guard:
   s03r_completed: false
   s04_started: false
