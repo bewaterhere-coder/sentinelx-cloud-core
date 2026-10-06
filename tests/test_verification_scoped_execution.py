@@ -150,9 +150,8 @@ def _fixture(tmp_path: Path):
 
     runtime_roots = {Path(sys.prefix).resolve(), Path(sys.base_prefix).resolve()}
     pwsh = shutil.which("pwsh")
-    if pwsh is None:
-        pytest.skip("pwsh is required for the S03 physical verification fixture")
-    runtime_roots.add(Path(pwsh).resolve().parent)
+    if pwsh is not None:
+        runtime_roots.add(Path(pwsh).resolve().parent)
 
     mutation_policy = MutationExecutionPolicy(
         configured=True,
