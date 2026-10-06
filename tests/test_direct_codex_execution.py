@@ -163,6 +163,14 @@ def _bare_remote(tmp_path: Path, branch: str) -> tuple[Path, str]:
     )
     bare = tmp_path / "remote.git"
     subprocess.run([_GIT, "clone", "-q", "--bare", str(source), str(bare)], check=True)
+    # The real canonical remote is reached over HTTPS and therefore has no
+    # filesystem integrity boundary. This local fixture remote stands in for
+    # it, so the test stamps the same low mandatory label the direct-Codex
+    # enclave uses; otherwise the fixture's low-integrity `git push` would be
+    # refused by MIC for a reason that does not exist in production.
+    from sentinelx_core import windows_integrity
+
+    windows_integrity.set_low_mandatory_label_tree(bare)
     head = subprocess.run(
         [_GIT, "-C", str(source), "rev-parse", "HEAD"],
         check=True,
@@ -330,6 +338,20 @@ def test_bin_outside_package_is_rejected(tmp_path: Path) -> None:
     assert verify_package(root, "@openai/codex") is None
 
 
+def test_absolute_bin_is_rejected(tmp_path: Path) -> None:
+    """An absolute bin path must never be executed by the provider."""
+    root = _fake_npm_root(tmp_path / "npm" / "node_modules")
+    # A real on-disk script at an absolute path must not be selected.
+    evil = tmp_path / "evil" / "codex.js"
+    evil.parent.mkdir(parents=True)
+    evil.write_text("// evil\n", encoding="utf-8")
+    (root / "@openai" / "codex" / "package.json").write_text(
+        f'{{"name": "@openai/codex", "version": "0.154.0", "bin": "{evil}"}}',
+        encoding="utf-8",
+    )
+    assert verify_package(root, "@openai/codex") is None
+
+
 def test_missing_node_executable_fails_closed(tmp_path: Path) -> None:
     policy = _policy(tmp_path, node_executable=tmp_path / "missing-node.exe")
     with pytest.raises(DirectCodexDiscoveryError) as exc:
@@ -386,15 +408,29 @@ class _Process:
     execution_context = "active_console_session_direct"
 
 
-def _params() -> dict[str, Any]:
+def _params(
+    *,
+    repository: RepositoryIdentity | None = None,
+    semantic: SemanticIdentity | None = None,
+) -> dict[str, Any]:
+    """Closed execute_task payload. The identity defaults stay stable for the
+    receipt tests; end-to-end tests pass the exact identity they proved."""
+    repo = repository or RepositoryIdentity(vcs="git", authority="github.com", path="o/r")
+    lineage = semantic or SemanticIdentity(
+        project_id="sentinelx-cloud-core",
+        task_id="PR-015",
+        run_id="run-1",
+        attempt_id="attempt-1",
+        slice_id="S02",
+    )
     return {
-        "repository": {"vcs": "git", "authority": "github.com", "path": "o/r"},
+        "repository": {"vcs": repo.vcs, "authority": repo.authority, "path": repo.path},
         "lineage": {
-            "project_id": "sentinelx-cloud-core",
-            "task_id": "PR-015",
-            "run_id": "run-1",
-            "attempt_id": "attempt-1",
-            "slice_id": "S02",
+            "project_id": lineage.project_id,
+            "task_id": lineage.task_id,
+            "run_id": lineage.run_id,
+            "attempt_id": lineage.attempt_id,
+            "slice_id": lineage.slice_id,
         },
         "development": {
             "action": "implementation",
@@ -462,22 +498,29 @@ def test_replacement_branch_is_inconsistent() -> None:
 # ── end-to-end execute_task with a fixture Codex ─────────────────────────
 
 
-def _fixture_codex(path: Path, *, push: bool) -> Path:
-    push_body = (
+def _fixture_codex(path: Path, *, commit: bool) -> Path:
+    """Stand-in for the installed Codex CLI.
+
+    It only ever works inside the execution workspace: publishing is owned by
+    the provider, not by the direct host.
+    """
+    commit_body = (
         "const cp=require('child_process');"
         "const run=(...a)=>cp.execFileSync('git',a,{stdio:'ignore'});"
         "run('-c','user.email=fixture@example.com','-c','user.name=fixture','add','CHANGE.md');"
         "run('-c','user.email=fixture@example.com','-c','user.name=fixture','commit','-m','slice');"
-        "run('push','origin','HEAD:'+process.env.FIXTURE_BRANCH);"
-        if push
+        if commit
         else ""
     )
     path.write_text(
         "const fs=require('fs');"
-        "if(process.argv.includes('--help')){console.log('Usage: codex exec [PROMPT] --json');"
+        "if(process.argv.includes('--help')){"
+        "console.log('Usage: codex exec [OPTIONS] [PROMPT]\\n"
+        "  -s, --sandbox <SANDBOX_MODE>\\n"
+        "      --json\\n');"
         "process.exit(0);}"
         "fs.writeFileSync('CHANGE.md','slice work\\n');"
-        + push_body
+        + commit_body
         + "console.log(JSON.stringify({status:'ok'}));",
         encoding="utf-8",
     )
@@ -503,7 +546,7 @@ async def test_execute_task_reports_local_only_run_as_incomplete(
     monkeypatch.setattr(
         "sentinelx_core.direct_codex_transport.remote_url_for", lambda _repository: str(bare)
     )
-    script = _fixture_codex(tmp_path / "codex.js", push=False)
+    script = _fixture_codex(tmp_path / "codex.js", commit=False)
     chain = CodexChain(
         node_executable=Path(node),
         codex_script=script,
@@ -525,8 +568,7 @@ async def test_execute_task_reports_local_only_run_as_incomplete(
     )
     await provider.prove_containment(repository=_repository(), semantic=_semantic())
 
-    params = _params()
-    params["lineage"]["slice_id"] = "S02"
+    params = _params(repository=_repository(), semantic=_semantic())
     params["transport"]["branch"] = "task/bridge"
     params["transport"]["expected_remote_sha"] = head
     payload = await provider.call(_context_like(), "execute_task", params)
@@ -558,8 +600,7 @@ async def test_execute_task_completes_exact_transport_and_receipt(
     monkeypatch.setattr(
         "sentinelx_core.direct_codex_transport.remote_url_for", lambda _repository: str(bare)
     )
-    monkeypatch.setenv("FIXTURE_BRANCH", "task/bridge")
-    script = _fixture_codex(tmp_path / "codex.js", push=True)
+    script = _fixture_codex(tmp_path / "codex.js", commit=True)
     chain = CodexChain(
         node_executable=Path(node),
         codex_script=script,
@@ -581,8 +622,7 @@ async def test_execute_task_completes_exact_transport_and_receipt(
     )
     await provider.prove_containment(repository=_repository(), semantic=_semantic())
 
-    params = _params()
-    params["lineage"]["slice_id"] = "S02"
+    params = _params(repository=_repository(), semantic=_semantic())
     params["transport"]["branch"] = "task/bridge"
     params["transport"]["expected_remote_sha"] = head
     payload = await provider.call(_context_like(), "execute_task", params)
@@ -728,6 +768,58 @@ async def test_containment_proof_switches_effect_to_proven(tmp_path: Path) -> No
     assert resolution.effect is RepositoryEffect.PROCESS_MUTATION
     assert resolution.coverage is FirewallCoverage.PROVEN
     assert provider.readiness()["available"] is True
+
+
+@WINDOWS_ONLY
+@pytest.mark.asyncio
+async def test_containment_negative_probe_is_real_os_refusal(tmp_path: Path) -> None:
+    node = _node()
+    if node is None:
+        pytest.skip("node is not available")
+    from sentinelx_core.handlers import direct_codex as provider_module
+    from sentinelx_core.handlers.direct_codex import make_devforge_direct_codex_provider
+
+    policy = _full_policy(tmp_path, node_executable=Path(node))
+    provider = make_devforge_direct_codex_provider(policy, platform_name="Windows")
+    proof = await provider.prove_containment(repository=_repository(), semantic=_semantic())
+    assert proof["verified"] is True
+
+    probe = proof["negative_probe"]
+    # The child really started inside the workspace and really attempted the
+    # out-of-workspace write: the refusal is produced by the OS, not by a
+    # pre-spawn cwd admission check.
+    assert probe["attempted"] is True
+    assert probe["started_inside_workspace"] is True
+    assert probe["child_exit_code"] == 0
+    assert probe["outside_write_result"] in {"EPERM", "EACCES"}
+    assert probe["denied_by"] == provider_module.SANDBOX_MECHANISM
+    assert probe["contaminated"] is False
+    assert not Path(probe["target"]).exists()
+    # The permitted workspace write must have actually landed.
+    assert proof["workspace_write_succeeded"] is True
+
+
+@WINDOWS_ONLY
+@pytest.mark.asyncio
+async def test_containment_proof_fails_closed_without_protected_sibling(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    node = _node()
+    if node is None:
+        pytest.skip("node is not available")
+    from sentinelx_core.handlers.direct_codex import make_devforge_direct_codex_provider
+
+    policy = _full_policy(tmp_path, node_executable=Path(node))
+    provider = make_devforge_direct_codex_provider(policy, platform_name="Windows")
+    # No sibling outside the workspace root is available: the negative probe
+    # cannot be physically attempted, so the proof must refuse rather than
+    # simulate one by writing somewhere.
+    monkeypatch.setattr(
+        "sentinelx_core.handlers.direct_codex._negative_target", lambda _workspace: None
+    )
+    proof = await provider.prove_containment(repository=_repository(), semantic=_semantic())
+    assert proof["verified"] is False
+    assert proof["negative_probe"]["attempted"] is False
 
 
 @WINDOWS_ONLY

@@ -16,6 +16,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
@@ -87,10 +88,21 @@ def _parse_environment_block(ptr: int) -> dict[str, str]:
     return env
 
 
-def _build_environment_buffer(base: dict[str, str]) -> Any:
-    """Return a mutable UTF-16 environment block with noninteractive Git guards."""
+def build_environment_buffer(base: Mapping[str, str]) -> Any:
+    """Encode ``base`` as a double-NUL-terminated UTF-16 environment block.
+
+    This is the single environment-block encoder for the package: the user-scoped
+    Git runner and the active-user process runner both depend on it so the two
+    never drift into inconsistent encodings.
+    """
     import ctypes
 
+    items = [f"{k}={v}" for k, v in sorted(base.items(), key=lambda kv: kv[0].upper())]
+    return ctypes.create_unicode_buffer("\0".join(items) + "\0\0")
+
+
+def _build_environment_buffer(base: dict[str, str]) -> Any:
+    """Return a UTF-16 environment block with noninteractive Git guards."""
     env = dict(base)
     env.update(
         {
@@ -101,9 +113,41 @@ def _build_environment_buffer(base: dict[str, str]) -> Any:
             "GIT_OPTIONAL_LOCKS": "0",
         }
     )
-    # Environment blocks are conventionally case-insensitive sorted.
-    items = [f"{k}={v}" for k, v in sorted(env.items(), key=lambda kv: kv[0].upper())]
-    return ctypes.create_unicode_buffer("\0".join(items) + "\0\0")
+    return build_environment_buffer(env)
+
+
+def active_user_base_environment(token: int) -> dict[str, str]:
+    """Resolve the active user's real profile environment for ``token``.
+
+    Reuses ``userenv.CreateEnvironmentBlock`` — the same mechanism the user-scoped
+    Git runner already depends on — so a child process started from ``token``
+    inherits the active user's real environment instead of a provider-synthesized
+    one. Returns a freshly decoded ``dict`` (pseudo ``=C:=`` entries preserved).
+    """
+    import ctypes
+    from ctypes import wintypes
+
+    userenv = ctypes.WinDLL("userenv", use_last_error=True)
+    userenv.CreateEnvironmentBlock.argtypes = [
+        ctypes.POINTER(ctypes.c_void_p),
+        wintypes.HANDLE,
+        wintypes.BOOL,
+    ]
+    userenv.CreateEnvironmentBlock.restype = wintypes.BOOL
+    userenv.DestroyEnvironmentBlock.argtypes = [ctypes.c_void_p]
+    userenv.DestroyEnvironmentBlock.restype = wintypes.BOOL
+
+    env_ptr = ctypes.c_void_p()
+    if not userenv.CreateEnvironmentBlock(ctypes.byref(env_ptr), wintypes.HANDLE(token), False):
+        err = ctypes.get_last_error()
+        raise UserScopedGitError(
+            "GitExecutionContextUnavailable",
+            f"CreateEnvironmentBlock failed with Windows error {err}",
+        )
+    try:
+        return _parse_environment_block(env_ptr.value)
+    finally:
+        userenv.DestroyEnvironmentBlock(env_ptr)
 
 
 def _run_windows_user_git(root: Path, args: tuple[str, ...], timeout: float) -> tuple[int, bytes, bytes]:
@@ -125,8 +169,6 @@ def _run_windows_user_git(root: Path, args: tuple[str, ...], timeout: float) -> 
     kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
     advapi32 = ctypes.WinDLL("advapi32", use_last_error=True)
     wtsapi32 = ctypes.WinDLL("wtsapi32", use_last_error=True)
-    userenv = ctypes.WinDLL("userenv", use_last_error=True)
-
     INVALID_SESSION = 0xFFFFFFFF
     CREATE_NO_WINDOW = 0x08000000
     CREATE_UNICODE_ENVIRONMENT = 0x00000400
@@ -205,17 +247,9 @@ def _run_windows_user_git(root: Path, args: tuple[str, ...], timeout: float) -> 
             f"WTSQueryUserToken failed with Windows error {err}",
         )
 
-    env_ptr = ctypes.c_void_p()
     pi = PROCESS_INFORMATION()
     try:
-        if not userenv.CreateEnvironmentBlock(ctypes.byref(env_ptr), token, False):
-            err = ctypes.get_last_error()
-            raise UserScopedGitError(
-                "GitExecutionContextUnavailable",
-                f"CreateEnvironmentBlock failed with Windows error {err}",
-            )
-
-        base_env = _parse_environment_block(env_ptr.value)
+        base_env = active_user_base_environment(int(token.value))
         env_buffer = _build_environment_buffer(base_env)
 
         argv = [
@@ -283,8 +317,6 @@ def _run_windows_user_git(root: Path, args: tuple[str, ...], timeout: float) -> 
             kernel32.CloseHandle(pi.hThread)
         if pi.hProcess:
             kernel32.CloseHandle(pi.hProcess)
-        if env_ptr.value:
-            userenv.DestroyEnvironmentBlock(env_ptr)
         if token:
             kernel32.CloseHandle(token)
 

@@ -64,12 +64,15 @@ implementation:
   delivered:
     - src/sentinelx_core/direct_codex_workspace.py: provider-owned workspace derivation from Host root plus repository/task/run/attempt/slice identity with canonical-overlap refusal
     - src/sentinelx_core/direct_codex_transport.py: CAS remote head admission and independent execution checkout of the exact canonical branch
-    - src/sentinelx_core/user_process.py: internal Windows active-user process runner with job containment, bounded capture, timeout and process-tree closure
+    - src/sentinelx_core/user_process.py: internal Windows active-user process runner with job containment, bounded capture, timeout and process-tree closure; reuses user_git.CreateEnvironmentBlock for a real active-user environment and reads back child integrity/session
+    - src/sentinelx_core/user_git.py: shared build_environment_buffer and active_user_base_environment (CreateEnvironmentBlock) reused by both the Git runner and the active-user process runner
+    - src/sentinelx_core/policy.py: direct-Codex package identity pinned to @openai/codex and removed from the operator-configurable field set so a host config cannot elevate another npm package to the Codex Development Host
     - src/sentinelx_core/direct_codex_discovery.py: verified node + <package>/bin/codex.js chain with package identity and non-interactive contract probes
     - src/sentinelx_core/direct_codex_handoff.py: deterministic handoff compiled from canonical structured fields only
     - src/sentinelx_core/direct_codex_result.py: bounded direct/Codex result and receipt validation
     - src/sentinelx_core/handlers/direct_codex.py: execute_task composition plus the D9 containment proof gate and proven effect projection
     - tests/test_direct_codex_execution.py: S02 verification coverage
+    - tests/test_user_process.py: active-user process launch, integrity/session read-back and cwd containment
     - config.example.windows.yaml: documented verified execution chain
   not_delivered:
     - structured direct/Codex receipt and exact-candidate self-host recovery proof (S03)
@@ -77,8 +80,8 @@ implementation:
     - production/live direct-Codex activation (Acceptance-owned)
 
 verification:
-  focused_suite: tests/test_direct_codex_execution.py
-  focused_result: 22 passed
+  focused_suite: tests/test_direct_codex_execution.py + tests/test_user_process.py
+  focused_result: 29 passed (test_direct_codex_execution 25, test_user_process 4)
   focused_coverage:
     - workspace derivation is deterministic and refuses canonical intersection
     - expected remote head mismatch fails before any mutation
@@ -93,18 +96,23 @@ verification:
     - result never exposes environment or credential values
     - containment proof switches repository_effect to proven
   related_regressions:
-    - tests/test_direct_codex_provider.py + tests/test_local_api.py + tests/test_canonical_repository_firewall_readiness.py: 108 passed
-    - firewall/local_api/policy/scope/user_git/windows sandbox suites: 129 passed, 1 skipped
+    - tests/test_user_scoped_git.py + tests/test_policy.py + tests/test_direct_codex_provider.py + tests/test_direct_codex_execution.py + tests/test_user_process.py: 110 passed; the only failure is the documented symlink-privilege test below
+    - the 4 tests/test_windows_mutation_sandbox.py failures (SetNamedSecurityInfoW WinError 5 on D:\coco\workspaces) are the documented host-privilege failures and were not part of this subset
   physical_windows_proof:
     containment_fixture: executed on this Windows host through prove_containment
     workspace_write_succeeded: true
     protected_sibling_refused: true
     process_tree_closed: true
     job_contained: true
+    low_integrity_child_readback: true
+    default_child_readback: true
     note: >-
       Negative proof is provider-enforced (workspace-scoped cwd plus job
-      containment); OS-level ACL/AppContainer proofs remain owned by the
-      existing windows_mutation_sandbox suite and Acceptance.
+      containment); the new test_user_process suite reads back the OS-visible
+      integrity level and Windows session of the live child (default and low
+      MIC) so containment is an observed fact, not a promise. OS-level
+      ACL/AppContainer proofs remain owned by the windows_mutation_sandbox
+      suite and Acceptance.
   preexisting_environment_failures:
     - tests/test_policy.py::test_file_ops_symlink_escape_is_defeated (symlink privilege unavailable to this shell, WinError 1314)
     - tests/test_windows_mutation_sandbox.py::test_real_appcontainer_writes_only_exact_workspace (SetNamedSecurityInfoW WinError 5 on D:\coco\workspaces)
@@ -115,6 +123,35 @@ verification:
     The same five failures reproduce on the unmodified S01 workspace at head
     b581b82fbef83ea53ed8e228de1907836aaf9179, so they are host-privilege
     environment failures and not S02 regressions.
+
+correction:
+  correction_pass: "2026-10-07 (S02 wrap-up / 收口)"
+  scope: >-
+    S02 wrap-up only. S03 is explicitly out of scope and is not started by this
+    pass.
+  items:
+    - active-user environment reuse: user_process derives the child's real
+      active-user environment through user_git.active_user_base_environment
+      (userenv.CreateEnvironmentBlock) instead of a second, inconsistent
+      provider-synthesized environment buffer; user_git exposes the shared
+      build_environment_buffer encoder used by both runners.
+    - codex package identity fixed: policy.codex_package is pinned to
+      @openai/codex and removed from the operator-configurable field set, so a
+      host configuration cannot elevate another npm package to the Codex
+      Development Host role.
+    - test temp hygiene: the untracked .pytest-tmp scratch directory and local
+      test logs are removed from the workspace so they are never committed.
+    - line-ending churn verified absent: git diff --ignore-cr-at-eol is
+      identical to the plain diff stat, so the diff carries only real code.
+  rerun:
+    s02_focused: 29 passed (test_direct_codex_execution 25, test_user_process 4)
+    regression_subset: tests/test_policy.py + tests/test_user_scoped_git.py +
+      tests/test_direct_codex_provider.py: 81 passed; the single failure is the
+      documented symlink-privilege test (WinError 1314), a pre-existing
+      host-privilege failure, not an S02 regression
+    windows_physical_containment_proof: re-verified on this host (default and
+      low-integrity child integrity/session read-back, job containment,
+      process-tree closure)
 
 claims:
   caller_never_supplies_workspace_or_executable: true

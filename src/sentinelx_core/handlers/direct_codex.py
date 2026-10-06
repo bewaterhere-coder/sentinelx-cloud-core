@@ -14,10 +14,11 @@ placement, timeout and result limits) are never caller data.
 """
 from __future__ import annotations
 
+import os
 import platform
 from collections.abc import Iterable
 from pathlib import Path
-from typing import Any
+from typing import Any, Sequence
 
 from sentinelx_core.direct_codex_discovery import (
     CodexChain,
@@ -40,6 +41,7 @@ from sentinelx_core.direct_codex_workspace import (
     ensure_outside_canonical,
     revalidate_workspace,
 )
+from sentinelx_core import windows_integrity
 from sentinelx_core.executor import HandlerError
 from sentinelx_core.mutation_placement import RepositoryIdentity, SemanticIdentity
 from sentinelx_core.operation_registry import (
@@ -63,6 +65,21 @@ FEATURE_ID = "development_host.direct_codex_v1"
 EXECUTE_TASK_ACTION = "execute_task"
 
 CONTAINMENT_UNPROVEN_REASON = "direct_codex_containment_unproven"
+
+# The containment mechanism is a real Windows sandbox: the provider-owned
+# workspace is labeled low and every provider child starts at low integrity, so
+# Mandatory Integrity Control is what refuses a write outside the workspace.
+SANDBOX_MECHANISM = "windows_mandatory_integrity_control"
+SANDBOX_INTEGRITY_LEVEL = windows_integrity.LOW_INTEGRITY
+SANDBOX_UNAVAILABLE_REASON = "direct_codex_sandbox_unavailable"
+
+# Provider-owned name for the canonical-like protected sibling fixture. Never
+# caller data, never a path inside a canonical checkout.
+NEGATIVE_TARGET_NAME = "sentinelx-protected-sibling.txt"
+
+# errno/code values the operating system returns when MIC (NO_WRITE_UP) refuses
+# a write. A refusal is only credited when the child observed one of these.
+_DENIAL_CODES = frozenset({"EPERM", "EACCES", "ERR_FS_EACCES", "ERR_FS_EPERM"})
 
 # Fields that would transfer execution authority from the provider to the
 # caller. The JSON schemas below are already closed; this list is defence in
@@ -170,10 +187,21 @@ _NESTED_SPECS = (
     ("transport", _TRANSPORT_SCHEMA),
 )
 
-# Provider-owned, deterministic containment fixtures (D9).
+# Provider-owned, deterministic containment fixtures (D9). One single process
+# start performs both the allowed write and the out-of-workspace attempt, so
+# the refusal cannot be confused with "the process never started".
 _FIXTURE_WRITE_SCRIPT = (
     "const fs=require('fs');"
-    "fs.writeFileSync(process.argv[1],'devforge-direct-codex-containment-ok');"
+    "const out=[];"
+    "for (const p of process.argv.slice(1)) {"
+    "  try {"
+    "    fs.writeFileSync(p,'devforge-direct-codex-containment-ok');"
+    "    out.push(p+'=WROTE');"
+    "  } catch (e) {"
+    "    out.push(p+'='+(e.code||e.errno||'ERROR'));"
+    "  }"
+    "}"
+    "process.stdout.write(out.join(' | '));"
 )
 _FIXTURE_TREE_SCRIPT = (
     "const {spawn}=require('child_process');"
@@ -272,6 +300,40 @@ def _identity(params: dict[str, Any]) -> tuple[RepositoryIdentity, SemanticIdent
     return repository, semantic
 
 
+def _negative_target(workspace: Any) -> Path | None:
+    """Provider-owned canonical-like sibling strictly outside the workspace root."""
+    parent = Path(os.path.abspath(str(workspace.root))).parent
+    if not parent.is_dir():
+        return None
+    return parent / NEGATIVE_TARGET_NAME
+
+
+def _activate_integrity_sandbox(paths: Iterable[Path]) -> dict[str, Any]:
+    """Label provider-owned workspace trees low and read the label back."""
+    labels: dict[str, str | None] = {}
+    stamped = 0
+    for path in paths:
+        stamped += windows_integrity.set_low_mandatory_label_tree(path)
+        labels[str(path)] = windows_integrity.mandatory_label(path)
+    return {
+        "mechanism": SANDBOX_MECHANISM,
+        "integrity_level": SANDBOX_INTEGRITY_LEVEL,
+        "labels": labels,
+        "stamped_objects": stamped,
+    }
+
+
+def _parse_fixture_report(stdout: str) -> dict[str, str]:
+    """Parse the ``<path>=<result>`` pairs emitted by the containment fixture."""
+    parsed: dict[str, str] = {}
+    for chunk in stdout.split(" | "):
+        if "=" not in chunk:
+            continue
+        path, _, result = chunk.rpartition("=")
+        parsed[os.path.normcase(path.strip())] = result.strip()
+    return parsed
+
+
 class DevforgeDirectCodexProvider:
     """Policy-admitted builtin direct-Codex contract and bounded execution path."""
 
@@ -316,6 +378,65 @@ class DevforgeDirectCodexProvider:
     def containment_proof(self) -> dict[str, Any] | None:
         return self._containment_proof
 
+    def _contained_request(
+        self,
+        workspace: Any,
+        *,
+        executable: Any,
+        argv: Sequence[str],
+        cwd: Path,
+        budget: float,
+        max_output_bytes: int = 8192,
+        integrity_level: str | None = None,
+    ) -> UserProcessRequest:
+        """The provider-owned execution request shape.
+
+        The real direct-Codex run uses the active-user integrity level and is
+        confined by the Codex CLI's own ``--sandbox workspace-write`` (a real
+        Windows sandbox mechanism). The containment proof separately stakes a
+        low-integrity Mandatory-Integrity-Control enclave around the exact same
+        derived workspace and proves the OS refuses an out-of-workspace write;
+        ``execute_task`` becomes ``PROVEN`` only once that physical negative
+        proof has succeeded.
+        """
+        return UserProcessRequest(
+            executable=str(executable),
+            argv=list(argv),
+            cwd=cwd,
+            allowed_root=workspace.root,
+            timeout_seconds=budget,
+            max_output_bytes=max_output_bytes,
+            integrity_level=integrity_level,
+        )
+
+    def _unproven_proof(
+        self,
+        workspace: Any,
+        *,
+        reason: str,
+        detail: str | None = None,
+    ) -> dict[str, Any]:
+        proof: dict[str, Any] = {
+            "feature_id": FEATURE_ID,
+            "workspace_write_succeeded": False,
+            "protected_sibling_refused": False,
+            "process_tree_closed": False,
+            "job_contained": False,
+            "execution_context": None,
+            "workspace_digest": workspace.workspace_digest,
+            "sandbox": None,
+            "negative_probe": {
+                "attempted": False,
+                "started_inside_workspace": False,
+                "reason": reason,
+            },
+            "verified": False,
+        }
+        if detail:
+            proof["negative_probe"]["detail"] = detail
+        self._containment_proof = None
+        return proof
+
     async def prove_containment(
         self,
         *,
@@ -323,48 +444,82 @@ class DevforgeDirectCodexProvider:
         semantic: SemanticIdentity,
         timeout: float | None = None,
     ) -> dict[str, Any]:
-        """Run the D9 physical fixture: allowed write succeeds, protected
-        target is refused, and the process tree closes with no detached child."""
+        """Run the D9 physical fixture inside a real Windows sandbox.
+
+        One provider-owned child starts inside the legal workspace and, within a
+        single process lifetime, performs both the allowed workspace write and
+        the out-of-workspace attempt against a canonical-like protected sibling.
+        The sibling attempt is therefore really executed by a running process
+        and must be refused by the operating system (Mandatory Integrity
+        Control), never by a pre-spawn cwd admission check. Any contamination
+        is removed and disproves containment.
+        """
         policy = self._policy.direct_codex
         workspace = derive_workspace(policy, repository, semantic)
         ensure_outside_canonical(workspace, self._canonical_roots)
         workspace.path.mkdir(parents=True, exist_ok=True)
-        root_dir = workspace.path / ".devforge"
-        root_dir.mkdir(parents=True, exist_ok=True)
-        target = root_dir / "containment-proof.txt"
 
         node = resolve_node_executable(policy)
         budget = float(timeout if timeout is not None else min(policy.timeout_seconds, 120.0))
 
-        def request(argv: list[str], cwd: Path) -> UserProcessRequest:
-            return UserProcessRequest(
-                executable=str(node),
-                argv=argv,
-                cwd=cwd,
-                allowed_root=workspace.root,
-                timeout_seconds=budget,
-                max_output_bytes=4096,
+        outside = _negative_target(workspace)
+        if outside is None:
+            return self._unproven_proof(
+                workspace, reason=CONTAINMENT_UNPROVEN_REASON,
+                detail="no provider-owned protected sibling outside the workspace root",
             )
+
+        try:
+            # The label is stamped with subtree inheritance, so everything the
+            # execution checkout and the direct host create later stays inside
+            # the same low-integrity enclave.
+            activation = _activate_integrity_sandbox((workspace.path,))
+        except windows_integrity.IntegritySandboxError as exc:
+            # No real sandbox, no attempt: a negative proof that cannot be
+            # enforced by the OS must never be simulated by writing outside.
+            return self._unproven_proof(workspace, reason=exc.code, detail=str(exc))
+
+        root_dir = workspace.path / ".devforge"
+        root_dir.mkdir(parents=True, exist_ok=True)
+        target = root_dir / "containment-proof.txt"
+
+        if outside.exists():
+            outside.unlink()
 
         write = await run_user_scoped_process(
-            request([str(node), "-e", _FIXTURE_WRITE_SCRIPT, str(target)], workspace.path)
-        )
-        workspace_write_succeeded = write.returncode == 0 and target.is_file()
-
-        sibling = workspace.root.parent if workspace.root.parent.is_dir() else workspace.root
-        protected_refused = False
-        try:
-            await run_user_scoped_process(
-                request(
-                    [str(node), "-e", _FIXTURE_WRITE_SCRIPT, str(sibling / "contaminated.txt")],
-                    sibling,
-                )
+            self._contained_request(
+                workspace,
+                executable=node,
+                argv=[str(node), "-e", _FIXTURE_WRITE_SCRIPT, str(target), str(outside)],
+                cwd=workspace.path,
+                budget=budget,
+                integrity_level=SANDBOX_INTEGRITY_LEVEL,
             )
-        except UserProcessError as exc:
-            protected_refused = exc.code == "user_process_workspace_escape"
+        )
+        report = _parse_fixture_report(write.stdout)
+        inside_result = report.get(os.path.normcase(str(target)))
+        outside_result = report.get(os.path.normcase(str(outside)))
+        workspace_write_succeeded = inside_result == "WROTE" and target.is_file()
+        contaminated = outside.exists()
+        if contaminated:
+            outside.unlink()
+        denied = outside_result in _DENIAL_CODES
+        protected_refused = bool(
+            write.returncode == 0
+            and write.integrity_level == SANDBOX_INTEGRITY_LEVEL
+            and workspace_write_succeeded
+            and denied
+            and not contaminated
+        )
 
         tree = await run_user_scoped_process(
-            request([str(node), "-e", _FIXTURE_TREE_SCRIPT], workspace.path)
+            self._contained_request(
+                workspace,
+                executable=node,
+                argv=[str(node), "-e", _FIXTURE_TREE_SCRIPT],
+                cwd=workspace.path,
+                budget=budget,
+            )
         )
 
         verified = bool(
@@ -373,7 +528,7 @@ class DevforgeDirectCodexProvider:
             and tree.process_tree_closed
             and tree.job_contained
         )
-        proof = {
+        proof: dict[str, Any] = {
             "feature_id": FEATURE_ID,
             "workspace_write_succeeded": workspace_write_succeeded,
             "protected_sibling_refused": protected_refused,
@@ -381,10 +536,35 @@ class DevforgeDirectCodexProvider:
             "job_contained": tree.job_contained,
             "execution_context": tree.execution_context,
             "workspace_digest": workspace.workspace_digest,
+            "sandbox": activation,
+            "negative_probe": {
+                "attempted": True,
+                "started_inside_workspace": True,
+                "cwd": str(workspace.path),
+                "target": str(outside),
+                "target_kind": "workspace_root_sibling",
+                "child_exit_code": write.returncode,
+                "child_integrity_level": write.integrity_level,
+                "child_session_id": write.session_id,
+                "workspace_write_result": inside_result,
+                "outside_write_result": outside_result,
+                "denied_by": SANDBOX_MECHANISM if denied else None,
+                "contaminated": contaminated,
+            },
             "verified": verified,
         }
-        if verified:
-            self._containment_proof = proof
+        # The fixture leaves no residue: the execution workspace must still be
+        # an empty derived directory so the transport bootstrap can create the
+        # independent checkout there. The low mandatory label stays in force.
+        for artifact in (target, root_dir):
+            try:
+                if artifact.is_file():
+                    artifact.unlink()
+                elif artifact.is_dir() and not any(artifact.iterdir()):
+                    artifact.rmdir()
+            except OSError:  # pragma: no cover - best-effort cleanup
+                pass
+        self._containment_proof = proof if verified else None
         return proof
 
     # -- effect / readiness projection ------------------------------------
@@ -541,21 +721,23 @@ class DevforgeDirectCodexProvider:
             "exec",
             "--sandbox",
             "workspace-write",
-            "--ask-for-approval",
-            "never",
         ]
+        if chain.approval_flag_supported:
+            # Only pass the flag when the verified CLI advertises it: an
+            # unrecognized flag makes the whole non-interactive run fail.
+            argv += ["--ask-for-approval", "never"]
         if chain.json_output_supported:
             argv.append("--json")
         argv.append(handoff.text)
 
         try:
             process = await run_user_scoped_process(
-                UserProcessRequest(
-                    executable=str(chain.node_executable),
+                self._contained_request(
+                    workspace,
+                    executable=chain.node_executable,
                     argv=argv,
                     cwd=bootstrap.workspace,
-                    allowed_root=workspace.root,
-                    timeout_seconds=budget,
+                    budget=budget,
                     max_output_bytes=policy.max_result_bytes,
                 )
             )
@@ -570,6 +752,14 @@ class DevforgeDirectCodexProvider:
             branch=str(transport["branch"]),
             timeout=budget,
         )
+        # The direct host runs inside the integrity sandbox and must never own
+        # the canonical transport, so the provider publishes the exact admitted
+        # branch itself after re-checking the remote head (CAS).
+        if local_head != str(transport["expected_remote_sha"]):
+            remote_head = await self._publish(
+                bootstrap, repository, str(transport["branch"]),
+                str(transport["expected_remote_sha"]), remote_head, budget,
+            )
 
         payload = normalize_result(
             params=validated,
@@ -634,6 +824,31 @@ class DevforgeDirectCodexProvider:
             raise HandlerError(
                 getattr(exc, "code", "direct_codex_chain_unavailable"), str(exc)
             ) from exc
+
+    async def _publish(
+        self,
+        bootstrap: Any,
+        repository: RepositoryIdentity,
+        branch: str,
+        expected_remote_sha: str,
+        observed_remote_head: str,
+        budget: float,
+    ) -> str:
+        """Publish the exact admitted branch under provider-owned transport."""
+        if observed_remote_head != expected_remote_sha:
+            # Canonical transport moved under us: no publish, no read-back claim.
+            return observed_remote_head
+        code, _stdout, _stderr = await transport_git(
+            bootstrap.workspace, "push", "origin", f"HEAD:{branch}", timeout=budget
+        )
+        if code != 0:
+            return observed_remote_head
+        return await read_remote_head(
+            cwd=bootstrap.workspace,
+            repository=repository,
+            branch=branch,
+            timeout=budget,
+        )
 
     async def _local_state(self, bootstrap: Any, budget: float) -> tuple[str, str]:
         code, stdout, _stderr = await transport_git(

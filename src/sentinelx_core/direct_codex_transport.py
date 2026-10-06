@@ -161,7 +161,10 @@ async def bootstrap_execution_checkout(
 
     created = False
     if not (workspace.path / ".git").exists():
-        if workspace.path.exists():
+        # The direct-Codex containment proof derives and empties this exact
+        # directory before the transport bootstrap, so an existing but empty
+        # derived workspace is still a valid independent-checkout target.
+        if workspace.path.exists() and any(workspace.path.iterdir()):
             raise DirectCodexTransportError(
                 "direct_codex_workspace_occupied",
                 "the derived execution workspace exists but is not an independent checkout",

@@ -11,6 +11,11 @@ Boundary rules enforced here:
   accepts caller text, prompts, shell strings or environment overrides;
 - the child is always placed in a Job object with ``KILL_ON_JOB_CLOSE`` and no
   breakaway, so the whole process tree dies with the root process;
+- when the provider requests the low integrity level the child is started from
+  a lowered active-user token, so Mandatory Integrity Control — not a Python
+  side check — is what refuses writes outside the labeled workspace. The
+  requested level and the child session are read back from the live process
+  before it is allowed to continue;
 - stdout/stderr are captured through inheritable temp-file handles and are
   bounded by ``max_output_bytes``;
 - the active-user environment block is created but never returned, logged or
@@ -30,6 +35,9 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
+from sentinelx_core import user_git
+from sentinelx_core import windows_integrity
 
 FEATURE_NAME = "host_runtime.user_process_v1"
 
@@ -63,6 +71,10 @@ class UserProcessRequest:
     max_output_bytes: int = 65536
     allowed_root: Path | None = None
     environment: Mapping[str, str] | None = None
+    # Provider-owned containment request. Only ``None`` (default: the active
+    # user's own integrity level) or ``low`` are accepted; a caller can never
+    # reach this field because no operation or local_api action exposes it.
+    integrity_level: str | None = None
 
 
 @dataclass(frozen=True)
@@ -75,6 +87,8 @@ class UserProcessResult:
     job_contained: bool
     pid: int
     execution_context: str
+    integrity_level: str | None = None
+    session_id: int | None = None
 
 
 def supported() -> bool:
@@ -316,6 +330,17 @@ def _run_windows(request: UserProcessRequest) -> UserProcessResult:
     if _current_session_id(kernel32, ctypes_mod) != active_console_session():
         token = _user_token(kernel32, ctypes_mod, wintypes_mod)
         context = "wts_user_token"
+    if request.integrity_level == windows_integrity.LOW_INTEGRITY:
+        # The sandbox is provider-owned: the active user's own token is
+        # duplicated and lowered, so the kernel (MIC) refuses every write that
+        # leaves the labeled workspace. No caller data reaches this branch.
+        token = windows_integrity.low_integrity_token(token or None)
+        context = f"{context}_low_integrity"
+    elif request.integrity_level is not None:
+        raise UserProcessError(
+            "user_process_invalid_integrity_level",
+            f"unsupported process integrity level: {request.integrity_level}",
+        )
 
     job = _job_object(kernel32, ctypes_mod, wintypes_mod)
     process_info = PROCESS_INFORMATION()
@@ -330,11 +355,25 @@ def _run_windows(request: UserProcessRequest) -> UserProcessResult:
     os.set_handle_inheritable(stdout_handle, True)
     os.set_handle_inheritable(stderr_handle, True)
 
-    env_buffer = None
-    creation_flags = _CREATE_NO_WINDOW
-    if request.environment is not None:
-        env_buffer = _environment_buffer(request.environment, ctypes_mod)
-        creation_flags |= _CREATE_UNICODE_ENVIRONMENT
+    # Establish a real active-user environment for the child. For the
+    # cross-session token path this reuses the same userenv.CreateEnvironmentBlock
+    # mechanism the user-scoped Git runner depends on (user_git.active_user_base_
+    # environment); for the same-session path the process environment is already
+    # the active user's own. The provider-owned request.environment (if any) is
+    # merged on top and never replaces the real profile environment, so the
+    # runner relies on one environment mechanism instead of a second, inconsistent
+    # synthesis.
+    if token:
+        try:
+            base_env = user_git.active_user_base_environment(token)
+        except user_git.UserScopedGitError as exc:
+            raise UserProcessError("user_process_containment_unavailable", str(exc)) from None
+    else:
+        base_env = dict(os.environ)
+    if request.environment:
+        base_env.update(dict(request.environment))
+    env_buffer = user_git.build_environment_buffer(base_env)
+    creation_flags = _CREATE_NO_WINDOW | _CREATE_UNICODE_ENVIRONMENT
 
     try:
         if token:
@@ -421,6 +460,33 @@ def _run_windows(request: UserProcessRequest) -> UserProcessResult:
                 "the provider-owned child process is not contained in its job object",
             )
 
+        # Read back the OS-visible identity of the running child before it
+        # executes any further instruction: the requested integrity level and
+        # the active-user session must both be observable facts, not promises.
+        try:
+            integrity_level = windows_integrity.process_integrity_level(process_info.hProcess)
+            session_id = windows_integrity.process_session_id(process_info.hProcess)
+        except windows_integrity.IntegritySandboxError as exc:
+            kernel32.TerminateJobObject(wintypes_mod.HANDLE(job), 1)
+            raise UserProcessError("user_process_containment_unavailable", str(exc)) from None
+        if request.integrity_level is not None and integrity_level != request.integrity_level:
+            kernel32.TerminateJobObject(wintypes_mod.HANDLE(job), 1)
+            raise UserProcessError(
+                "user_process_containment_unavailable",
+                f"child integrity level is {integrity_level!r}, not {request.integrity_level!r}",
+            )
+        expected_session = active_console_session()
+        if (
+            session_id is not None
+            and expected_session is not None
+            and session_id != expected_session
+        ):
+            kernel32.TerminateJobObject(wintypes_mod.HANDLE(job), 1)
+            raise UserProcessError(
+                "user_process_context_unavailable",
+                f"child session {session_id} is not the active console session {expected_session}",
+            )
+
         timeout_ms = max(1, int(request.timeout_seconds * 1000))
         wait_result = int(
             kernel32.WaitForSingleObject(process_info.hProcess, wintypes_mod.DWORD(timeout_ms))
@@ -459,6 +525,8 @@ def _run_windows(request: UserProcessRequest) -> UserProcessResult:
             job_contained=contained,
             pid=pid,
             execution_context=context,
+            integrity_level=integrity_level,
+            session_id=session_id,
         )
     except UserProcessError:
         for handle in handles:
@@ -470,14 +538,6 @@ def _run_windows(request: UserProcessRequest) -> UserProcessResult:
         if token:
             kernel32.CloseHandle(wintypes_mod.HANDLE(token))
         raise
-
-
-def _environment_buffer(environment: Mapping[str, str], ctypes_mod: Any) -> Any:
-    """Build a provider-owned unicode environment block (never returned)."""
-    body = "".join(f"{key}={value}\0" for key, value in sorted(environment.items()))
-    encoded = (body + "\0").encode("utf-16-le")
-    buffer = ctypes_mod.create_string_buffer(encoded, len(encoded))
-    return ctypes_mod.cast(buffer, ctypes_mod.c_void_p)
 
 
 async def run_user_scoped_process(request: UserProcessRequest) -> UserProcessResult:

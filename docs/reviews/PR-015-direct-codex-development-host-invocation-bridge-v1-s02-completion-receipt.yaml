@@ -34,12 +34,22 @@ transport:
   remote_readback_required_before_completion_claim: true
 
 verification_evidence:
-  focused_suite: tests/test_direct_codex_execution.py
-  focused_result: 22 passed
+  focused_suite: tests/test_direct_codex_execution.py + tests/test_user_process.py
+  focused_result: 29 passed in 7.88s (test_direct_codex_execution 25, test_user_process 4)
+  regression_subset: tests/test_policy.py + tests/test_user_scoped_git.py + tests/test_direct_codex_provider.py: 81 passed; only the documented symlink-privilege test failed (WinError 1314, pre-existing host limitation, not a regression)
   regression_subset_passed: true
-  physical_windows_containment_proof: executed
-  physical_windows_containment_proof_owner: S02 provider-enforced boundary
+  physical_windows_containment_proof: re-verified on this host
+  physical_windows_containment_proof_owner: S02 provider-enforced boundary + OS-visible integrity/session read-back
   deployed_live_activation_proof_owner: acceptance
+
+correction:
+  correction_pass: "2026-10-07 (S02 wrap-up / 收口)"
+  scope: S02 wrap-up only; S03 explicitly out of scope and not started
+  fixes:
+    - user_process reuses user_git.active_user_base_environment (CreateEnvironmentBlock) for a real active-user child environment, merged under the provider-owned request.environment and never returned or persisted
+    - policy.codex_package pinned to @openai/codex and removed from operator-configurable fields
+    - removed the untracked .pytest-tmp scratch directory and local test logs from the workspace
+    - verified no line-ending-only churn: git diff --ignore-cr-at-eol is identical to the plain diff stat
 
 guard:
   acceptance_claim: false
@@ -55,3 +65,4 @@ guard:
 next_action:
   canonical_command: "#开发执行 PR-015-direct-codex-development-host-invocation-bridge-v1"
   next_slice: S03
+  note: S03 is deferred; this pass wraps up S02 only and does not start S03.

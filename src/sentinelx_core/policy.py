@@ -486,7 +486,6 @@ _DIRECT_CODEX_FIELDS = frozenset(
         "supported_platform",
         "timeout_seconds",
         "max_result_bytes",
-        "codex_package",
         "node_executable",
     }
 )
@@ -501,6 +500,10 @@ class DirectCodexPolicy:
     optional executable-discovery constraints. Caller payloads never carry any
     of them -- the devforge_direct_codex action schema is closed and rejects
     executable, argv, shell, cwd, environment, model and credential fields.
+
+    The direct-Codex package identity is fixed at ``@openai/codex`` and is NOT
+    an operator-configurable field. Pinning it prevents a host configuration
+    from elevating any other npm package into the Codex Development Host role.
     """
 
     configured: bool = False
@@ -577,7 +580,7 @@ class DirectCodexPolicy:
             supported_platform=str(block.get("supported_platform") or "windows").strip().lower(),
             timeout_seconds=timeout_seconds,
             max_result_bytes=max_result_bytes,
-            codex_package=str(block.get("codex_package") or "@openai/codex").strip(),
+            codex_package="@openai/codex",
             node_executable=node_executable,
         )
 
