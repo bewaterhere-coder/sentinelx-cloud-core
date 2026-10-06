@@ -47,6 +47,44 @@ next_discriminator:
     baseline_runner_fail:
       meaning: regression is below the runner, in sandbox/runtime behavior or branch-level spawn changes
 
+
+baseline_runner_control:
+  result: failed
+  handler_result:
+    ok: false
+    timed_out: true
+    returncode: -1
+    output: Timeout
+  audit_operation_id: mao_iZa-xtdtxofbG8G2WGzL7SlE
+  process_spawned: true
+  appcontainer: true
+  job_contained: true
+  breakaway_allowed: false
+  root_pid: 45680
+  terminal_state: terminal
+  process_tree_quiescent: true
+  residual_write_authority: false
+  interpretation:
+    - replacing only the candidate Python runner text with the main baseline runner does not restore generic scoped execution
+    - runner instrumentation is therefore not the sufficient cause
+    - remaining discriminator must compare full main baseline sandbox/runtime code under the same SYSTEM proof harness
+
+main_baseline_full_control:
+  status: prepared
+  checkout: D:\coco\workspaces\bewaterhere-coder\sentinelx-cloud-core\pr011-s03r-main-control
+  ref: main
+  expected_main_sha: e7064c9bf4fcd15bdb6f5a2678414210c01d1c00
+  test: tests/test_scoped_script_execution.py::test_scoped_python_preserves_unicode_cwd_and_drops_host_credentials
+  launcher: .devforge-pr011-launch-main-control.ps1
+  environment:
+    system_identity: NT AUTHORITY\SYSTEM
+    pythonpath_removed: true
+    same_service_venv_python: true
+  decision:
+    pass: branch sandbox/runtime changes introduced the regression
+    fail: SYSTEM proof workspace/environment itself is incompatible with the main baseline and the branch is not yet implicated
+  product_code_mutation: false
+
 safety:
   canonical_main_mutated: false
   product_code_mutated_by_diagnostic: false
