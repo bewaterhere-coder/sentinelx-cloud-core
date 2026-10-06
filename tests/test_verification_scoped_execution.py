@@ -235,9 +235,11 @@ def test_profiled_scoped_execution_runs_real_node_npm_offline_and_bounds_evidenc
     monkeypatch.setenv("HTTPS_PROXY", "http://127.0.0.1:9")
 
     content = r"""
+import ctypes
 import os
 import subprocess
 import sys
+from ctypes import wintypes
 
 progress = os.path.join(os.getcwd(), "progress.txt")
 def mark(text):
@@ -266,7 +268,30 @@ def run(label, command, *, expect_success=True):
     if not expect_success and completed.returncode == 0:
         raise SystemExit("offline cache miss unexpectedly succeeded")
 
-run("python-child", [sys.executable, "-c", "print('python-child-ok')"])
+mark("before-python-job-child")
+child = subprocess.Popen(
+    [sys.executable, "-c", "import time; print('python-child-ok'); time.sleep(1)"],
+    cwd=os.getcwd(),
+    stdout=subprocess.PIPE,
+    stderr=subprocess.PIPE,
+    text=True,
+)
+in_job = wintypes.BOOL()
+kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+kernel32.IsProcessInJob.argtypes = [wintypes.HANDLE, wintypes.HANDLE, ctypes.POINTER(wintypes.BOOL)]
+kernel32.IsProcessInJob.restype = wintypes.BOOL
+if not kernel32.IsProcessInJob(int(child._handle), None, ctypes.byref(in_job)):
+    raise SystemExit("IsProcessInJob child probe failed")
+if not in_job.value:
+    raise SystemExit("python descendant escaped the scoped Job")
+child_out, child_err = child.communicate(timeout=10)
+if child.returncode != 0:
+    raise SystemExit(child.returncode)
+print(child_out.strip())
+if child_err.strip():
+    print(child_err.strip())
+print("python-child-job-ok")
+mark("after-python-job-child")
 run("user32-child", [os.path.join(os.environ["SYSTEMROOT"], "System32", "whoami.exe")])
 run("node-version", ["cmd.exe", "/d", "/s", "/c", "node --version"])
 run("npm-version", ["cmd.exe", "/d", "/s", "/c", "npm --version"])
@@ -297,6 +322,7 @@ print("cache-miss-offline-ok")
     assert result["ok"] is True, result
     assert result["cwd"] == "source"
     assert "python-child-ok" in result["output"]
+    assert "python-child-job-ok" in result["output"]
     assert "offline-check-ok" in result["output"]
     assert "cache-miss-offline-ok" in result["output"]
     assert "command" not in result
