@@ -3,7 +3,7 @@
 ## Plan State
 
 ```yaml
-plan_revision: 5
+plan_revision: 6
 task_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1
 requirement_revision: 2
 status: proposed
@@ -15,32 +15,55 @@ transport:
   branch: task/scoped-verification-toolchain-dependency-capsule-v1
   base_branch: main
 repository_baseline: e7064c9bf4fcd15bdb6f5a2678414210c01d1c00
-task_head_before_remediation: 51fff4e3fd5de769c5a8add58275c0a9eaac195b
+task_head_at_remediation_entry: d14451836293640407d80a6fc32405bd3a2b17b8
+runtime_provenance:
+  devforge_version: "2.51.0"
+  devforge_main_sha: 7e5a098473d89f88a69066a9bc88d1213b2f7e49
+  devforge_runtime_blob_sha: 54eb9e4f0c79620357bc2cf1b8d06d6af9771d6d
+  review_contract_version: "1.3"
+  review_contract_blob_sha: e8fe92cf1e98c3f7eb5bd60277bde8b42b381df7
+remediation_source:
+  rejected_review_ref: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-review-r5.md
+  rejected_review_blob_sha: 889a632e21b1b3bfeda4e72dd06bb6ee37fb7dad
+  rejected_finding: PR011-R5-F1-remediation-provenance-and-gate-transition-inconsistent
 impact_analysis: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-r5-real-host-descendant-process-impact-analysis.md
 prior_plan:
-  revision: 4
-  blob_sha: 860d59747c8e965bc9d7932ef8f4842e0daa2bbf
-  archive_ref: docs/plans/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-r4.md
+  revision: 5
+  blob_sha: 39e2056c924b4ca9ba73211921001aff408e99a6
+  archive_ref: docs/plans/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-r5.md
 prior_execution_slice_set:
   blob_sha: b0e92968c7a082cba6dce251bc3ff5ba50b334e8
   status: stale_due_real_host_descendant_process_disproof
 ```
 
-## 1. Revision 5 Decision
+## 1. Revision 6 Decision
 
-Revision 5 is a Plan remediation triggered by new real-Windows physical evidence obtained during S04.
+Revision 6 is a **workflow/provenance-only Plan remediation** of the rejected Revision 5 Plan.
 
-Requirement Revision 2 is unchanged. The new evidence invalidates implementation assumptions in the approved Plan R4 lineage:
+The latest rejected Plan Review classified the substantive Revision 5 architecture as acceptable but non-authorizable because the prior remediation was persisted with stale DevForge 2.43.0 provenance and an invalid `implementation -> plan_review` transition.
 
-1. the S02 verification-toolchain ACL implementation attempted to grant traverse authority on protected ancestors such as `C:\Program Files`; this is broader than the minimum provider-owned toolchain authority required by R2 and fails on a realistic stable toolchain location;
-2. the S03 execution shape assumes the AppContainer root Python runner can create descendant processes for Node/npm and npm lifecycle scripts;
-3. a real-Host minimal `python.exe -> python.exe` descendant probe timed out at `PYTHON_CHILD_START`, proving that this assumption is not physically established on the target Host;
-4. S04 cannot be completed on top of an unproven S03 descendant path;
-5. S05 remains downstream of a successful physical S04 proof.
+Revision 6 addresses exactly that finding:
 
-Plan R4 and its exact Slice Set are therefore stale execution authority.
+1. it binds remediation to the current durable Task at `plan_review_rejected`;
+2. it binds to the latest rejected Plan Review R5 and its exact blob;
+3. it records fresh canonical DevForge 2.51.0 main/runtime/review-contract provenance;
+4. it preserves Requirement Revision 2 without semantic change;
+5. it preserves PR #11 and the existing task branch;
+6. it preserves the complete substantive R5 architecture, evidence dispositions, security boundaries and proposed post-review repair sequence;
+7. it compiles no new Execution Slice Set and grants no implementation authority;
+8. after durable Plan readback, the owning `#开发计划修复` transition is only `plan_review_rejected -> plan_review`.
 
-No product implementation is authorized by Revision 5 itself.
+No product implementation is authorized by Revision 6 itself.
+
+The technical remediation sequence remains exactly the Revision 5 sequence:
+
+```text
+S01 preserved / no replay
+→ S02R toolchain minimum-authority repair
+→ S03R real-Host descendant-process repair
+→ S04 readiness/capability physical proof
+→ S05 devforge_runtime projection + live readback
+```
 
 ## 2. Preserved Canonical Boundaries
 
