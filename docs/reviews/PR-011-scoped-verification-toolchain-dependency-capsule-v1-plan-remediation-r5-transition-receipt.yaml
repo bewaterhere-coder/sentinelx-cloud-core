@@ -31,7 +31,7 @@ output:
   plan_ref: docs/plans/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan.md
   plan_blob_sha: 39e2056c924b4ca9ba73211921001aff408e99a6
   remediation_checkpoint_ref: docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-remediation-r5-20261006.yaml
-  task_blob_sha_after_transition: c355faa0a48b70d21c87178b3aab19a05ca8141e
+  task_blob_sha_after_transition: 6ef21e9e1dde16212142d1c60be8a1ea34eae567
 
 transition:
   from_stage: implementation
