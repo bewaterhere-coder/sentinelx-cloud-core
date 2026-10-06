@@ -5,25 +5,32 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 1
 development:
-  stage: plan_review
+  stage: implementation
   gates:
     requirement_ready: true
-    plan_approved: false
+    plan_approved: true
     acceptance_approved: false
     completion_verified: false
   plan_revision: 2
-  implementation_authorized: false
-  latest_plan_review: rejected_round_1
-  latest_plan_remediation: r2_ready
-  review_disposition: plan_local_remediated
-  next_expected_actor: reviewer
+  implementation_authorized: true
+  latest_plan_review: approved_round_2
+  latest_plan_remediation: r2_applied
+  review_disposition: approved
+  next_expected_actor: bootstrap_operator
   authorization:
     mode: durable
     ref: docs/authorizations/PR-015-direct-codex-development-host-invocation-bridge-v1-development-authorization.yaml
 artifacts:
   plan: docs/plans/PR-015-direct-codex-development-host-invocation-bridge-v1-plan.md
-  latest_plan_review: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r1.md
+  latest_plan_review: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r2.md
+  prior_plan_review: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r1.md
   latest_plan_remediation: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-remediation-r2-20261006.yaml
+  execution_slices: docs/execution/PR-015-direct-codex-development-host-invocation-bridge-v1-slices.yaml
+implementation_entry:
+  bootstrap_required: true
+  intended_target: direct:codebuddy
+  override_state: absent_until_explicit_command
+  explicit_command: "#开发引导执行 PR-015-direct-codex-development-host-invocation-bridge-v1 direct:codebuddy"
 transport:
   type: github-pr
   pr_number: 15
