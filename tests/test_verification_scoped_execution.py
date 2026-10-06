@@ -237,6 +237,7 @@ def test_profiled_scoped_execution_runs_real_node_npm_offline_and_bounds_evidenc
     content = r"""
 import os
 import subprocess
+import sys
 
 progress = os.path.join(os.getcwd(), "progress.txt")
 def mark(text):
@@ -265,6 +266,8 @@ def run(label, command, *, expect_success=True):
     if not expect_success and completed.returncode == 0:
         raise SystemExit("offline cache miss unexpectedly succeeded")
 
+run("python-child", [sys.executable, "-c", "print('python-child-ok')"])
+run("user32-child", [os.path.join(os.environ["SYSTEMROOT"], "System32", "whoami.exe")])
 run("node-version", ["cmd.exe", "/d", "/s", "/c", "node --version"])
 run("npm-version", ["cmd.exe", "/d", "/s", "/c", "npm --version"])
 run("npm-ci", ["cmd.exe", "/d", "/s", "/c", "npm ci --offline"])
@@ -293,6 +296,7 @@ print("cache-miss-offline-ok")
             print("S03_PROGRESS=" + progress.read_text(encoding="utf-8", errors="replace"))
     assert result["ok"] is True, result
     assert result["cwd"] == "source"
+    assert "python-child-ok" in result["output"]
     assert "offline-check-ok" in result["output"]
     assert "cache-miss-offline-ok" in result["output"]
     assert "command" not in result
