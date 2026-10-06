@@ -128,7 +128,8 @@ slices:
   - slice_id: S03R
     objective: Repair real-Host descendant-process creation inside the existing AppContainer/Job scoped execution path without containment widening.
     depends_on: [S02R]
-    state: pending
+    state: completed
+    evidence_disposition: completed_plan_r6_real_host_verified
     scope:
       refs:
         - src/sentinelx_core/winspawn.py
@@ -162,8 +163,9 @@ slices:
     external_availability_rule: real Windows Host physical proof is mandatory; CI-only evidence is insufficient
     checkpoint:
       required: true
-    run_refs: []
-    completion_receipt_ref: null
+    run_refs:
+      - docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s03r-completion-20261006.yaml
+    completion_receipt_ref: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s03r-completion-receipt.yaml
 
   - slice_id: S04
     objective: Add separately gated Node/npm verification readiness/capability after repaired real descendant execution is physically proven.
@@ -239,10 +241,10 @@ slices:
     completion_receipt_ref: null
 
 execution_state:
-  current_slice: S03R
+  current_slice: S04
   current_slice_state: pending
-  completed_slices: [S01, S02R]
-  pending_slices: [S03R, S04, S05]
+  completed_slices: [S01, S02R, S03R]
+  pending_slices: [S04, S05]
   historical_partial_slices: [S02, S03]
   all_slices_completed: false
 acceptance_boundary:
