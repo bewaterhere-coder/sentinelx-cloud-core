@@ -8,18 +8,18 @@ task_id: PR-016-scoped-verification-node-npm-typescript-appcontainer-drive-root-
 title: SentinelX Scoped Verification Node/npm TypeScript AppContainer Drive-Root Compatibility V1
 requirement_revision: 1
 development:
-  stage: plan_review
+  stage: implementation
   gates:
     requirement_ready: true
-    plan_approved: false
+    plan_approved: true
     acceptance_approved: false
     completion_verified: false
   plan_revision: 1
-  implementation_authorized: false
-  next_expected_actor: reviewer
+  implementation_authorized: true
+  next_expected_actor: implementer
   blocking_findings: []
-  current_slice: null
-  current_slice_state: null
+  current_slice: S01
+  current_slice_state: pending
   authorization:
     mode: legacy_command_scoped
 transport:
@@ -29,6 +29,9 @@ transport:
   base_branch: main
 artifacts:
   plan: docs/plans/PR-016-scoped-verification-node-npm-typescript-appcontainer-drive-root-compatibility-v1-plan.md
+  latest_plan_review: docs/reviews/PR-016-scoped-verification-node-npm-typescript-appcontainer-drive-root-compatibility-v1-plan-review-r1.md
+  latest_plan_review_transition_receipt: docs/reviews/PR-016-scoped-verification-node-npm-typescript-appcontainer-drive-root-compatibility-v1-plan-review-r1-transition-receipt.yaml
+  execution_slice_set: docs/execution/PR-016-scoped-verification-node-npm-typescript-appcontainer-drive-root-compatibility-v1-slices.yaml
   development_start_receipt: docs/checkpoints/PR-016-scoped-verification-node-npm-typescript-appcontainer-drive-root-compatibility-v1-development-start-20261006.yaml
   provisional_bootstrap: docs/checkpoints/scoped-verification-node-npm-typescript-appcontainer-drive-root-compatibility-v1-provisional-bootstrap.md
 related_tasks:
