@@ -1329,22 +1329,10 @@ class WindowsMutationSandbox:
             materialized = materialize_verification_runtime(plan, activation.workspace)
             _grant_verification_toolchain_read(toolchain_root, activation.sandbox_identity)
             self._verification_toolchain_reads[key] = toolchain_root
-            session_handles = _grant_verification_session_read(activation.sandbox_identity)
-            self._verification_session_reads[key] = session_handles
             revalidate_verification_before_spawn(materialized)
             return materialized
         except Exception:
             cleanup_errors: list[str] = []
-            session_handles = self._verification_session_reads.get(key)
-            if session_handles is not None:
-                try:
-                    _remove_verification_session_read(
-                        session_handles, activation.sandbox_identity
-                    )
-                except (RuntimeError, OSError, ValueError) as cleanup_error:
-                    cleanup_errors.append(f"verification session read: {cleanup_error}")
-                else:
-                    self._verification_session_reads.pop(key, None)
             try:
                 _remove_verification_toolchain_read(toolchain_root, activation.sandbox_identity)
             except (RuntimeError, OSError, ValueError) as cleanup_error:
@@ -1417,6 +1405,22 @@ class WindowsMutationSandbox:
             raise HostMutationSandboxContainmentFailed(
                 "suspended root did not read back as no-breakaway Job-contained"
             )
+
+        # Preserve the already-proven root-process creation path. Session-0
+        # USER32 authority is verification-only and is granted only after the
+        # AppContainer root exists suspended and has been proven Job-contained,
+        # but before it can resume and create descendants.
+        if verification is not None:
+            key = (activation.scope_id, activation.generation)
+            try:
+                session_handles = _grant_verification_session_read(
+                    activation.sandbox_identity
+                )
+            except Exception:
+                raw.close()
+                raise
+            self._verification_session_reads[key] = session_handles
+
         try:
             self.scope_store.bind_runtime_process(
                 activation.scope_id,
