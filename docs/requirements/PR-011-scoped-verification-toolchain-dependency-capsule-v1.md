@@ -8,7 +8,7 @@ task_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1
 title: Scoped Verification Toolchain & Dependency Capsule V1
 requirement_revision: 2
 development:
-  stage: fixing
+  stage: acceptance
   gates:
     requirement_ready: true
     plan_approved: true
@@ -16,10 +16,9 @@ development:
     completion_verified: false
   plan_revision: 6
   acceptance_revision: 1
-  implementation_authorized: true
-  next_expected_actor: implementer
-  blocking_findings:
-    - AC11RelevantWindowsCIRegression
+  implementation_authorized: false
+  next_expected_actor: acceptance_verifier
+  blocking_findings: []
   current_slice: null
   current_slice_state: completed
   authorization:
@@ -51,6 +50,9 @@ artifacts:
   latest_slice_completion_receipt: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s05-completion-receipt.yaml
   latest_acceptance: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-acceptance-r1.md
   latest_acceptance_transition_receipt: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-acceptance-r1-transition-receipt.yaml
+  latest_acceptance_repair_impact_analysis: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-acceptance-r1-fix-impact-analysis.md
+  latest_acceptance_repair_checkpoint: docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-acceptance-r1-repair-completed-20261006.yaml
+  latest_acceptance_repair_transition_receipt: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-acceptance-r1-repair-transition-receipt.yaml
   s04_blocked_checkpoint: docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s04-blocked-host-execution-surface-20261005.yaml
   requirement_change_impact: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-requirement-r2-impact-analysis.md
   development_start_receipt: docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-development-start-20261003.yaml
