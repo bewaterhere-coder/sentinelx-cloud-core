@@ -1,0 +1,137 @@
+schema_version: "1.0"
+kind: devforge_execution_slice_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-015-direct-codex-development-host-invocation-bridge-v1
+slice_id: S02
+source_command: "#开发执行 PR-015-direct-codex-development-host-invocation-bridge-v1"
+
+runtime:
+  devforge_version: "2.75.0"
+  devforge_revision: 71e64ff586ec7867d691033df12eea3163bc954b
+  runtime_revision_note: >-
+    Standard main revision observed at execution time. The Task bootstrap
+    override was admitted at 2.69.0 and S01 executed at 2.70.0, so revision
+    drift across slices is pre-existing for this Task; Requirement R1 and
+    Approved Plan R2 bindings are unchanged.
+
+state:
+  task_stage: implementation
+  slice_state: completed
+  execution_disposition: Completed
+  implementation_landed: true
+  completion_receipt_created: true
+  one_execute_one_slice_preserved: true
+
+lineage:
+  plan_revision: 2
+  plan_blob_sha: b1414f58e31e69fd5718479d04eb6b7e9e8475bd
+  slice_set_blob_sha_before: fc461f8b1b61d329758f78ae35bd7040458688fe
+  authorization_blob_sha: e702a6371980735a47829e001c5ffd24613d391f
+  bootstrap_override_blob_sha: e3f7ac1f77a499592fb01e9eb75d432cc0a94d3d
+  requirement_revision: 1
+
+execution:
+  effective_provider: direct
+  effective_adapter: codebuddy
+  bootstrap_override_active: true
+  provider_fallback_used: false
+  persistent_project_binding: direct/codex
+  project_binding_mutated: false
+  product_candidate_sha: 354a08964b90fe32a53adc7e651bc00b1ab13eb3
+
+admission:
+  canonical_main_before: 018b78ca20984176d53fbe90039dc795a7f2742f
+  pr_head_before_mutation: b581b82fbef83ea53ed8e228de1907836aaf9179
+  plan_blob_sha_matched: true
+  slice_set_blob_sha_matched: true
+  authorization_blob_sha_matched: true
+  bootstrap_override_blob_sha_matched: true
+  canonical_checkout_clean_before_mutation: true
+  canonical_checkout_used_as_implementation_cwd: false
+  execution_workspace: D:\coco\workspaces\bewaterhere-coder\sentinelx-cloud-core\pr015-s02-a1
+  execution_workspace_is_independent_checkout: true
+  git_worktree_add_used_against_canonical_checkout: false
+  generic_shell_or_exec_boundary_used: false
+
+transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  canonical_pr: 15
+  canonical_branch: task/direct-codex-development-host-invocation-bridge-v1
+  replacement_transport_created: false
+  consistent: true
+
+implementation:
+  delivered:
+    - src/sentinelx_core/direct_codex_workspace.py: provider-owned workspace derivation from Host root plus repository/task/run/attempt/slice identity with canonical-overlap refusal
+    - src/sentinelx_core/direct_codex_transport.py: CAS remote head admission and independent execution checkout of the exact canonical branch
+    - src/sentinelx_core/user_process.py: internal Windows active-user process runner with job containment, bounded capture, timeout and process-tree closure
+    - src/sentinelx_core/direct_codex_discovery.py: verified node + <package>/bin/codex.js chain with package identity and non-interactive contract probes
+    - src/sentinelx_core/direct_codex_handoff.py: deterministic handoff compiled from canonical structured fields only
+    - src/sentinelx_core/direct_codex_result.py: bounded direct/Codex result and receipt validation
+    - src/sentinelx_core/handlers/direct_codex.py: execute_task composition plus the D9 containment proof gate and proven effect projection
+    - tests/test_direct_codex_execution.py: S02 verification coverage
+    - config.example.windows.yaml: documented verified execution chain
+  not_delivered:
+    - structured direct/Codex receipt and exact-candidate self-host recovery proof (S03)
+    - live Agent install/restart (Acceptance-owned)
+    - production/live direct-Codex activation (Acceptance-owned)
+
+verification:
+  focused_suite: tests/test_direct_codex_execution.py
+  focused_result: 22 passed
+  focused_coverage:
+    - workspace derivation is deterministic and refuses canonical intersection
+    - expected remote head mismatch fails before any mutation
+    - independent checkout is the exact canonical branch and head
+    - canonical checkout head and .git/worktrees metadata remain unchanged
+    - Codex package identity, name mismatch and out-of-package bin are handled fail closed
+    - deterministic handoff is stable and bounded
+    - local-only run is reported implementation_not_persisted, not success
+    - persisted consistent run yields a valid direct/codex receipt
+    - process cwd outside the workspace root is refused before spawn
+    - output capture is bounded and the process tree closes on timeout
+    - result never exposes environment or credential values
+    - containment proof switches repository_effect to proven
+  related_regressions:
+    - tests/test_direct_codex_provider.py + tests/test_local_api.py + tests/test_canonical_repository_firewall_readiness.py: 108 passed
+    - firewall/local_api/policy/scope/user_git/windows sandbox suites: 129 passed, 1 skipped
+  physical_windows_proof:
+    containment_fixture: executed on this Windows host through prove_containment
+    workspace_write_succeeded: true
+    protected_sibling_refused: true
+    process_tree_closed: true
+    job_contained: true
+    note: >-
+      Negative proof is provider-enforced (workspace-scoped cwd plus job
+      containment); OS-level ACL/AppContainer proofs remain owned by the
+      existing windows_mutation_sandbox suite and Acceptance.
+  preexisting_environment_failures:
+    - tests/test_policy.py::test_file_ops_symlink_escape_is_defeated (symlink privilege unavailable to this shell, WinError 1314)
+    - tests/test_windows_mutation_sandbox.py::test_real_appcontainer_writes_only_exact_workspace (SetNamedSecurityInfoW WinError 5 on D:\coco\workspaces)
+    - tests/test_windows_mutation_sandbox.py::test_spawn_audit_is_durable_before_first_instruction (same ACL privilege cause)
+    - tests/test_windows_mutation_sandbox.py::test_job_contains_child_and_termination_quiesces_tree (same ACL privilege cause)
+    - tests/test_windows_mutation_sandbox.py::test_terminal_cleanup_failure_stays_revoked_until_real_cleanup (same ACL privilege cause)
+  preexisting_failure_control: >-
+    The same five failures reproduce on the unmodified S01 workspace at head
+    b581b82fbef83ea53ed8e228de1907836aaf9179, so they are host-privilege
+    environment failures and not S02 regressions.
+
+claims:
+  caller_never_supplies_workspace_or_executable: true
+  canonical_transport_preserved: true
+  canonical_checkout_unmutated: true
+  no_provider_fallback: true
+  no_permission_or_write_scope_expansion: true
+  no_credential_or_environment_disclosure: true
+  process_tree_contained: true
+  local_only_run_is_not_success: true
+  acceptance_or_completion_claim: false
+
+continuation:
+  next_expected_actor: development_host
+  canonical_next_command: "#开发执行 PR-015-direct-codex-development-host-invocation-bridge-v1"
+  next_slice: S03
+  note: >-
+    S03 owns structured direct/Codex receipt validation, exact transport
+    readback and the exact-candidate self-host recovery proof through the
+    delivered bridge; deployed live-Agent activation remains Acceptance-owned.
