@@ -8,7 +8,7 @@ task_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1
 title: Scoped Verification Toolchain & Dependency Capsule V1
 requirement_revision: 2
 development:
-  stage: plan_review
+  stage: plan_review_rejected
   gates:
     requirement_ready: true
     plan_approved: false
@@ -16,10 +16,11 @@ development:
     completion_verified: false
   plan_revision: 5
   implementation_authorized: false
-  next_expected_actor: reviewer
-  blocking_findings: []
+  next_expected_actor: planner
+  blocking_findings:
+    - PR011-R5-F1-remediation-provenance-and-gate-transition-inconsistent
   current_slice: null
-  current_slice_state: not_authorized_until_plan_r5_review
+  current_slice_state: not_authorized
   authorization:
     mode: legacy_command_scoped
 transport:
@@ -40,8 +41,10 @@ artifacts:
   latest_plan_change_impact: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-r5-real-host-descendant-process-impact-analysis.md
   latest_plan_remediation: docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-remediation-r5-20261006.yaml
   latest_plan_remediation_transition_receipt: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-remediation-r5-transition-receipt.yaml
-  latest_plan_review: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-review-r4.md
-  latest_plan_review_disposition: stale_after_plan_r5_remediation
+  latest_plan_review: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-review-r5.md
+  latest_plan_review_blob_sha: 889a632e21b1b3bfeda4e72dd06bb6ee37fb7dad
+  latest_plan_review_disposition: rejected_current
+  prior_plan_review: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-review-r4.md
   latest_slice_completion_checkpoint: docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s03-completed-20261005.yaml
   latest_slice_completion_receipt: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s03-completion-receipt.yaml
   s04_blocked_checkpoint: docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s04-blocked-host-execution-surface-20261005.yaml
