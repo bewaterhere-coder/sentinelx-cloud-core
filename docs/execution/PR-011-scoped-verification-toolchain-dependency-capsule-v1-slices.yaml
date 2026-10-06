@@ -211,7 +211,8 @@ slices:
   - slice_id: S05
     objective: Extend canonical devforge_runtime.execute_scoped with bounded verification selector and prove live Agent-owned schema/execution readback.
     depends_on: [S04]
-    state: pending
+    state: completed
+    evidence_disposition: completed_plan_r6_ci_and_live_agent_verified
     scope:
       refs:
         - src/sentinelx_core/handlers/devforge_runtime.py
@@ -243,15 +244,17 @@ slices:
       - docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s05-live-activation-blocked-20261006.yaml
       - docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s05-live-profile-unconfigured-20261006.yaml
       - docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s05-dcoco-policy-conflict-20261006.yaml
-    completion_receipt_ref: null
+      - docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s05-live-proof-passed-cleanup-pending-20261006.yaml
+      - docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s05-completion-20261006.yaml
+    completion_receipt_ref: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s05-completion-receipt.yaml
 
 execution_state:
-  current_slice: S05
-  current_slice_state: pending
-  completed_slices: [S01, S02R, S03R, S04]
-  pending_slices: [S05]
+  current_slice: null
+  current_slice_state: completed
+  completed_slices: [S01, S02R, S03R, S04, S05]
+  pending_slices: []
   historical_partial_slices: [S02, S03]
-  all_slices_completed: false
+  all_slices_completed: true
 acceptance_boundary:
   all_current_plan_slices_must_be_completed: true
   pr015_downstream_evidence_required: false
