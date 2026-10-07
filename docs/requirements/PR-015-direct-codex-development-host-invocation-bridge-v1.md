@@ -5,7 +5,8 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 1
 development:
-  stage: implementation
+  stage: acceptance
+  implementation_execution_complete: true
   gates:
     requirement_ready: true
     plan_approved: true
@@ -16,7 +17,10 @@ development:
   latest_plan_review: approved_round_2
   latest_plan_remediation: r2_applied
   review_disposition: approved
-  next_expected_actor: implementer
+  next_expected_actor: human
+  acceptance_disposition: decision_required
+  blocking_findings:
+    - Real direct-Codex host performs implementation work but does not commit it, so the bridge cannot produce a persisted successful receipt under Plan R2; persistence ownership requires a material architecture decision.
   authorization:
     mode: durable
     ref: docs/authorizations/PR-015-direct-codex-development-host-invocation-bridge-v1-development-authorization.yaml
@@ -26,10 +30,14 @@ artifacts:
   prior_plan_review: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r1.md
   latest_plan_remediation: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-remediation-r2-20261006.yaml
   execution_slices: docs/execution/PR-015-direct-codex-development-host-invocation-bridge-v1-slices.yaml
+  latest_slice_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-s03-completion-20261007.yaml
+  latest_slice_completion_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-s03-completion-receipt.yaml
+  latest_acceptance: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r1.md
+  latest_acceptance_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r1-decision-required-20261007.yaml
 implementation_entry:
   bootstrap_required: true
   intended_target: direct:codebuddy
-  override_state: active
+  override_state: expired
   override_ref: docs/overrides/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-execution-override.yaml
   effective_provider:
     provider: direct
