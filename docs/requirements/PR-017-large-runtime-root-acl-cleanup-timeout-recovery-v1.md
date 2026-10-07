@@ -8,17 +8,17 @@ task_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
 title: SentinelX Large Runtime Root ACL Cleanup Timeout & Recovery V1
 requirement_revision: 1
 development:
-  stage: acceptance
+  stage: accepted
   gates:
     requirement_ready: true
     plan_approved: true
-    acceptance_approved: false
+    acceptance_approved: true
     completion_verified: false
   plan_revision: 5
   implementation_authorized: true
-  next_expected_actor: verifier
-  acceptance_disposition: pending_reverification
-  execution_disposition: fixing_r1_readiness_restored_ready_for_acceptance
+  next_expected_actor: integration
+  acceptance_disposition: approved_r3
+  execution_disposition: accepted_ready_for_finalization
   blocking_findings: []
   repair_evidence:
     - Fixing R1 preserved exact product candidate f9e07da9cc37f6e882c3258280869b415cafcb5c and did not replay S03 or Unity.
@@ -54,8 +54,8 @@ artifacts:
   latest_integrated_candidate: "f9e07da9cc37f6e882c3258280869b415cafcb5c"
   prior_s03_blocker_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-blocked-exact-candidate-host-activation-unavailable-20261008.yaml
   prior_acceptance_attempt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-acceptance-r1-blocked-incomplete-slices-20261008.yaml
-  latest_acceptance: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-acceptance-r2.yaml
-  latest_acceptance_blob_sha: 6cce15de869cc7ed77f42d37c8d10e13edf18e3e
+  latest_acceptance: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-acceptance-r3.yaml
+  latest_acceptance_blob_sha: 4e22d9537ae9e742c19ee3639c674ed8121995bc
   latest_acceptance_transition_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-acceptance-r2-transition-receipt.yaml
   latest_acceptance_transition_receipt_blob_sha: fdae4397b2594d3db3353fc6e4013beeb7632b0d
   latest_fixing_execution_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-fixing-r1-readiness-restored-20261008.yaml
