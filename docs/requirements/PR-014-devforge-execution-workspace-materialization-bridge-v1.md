@@ -5,62 +5,69 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 2
 development:
-  stage: implementation
+  stage: plan_review
   gates:
     requirement_ready: true
-    plan_approved: true
+    plan_approved: false
     acceptance_approved: false
     completion_verified: false
-  plan_revision: 5
-  latest_plan_review: approved_round_5
-  prior_plan_review: approved_round_4
+  plan_revision: 6
+  latest_plan_review: null
+  prior_plan_review: approved_round_5
   latest_plan_remediation: plan_r4_remediation_r1
   prior_plan_remediation: plan_r2_remediation_r1
-  implementation_authorized: true
+  implementation_authorized: false
   blocking_findings: []
-  current_slice: S02
-  current_slice_state: pending
+  current_slice: null
+  current_slice_state: null
   completed_slices_preserved: [S01]
-  prior_plan_revision: 4
-  prior_slice_set_status: invalidated_by_requirement_revision_2
+  preserved_completed_candidate_slices: [S02]
+  preserved_s02_product_candidate: 45dc99d15a23c499b4c1500fab60ed5e76475aeb
+  s02_product_mutation_replay: forbidden
+  prior_plan_revision: 5
+  prior_slice_set_status: invalidated_by_plan_revision_6
   requirement_change_impact: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-requirement-r2-invalidation.md
-  bootstrap_required_before_current_slice: true
-  bootstrap_target: direct:codebuddy
-  bootstrap_command: "#开发引导执行 PR-014-devforge-execution-workspace-materialization-bridge-v1 direct:codebuddy"
-  bootstrap_admission_status: admitted
-  bootstrap_override_state: active
-  active_bootstrap_override: docs/overrides/PR-014-devforge-execution-workspace-materialization-bridge-v1-bootstrap-execution-override.yaml
+  bootstrap_required_before_current_slice: false
+  bootstrap_target: null
+  bootstrap_command: null
+  bootstrap_admission_status: not_applicable_during_plan_review
+  bootstrap_override_state: expired_by_plan_revision_6
+  prior_bootstrap_override: docs/overrides/PR-014-devforge-execution-workspace-materialization-bridge-v1-bootstrap-execution-override.yaml
   latest_bootstrap_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-bootstrap-execution-override-r1-receipt.yaml
-  execution_disposition: blocked
-  execution_blocker: DirectDevelopmentHostInvocationProjectionUnavailable
-  execution_failure_state: BlockedByTool
-  execution_failure_reason: RequiredExecutionCapabilityIncompatible
+  execution_disposition: reconciliation_pending_plan_review
+  execution_blocker: null
+  execution_failure_state: null
+  execution_failure_reason: null
   latest_execution_run: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-run-001.yaml
-  latest_execution_checkpoint: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-blocked-direct-invocation-projection-20261008.yaml
+  latest_execution_checkpoint: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-completion-20261008.yaml
+  preserved_s02_completion_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-completion-receipt.yaml
   prior_bootstrap_receipt: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-harness-bootstrap-blocked-20261008.yaml
-  superseded_slice_set_status: invalidated_by_plan_revision_5
-  next_expected_actor: implementer
+  superseded_slice_set_status: invalidated_by_plan_revision_6
+  next_expected_actor: reviewer
   authorization:
     mode: legacy_command_scoped
 artifacts:
   requirement_review: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-requirement-review-r1.md
   plan: docs/plans/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan.md
-  latest_plan_review: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r5.md
-  latest_plan_review_transition_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r5-transition-receipt.yaml
+  latest_plan_review: null
+  latest_plan_review_transition_receipt: null
+  superseded_plan_review: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r5.md
+  superseded_plan_review_transition_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r5-transition-receipt.yaml
   latest_plan_remediation: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-remediation-r4-20261008.yaml
   latest_plan_remediation_transition_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-remediation-r4-transition-receipt.yaml
-  latest_replan: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-replan-r5-20261008.yaml
-  latest_replan_transition_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-replan-r5-transition-receipt.yaml
-  execution_slice_set: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-r5-slices.yaml
+  latest_replan: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-replan-r6-20261008.yaml
+  latest_replan_transition_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-replan-r6-transition-receipt.yaml
+  execution_slice_set: null
   latest_execution_run: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-run-001.yaml
-  latest_execution_checkpoint: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-blocked-direct-invocation-projection-20261008.yaml
-  superseded_execution_slice_set: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-r4-slices.yaml
-  prior_plan_review: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r4.md
+  latest_execution_checkpoint: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-completion-20261008.yaml
+  preserved_s02_completion_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-completion-receipt.yaml
+  superseded_execution_slice_set: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-r5-slices.yaml
+  prior_plan_review: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r5.md
   prior_plan_remediation: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-remediation-r1.yaml
   prior_execution_slice_set: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-slices.yaml
   prior_plan_review_transition_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r2-transition-receipt.yaml
   requirement_change_impact: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-requirement-r2-invalidation.md
-  latest_slice_checkpoint: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-s01-completion-20261005.yaml
+  latest_slice_checkpoint: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-completion-20261008.yaml
 transport:
   type: github-pr
   pr_number: 14
