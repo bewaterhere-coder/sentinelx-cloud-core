@@ -137,13 +137,20 @@ slices:
         - canonical main remains unchanged by PR-021 implementation
     checkpoint:
       required: true
-    state: pending
-    run_refs: []
-    completion_receipt_ref: null
+    state: completed
+    run_refs:
+      - docs/execution/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s04-run-001.yaml
+    completion_receipt_ref: docs/checkpoints/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s04-completion-20261008.yaml
 
 current:
   slice_id: S04
-  state: pending
+  state: completed
+
+execution_summary:
+  all_required_slices_completed: true
+  completed_slices: [S01, S02, S03, S04]
+  formal_acceptance_performed: false
+  canonical_next_action: "#开发验收 PR-021-minimal-runtime-complexity-reduction-boundary-v1"
 
 approval:
   review_ref: docs/reviews/PR-021-minimal-runtime-complexity-reduction-boundary-v1-plan-review-r1.md
