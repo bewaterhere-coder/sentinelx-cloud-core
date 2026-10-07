@@ -378,6 +378,81 @@ class DevforgeDirectCodexProvider:
     def containment_proof(self) -> dict[str, Any] | None:
         return self._containment_proof
 
+    @staticmethod
+    def _proof_binding(
+        repository: RepositoryIdentity,
+        semantic: SemanticIdentity,
+        workspace: Any,
+    ) -> dict[str, Any]:
+        """The exact identity a containment proof is bound to."""
+        return {
+            "repository": repository.canonical,
+            "task_id": semantic.task_id,
+            "run_id": semantic.run_id,
+            "attempt_id": semantic.attempt_id,
+            "slice_id": semantic.slice_id,
+            "workspace_digest": workspace.workspace_digest,
+        }
+
+    def _proof_is_bound_to(
+        self,
+        proof: Any,
+        *,
+        repository: RepositoryIdentity,
+        semantic: SemanticIdentity,
+        workspace: Any,
+    ) -> bool:
+        """A stored proof authorizes only its own proven workspace/identity.
+
+        Any binding mismatch (a different derived workspace, Task, Run, Attempt
+        or Slice) makes the proof stale for this request: it must not be reused.
+        """
+        if not isinstance(proof, dict) or not proof.get("verified"):
+            return False
+        binding = proof.get("binding")
+        if not isinstance(binding, dict):
+            return False
+        expected = self._proof_binding(repository, semantic, workspace)
+        return all(binding.get(key) == value for key, value in expected.items())
+
+    async def _ensure_containment_proof(
+        self,
+        *,
+        repository: RepositoryIdentity,
+        semantic: SemanticIdentity,
+        workspace: Any,
+    ) -> dict[str, Any]:
+        """The provider-owned production containment-proof lifecycle.
+
+        The Acceptance R5 repair: ``execute_task`` owns the D9 physical proof.
+        No caller (model, Hub or test) ever invokes ``prove_containment`` to
+        make the bridge work. A verified proof bound to the exact current
+        derived workspace/Task identity is reused; anything absent, unverified
+        or bound to a different workspace triggers a fresh provider-owned proof
+        run. Any failure is fail-closed before any repository/Codex mutation.
+        """
+        if self._proof_is_bound_to(
+            self._containment_proof, repository=repository, semantic=semantic, workspace=workspace
+        ):
+            return self._containment_proof  # type: ignore[return-value]
+        try:
+            proof = await self.prove_containment(repository=repository, semantic=semantic)
+        except (DirectCodexDiscoveryError, UserProcessError, DirectCodexWorkspaceError) as exc:
+            raise HandlerError(
+                "direct_codex_execution_unavailable",
+                "devforge_direct_codex containment proof failed before execution: "
+                f"{getattr(exc, 'code', type(exc).__name__)}: {exc}",
+            ) from exc
+        if not proof.get("verified"):
+            raise HandlerError(
+                "direct_codex_execution_unavailable",
+                "devforge_direct_codex.execute_task requires a verified direct-Codex "
+                "containment proof (workspace-scoped process, job containment, "
+                "protected-root refusal); the physical proof did not verify for "
+                "the exact derived workspace",
+            )
+        return proof
+
     def _contained_request(
         self,
         workspace: Any,
@@ -459,15 +534,15 @@ class DevforgeDirectCodexProvider:
         ensure_outside_canonical(workspace, self._canonical_roots)
         workspace.path.mkdir(parents=True, exist_ok=True)
 
-        node = resolve_node_executable(policy)
-        budget = float(timeout if timeout is not None else min(policy.timeout_seconds, 120.0))
-
         outside = _negative_target(workspace)
         if outside is None:
             return self._unproven_proof(
                 workspace, reason=CONTAINMENT_UNPROVEN_REASON,
                 detail="no provider-owned protected sibling outside the workspace root",
             )
+
+        node = resolve_node_executable(policy)
+        budget = float(timeout if timeout is not None else min(policy.timeout_seconds, 120.0))
 
         try:
             # The label is stamped with subtree inheritance, so everything the
@@ -552,6 +627,10 @@ class DevforgeDirectCodexProvider:
                 "contaminated": contaminated,
             },
             "verified": verified,
+            # The proof is only valid for the exact derived workspace and the
+            # Task/Run/Attempt[/Slice] identity it was proven for. A proof is
+            # never reused across workspaces or lineage identities.
+            "binding": self._proof_binding(repository, semantic, workspace),
         }
         # The fixture leaves no residue: the execution workspace must still be
         # an empty derived directory so the transport bootstrap can create the
@@ -672,16 +751,6 @@ class DevforgeDirectCodexProvider:
             raise HandlerError("invalid_payload", "params.action is transport-owned")
 
         validated = validate_execute_task_params(params)
-        if self._containment_proof is None or not self._containment_proof.get("verified"):
-            # Fail closed: an external development host may only run after the
-            # D9 physical containment proof succeeded. There is no shell,
-            # generic exec or provider fallback path.
-            raise HandlerError(
-                "direct_codex_execution_unavailable",
-                "devforge_direct_codex.execute_task requires a verified direct-Codex "
-                "containment proof (workspace-scoped process, job containment, "
-                "protected-root refusal)",
-            )
         repository, semantic = _identity(validated)
         policy = self._policy.direct_codex
         lineage = validated["lineage"]
@@ -689,6 +758,13 @@ class DevforgeDirectCodexProvider:
         development = validated["development"]
 
         workspace = derive_workspace(policy, repository, semantic)
+        # Provider-owned containment lifecycle (Acceptance R5 repair): the
+        # physical proof is established here, bound to the exact derived
+        # workspace/Task identity, and any failure fails closed BEFORE the
+        # transport bootstrap or Codex can mutate anything.
+        await self._ensure_containment_proof(
+            repository=repository, semantic=semantic, workspace=workspace
+        )
         budget = float(policy.timeout_seconds)
 
         bootstrap = await self._bootstrap(workspace, repository, semantic, transport, budget)

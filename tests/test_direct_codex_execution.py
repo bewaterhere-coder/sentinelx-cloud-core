@@ -767,7 +767,7 @@ async def _run_fixture_execute(
     monkeypatch: pytest.MonkeyPatch,
     *,
     edit: bool,
-) -> tuple[dict[str, Any], Path, str]:
+) -> tuple[dict[str, Any], Path, str, Any]:
     """Run one real provider ``execute_task`` with the fixture Codex host."""
     node = _node()
     if node is None:
@@ -803,13 +803,15 @@ async def _run_fixture_execute(
     provider = make_devforge_direct_codex_provider(
         policy, platform_name="Windows", canonical_roots=[]
     )
-    await provider.prove_containment(repository=_repository(), semantic=_semantic())
+    # No caller-owned prove_containment call: the production execute_task
+    # lifecycle must establish the containment proof itself (Acceptance R5
+    # repair, direct_codex_containment_proof_lifecycle_unreachable).
 
     params = _params(repository=_repository(), semantic=_semantic())
     params["transport"]["branch"] = "task/bridge"
     params["transport"]["expected_remote_sha"] = head
     payload = await provider.call(_context_like(), "execute_task", params)
-    return payload, bare, head
+    return payload, bare, head, provider
 
 
 @WINDOWS_ONLY
@@ -818,7 +820,21 @@ async def test_execute_task_provider_persists_real_host_edits(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """The provider owns the commit: a non-committing host still persists."""
-    payload, bare, head = await _run_fixture_execute(tmp_path, monkeypatch, edit=True)
+    payload, bare, head, provider = await _run_fixture_execute(
+        tmp_path, monkeypatch, edit=True
+    )
+
+    # The provider-owned production lifecycle self-proved containment, bound it
+    # to the exact derived workspace/Task identity, and readiness is verified.
+    proof = provider.containment_proof
+    assert proof is not None and proof["verified"] is True
+    assert proof["binding"]["task_id"] == (
+        "PR-015-direct-codex-development-host-invocation-bridge-v1"
+    )
+    assert proof["binding"]["workspace_digest"]
+    readiness = provider.readiness()
+    assert readiness["available"] is True
+    assert readiness["verified"] is True
 
     candidate = payload["persistence"]["candidate_commit"]
     assert payload["transport"]["actual_branch"] == "task/bridge"
@@ -853,7 +869,9 @@ async def test_execute_task_no_change_is_distinct_and_not_published(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """A no-eligible-change run never manufactures an empty implementation commit."""
-    payload, bare, head = await _run_fixture_execute(tmp_path, monkeypatch, edit=False)
+    payload, bare, head, _provider = await _run_fixture_execute(
+        tmp_path, monkeypatch, edit=False
+    )
 
     assert payload["persistence"]["status"] == "no_change"
     assert payload["persistence"]["candidate_commit"] is None

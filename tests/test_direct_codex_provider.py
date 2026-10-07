@@ -165,11 +165,132 @@ def test_execute_task_rejects_missing_required_blocks(tmp_path: Path) -> None:
     assert exc.value.code == "invalid_payload"
 
 
-def test_execution_fails_closed_until_containment_is_proven(tmp_path: Path) -> None:
+def test_execution_fails_closed_until_containment_is_proven(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A verified proof is still the admission boundary.
+
+    With no proof present the provider-owned lifecycle attempts to establish
+    it; here the physical proof cannot even be attempted (no protected sibling
+    exists), so the lifecycle must fail closed by itself — no caller-owned
+    prove_containment call — and before any transport bootstrap or Codex
+    mutation.
+    """
     provider = make_devforge_direct_codex_provider(_admitted_policy(tmp_path))
+    monkeypatch.setattr(
+        "sentinelx_core.handlers.direct_codex._negative_target", lambda _workspace: None
+    )
     with pytest.raises(HandlerError) as exc:
         _run(provider.call, _context(), EXECUTE_TASK_ACTION, _valid_params())
     assert exc.value.code == "direct_codex_execution_unavailable"
+    # The proof failed BEFORE any repository/checkout mutation.
+    assert list((tmp_path / "devforge-workspaces").rglob(".git")) == []
+
+
+def test_verified_stale_proof_is_not_reused_across_workspaces(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A verified proof bound to another workspace/identity never authorizes
+    execution: the provider re-proves for the current derived workspace."""
+    provider = make_devforge_direct_codex_provider(_admitted_policy(tmp_path))
+    provider._containment_proof = {
+        "verified": True,
+        "binding": {
+            "repository": "git://github.com/other/repo",
+            "task_id": "PR-OTHER",
+            "run_id": "other-run",
+            "attempt_id": "other-attempt",
+            "slice_id": "S99",
+            "workspace_digest": "not-this-workspace",
+        },
+    }
+    reproof_tasks: list[str] = []
+
+    async def _fake_prove(*, repository: Any, semantic: Any, timeout: Any = None) -> Any:
+        reproof_tasks.append(semantic.task_id)
+        return {"verified": False, "negative_probe": {"attempted": False}}
+
+    monkeypatch.setattr(provider, "prove_containment", _fake_prove)
+    with pytest.raises(HandlerError) as exc:
+        _run(provider.call, _context(), EXECUTE_TASK_ACTION, _valid_params())
+    assert exc.value.code == "direct_codex_execution_unavailable"
+    # The stale proof did not authorize: a fresh provider-owned proof run was
+    # attempted for the exact requested Task identity.
+    assert reproof_tasks == ["PR-015-direct-codex-development-host-invocation-bridge-v1"]
+
+
+def test_matching_bound_proof_is_reused_without_reproving(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A verified proof bound to the exact current workspace/Task identity is
+    reused; the provider never re-proves (or re-runs fixtures) needlessly."""
+    from sentinelx_core.direct_codex_workspace import derive_workspace
+    from sentinelx_core.mutation_placement import RepositoryIdentity, SemanticIdentity
+
+    provider = make_devforge_direct_codex_provider(_admitted_policy(tmp_path))
+    repository = RepositoryIdentity(vcs="git", authority="github.com", path="o/r")
+    semantic = SemanticIdentity(
+        project_id="sentinelx-cloud-core",
+        task_id="PR-015",
+        run_id="run-1",
+        attempt_id="attempt-1",
+        slice_id="S04",
+    )
+    workspace = derive_workspace(provider._policy.direct_codex, repository, semantic)
+    provider._containment_proof = {
+        "verified": True,
+        "binding": provider._proof_binding(repository, semantic, workspace),
+    }
+
+    def _fail(*args: Any, **kwargs: Any) -> Any:
+        raise AssertionError("a bound proof must be reused, not re-proven")
+
+    monkeypatch.setattr(provider, "prove_containment", _fail)
+    proof = asyncio.run(
+        provider._ensure_containment_proof(
+            repository=repository, semantic=semantic, workspace=workspace
+        )
+    )
+    assert proof["verified"] is True
+
+
+def test_proof_binding_rejects_identity_and_verification_mismatch(tmp_path: Path) -> None:
+    from sentinelx_core.direct_codex_workspace import derive_workspace
+    from sentinelx_core.mutation_placement import RepositoryIdentity, SemanticIdentity
+
+    provider = make_devforge_direct_codex_provider(_admitted_policy(tmp_path))
+    repository = RepositoryIdentity(vcs="git", authority="github.com", path="o/r")
+    semantic = SemanticIdentity(
+        project_id="sentinelx-cloud-core",
+        task_id="PR-015",
+        run_id="run-1",
+        attempt_id="attempt-1",
+        slice_id="S04",
+    )
+    workspace = derive_workspace(provider._policy.direct_codex, repository, semantic)
+    binding = provider._proof_binding(repository, semantic, workspace)
+
+    bound = {
+        "repository": repository,
+        "semantic": semantic,
+        "workspace": workspace,
+    }
+    # Same workspace digest but a different Task identity is not a match.
+    assert (
+        provider._proof_is_bound_to(
+            {"verified": True, "binding": dict(binding, task_id="PR-016")}, **bound
+        )
+        is False
+    )
+    # An unverified proof never binds, even with a matching binding block.
+    assert (
+        provider._proof_is_bound_to({"verified": False, "binding": dict(binding)}, **bound)
+        is False
+    )
+    # A proof without a binding block (legacy shape) never binds.
+    assert provider._proof_is_bound_to({"verified": True}, **bound) is False
+    # The exact binding matches.
+    assert provider._proof_is_bound_to({"verified": True, "binding": binding}, **bound) is True
 
 
 # ── effect / readiness projection ───────────────────────────────────────
