@@ -4,7 +4,7 @@
 
 ```yaml
 task_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
-plan_revision: 1
+plan_revision: 2
 plan_status: ready_for_review
 implementation_authority: false
 requirement_ref: docs/requirements/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1.md
@@ -21,11 +21,62 @@ Repair the fixed 20-second Windows runtime-root ACL boundary without weakening t
 
 The implementation should make runtime ACL duration provider-owned and bounded, close the partial-grant ambiguity, preserve the existing revoked/terminal lifecycle, and prove the fix against a real large runtime root.
 
+**Revision 2 integration objective:** preserve the already-completed S01/S02 evidence, consume the separately verified PR-018 Unity/AppContainer compatibility candidate as a bounded upstream dependency, and replay only PR-017 S03 / Requirement R8.3 on the combined canonical PR-017 candidate. No S01/S02 replay or PR-018 documentation import is authorized.
+
 ## Technical Decision
 
 Treat this as a **runtime-root ACL lifecycle reliability** defect inside the existing `WindowsMutationSandbox`.
 
 Do not redesign `execute_scoped`, scope identity, Job containment or AppContainer authority.
+
+### Revision 2 — PR-018 integration decision
+
+The prior S03 blocker is no longer treated as an implementation problem owned by PR-017. PR-018 has separately verified the exact Unity/AppContainer compatibility boundary and produced a verified product candidate:
+
+```text
+PR-018 verified product candidate:
+73a52013055a8b3bb70b319a0ed7b7ba832ae0c9
+
+PR-018 exact live source proof:
+86bc881265ee3fb2ab388170a16e627caf6d723e
+
+PR-018 Acceptance R1 disposition:
+Rejected only on cross-Task AC18 integration/replay dependency
+local AC1-AC17 and AC19: pass
+```
+
+PR-017 R2 therefore uses PR-018 as an **integration dependency**, not as authority to redesign PR-017.
+
+The canonical integration rule is:
+
+```text
+current PR-017 canonical branch
++ exact verified PR-018 non-document runtime/config/test payload
+→ combined PR-017 candidate
+→ replay PR-017 S03 only
+→ prove R8.3 + original PR-017 cleanup/containment requirements
+```
+
+The integration MUST NOT merge or copy PR-018 Requirement, Plan, Slice, checkpoint, receipt, acceptance, or task-state artifacts into PR-017. The PR-018-only workflow `.github/workflows/pr018-s02-verification.yml` is also excluded from the PR-017 integration payload.
+
+The exact R2 payload is frozen to these candidate blobs from `73a52013055a8b3bb70b319a0ed7b7ba832ae0c9`:
+
+```yaml
+config.example.windows.yaml: a76b1772361517838b40de019bee1e9aa9fb9c85
+src/sentinelx_core/handlers/basic.py: 5a99296d9c80b164d344abf519f5627eae5f52fe
+src/sentinelx_core/handlers/mutation_scope.py: af310b650151de168a9ff437140fbe0e1187cf6d
+src/sentinelx_core/handlers/scoped_script.py: 1b8c05b14658f3ffb71e08fbd23851391132b5cf
+src/sentinelx_core/mutation_placement.py: 6ee33bacee65dac566116a4252756e40e25c4662
+src/sentinelx_core/mutation_readiness.py: aa318aec6e25b2b0ce3d13feb9c46c6680852144
+src/sentinelx_core/mutation_scope.py: 1a6dce6d066c07569ea5676cd9a411105171a9f6
+src/sentinelx_core/policy.py: 82cc82615f090f19777161125c1e2aff14e63806
+src/sentinelx_core/windows_mutation_sandbox.py: c5a9ae35b8324adffc31ce9ed6cbbf9ebe172bde
+tests/test_mutation_scope_admission.py: 4dd4db78a3c20487ae442ac312760dd6dbaa4b1e
+tests/test_policy.py: fd1d002d8426f58c71c0b5f66a343f00c786e943
+tests/test_windows_mutation_sandbox.py: 8218fa324a99ba48669a5427fdafaf714f43f25f
+```
+
+Before mutation, execution must re-read the current PR-017 head and prove that none of these 12 files have drifted from the reviewed PR-017 baseline. If any has moved independently, stop for reconciliation rather than overwriting it.
 
 Preferred model:
 
@@ -165,44 +216,63 @@ Add focused cases for:
 
 Use monkeypatch/fakes for deterministic timeout tests; do not make ordinary unit tests wait hundreds of seconds.
 
-### 7. Real Windows physical proof
+### 7. Combined-candidate S03 real Windows replay
 
-After focused tests pass, run a real Host proof.
+S01 and S02 are historical completed slices under Plan R1 and MUST NOT be replayed.
 
-Recommended Host config:
+After Plan R2 approval, S03 execution first materializes the frozen PR-018 payload onto the canonical PR-017 branch, verifies the resulting tree, and then performs the real Host replay.
+
+Recommended Host config remains bounded and provider-owned:
 
 ```yaml
 mutation_execution:
   runtime_acl_timeout_seconds: 300
+  runtime_session_object_read_enabled: true  # temporary S03 proof only
   runtime_read_roots:
     - C:\ProgramData\SentinelX\.venv
     - C:\Python314
-    - C:\Windows\System32\WindowsPowerShell\v1.0
     - C:\Program Files\Unity\Hub\Editor\6000.6.4f1
 ```
 
-Proof sequence:
+The compatibility toggle is temporary proof configuration only. It must be restored to `false` after the replay and the Host must re-read healthy with no residual authority.
+
+Replay sequence:
 
 ```text
-A. execute_scoped python3 marker
+A. combined-candidate admission
+   → canonical PR-017 branch only
+   → exact 12-file PR-018 payload read back
+   → no PR-018 docs/workflow/task-state import
+
+B. execute_scoped python3 marker
    → PASS
    → terminal
 
-B. execute_scoped powershell marker
-   → expected runtime result
-   → cleanup terminal
-
 C. execute_scoped python3
-   → subprocess Unity.exe batch/version probe
-   → Unity process initializes
-   → cleanup completes
-   → terminal
+   → subprocess exact Unity.exe -version
+   → raw child status != 0xC0000142
+   → deterministic output 6000.6.4f1
+   → scope terminal
 
-D. icacls/readback
-   → exact test AppContainer SID absent from Unity runtime root
+D. live security/cleanup readback
+   → AppContainer=true
+   → process is Job-contained / no-breakaway
+   → Session 0 exact read-only masks only
+   → exact Unity scope AppContainer SID absent from:
+      - Unity runtime root
+      - bound Window Station
+      - bound Desktop
+   → durable Session-0 cleanup binding cleared before terminal success
+
+E. post-proof restore
+   → runtime_session_object_read_enabled=false
+   → temporary proof authority removed
+   → host_mutation_sandbox_v1 verified
+   → PR-011 Node/npm scoped verification verified
+   → canonical mutation firewall verified
 ```
 
-If Unity itself exposes a separate AppContainer compatibility blocker after ACL cleanup is fixed, record that as a distinct downstream limitation rather than broadening this Task.
+The existing PR-017 PowerShell evidence remains preserved from Plan R1. It is not replayed merely because Unity compatibility was supplied by PR-018; a new PowerShell run is required only if Plan Review identifies material overlap affecting that evidence.
 
 ### 8. Regression closure
 
@@ -221,37 +291,37 @@ Then run the repository's affected Windows mutation/security regression set.
 
 ## Expected Files
 
-Primary:
+Plan R2 authorizes no new local design beyond the frozen PR-018 integration payload. The only product/config/test files eligible for S03 integration are the 12 blob-frozen paths listed in the Revision 2 integration decision above.
+
+PR-017 Requirement/Plan/Slice/checkpoint/receipt artifacts may change only to record Plan R2 lineage and S03 evidence.
+
+Explicitly excluded:
 
 ```text
-src/sentinelx_core/policy.py
-src/sentinelx_core/mutation_placement.py
-src/sentinelx_core/windows_mutation_sandbox.py
-tests/test_policy.py
-tests/test_windows_mutation_sandbox.py
-config.example.windows.yaml
-```
-
-Possible only when existing test organization requires it:
-
-```text
-tests/test_mutation_scope_admission.py
-tests/test_scoped_script_execution.py
+all docs/** from PR-018
+.github/workflows/pr018-s02-verification.yml
+PR-018 branch / PR number / task-state mutation
+PR-017 S01/S02 product or receipt replay
 ```
 
 No protocol schema change is expected.
 
 ## Slice Proposal
 
-Plan Review should compile the canonical Slice Set. Recommended decomposition:
+Plan Review R2 must preserve S01 and S02 as completed historical slices with their existing receipts and compile only the revised S03 authority.
 
 ```text
-S01 — policy + digest + runtime ACL timeout/error semantics + focused tests
-S02 — partial-grant compensation + revoked/retry recovery regression closure
-S03 — real Windows large-runtime-root proof + affected security regressions
+S01 — PRESERVED COMPLETED; no replay
+S02 — PRESERVED COMPLETED; no replay
+S03 — exact PR-018 payload integration on canonical PR-017 branch
+      + combined-candidate real Windows R8.3 replay
+      + exact cleanup/security readback
+      + affected regression closure
 ```
 
-No Slice is authorized until Plan Review approves this Plan and persists the canonical Execution Slice Set.
+No new S04 is introduced. One explicit `#开发执行 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1` after Plan R2 approval may complete at most the revised S03.
+
+No product mutation is authorized until Plan Review approves Plan R2 and recompiles the canonical Execution Slice Set.
 
 ## Risks
 
@@ -275,13 +345,25 @@ Mitigation: include timeout in policy identity for future admission while preser
 
 Mitigation: real timing evidence and bounded operator choice up to the approved maximum. If 600 seconds is insufficient, treat it as a separate design problem rather than removing the bound.
 
+### RSK-6 — cross-Task payload drift
+
+Mitigation: freeze the exact PR-018 candidate and per-file blob identities; refuse branch-level merge or moving-head cherry-pick semantics.
+
+### RSK-7 — replay accidentally invalidates S01/S02 evidence
+
+Mitigation: preserve their canonical receipts and prohibit replay/mutation unless the 12-file integration materially changes an invariant they own. Plan Review must explicitly decide any such invalidation; implementation must not infer it.
+
+### RSK-8 — PR-018 proof is mistaken for PR-017 S03 evidence
+
+Mitigation: PR-018 proof is only dependency evidence. PR-017 must create its own combined-candidate S03 scope/audit/cleanup receipt on the canonical PR-017 transport.
+
 ## Plan Review Questions
 
-1. Is a provider-owned bounded timeout the smallest correct fix for large immutable runtime roots?
-2. Should the V1 range remain 5–600 seconds?
-3. Is timeout correctly part of the Host mutation policy digest?
-4. Does partial-grant compensation close the current rollback ambiguity?
-5. Is cleanup timeout correctly classified as residual-authority ambiguity?
-6. Does the existing revoked/retry terminalization already satisfy recovery without a new state?
-7. Are PR-011 verification-toolchain ACL semantics intentionally unchanged?
-8. Does real Unity-root proof sufficiently exercise the original incident without making Unity a permanent SentinelX dependency?
+1. Is exact 12-blob projection the correct way to consume PR-018 without importing its task lineage?
+2. Are all 12 files necessary and sufficient for the verified compatibility candidate?
+3. Is excluding the PR-018-only workflow correct for PR-017 S03?
+4. Can S01/S02 receipts remain valid without replay because PR-017 current head has no product drift since the PR-018 stacked base?
+5. Does the revised S03 prove both R8.3 and the original PR-017 runtime-root cleanup/terminal invariants?
+6. Is temporary `runtime_session_object_read_enabled=true` acceptable only for S03 proof with mandatory default-off restoration?
+7. Are PR-011/PR-012 regression and no-breakaway/canonical-firewall checks sufficient after combined-candidate activation?
+8. Does Plan R2 avoid treating PR-018 isolated evidence as PR-017 S03 completion evidence?
