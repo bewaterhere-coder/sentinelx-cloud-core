@@ -57,7 +57,7 @@ slices:
   - slice_id: S01
     objective: Prove or falsify the PR-011 Session-0 USER32 hypothesis against real Unity 6000.6.4f1 without changing production generic admission.
     depends_on: []
-    state: pending
+    state: completed
     scope:
       refs:
         - src/sentinelx_core/windows_mutation_sandbox.py as read-only product reference
@@ -97,7 +97,9 @@ slices:
       - docs/checkpoints/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-s01-blocked-host-still-offline-20261008.yaml@285651e7e2b4d7fd9651539817bc41f81005e969
       - docs/checkpoints/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-s01-blocked-candidate-not-activated-direct-timeout-20261008.yaml@73784c666c1d7491d8473dd01e3c4ad83ba0fdb8
       - direct_codex_run:run-pr018-s01-20261008-003:attempt-001:response_timeout_no_remote_publish_or_runtime_activation_observed
-    completion_receipt_ref: null
+      - docs/checkpoints/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-s01-completion-20261008.yaml@85ebc7cb3bb4c8d20ee0640566a8eec55b13ed26
+      - scoped_runtime_run:run-pr018-s01-20261008-004:attempt-001:hypothesis_confirmed
+    completion_receipt_ref: docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-s01-completion-receipt.yaml
 
   - slice_id: S02
     objective: Add Host-owned default-off generic Session-0 compatibility with durable pre-grant authority binding and restart-safe fail-closed cleanup.
@@ -198,10 +200,10 @@ slices:
     completion_receipt_ref: null
 
 execution_state:
-  current_slice: S01
+  current_slice: S02
   current_slice_state: pending
-  completed_slices: []
-  pending_slices: [S01, S02, S03]
+  completed_slices: [S01]
+  pending_slices: [S02, S03]
   all_slices_completed: false
 
 acceptance_boundary:
