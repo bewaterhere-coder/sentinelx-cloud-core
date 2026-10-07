@@ -41,7 +41,8 @@ from sentinelx_core.direct_codex_workspace import (
     ensure_outside_canonical,
     revalidate_workspace,
 )
-from sentinelx_core import windows_integrity
+from sentinelx_core import direct_codex_acl, windows_integrity
+from sentinelx_core.direct_codex_acl import DirectCodexAclError
 from sentinelx_core.executor import HandlerError
 from sentinelx_core.mutation_placement import RepositoryIdentity, SemanticIdentity
 from sentinelx_core.operation_registry import (
@@ -65,6 +66,24 @@ FEATURE_ID = "development_host.direct_codex_v1"
 EXECUTE_TASK_ACTION = "execute_task"
 
 CONTAINMENT_UNPROVEN_REASON = "direct_codex_containment_unproven"
+
+# Acceptance R7 repair: the readiness proof must cover the *real* selected
+# Codex workspace-write sandbox setup, not only the surrogate MIC negative
+# proof. The provider therefore runs one bounded real ``codex exec --sandbox
+# workspace-write`` probe inside the exact derived workspace and requires it
+# to create a provider-owned marker file.
+REAL_SANDBOX_UNPROVEN_REASON = "direct_codex_real_sandbox_setup_unproven"
+CODEX_PROBE_MARKER_DIR = ".devforge"
+CODEX_PROBE_MARKER_PATH = ".devforge/codex-write-probe.txt"
+CODEX_PROBE_MARKER_CONTENT = "DEVFORGE-CODEX-WRITE-PROBE-OK"
+CODEX_PROBE_PROMPT_PREFIX = "[DEVFORGE-CODEX-PROBE]"
+CODEX_PROBE_PROMPT = (
+    "[DEVFORGE-CODEX-PROBE] Create the file .devforge/codex-write-probe.txt in the "
+    "current workspace whose entire content is exactly DEVFORGE-CODEX-WRITE-PROBE-OK. "
+    "Create no other file and run no other command."
+)
+CODEX_PROBE_TIMEOUT_SECONDS = 300.0
+CODEX_PROBE_MAX_OUTPUT_BYTES = 65536
 
 # The containment mechanism is a real Windows sandbox: the provider-owned
 # workspace is labeled low and every provider child starts at low integrity, so
@@ -448,8 +467,9 @@ class DevforgeDirectCodexProvider:
                 "direct_codex_execution_unavailable",
                 "devforge_direct_codex.execute_task requires a verified direct-Codex "
                 "containment proof (workspace-scoped process, job containment, "
-                "protected-root refusal); the physical proof did not verify for "
-                "the exact derived workspace",
+                "protected-root refusal, and a successful real Codex "
+                "workspace-write sandbox setup); the physical proof did not "
+                "verify for the exact derived workspace",
             )
         return proof
 
@@ -512,6 +532,128 @@ class DevforgeDirectCodexProvider:
         self._containment_proof = None
         return proof
 
+    @staticmethod
+    def _proof_verified(proof: Any) -> bool:
+        """A proof is verified only when it covers the real sandbox setup.
+
+        The surrogate MIC fixture alone can never make a proof verified
+        (Acceptance R7, AC2/AC5): ``verified`` additionally requires a
+        successful real ``codex exec --sandbox workspace-write`` setup inside
+        the exact derived workspace.
+        """
+        if not isinstance(proof, dict) or not proof.get("verified"):
+            return False
+        setup = proof.get("real_sandbox_setup")
+        return isinstance(setup, dict) and setup.get("codex_workspace_write_setup") is True
+
+    async def _probe_real_sandbox_setup(
+        self,
+        policy: Any,
+        workspace: Any,
+        budget: float,
+    ) -> dict[str, Any]:
+        """Prove the real selected Codex workspace-write setup can mutate the
+        exact workspace.
+
+        One bounded real ``codex exec --sandbox workspace-write`` run executes
+        a provider-owned prompt that creates a provider-owned marker file
+        inside the exact derived workspace. This is the positive proof the
+        surrogate MIC fixture cannot give: the Codex sandbox setup (ACL grant
+        under the active user's token) and a real sandboxed write both have to
+        succeed. The marker and any probe residue are removed afterwards; an
+        unexpected residue fails closed so the transport bootstrap always sees
+        an empty derived workspace.
+        """
+        setup: dict[str, Any] = {
+            "attempted": False,
+            "codex_workspace_write_setup": False,
+            "sandbox_mode": "workspace-write",
+            "marker_path": CODEX_PROBE_MARKER_PATH,
+            "marker_content_match": False,
+            "exit_code": None,
+            "timed_out": False,
+            "process_tree_closed": False,
+            "job_contained": False,
+            "reason": None,
+        }
+        try:
+            chain = await discover_codex_chain(
+                policy,
+                cwd=workspace.path,
+                allowed_root=workspace.root,
+                probe_timeout=min(budget, 30.0),
+            )
+        except (DirectCodexDiscoveryError, UserProcessError) as exc:
+            setup["reason"] = (
+                f"{getattr(exc, 'code', type(exc).__name__)}: {str(exc)[:300]}"
+            )
+            return setup
+        marker = workspace.path / CODEX_PROBE_MARKER_DIR / "codex-write-probe.txt"
+        argv = [
+            str(chain.node_executable),
+            str(chain.codex_script),
+            "exec",
+            "--sandbox",
+            "workspace-write",
+        ]
+        # The probe runs BEFORE the transport bootstrap materializes the
+        # checkout, so the derived directory is not a git repository yet and
+        # the CLI must be told not to require one. This flag never widens the
+        # sandbox policy itself.
+        if not (workspace.path / ".git").exists() and chain.skip_git_repo_check_supported:
+            argv.append("--skip-git-repo-check")
+        if chain.approval_flag_supported:
+            argv += ["--ask-for-approval", "never"]
+        if chain.json_output_supported:
+            argv.append("--json")
+        argv.append(CODEX_PROBE_PROMPT)
+        try:
+            process = await run_user_scoped_process(
+                self._contained_request(
+                    workspace,
+                    executable=chain.node_executable,
+                    argv=argv,
+                    cwd=workspace.path,
+                    budget=min(budget, CODEX_PROBE_TIMEOUT_SECONDS),
+                    max_output_bytes=CODEX_PROBE_MAX_OUTPUT_BYTES,
+                )
+            )
+        except UserProcessError as exc:
+            setup["reason"] = f"{exc.code}: {str(exc)[:300]}"
+            return setup
+        setup["attempted"] = True
+        setup["exit_code"] = process.returncode
+        setup["timed_out"] = process.timed_out
+        setup["process_tree_closed"] = process.process_tree_closed
+        setup["job_contained"] = process.job_contained
+        # Bounded diagnostics for the fail-closed path (never credential
+        # material: this is the Codex CLI's own error channel).
+        setup["stderr_tail"] = process.stderr.strip()[-500:]
+        try:
+            setup["marker_content_match"] = (
+                marker.is_file()
+                and marker.read_text(encoding="utf-8", errors="replace").strip()
+                == CODEX_PROBE_MARKER_CONTENT
+            )
+        except OSError as exc:
+            setup["reason"] = f"probe_marker_unreadable: {exc}"
+        if setup["marker_content_match"]:
+            try:
+                marker.unlink()
+            except OSError as exc:
+                setup["reason"] = f"probe_marker_cleanup_failed: {exc}"
+        succeeded = bool(
+            not process.timed_out
+            and process.returncode == 0
+            and setup["marker_content_match"]
+            and process.process_tree_closed
+            and process.job_contained
+        )
+        setup["codex_workspace_write_setup"] = succeeded
+        if not succeeded and setup["reason"] is None:
+            setup["reason"] = REAL_SANDBOX_UNPROVEN_REASON
+        return setup
+
     async def prove_containment(
         self,
         *,
@@ -528,6 +670,12 @@ class DevforgeDirectCodexProvider:
         and must be refused by the operating system (Mandatory Integrity
         Control), never by a pre-spawn cwd admission check. Any contamination
         is removed and disproves containment.
+
+        Acceptance R7 repair: before the proof verifies, the provider also
+        performs the exact-workspace ACL handoff to the active interactive
+        user (the real Codex sandbox setup helper needs the active user's
+        ``WRITE_DAC`` on the provider-created workspace) and runs the real
+        selected Codex ``workspace-write`` sandbox setup probe.
         """
         policy = self._policy.direct_codex
         workspace = derive_workspace(policy, repository, semantic)
@@ -552,6 +700,16 @@ class DevforgeDirectCodexProvider:
         except windows_integrity.IntegritySandboxError as exc:
             # No real sandbox, no attempt: a negative proof that cannot be
             # enforced by the OS must never be simulated by writing outside.
+            return self._unproven_proof(workspace, reason=exc.code, detail=str(exc))
+
+        # Acceptance R7 repair: hand the exact workspace's ownership/DACL to
+        # the active interactive user, bounded to this subtree only, so the
+        # real Codex workspace-write sandbox setup (which runs under the
+        # active user's non-elevated token) can grant its write ACE instead of
+        # failing with SetNamedSecurityInfoW error 5.
+        try:
+            acl_handoff = direct_codex_acl.handoff_workspace_to_active_user(workspace.path)
+        except DirectCodexAclError as exc:
             return self._unproven_proof(workspace, reason=exc.code, detail=str(exc))
 
         root_dir = workspace.path / ".devforge"
@@ -597,11 +755,17 @@ class DevforgeDirectCodexProvider:
             )
         )
 
+        # Acceptance R7 repair: the real selected Codex workspace-write setup
+        # must succeed against the provider-created workspace before the
+        # proof can verify (the surrogate MIC fixture alone never verifies).
+        sandbox_setup = await self._probe_real_sandbox_setup(policy, workspace, budget)
+
         verified = bool(
             workspace_write_succeeded
             and protected_refused
             and tree.process_tree_closed
             and tree.job_contained
+            and sandbox_setup.get("codex_workspace_write_setup") is True
         )
         proof: dict[str, Any] = {
             "feature_id": FEATURE_ID,
@@ -612,6 +776,8 @@ class DevforgeDirectCodexProvider:
             "execution_context": tree.execution_context,
             "workspace_digest": workspace.workspace_digest,
             "sandbox": activation,
+            "acl_handoff": dict(acl_handoff),
+            "real_sandbox_setup": sandbox_setup,
             "negative_probe": {
                 "attempted": True,
                 "started_inside_workspace": True,
@@ -632,9 +798,10 @@ class DevforgeDirectCodexProvider:
             # never reused across workspaces or lineage identities.
             "binding": self._proof_binding(repository, semantic, workspace),
         }
-        # The fixture leaves no residue: the execution workspace must still be
-        # an empty derived directory so the transport bootstrap can create the
-        # independent checkout there. The low mandatory label stays in force.
+        # The fixture and the probe leave no residue: the execution workspace
+        # must still be an empty derived directory so the transport bootstrap
+        # can create the independent checkout there. The low mandatory label
+        # stays in force.
         for artifact in (target, root_dir):
             try:
                 if artifact.is_file():
@@ -643,15 +810,30 @@ class DevforgeDirectCodexProvider:
                     artifact.rmdir()
             except OSError:  # pragma: no cover - best-effort cleanup
                 pass
+        residue = sorted(entry.name for entry in workspace.path.iterdir())
+        proof["workspace_residue"] = residue
+        if residue:
+            verified = False
+            proof["verified"] = False
+        # Lifecycle closure of the proof-phase handoff: execute_task re-applies
+        # the handoff (idempotently) for its own transport/Codex/persistence
+        # window and revokes it again when the attempt ends.
+        try:
+            revocation = direct_codex_acl.revoke_workspace_handoff(workspace.path)
+        except Exception as exc:  # pragma: no cover - defensive
+            revocation = {"revoked": False, "errors": [str(exc)[:200]]}
+        proof["acl_handoff"]["revocation"] = revocation
         self._containment_proof = proof if verified else None
         return proof
 
     # -- effect / readiness projection ------------------------------------
     def repository_effect(self, action: str) -> OperationEffectResolution:
         if action == EXECUTE_TASK_ACTION:
-            if self._containment_proof is not None and self._containment_proof.get("verified"):
-                # Provider-owned containment is proven by the D9 fixture: job
-                # containment, workspace-scoped cwd and a protected-root refusal.
+            if self._proof_verified(self._containment_proof):
+                # Provider-owned containment is proven by the D9 fixture AND
+                # the real Codex workspace-write sandbox setup probe: job
+                # containment, workspace-scoped cwd, a protected-root refusal
+                # and a successful real sandbox setup on the exact workspace.
                 return OperationEffectResolution(
                     RepositoryEffect.PROCESS_MUTATION,
                     FirewallCoverage.PROVEN,
@@ -659,8 +841,8 @@ class DevforgeDirectCodexProvider:
                 )
             # A direct development host is an external process. It is a process
             # mutation and stays UNPROVEN until the physical containment proof
-            # succeeds, so provider-wide effective-surface readiness cannot
-            # become true through an unproven containment path.
+            # and the real sandbox setup succeed, so provider-wide effective-
+            # surface readiness cannot become true through an unproven path.
             return OperationEffectResolution(
                 RepositoryEffect.PROCESS_MUTATION,
                 FirewallCoverage.UNPROVEN,
@@ -673,15 +855,24 @@ class DevforgeDirectCodexProvider:
         )
 
     def readiness(self) -> dict[str, Any]:
-        """Provider-owned readiness projection for ``FEATURE_ID``."""
+        """Provider-owned readiness projection for ``FEATURE_ID``.
+
+        ``verified=true`` means the real selected Codex workspace-write sandbox
+        has proven it can initialize against the provider-created workspace and
+        mutate the exact workspace — readiness can no longer be verified by the
+        surrogate child-integrity probe alone (Acceptance R7, AC2).
+        """
         reasons = list(self.admission_reasons)
         if not reasons and not self.available_actions():
             reasons.append("local_api_disabled")
+        verified = self._proof_verified(self._containment_proof)
         if not reasons and self._containment_proof is None:
             reasons.append(CONTAINMENT_UNPROVEN_REASON)
+        elif not reasons and not verified:
+            reasons.append(REAL_SANDBOX_UNPROVEN_REASON)
         return {
             "available": self._containment_proof is not None,
-            "verified": bool(self._containment_proof and self._containment_proof.get("verified")),
+            "verified": verified,
             "contract_id": CONTRACT_ID,
             "contract_revision": CONTRACT_REVISION,
             "reason": reasons[0] if reasons else None,
@@ -761,84 +952,107 @@ class DevforgeDirectCodexProvider:
         # Provider-owned containment lifecycle (Acceptance R5 repair): the
         # physical proof is established here, bound to the exact derived
         # workspace/Task identity, and any failure fails closed BEFORE the
-        # transport bootstrap or Codex can mutate anything.
+        # transport bootstrap or Codex can mutate anything. Acceptance R7
+        # repair: a verified proof now includes the real Codex workspace-write
+        # sandbox setup probe on the exact workspace.
         await self._ensure_containment_proof(
             repository=repository, semantic=semantic, workspace=workspace
         )
+        # Acceptance R7 repair: apply the exact-workspace ACL handoff for this
+        # invocation window. Idempotent, bounded to the derived workspace
+        # subtree, and revoked again when the attempt ends (success or failure).
+        try:
+            acl_evidence = direct_codex_acl.handoff_workspace_to_active_user(workspace.path)
+        except DirectCodexAclError as exc:
+            raise HandlerError(
+                "direct_codex_workspace_acl_handoff_failed",
+                f"the exact-workspace ACL handoff to the active user failed: {exc}",
+            ) from exc
+        acl_revocation: dict[str, Any] = {"revoked": False}
         budget = float(policy.timeout_seconds)
 
-        bootstrap = await self._bootstrap(workspace, repository, semantic, transport, budget)
-
-        chain = await self._chain(policy, workspace, bootstrap, budget)
-        await verify_cli_contract(
-            chain, cwd=bootstrap.workspace, allowed_root=workspace.root, timeout=min(budget, 60.0)
-        )
-
-        handoff = compile_handoff(
-            task_id=str(lineage["task_id"]),
-            run_id=str(lineage["run_id"]),
-            attempt_id=str(lineage["attempt_id"]),
-            slice_id=str(lineage["slice_id"]) if lineage.get("slice_id") else None,
-            action=str(development["action"]),
-            requirement_ref=str(development["requirement_ref"]),
-            plan_ref=str(development["plan_ref"]),
-            findings_ref=(
-                str(development["findings_ref"]) if development.get("findings_ref") else None
-            ),
-            pr_number=int(transport["pr_number"]),
-            branch=str(transport["branch"]),
-            expected_remote_sha=str(transport["expected_remote_sha"]),
-        )
-        write_handoff(bootstrap.workspace, handoff)
-
-        argv = [
-            str(chain.node_executable),
-            str(chain.codex_script),
-            "exec",
-            "--sandbox",
-            "workspace-write",
-        ]
-        if chain.approval_flag_supported:
-            # Only pass the flag when the verified CLI advertises it: an
-            # unrecognized flag makes the whole non-interactive run fail.
-            argv += ["--ask-for-approval", "never"]
-        if chain.json_output_supported:
-            argv.append("--json")
-        argv.append(handoff.text)
-
         try:
-            process = await run_user_scoped_process(
-                self._contained_request(
-                    workspace,
-                    executable=chain.node_executable,
-                    argv=argv,
-                    cwd=bootstrap.workspace,
-                    budget=budget,
-                    max_output_bytes=policy.max_result_bytes,
-                )
+            bootstrap = await self._bootstrap(workspace, repository, semantic, transport, budget)
+
+            chain = await self._chain(policy, workspace, bootstrap, budget)
+            await verify_cli_contract(
+                chain, cwd=bootstrap.workspace, allowed_root=workspace.root,
+                timeout=min(budget, 60.0),
             )
-        except UserProcessError as exc:
-            raise HandlerError(exc.code, str(exc)) from exc
 
-        revalidate_workspace(workspace, policy, repository, semantic)
-        # The direct host runs inside the integrity sandbox and never owns the
-        # canonical transport. After Codex exits, the provider owns deterministic
-        # local persistence (one provenance-bound candidate commit) and ordinary
-        # fast-forward publication of the exact checkout changes, followed by an
-        # independent remote readback.
-        try:
-            persistence = await persist_implementation(
-                workspace=workspace,
-                bootstrap=bootstrap,
-                repository=repository,
-                semantic=semantic,
-                canonical_pr=int(transport["pr_number"]),
+            handoff = compile_handoff(
+                task_id=str(lineage["task_id"]),
+                run_id=str(lineage["run_id"]),
+                attempt_id=str(lineage["attempt_id"]),
+                slice_id=str(lineage["slice_id"]) if lineage.get("slice_id") else None,
+                action=str(development["action"]),
+                requirement_ref=str(development["requirement_ref"]),
+                plan_ref=str(development["plan_ref"]),
+                findings_ref=(
+                    str(development["findings_ref"]) if development.get("findings_ref") else None
+                ),
+                pr_number=int(transport["pr_number"]),
                 branch=str(transport["branch"]),
                 expected_remote_sha=str(transport["expected_remote_sha"]),
-                timeout=budget,
             )
-        except (DirectCodexTransportError, DirectCodexWorkspaceError) as exc:
-            raise HandlerError(exc.code, str(exc)) from exc
+            write_handoff(bootstrap.workspace, handoff)
+
+            argv = [
+                str(chain.node_executable),
+                str(chain.codex_script),
+                "exec",
+                "--sandbox",
+                "workspace-write",
+            ]
+            if chain.approval_flag_supported:
+                # Only pass the flag when the verified CLI advertises it: an
+                # unrecognized flag makes the whole non-interactive run fail.
+                argv += ["--ask-for-approval", "never"]
+            if chain.json_output_supported:
+                argv.append("--json")
+            argv.append(handoff.text)
+
+            try:
+                process = await run_user_scoped_process(
+                    self._contained_request(
+                        workspace,
+                        executable=chain.node_executable,
+                        argv=argv,
+                        cwd=bootstrap.workspace,
+                        budget=budget,
+                        max_output_bytes=policy.max_result_bytes,
+                    )
+                )
+            except UserProcessError as exc:
+                raise HandlerError(exc.code, str(exc)) from exc
+
+            revalidate_workspace(workspace, policy, repository, semantic)
+            # The direct host runs inside the integrity sandbox and never owns the
+            # canonical transport. After Codex exits, the provider owns deterministic
+            # local persistence (one provenance-bound candidate commit) and ordinary
+            # fast-forward publication of the exact checkout changes, followed by an
+            # independent remote readback.
+            try:
+                persistence = await persist_implementation(
+                    workspace=workspace,
+                    bootstrap=bootstrap,
+                    repository=repository,
+                    semantic=semantic,
+                    canonical_pr=int(transport["pr_number"]),
+                    branch=str(transport["branch"]),
+                    expected_remote_sha=str(transport["expected_remote_sha"]),
+                    timeout=budget,
+                )
+            except (DirectCodexTransportError, DirectCodexWorkspaceError) as exc:
+                raise HandlerError(exc.code, str(exc)) from exc
+        finally:
+            # Lifecycle closure of the exact-workspace handoff: no residual
+            # active-user authority survives a normal or failed attempt exit
+            # beyond the provider-owned workspace itself.
+            try:
+                acl_revocation = direct_codex_acl.revoke_workspace_handoff(workspace.path)
+            except Exception:  # pragma: no cover - defensive
+                acl_revocation = {"revoked": False, "errors": ["revocation_unavailable"]}
 
         payload = normalize_result(
             params=validated,
@@ -863,6 +1077,15 @@ class DevforgeDirectCodexProvider:
         payload["operation"] = EXECUTE_TASK_ACTION
         payload["endpoint"] = self.name
         payload["receipt"]["reason"] = reason
+        # Bounded evidence of the exact-workspace ACL handoff lifecycle: the
+        # authority was granted only inside the derived workspace and revoked
+        # when the attempt window closed.
+        payload["workspace"]["acl_handoff"] = {
+            "mechanism": "exact_workspace_owner_and_grant_handoff",
+            "user_sid": acl_evidence.get("user_sid"),
+            "objects": acl_evidence.get("objects"),
+            "revoked": bool(acl_revocation.get("revoked")),
+        }
         return payload
 
     # -- execution helpers -------------------------------------------------

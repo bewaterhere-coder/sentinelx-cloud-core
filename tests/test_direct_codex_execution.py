@@ -720,14 +720,26 @@ def test_replacement_branch_is_inconsistent() -> None:
 # ── end-to-end execute_task with a fixture Codex ─────────────────────────
 
 
-def _fixture_codex(path: Path, *, edit: bool = True) -> Path:
+def _fixture_codex(path: Path, *, edit: bool = True, probe: bool = True) -> Path:
     """Stand-in for the installed Codex CLI.
 
     Real-host behaviour (Acceptance R1): the direct host edits the isolated
     checkout and never creates a Git commit. Publishing and persistence are owned
     by the provider, not by the direct host.
+
+    Real-host behaviour (Acceptance R7): the real ``exec --sandbox
+    workspace-write`` run honours the provider's sandbox-setup probe prompt and
+    creates the provider-owned marker file inside the exact workspace.
     """
     edit_body = "fs.writeFileSync('CHANGE.md','slice work\\n');" if edit else ""
+    probe_body = (
+        "if(process.argv.includes('--sandbox')&&process.argv.includes('workspace-write')"
+        "&&process.argv.some(a=>String(a).indexOf('[DEVFORGE-CODEX-PROBE]')===0)){"
+        "require('fs').mkdirSync('.devforge',{recursive:true});"
+        "require('fs').writeFileSync('.devforge/codex-write-probe.txt',"
+        "'DEVFORGE-CODEX-WRITE-PROBE-OK');"
+        "process.exit(0);}"
+    ) if probe else ""
     path.write_text(
         "const fs=require('fs');"
         "if(process.argv.includes('--help')){"
@@ -735,11 +747,41 @@ def _fixture_codex(path: Path, *, edit: bool = True) -> Path:
         "  -s, --sandbox <SANDBOX_MODE>\\n"
         "      --json\\n');"
         "process.exit(0);}"
+        + probe_body
         + edit_body
         + "console.log(JSON.stringify({status:'ok'}));",
         encoding="utf-8",
     )
     return path
+
+
+def _patch_fixture_chain(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    *,
+    probe: bool = True,
+) -> None:
+    """Give the provider a verified fixture Codex chain (proof probe needs it)."""
+    node = _node()
+    if node is None:
+        pytest.skip("node is not available")
+    from sentinelx_core.handlers import direct_codex as provider_module
+
+    script = _fixture_codex(tmp_path / "codex.js", edit=False, probe=probe)
+    chain = CodexChain(
+        node_executable=Path(node),
+        codex_script=script,
+        package_dir=script.parent,
+        package_name="@openai/codex",
+        package_version="0.0.0",
+        npm_root=script.parent,
+        json_output_supported=False,
+    )
+    monkeypatch.setattr(
+        provider_module,
+        "discover_codex_chain",
+        lambda *args, **kwargs: _await_chain(chain),
+    )
 
 
 def _remote_rev(bare: Path, ref: str) -> str:
@@ -832,6 +874,7 @@ async def test_execute_task_provider_persists_real_host_edits(
         "PR-015-direct-codex-development-host-invocation-bridge-v1"
     )
     assert proof["binding"]["workspace_digest"]
+    assert proof["real_sandbox_setup"]["codex_workspace_write_setup"] is True
     readiness = provider.readiness()
     assert readiness["available"] is True
     assert readiness["verified"] is True
@@ -857,6 +900,13 @@ async def test_execute_task_provider_persists_real_host_edits(
     assert payload["execution"]["provider"] == "direct"
     assert payload["execution"]["adapter"] == "codex"
     assert payload["workspace"]["canonical_checkout_mutated"] is False
+    # The exact-workspace ACL handoff was applied for the execution window and
+    # revoked when the attempt closed (no residual active-user authority).
+    assert payload["workspace"]["acl_handoff"]["mechanism"] == (
+        "exact_workspace_owner_and_grant_handoff"
+    )
+    assert payload["workspace"]["acl_handoff"]["revoked"] is True
+    assert payload["workspace"]["acl_handoff"]["user_sid"]
     # The canonical fixture branch really advanced to the provider candidate and
     # exactly one new commit exists (the provider's; the host never committed).
     assert _remote_rev(bare, "task/bridge") == candidate
@@ -999,13 +1049,16 @@ async def test_result_never_exposes_environment(tmp_path: Path) -> None:
 
 @WINDOWS_ONLY
 @pytest.mark.asyncio
-async def test_containment_proof_switches_effect_to_proven(tmp_path: Path) -> None:
+async def test_containment_proof_switches_effect_to_proven(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     node = _node()
     if node is None:
         pytest.skip("node is not available")
     from sentinelx_core.handlers.direct_codex import make_devforge_direct_codex_provider
     from sentinelx_core.operation_registry import FirewallCoverage, RepositoryEffect
 
+    _patch_fixture_chain(monkeypatch, tmp_path)
     policy = _full_policy(tmp_path, node_executable=Path(node))
     provider = make_devforge_direct_codex_provider(policy, platform_name="Windows")
     assert provider.repository_effect("execute_task").coverage is FirewallCoverage.UNPROVEN
@@ -1013,21 +1066,32 @@ async def test_containment_proof_switches_effect_to_proven(tmp_path: Path) -> No
     proof = await provider.prove_containment(repository=_repository(), semantic=_semantic())
     assert proof["workspace_write_succeeded"] is True
     assert proof["protected_sibling_refused"] is True
+    # Acceptance R7: the proof covers the REAL Codex workspace-write setup.
+    assert proof["real_sandbox_setup"]["codex_workspace_write_setup"] is True
+    assert proof["real_sandbox_setup"]["marker_content_match"] is True
+    assert proof["workspace_residue"] == []
+    # The proof-phase handoff is revoked when the proof window closes.
+    assert proof["acl_handoff"]["revocation"]["revoked"] is True
     assert proof["verified"] is True
 
     resolution = provider.repository_effect("execute_task")
     assert resolution.effect is RepositoryEffect.PROCESS_MUTATION
     assert resolution.coverage is FirewallCoverage.PROVEN
     assert provider.readiness()["available"] is True
+    assert provider.readiness()["verified"] is True
 
 
 @WINDOWS_ONLY
 @pytest.mark.asyncio
-async def test_containment_negative_probe_is_real_os_refusal(tmp_path: Path) -> None:
+async def test_containment_negative_probe_is_real_os_refusal(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     node = _node()
     if node is None:
         pytest.skip("node is not available")
     from sentinelx_core.handlers import direct_codex as provider_module
+
+    _patch_fixture_chain(monkeypatch, tmp_path)
     from sentinelx_core.handlers.direct_codex import make_devforge_direct_codex_provider
 
     policy = _full_policy(tmp_path, node_executable=Path(node))
@@ -1071,6 +1135,68 @@ async def test_containment_proof_fails_closed_without_protected_sibling(
     proof = await provider.prove_containment(repository=_repository(), semantic=_semantic())
     assert proof["verified"] is False
     assert proof["negative_probe"]["attempted"] is False
+
+
+@WINDOWS_ONLY
+@pytest.mark.asyncio
+async def test_real_sandbox_setup_failure_fails_closed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A Codex run that cannot establish its workspace-write setup never
+    verifies the proof (Acceptance R7, AC2/AC3)."""
+    node = _node()
+    if node is None:
+        pytest.skip("node is not available")
+    from sentinelx_core.handlers.direct_codex import make_devforge_direct_codex_provider
+    from sentinelx_core.operation_registry import FirewallCoverage
+
+    # The fixture host answers but never creates the probe marker: the real
+    # sandbox setup could not mutate the exact workspace.
+    _patch_fixture_chain(monkeypatch, tmp_path, probe=False)
+    policy = _full_policy(tmp_path, node_executable=Path(node))
+    provider = make_devforge_direct_codex_provider(policy, platform_name="Windows")
+    proof = await provider.prove_containment(repository=_repository(), semantic=_semantic())
+
+    assert proof["workspace_write_succeeded"] is True
+    assert proof["protected_sibling_refused"] is True
+    assert proof["real_sandbox_setup"]["codex_workspace_write_setup"] is False
+    assert proof["verified"] is False
+    assert provider.containment_proof is None
+    assert provider.repository_effect("execute_task").coverage is FirewallCoverage.UNPROVEN
+    assert provider.readiness()["verified"] is False
+    # No residue was left behind either.
+    assert proof["workspace_residue"] == []
+
+
+def test_readiness_verified_requires_real_sandbox_setup(tmp_path: Path) -> None:
+    """A surrogate-only proof (no real sandbox setup evidence) can never make
+    readiness verified — defence in depth against legacy proof shapes."""
+    from sentinelx_core.handlers.direct_codex import make_devforge_direct_codex_provider
+    from sentinelx_core.operation_registry import FirewallCoverage
+
+    policy = _full_policy(tmp_path)
+    provider = make_devforge_direct_codex_provider(policy, platform_name="Windows")
+    provider._containment_proof = {
+        "verified": True,
+        "binding": {
+            "repository": "git://github.com/o/r",
+            "task_id": "PR-015",
+            "run_id": "run-1",
+            "attempt_id": "attempt-1",
+            "slice_id": "S02",
+            "workspace_digest": "digest",
+        },
+    }
+    # The MIC surrogate alone (no real_sandbox_setup block) is not enough.
+    assert provider.readiness()["verified"] is False
+    assert provider.repository_effect("execute_task").coverage is FirewallCoverage.UNPROVEN
+
+    provider._containment_proof = dict(
+        provider._containment_proof,
+        real_sandbox_setup={"codex_workspace_write_setup": True},
+    )
+    assert provider.readiness()["verified"] is True
+    assert provider.repository_effect("execute_task").coverage is FirewallCoverage.PROVEN
 
 
 @WINDOWS_ONLY

@@ -36,13 +36,25 @@ from typing import Iterator
 FEATURE_NAME = "host_runtime.integrity_sandbox_v1"
 
 SE_FILE_OBJECT = 1
-LABEL_SECURITY_INFORMATION = 0x00000010
+OWNER_SECURITY_INFORMATION = 0x00000001
+GROUP_SECURITY_INFORMATION = 0x00000002
 DACL_SECURITY_INFORMATION = 0x00000004
+LABEL_SECURITY_INFORMATION = 0x00000010
 SYSTEM_MANDATORY_LABEL_NO_WRITE_UP = 0x00000001
 ACL_REVISION = 2
 GRANT_ACCESS = 1
 SET_ACCESS = 2
+REVOKE_ACCESS = 4
 FILE_ALL_ACCESS = 0x001F01FF
+ACCESS_ALLOWED_ACE_TYPE = 0x00
+
+# Token privileges that allow setting an arbitrary object owner. They are
+# enabled best effort: LocalSystem and elevated brokers hold them, an owner
+# transfer to the process's own SID never needs them.
+_OWNER_PRIVILEGES = ("SeRestorePrivilege", "SeTakeOwnershipPrivilege")
+TOKEN_ADJUST_PRIVILEGES = 0x0020
+SE_PRIVILEGE_ENABLED = 0x00000002
+_ERROR_NOT_ALL_ASSIGNED = 1300
 
 OBJECT_INHERIT_ACE = 0x00000001
 CONTAINER_INHERIT_ACE = 0x00000002
@@ -339,6 +351,328 @@ def grant_owner_full_control(path: Path) -> str:
                 f"SetNamedSecurityInfoW(DACL) failed for {path}: WinError {result}",
             )
     return sid
+
+
+@contextmanager
+def owner_write_privileges() -> Iterator[None]:
+    """Best-effort enable of the owner-transfer privileges on this process.
+
+    Setting an object's owner to another SID requires ``SeRestorePrivilege`` or
+    ``SeTakeOwnershipPrivilege``. Transferring ownership to the process's own
+    SID only needs ``WRITE_OWNER`` and never depends on this helper.
+    """
+    k32, advapi = _apis()
+
+    class _LUID(ctypes.Structure):
+        _fields_ = [("LowPart", wintypes.DWORD), ("HighPart", wintypes.LONG)]
+
+    class _LUID_AND_ATTRIBUTES(ctypes.Structure):
+        _fields_ = [("Luid", _LUID), ("Attributes", wintypes.DWORD)]
+
+    class _TOKEN_PRIVILEGES(ctypes.Structure):
+        _fields_ = [  # noqa: RUF012
+            ("PrivilegeCount", wintypes.DWORD),
+            ("Privileges", _LUID_AND_ATTRIBUTES * 2),
+        ]
+
+    advapi.LookupPrivilegeValueW.argtypes = [
+        wintypes.LPCWSTR,
+        wintypes.LPCWSTR,
+        ctypes.POINTER(_LUID),
+    ]
+    advapi.LookupPrivilegeValueW.restype = wintypes.BOOL
+    advapi.AdjustTokenPrivileges.argtypes = [
+        wintypes.HANDLE,
+        wintypes.BOOL,
+        ctypes.c_void_p,
+        wintypes.DWORD,
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+    ]
+    advapi.AdjustTokenPrivileges.restype = wintypes.BOOL
+
+    token = wintypes.HANDLE()
+    enabled: list[_LUID] = []
+    if advapi.OpenProcessToken(
+        k32.GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, ctypes.byref(token)
+    ):
+        for name in _OWNER_PRIVILEGES:
+            luid = _LUID()
+            if not advapi.LookupPrivilegeValueW(None, name, ctypes.byref(luid)):
+                continue
+            privileges = _TOKEN_PRIVILEGES()
+            privileges.PrivilegeCount = 1
+            privileges.Privileges[0].Luid = luid
+            privileges.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED
+            if not advapi.AdjustTokenPrivileges(token, False, ctypes.byref(privileges), 0, None, None):
+                continue
+            if ctypes.get_last_error() == _ERROR_NOT_ALL_ASSIGNED:
+                continue  # privilege not held; the owner write may still succeed
+            enabled.append(luid)
+    try:
+        yield
+    finally:
+        if token:
+            for luid in enabled:
+                privileges = _TOKEN_PRIVILEGES()
+                privileges.PrivilegeCount = 1
+                privileges.Privileges[0].Luid = luid
+                privileges.Privileges[0].Attributes = 0
+                advapi.AdjustTokenPrivileges(token, False, ctypes.byref(privileges), 0, None, None)
+            k32.CloseHandle(token)
+
+
+def active_console_user_sid() -> str | None:
+    """Resolve the SID of the active interactive console user.
+
+    When this process already runs inside the active console session the
+    current process token is the active user's token. Otherwise the active
+    console session's user token is queried (a service-identity operation).
+    A SID is a token attribute used for ACL grants, never credential material.
+    Returns ``None`` when no active console session/user can be resolved.
+    """
+    if not supported():
+        return None
+    k32, advapi = _apis()
+    k32.WTSGetActiveConsoleSessionId.restype = wintypes.ULONG
+    session = int(k32.WTSGetActiveConsoleSessionId())
+    if session == 0xFFFFFFFF:
+        return None
+    k32.ProcessIdToSessionId.argtypes = [wintypes.DWORD, ctypes.POINTER(wintypes.DWORD)]
+    k32.ProcessIdToSessionId.restype = wintypes.BOOL
+    current = wintypes.DWORD()
+    if k32.ProcessIdToSessionId(
+        wintypes.DWORD(k32.GetCurrentProcessId()), ctypes.byref(current)
+    ) and int(current.value) == session:
+        return current_process_sid()
+    wtsapi = ctypes.WinDLL("wtsapi32", use_last_error=True)
+    wtsapi.WTSQueryUserToken.argtypes = [wintypes.ULONG, ctypes.POINTER(wintypes.HANDLE)]
+    wtsapi.WTSQueryUserToken.restype = wintypes.BOOL
+    token = wintypes.HANDLE()
+    if not wtsapi.WTSQueryUserToken(wintypes.ULONG(session), ctypes.byref(token)):
+        return None
+    try:
+
+        class _TOKEN_USER(ctypes.Structure):
+            _fields_ = [("User", _SID_AND_ATTRIBUTES)]
+
+        size = wintypes.DWORD()
+        if not advapi.GetTokenInformation(token, 1, None, 0, ctypes.byref(size)):
+            if ctypes.get_last_error() != 122:  # ERROR_INSUFFICIENT_BUFFER
+                return None
+        buffer = ctypes.create_string_buffer(max(int(size.value), ctypes.sizeof(_TOKEN_USER)))
+        if not advapi.GetTokenInformation(token, 1, buffer, ctypes.sizeof(buffer), ctypes.byref(size)):
+            return None
+        info = ctypes.cast(buffer, ctypes.POINTER(_TOKEN_USER)).contents
+        if not info.User.Sid:
+            return None
+        return _sid_string(info.User.Sid)
+    finally:
+        k32.CloseHandle(token)
+
+
+def object_owner(path: Path) -> str | None:
+    """Read back the NTFS owner SID string of ``path``."""
+    k32, advapi = _apis()
+    owner = ctypes.c_void_p()
+    descriptor = ctypes.c_void_p()
+    result = advapi.GetNamedSecurityInfoW(
+        str(path),
+        SE_FILE_OBJECT,
+        OWNER_SECURITY_INFORMATION,
+        ctypes.byref(owner),
+        None,
+        None,
+        None,
+        ctypes.byref(descriptor),
+    )
+    if result != 0 or not owner:
+        return None
+    try:
+        return _sid_string(owner)
+    finally:
+        if descriptor:
+            k32.LocalFree(descriptor)
+
+
+def set_owner_and_grant(
+    path: Path,
+    *,
+    owner_sid: str | None = None,
+    grant_sid: str | None = None,
+    revoke_sid: str | None = None,
+    grant_mask: int = FILE_ALL_ACCESS,
+) -> None:
+    """Set the owner and/or merge one explicit ACE into the DACL of ``path``.
+
+    The existing DACL is read and merged (``SetEntriesInAclW``), so previously
+    present ACEs are preserved rather than replaced. Only provider-owned
+    objects are ever passed here; no foreign path is touched.
+    """
+    k32, advapi = _apis()
+    if grant_sid is not None and revoke_sid is not None:
+        raise IntegritySandboxError(
+            "integrity_sandbox_unavailable",
+            "grant_sid and revoke_sid are mutually exclusive",
+        )
+    descriptor = ctypes.c_void_p()
+    old_dacl = ctypes.c_void_p()
+    result = advapi.GetNamedSecurityInfoW(
+        str(path),
+        SE_FILE_OBJECT,
+        DACL_SECURITY_INFORMATION,
+        None,
+        None,
+        ctypes.byref(old_dacl),
+        None,
+        ctypes.byref(descriptor),
+    )
+    if result != 0:
+        raise IntegritySandboxError(
+            "integrity_sandbox_unavailable",
+            f"GetNamedSecurityInfoW(DACL) failed for {path}: WinError {result}",
+        )
+    new_dacl = ctypes.c_void_p(old_dacl.value if old_dacl else 0)
+    try:
+        if grant_sid is not None or revoke_sid is not None:
+            trustee_sid = grant_sid if grant_sid is not None else revoke_sid
+            entries = (_EXPLICIT_ACCESS_W * 1)()
+            # The trustee keeps a pointer to the SID memory: the SID handle
+            # must stay alive until SetEntriesInAclW has consumed it.
+            with _SidHandle(trustee_sid) as handle:
+                advapi.BuildTrusteeWithSidW.argtypes = [
+                    ctypes.POINTER(_TRUSTEE_W),
+                    ctypes.c_void_p,
+                ]
+                advapi.BuildTrusteeWithSidW(ctypes.byref(entries[0].Trustee), handle.pointer())
+                entries[0].grfAccessPermissions = grant_mask
+                entries[0].grfAccessMode = (
+                    GRANT_ACCESS if grant_sid is not None else REVOKE_ACCESS
+                )
+                entries[0].grfInheritance = SUBTREE_INHERIT_ACE
+                advapi.SetEntriesInAclW.argtypes = [
+                    wintypes.ULONG,
+                    ctypes.POINTER(_EXPLICIT_ACCESS_W),
+                    ctypes.c_void_p,
+                    ctypes.POINTER(ctypes.c_void_p),
+                ]
+                advapi.SetEntriesInAclW.restype = wintypes.DWORD
+                merge = ctypes.c_void_p()
+                rc = advapi.SetEntriesInAclW(1, entries, old_dacl, ctypes.byref(merge))
+            if rc != 0:
+                raise IntegritySandboxError(
+                    "integrity_sandbox_unavailable",
+                    f"SetEntriesInAclW failed for {path}: WinError {rc}",
+                )
+            new_dacl = merge
+        flags = DACL_SECURITY_INFORMATION
+        owner_handle: _SidHandle | None = None
+        owner_pointer = ctypes.c_void_p()
+        if owner_sid is not None:
+            flags |= OWNER_SECURITY_INFORMATION
+            owner_handle = _SidHandle(owner_sid)
+            owner_pointer = owner_handle.pointer()
+        try:
+            result = advapi.SetNamedSecurityInfoW(
+                str(path),
+                SE_FILE_OBJECT,
+                flags,
+                owner_pointer,
+                None,
+                new_dacl,
+                None,
+            )
+        finally:
+            if owner_handle is not None:
+                owner_handle.close()
+        if result != 0:
+            raise IntegritySandboxError(
+                "integrity_sandbox_unavailable",
+                f"SetNamedSecurityInfoW(owner/dacl) failed for {path}: WinError {result}",
+            )
+    finally:
+        if new_dacl.value and new_dacl.value != old_dacl.value:
+            k32.LocalFree(new_dacl)
+        if descriptor:
+            k32.LocalFree(descriptor)
+
+
+def has_grant_ace(path: Path, sid_str: str, *, explicit_only: bool = False) -> bool:
+    """Whether ``path``'s DACL contains an allow ACE for ``sid_str``.
+
+    ``explicit_only`` restricts the check to ACEs that are not inherited from
+    a parent directory, which is how the provider's own grant is verified.
+    """
+    k32, advapi = _apis()
+    dacl = ctypes.c_void_p()
+    descriptor = ctypes.c_void_p()
+    result = advapi.GetNamedSecurityInfoW(
+        str(path),
+        SE_FILE_OBJECT,
+        DACL_SECURITY_INFORMATION,
+        None,
+        None,
+        ctypes.byref(dacl),
+        None,
+        ctypes.byref(descriptor),
+    )
+    if result != 0 or not dacl:
+        return False
+    try:
+
+        class _ACE_HEADER(ctypes.Structure):
+            _fields_ = [  # noqa: RUF012
+                ("AceType", ctypes.c_ubyte),
+                ("AceFlags", ctypes.c_ubyte),
+                ("AceSize", wintypes.WORD),
+            ]
+
+        class _ACCESS_ALLOWED_ACE(ctypes.Structure):
+            _fields_ = [  # noqa: RUF012
+                ("Header", _ACE_HEADER),
+                ("Mask", wintypes.DWORD),
+                ("SidStart", wintypes.DWORD),
+            ]
+
+        class _ACL_SIZE_INFORMATION(ctypes.Structure):
+            _fields_ = [  # noqa: RUF012
+                ("AceCount", wintypes.DWORD),
+                ("AclBytesInUse", wintypes.DWORD),
+                ("AclBytesFree", wintypes.DWORD),
+            ]
+
+        advapi.GetAclInformation.argtypes = [
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            wintypes.DWORD,
+            ctypes.c_int,
+        ]
+        advapi.GetAclInformation.restype = wintypes.BOOL
+        advapi.GetAce.argtypes = [
+            ctypes.c_void_p,
+            wintypes.DWORD,
+            ctypes.POINTER(ctypes.c_void_p),
+        ]
+        advapi.GetAce.restype = wintypes.BOOL
+        info = _ACL_SIZE_INFORMATION()
+        if not advapi.GetAclInformation(dacl, ctypes.byref(info), ctypes.sizeof(info), 2):
+            return False
+        for index in range(int(info.AceCount)):
+            ace_pointer = ctypes.c_void_p()
+            if not advapi.GetAce(dacl, index, ctypes.byref(ace_pointer)):
+                return False
+            ace = ctypes.cast(ace_pointer, ctypes.POINTER(_ACCESS_ALLOWED_ACE)).contents
+            if ace.Header.AceType != ACCESS_ALLOWED_ACE_TYPE:
+                continue
+            if explicit_only and (ace.Header.AceFlags & 0x10):  # INHERITED_ACE
+                continue
+            sid_pointer = int(ace_pointer.value) + _ACCESS_ALLOWED_ACE.SidStart.offset
+            if _sid_string(sid_pointer) == sid_str:
+                return True
+        return False
+    finally:
+        if descriptor:
+            k32.LocalFree(descriptor)
 
 
 def set_low_mandatory_label(path: Path, *, inherit: bool = True, verify: bool = True) -> None:

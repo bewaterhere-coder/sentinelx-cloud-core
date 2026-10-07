@@ -59,6 +59,11 @@ class CodexChain:
     # Passing an unrecognized flag makes the whole non-interactive run fail.
     approval_flag_supported: bool = False
     sandbox_flag_supported: bool = True
+    # ``--skip-git-repo-check`` is required only by the provider's real sandbox
+    # setup probe, which runs before the transport bootstrap materializes the
+    # checkout (an empty derived directory is not a git repository). It never
+    # widens the sandbox: the workspace-write policy is unchanged.
+    skip_git_repo_check_supported: bool = False
 
 
 def _absolute(path: Path) -> Path:
@@ -258,6 +263,7 @@ async def discover_codex_chain(
             json_output_supported=contract["json_output_supported"],
             approval_flag_supported=contract["approval_flag_supported"],
             sandbox_flag_supported=contract["sandbox_supported"],
+            skip_git_repo_check_supported=contract["skip_git_repo_check_supported"],
         )
     raise DirectCodexDiscoveryError(
         "direct_codex_chain_unavailable",
@@ -294,6 +300,7 @@ async def probe_cli_contract(
             "sandbox_supported": False,
             "approval_flag_supported": False,
             "json_output_supported": False,
+            "skip_git_repo_check_supported": False,
         }
     if result.returncode != 0:
         return {
@@ -301,6 +308,7 @@ async def probe_cli_contract(
             "sandbox_supported": False,
             "approval_flag_supported": False,
             "json_output_supported": False,
+            "skip_git_repo_check_supported": False,
         }
     help_text = result.stdout
     return {
@@ -308,6 +316,7 @@ async def probe_cli_contract(
         "sandbox_supported": "--sandbox" in help_text,
         "approval_flag_supported": "--ask-for-approval" in help_text,
         "json_output_supported": "--json" in help_text,
+        "skip_git_repo_check_supported": "--skip-git-repo-check" in help_text,
     }
 
 
