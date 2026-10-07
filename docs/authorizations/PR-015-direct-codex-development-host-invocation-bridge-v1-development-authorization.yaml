@@ -13,7 +13,7 @@ authority:
 scope:
   workflow: project_development
   requirement_ref: docs/requirements/PR-015-direct-codex-development-host-invocation-bridge-v1.md
-  requirement_revision: 1
+  requirement_revision: 2
   allowed_actions:
     - orchestration
     - implementation
@@ -28,19 +28,21 @@ scope:
     - production_release
     - devforge_runtime_mutation
 bindings:
-  plan_ref: docs/plans/PR-015-direct-codex-development-host-invocation-bridge-v1-plan.md
-  plan_revision: 2
-  plan_blob_sha: b1414f58e31e69fd5718479d04eb6b7e9e8475bd
+  plan_ref: null
+  plan_revision: null
+  plan_blob_sha: null
   transport_ref:
     type: github-pr
     repository: bewaterhere-coder/sentinelx-cloud-core
     pr_number: 15
     branch: task/direct-codex-development-host-invocation-bridge-v1
 lifecycle:
-  state: suspended
-  revision: 3
-  reason: upstream_material_decision
-  decision_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r1.md
+  state: active
+  revision: 4
+  reactivated_by: "#开发 PR-015-direct-codex-development-host-invocation-bridge-v1 修订当前方案：采用 provider-owned deterministic commit-on-publish"
+  reactivation_reason: human_material_decision_resolved
+  requirement_revision_bound: 2
+  plan_binding_pending_review: true
 receipt:
   source_command: "#开发 SentinelX Direct Codex Development Host Invocation Bridge V1"
   readback_required: true
@@ -49,3 +51,6 @@ receipt:
   latest_acceptance_command: "#开发验收 PR-015-direct-codex-development-host-invocation-bridge-v1"
   latest_acceptance_result: DecisionRequired
   suspension_readback_required: true
+  latest_reactivation_source: "#开发"
+  latest_reactivation_result: active_pending_plan_review
+  reactivation_readback_required: true
