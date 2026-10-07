@@ -46,6 +46,7 @@ artifacts:
   latest_slice_completion_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-repair-completion-receipt-r4.yaml
   latest_slice_invalidation: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-live-invalidation-r3.md
   latest_s03_blocker_review: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-unity-appcontainer-compatibility-blocker-r1.md
+  latest_acceptance_attempt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-acceptance-r1-blocked-incomplete-slices-20261008.yaml
 related_tasks:
   predecessor:
     - PR-012-execute-scoped-explicit-execution-profile-v1
