@@ -137,4 +137,6 @@ receipt:
   expiry_reconciled_at: "2026-10-07"
   expiry_reconciled_by: "#开发执行 PR-015-direct-codex-development-host-invocation-bridge-v1"
   expiry_readback_required: true
+  expiry_readback_verified: true
+  expiry_readback_blob_sha: 6e2ec2e8a9eb3682e187c8d03ec9ec1451c0b681
   readback_ref: "github-pr:bewaterhere-coder/sentinelx-cloud-core#15:docs/overrides/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-execution-override.yaml@task/direct-codex-development-host-invocation-bridge-v1"
