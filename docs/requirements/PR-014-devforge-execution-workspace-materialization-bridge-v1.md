@@ -3,23 +3,21 @@ task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
 title: SentinelX DevForge Execution Workspace Materialization Bridge V1
 project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
-requirement_revision: 3
+requirement_revision: 4
 development:
-  stage: plan_review_rejected
+  stage: planning
   gates:
     requirement_ready: true
     plan_approved: false
     acceptance_approved: false
     completion_verified: false
-  plan_revision: 7
+  plan_revision: 8
   latest_plan_review: rejected_round_7
   prior_plan_review: approved_round_6
-  latest_plan_remediation: plan_r4_remediation_r1
+  latest_plan_remediation: requirement_r4_architecture_reconciliation
   prior_plan_remediation: plan_r2_remediation_r1
   implementation_authorized: false
-  blocking_findings:
-    - PR021MinimalRuntimeDispositionNotConsumed
-    - CanonicalMainImplementationSurfaceMismatch
+  blocking_findings: []
   current_slice: null
   current_slice_state: null
   completed_slices: [S01, S02]
@@ -40,8 +38,8 @@ development:
   preserved_s02_product_candidate: 45dc99d15a23c499b4c1500fab60ed5e76475aeb
   s02_product_mutation_replay: forbidden
   prior_plan_revision: 6
-  prior_slice_set_status: invalidated_by_requirement_revision_3
-  requirement_change_impact: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-requirement-r3-change-impact.md
+  prior_slice_set_status: invalidated_by_requirement_revision_4
+  requirement_change_impact: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-requirement-r4-change-impact.md
   bootstrap_required_before_current_slice: false
   bootstrap_target: null
   bootstrap_command: null
@@ -49,7 +47,7 @@ development:
   bootstrap_override_state: expired_by_requirement_revision_3
   prior_bootstrap_override: docs/overrides/PR-014-devforge-execution-workspace-materialization-bridge-v1-bootstrap-execution-override.yaml
   latest_bootstrap_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-bootstrap-execution-override-r1-receipt.yaml
-  execution_disposition: plan_review_r7_rejected
+  execution_disposition: requirement_r4_replanned_no_implementation
   execution_blocker: null
   execution_failure_state: null
   execution_failure_reason: null
@@ -58,10 +56,10 @@ development:
   preserved_s02_completion_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-completion-receipt.yaml
   latest_s02_reconciliation_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-r6-reconciliation-receipt.yaml
   prior_bootstrap_receipt: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-harness-bootstrap-blocked-20261008.yaml
-  superseded_slice_set_status: invalidated_by_requirement_revision_3
+  superseded_slice_set_status: invalidated_by_requirement_revision_4
   planned_pending_delta_slice: null
-  next_expected_actor: planner
-  canonical_next_action: "#开发计划修复 PR-014-devforge-execution-workspace-materialization-bridge-v1"
+  next_expected_actor: reviewer
+  canonical_next_action: "#开发评审 PR-014-devforge-execution-workspace-materialization-bridge-v1"
   authorization:
     mode: legacy_command_scoped
 artifacts:
@@ -76,7 +74,7 @@ artifacts:
   superseded_plan_review_transition_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r5-transition-receipt.yaml
   latest_plan_remediation: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-remediation-r4-20261008.yaml
   latest_plan_remediation_transition_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-remediation-r4-transition-receipt.yaml
-  latest_replan: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-replan-r7-20261008.yaml
+  latest_replan: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-replan-r8-20261008.yaml
   latest_replan_transition_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-replan-r7-transition-receipt.yaml
   execution_slice_set: null
   superseded_execution_slice_set: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-r6-slices.yaml
@@ -100,8 +98,8 @@ transport:
 requirement_readiness:
   result: Ready
   depth: deep
-  requirement_revision: 2
-  revision_reason: break_self_host_workspace_materialization_dependency_cycle
+  requirement_revision: 4
+  revision_reason: pr021_minimal_runtime_short_mutation_reconciliation
   prior_plan_revalidation_required: true
   material_questions: []
   ui_semantics:
@@ -110,6 +108,49 @@ requirement_readiness:
 ---
 
 # Requirement
+
+## Requirement Revision 4 — Canonical effective scope (2026-10-08)
+
+**Normative precedence:** This section supersedes all incompatible R1–R3 body clauses, including old R2/R3 Goal, R4/R7 source materialization, Development Host handoff, `devforge_runtime.materialize_workspace` as a required deliverable, and the legacy acceptance criteria wherever they imply long-Agent/bootstrap lifecycle. Historical sections below are preserved exclusively for lineage and may not be used as implementation authority. PR-021's frozen `docs/architecture/sentinelx-minimal-runtime-boundary-v1.md` on canonical main is controlling architecture.
+
+### Retained problem and outcome
+
+For explicit bounded short Host mutation, SentinelX may need a provider-owned, isolated workspace placement and confinement substrate. PR-014 retains **only** the minimum demonstrably needed to admit, scope, audit, execute, read back, and terminalize a small synchronous mutation. It shall not build a generic Git materializer or a user-level development workspace lifecycle by inertia. If an existing canonical runtime already supplies the relevant primitive, reuse it and make no duplicate system.
+
+### Required security invariants
+
+1. Source and execution placement are **independent Host-owned bindings**. The Host's admitted canonical source inventory resolves protected `D:\coco\repos\<owner>\<repository>` (current Windows topology); an independently configured dedicated execution root (preferred `D:\SentinelX\devforge-workspaces`, if actually admitted by effective Host policy) is outside all protected/canonical roots. Neither path is caller-selectable. Host effective policy, not this example, is authority.
+2. `D:\coco` protection may never be reduced, removed or circumvented by carve-outs/allowlists. No fallback to `mutation_execution.workspace_root` or legacy `locations.devforge_workspace_root=D:\coco` is permitted for the DevForge execution role. Do not mutate canonical `main` or operate on its tree as a workspace.
+3. The provider derives and validates path identity from closed semantic inputs, rejects traversal/symlinks/overlap/binding drift, and seals exact operation/write scope into the canonical durable MutationScope lifecycle **before any write**. Scope authority must not be widened by migration, retry or restart.
+4. Durable MutationScope records must parse/migrate known compatible additive fields including `runtime_read_authority_roots`, preserve their values on read/write, and fail closed for unknown authority-bearing fields; do not delete/reset the store as a repair.
+5. Durable audit START precedes mutation; provider-owned AppContainer/ACL/Job confinement, canonical mutation firewall, structured readback, failure cleanup and authority terminalization remain mandatory wherever the bounded operation requires them. No generic shell/Git clone/worktree/filesystem bypass is admissible.
+6. Caller controls no concrete workspace path, SID, ACL, executable, credential, source-cache path or mutation operation class. Provider-local effects remain typed and bounded; no new broad MCP Tool Projection.
+
+### Explicit removal / HOLD
+
+No PR-014 implementation authority exists for long-running CodeBuddy/Codex Agents, Direct Development Host bootstrap, handoff ACL normalization for user-level Agents, Development Host execution lifecycle, provider-owned Git source capsule or general source hydration, reusable checkout materialization, retained multi-operation transactions, long build/test orchestration, task scheduling, and durable long-operation recovery. Former `development.execution_workspace_materialize` full checkout/handoff receipt is not an acceptance deliverable. Any independently necessary short-mutation source access must be narrowly rejustified and reviewed, not inherited from S02.
+
+### Canonical product-source topology and admission
+
+At R4 drafting, canonical `main@cd42e371f18056327c1d8b744f8956a76bc11541` did **not** contain `src/sentinelx_core/policy.py`, `src/sentinelx_core/mutation_scope.py`, `src/sentinelx_core/handlers/devforge_runtime.py`, `pyproject.toml` or `README.md`, although the old PR branch did. This is an observed mismatch, not authorization to restore or cherry-pick source. **The first gate of R8 must re-read fresh current main and establish actual authoritative implementation ownership/topology.** If current main still has no canonical implementation surface, block product mutation and require a separately reviewed topology/disposition decision on the same Task; never resurrect the historical tree solely to pass the Plan.
+
+### Acceptance
+
+AC-R4-1: Proven bounded short-mutation consumer need; no Agent lifecycle or implicit generic materialization.
+
+AC-R4-2: Independent Host source/placement policy and protected-root non-overlap; fail closed for missing/drifting Host bindings, no caller path authority.
+
+AC-R4-3: Exact durable scope and additive-state compatibility without authority widening; audit START before write; AppContainer/Job containment where relevant; terminalization and negative-access evidence.
+
+AC-R4-4: Exact short-operation receipt and readback; failure never claims completion without evidence.
+
+AC-R4-5: Main topology ownership resolved before code writes; integration strategy reviewed rather than old branch replay; no unauthorized CI/Host side effects.
+
+### Historical evidence disposition
+
+S01 completion evidence, S02 completion/reconciliation receipts and candidate `45dc99d15a23c499b4c1500fab60ed5e76475aeb` are preserved as **historical evidence only**. No S01/S02 product mutation replay, no automatic candidate promotion, no new PR/branch, no mutation on canonical main. Previous Plan R7, its rejected Review R7 and all prior Slice Sets are superseded execution authority. Any new slice requires separate Plan approval.
+
+---
 
 ## Revision 2 — Bootstrap-safe cycle-break delta
 
