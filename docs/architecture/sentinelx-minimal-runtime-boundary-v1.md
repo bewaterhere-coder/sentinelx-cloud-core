@@ -757,21 +757,126 @@ It must not be silently eroded by incremental timeout/orchestration additions.
 | R12 | ADR grants no source deletion/provider disablement/Hub/project-binding mutation authority. |
 | R13 | This ADR freezes sequencing constraints; S04 owns exactly one final successor implementation order. |
 
-## 19. Successor sequencing constraints
+## 19. Primary successor implementation sequence — Frozen by S04
 
-S04 will freeze exactly one primary successor order.
+There is exactly one primary implementation sequence after PR-021 Acceptance.
 
-That final order must obey these constraints:
+No step may be reordered around its prerequisite.
 
-1. stop expanding architecture-conflicting long-Agent orchestration before adding replacement complexity;
-2. establish guided CLI routing/handoff before removing working Direct Codex paths;
-3. prove the direct-short SentinelX path still supports ordinary bounded operations;
-4. reshape or retire long-Agent-specific bridges only after replacement evidence exists;
-5. preserve security substrates throughout;
-6. perform source deletion only in separate explicit DevForge tasks;
-7. reconcile project binding and stabilization baseline through explicit successor tasks, never as an implicit side effect of PR-021.
+### Step 1 — Reconcile active architecture-conflicting work before adding replacement runtime
 
-This section constrains S04 but does not itself execute or finalize the successor plan.
+Create one explicit reconciliation Task covering the current active lineages without product-source deletion.
+
+Required outcomes:
+
+- PR-020 is durably moved to HOLD / superseded-for-development status rather than continuing unchanged;
+- PR-014 is replanned so its retained target is only the minimum short-mutation workspace isolation/security substrate proven necessary;
+- PR-014 long-Agent / direct-CodeBuddy bootstrap objectives are removed from the active target;
+- PR-019 stabilization baseline is revised so SentinelX stability does not permanently require Direct Codex long-Agent lifecycle;
+- no new Direct CodeBuddy/Codex Hub lifecycle dependency is admitted;
+- existing historical receipts/evidence remain preserved.
+
+This step is governance/replanning first. It prevents active work from continuing to deepen the architecture while replacement routing is being built.
+
+### Step 2 — Implement provider-neutral guided CLI routing and handoff in DevForge
+
+Create an explicit DevForge Task to implement the execution-mode resolver and provider-neutral guided CLI handoff.
+
+Required behavior:
+
+~~~text
+approved Slice / requested development operation
+↓
+classify workload shape
+├─ read-only
+│    → repository/read path
+├─ bounded short Host operation
+│    → SentinelX direct-short
+└─ CodeBuddy / Codex / large build / long test /
+   large refactor / duration-uncertain development work
+     → GuidedCLIRequired
+     → emit complete local CLI handoff
+~~~
+
+The handoff must carry Task/PR/branch/Requirement/Plan/Slice/run scope, forbidden actions, verification requirements and expected return evidence.
+
+This step must not delete Direct Codex. It establishes the replacement path first.
+
+### Step 3 — Migrate `sentinelx-cloud-core` DevForge execution binding
+
+After Step 2 is accepted and read back, create a separate explicit DevForge Task to migrate the current project binding away from:
+
+~~~yaml
+provider: direct
+adapter: codex
+~~~
+
+to the newly accepted execution-mode routing / guided CLI model.
+
+Migration must prove:
+
+- bounded direct-short work still reaches SentinelX;
+- long-Agent work resolves to guided CLI rather than Direct Codex Hub lifecycle;
+- canonical Task/PR/Plan/Slice identity survives the routing change;
+- no fallback silently restores `direct/codex`;
+- project registry read-back confirms the new binding.
+
+No Direct Codex source deletion occurs in this step.
+
+### Step 4 — Prove the SentinelX Minimal Runtime before retirement
+
+Create a SentinelX verification Task that proves the post-migration minimal runtime still performs the retained responsibilities.
+
+Minimum proof set:
+
+1. structured read;
+2. bounded file write inside authorized scope;
+3. short command execution;
+4. focused short verification;
+5. Host Mutation Scope admission and terminalization;
+6. fail-closed mutation audit;
+7. AppContainer / ACL / Job containment on the applicable Windows path;
+8. canonical repository firewall protection;
+9. operation/effect classification;
+10. receipt / read-back evidence;
+11. long/uncertain development operation resolves to guided CLI instead of timeout extension.
+
+This is the retirement gate.
+
+If this proof fails, Direct Codex remains installed and no retirement task may proceed.
+
+### Step 5 — Retire long-Agent-specific SentinelX surfaces through explicit per-capability DevForge Tasks
+
+Only after Steps 1–4 are accepted may retirement begin.
+
+Retirement follows the S03 matrix and uses separate explicit Tasks for material removals/simplifications.
+
+Order inside this final phase:
+
+1. remove/finalize superseded Direct Codex execution-provider lifecycle ownership;
+2. retire Codex-specific discovery / ACL handoff / workspace lifecycle / persistence pieces that have no remaining bounded consumer;
+3. extract or retain provider-neutral handoff / transport-readback / receipt validation semantics where Step 2/4 proved them useful;
+4. close or supersede PR-020's development-oriented Durable Async direction after its HOLD disposition is durably reconciled;
+5. close or supersede the long-Agent portions of PR-014 after the retained security substrate is independently owned;
+6. remove any obsolete direct-Agent configuration only after repository and project-registry read-back prove no remaining dependency.
+
+Security substrates remain untouched unless a separate reviewed Task proves equivalent protection.
+
+### Sequence invariant
+
+~~~text
+1. Reconcile conflicting active work
+→ 2. Build guided CLI routing/handoff
+→ 3. Migrate project binding
+→ 4. Verify Minimal Runtime
+→ 5. Retire long-Agent-specific surfaces
+~~~
+
+There is no supported shortcut from Step 1 directly to source deletion.
+
+There is no supported path that removes Direct Codex before the guided CLI replacement, binding migration and minimal-runtime verification are accepted.
+
+Every material code removal/simplification in Step 5 requires its own explicit DevForge Task and current dependency/read-back proof.
 
 ## 20. Non-authority
 
