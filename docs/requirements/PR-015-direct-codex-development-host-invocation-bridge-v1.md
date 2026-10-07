@@ -5,7 +5,7 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 2
 development:
-  stage: plan_review
+  stage: plan_review_rejected
   implementation_execution_complete: false
   gates:
     requirement_ready: true
@@ -14,18 +14,20 @@ development:
     completion_verified: false
   plan_revision: 5
   implementation_authorized: false
-  latest_plan_review: pending_round_5
-  latest_plan_remediation: r5_applied
-  review_disposition: pending
-  next_expected_actor: reviewer
+  latest_plan_review: rejected_round_5
+  latest_plan_remediation: pending_r6
+  review_disposition: rejected
+  next_expected_actor: planner
   acceptance_disposition: invalidated_by_requirement_revision_2
-  blocking_findings: []
+  blocking_findings:
+    - Checkout canonicalization authority incomplete: Plan R5 clamps external filters only for persistence, while the existing active-user checkout can still execute or depend on custom/global/system attribute/filter authority before Codex starts.
   authorization:
     mode: durable
     ref: docs/authorizations/PR-015-direct-codex-development-host-invocation-bridge-v1-development-authorization.yaml
 artifacts:
   plan: docs/plans/PR-015-direct-codex-development-host-invocation-bridge-v1-plan.md
   plan_blob_sha: c45a373e4f7a62ae11fceba89316dd8cf6353969
+  latest_plan_review: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r5.md
   prior_plan_review_r4: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r4.md
   prior_plan_review_r3: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r3.md
   prior_plan_review: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r2.md
