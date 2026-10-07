@@ -1,0 +1,43 @@
+schema_version: "1.0"
+kind: devforge_artifact_state_transition_receipt
+task_id: PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1
+from_stage: acceptance
+to_stage: accepted
+transition_rule: acceptance_approved_to_accepted
+source_command: "#开发验收 PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"
+
+runtime:
+  devforge_version: "2.102.0"
+  devforge_main_sha: "7b45640926dac9c559d558f8ddbbb137ba30b69b"
+  artifact_state_transition_contract_version: "1.1"
+  artifact_state_transition_contract_blob_sha: "4af7d9b41313f43bf4cc1fb3ab7927de722718ed"
+
+evidence_refs:
+  - docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-acceptance-r3.yaml@e89f80f4a4e15b39f0699b02cd931e553307d189
+  - docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-s03-completion-receipt.yaml@18c854e6bda38c586c59fac38862090c0b3f4e3c
+  - docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-acceptance-r3.yaml@4e22d9537ae9e742c19ee3639c674ed8121995bc
+  - docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-integration-receipt-r1.yaml@ae7a93de6d4ea782f350f55d40779dc3f2084fd0
+
+task_before_blob_sha: "faf6d1ce90d5933fe1ebb92f9b33e6de70443e28"
+task_after_blob_sha: "61d73830d409e1733a5b690d769cd11cbd901901"
+transition_commit: "34810502298804636e78fce847f9b51d5d48b8e2"
+verified: true
+
+readback:
+  task_stage: accepted
+  requirement_ready: true
+  plan_approved: true
+  acceptance_approved: true
+  completion_verified: false
+  next_expected_actor: integration
+  acceptance_revision: 3
+  transport:
+    repository: bewaterhere-coder/sentinelx-cloud-core
+    pr_number: 18
+    branch: task/unity-6-6-appcontainer-dll-initialization-compatibility-v1
+  acceptance_receipt_verified: true
+
+postconditions:
+  merge_or_finalization_executed: false
+  done_claimed: false
+  canonical_next_action: "#开发完成 PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"
