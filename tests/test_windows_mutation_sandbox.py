@@ -49,7 +49,13 @@ pytestmark = pytest.mark.skipif(sys.platform != "win32", reason="Windows AppCont
 
 
 class Fixture:
-    def __init__(self, tmp_path: Path, *, attempt_id: str) -> None:
+    def __init__(
+        self,
+        tmp_path: Path,
+        *,
+        attempt_id: str,
+        runtime_read_root: bool = False,
+    ) -> None:
         self.root = tmp_path / "fixture"
         self.workspace_root = self.root / "workspaces"
         self.sibling = self.root / "sibling"
@@ -65,7 +71,7 @@ class Fixture:
             scoped_mutation_enabled=True,
             workspace_root=self.workspace_root,
             protected_roots=(self.protected,),
-            runtime_read_roots=(),
+            runtime_read_roots=(self.runtime,) if runtime_read_root else (),
             scope_ttl_seconds=600,
             evidence_retention_days=7,
         )
@@ -319,7 +325,11 @@ def test_preexisting_foreign_appcontainer_acl_is_rejected(tmp_path: Path) -> Non
 
 
 def test_terminal_cleanup_failure_stays_revoked_until_real_cleanup(tmp_path: Path) -> None:
-    fx = Fixture(tmp_path, attempt_id="terminal-fail-closed")
+    fx = Fixture(
+        tmp_path,
+        attempt_id="terminal-fail-closed",
+        runtime_read_root=True,
+    )
     activation = fx.activate()
 
     def fail_cleanup(_record):
@@ -346,6 +356,10 @@ def test_terminal_cleanup_failure_stays_revoked_until_real_cleanup(tmp_path: Pat
     assert terminal.active_job_ids == ()
     assert terminal.active_process_ids == ()
     assert terminal.sandbox_write_authority_present is False
+    assert all(
+        sid != activation.sandbox_identity
+        for sid, _mask, _flags in _dacl_entries(fx.runtime)
+    )
 
 
 
@@ -377,17 +391,83 @@ def test_runtime_acl_timeout_is_deterministic_sandbox_error(
 ) -> None:
     root = tmp_path / "runtime"
     root.mkdir()
+    calls = 0
 
-    def timeout(*_args, **kwargs):
-        raise subprocess.TimeoutExpired(cmd="icacls", timeout=kwargs["timeout"])
+    def grant_timeout_then_cleanup_success(*_args, **kwargs):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise subprocess.TimeoutExpired(cmd="icacls", timeout=kwargs["timeout"])
+        return subprocess.CompletedProcess(args=["icacls"], returncode=0, stdout=b"", stderr=b"")
 
-    monkeypatch.setattr(windows_sandbox.subprocess, "run", timeout)
+    monkeypatch.setattr(
+        windows_sandbox.subprocess,
+        "run",
+        grant_timeout_then_cleanup_success,
+    )
+    monkeypatch.setattr(windows_sandbox, "_dacl_entries", lambda _root: [])
 
     with pytest.raises(
         HostMutationSandboxAclViolation,
         match=r"runtime ACL grant .* timed out after 77s",
     ):
         _grant_runtime_read(root, "S-1-15-2-515151", timeout_seconds=77)
+
+    assert calls == 2
+
+
+def test_runtime_acl_grant_failure_compensates_exact_attempted_root(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "runtime"
+    root.mkdir()
+    app_sid = "S-1-15-2-525252"
+    calls: list[tuple[str, ...]] = []
+
+    def fail_grant_then_cleanup(args: list[str], **_kwargs) -> None:
+        calls.append(tuple(args))
+        if "/grant:r" in args:
+            raise HostMutationSandboxAclViolation("injected grant failure")
+
+    monkeypatch.setattr(windows_sandbox, "_run_icacls", fail_grant_then_cleanup)
+    monkeypatch.setattr(windows_sandbox, "_dacl_entries", lambda _root: [])
+
+    with pytest.raises(
+        HostMutationSandboxAclViolation,
+        match="injected grant failure",
+    ):
+        _grant_runtime_read(root, app_sid, timeout_seconds=91)
+
+    assert calls == [
+        (str(root), "/grant:r", f"*{app_sid}:(OI)(CI)(RX)"),
+        (str(root), "/remove:g", f"*{app_sid}"),
+    ]
+
+
+def test_runtime_acl_grant_failure_with_ambiguous_compensation_is_residual_authority(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "runtime"
+    root.mkdir()
+    app_sid = "S-1-15-2-535353"
+    calls: list[tuple[str, ...]] = []
+
+    def fail_grant_and_cleanup(args: list[str], **_kwargs) -> None:
+        calls.append(tuple(args))
+        raise HostMutationSandboxAclViolation("injected ACL failure")
+
+    monkeypatch.setattr(windows_sandbox, "_run_icacls", fail_grant_and_cleanup)
+
+    with pytest.raises(
+        HostMutationSandboxResidualAuthority,
+        match=r"grant .* failed and compensating cleanup could not prove AppContainer SID removal",
+    ):
+        _grant_runtime_read(root, app_sid, timeout_seconds=92)
+
+    assert calls == [
+        (str(root), "/grant:r", f"*{app_sid}:(OI)(CI)(RX)"),
+        (str(root), "/remove:g", f"*{app_sid}"),
+    ]
 
 
 def test_runtime_acl_cleanup_requires_exact_root_sid_absence_readback(

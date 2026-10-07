@@ -785,11 +785,29 @@ def _grant_runtime_read(
 ) -> None:
     _assert_no_reparse(root, root)
     _assert_final_path(root)
-    _run_icacls(
-        [str(root), "/grant:r", f"*{app_sid}:(OI)(CI)(RX)"],
-        timeout_seconds=timeout_seconds,
-        operation=f"runtime ACL grant for {root}",
-    )
+    try:
+        _run_icacls(
+            [str(root), "/grant:r", f"*{app_sid}:(OI)(CI)(RX)"],
+            timeout_seconds=timeout_seconds,
+            operation=f"runtime ACL grant for {root}",
+        )
+    except HostMutationSandboxAclViolation as grant_error:
+        # icacls may time out or fail after Windows has already applied some
+        # inherited ACEs. The currently-attempted root is not yet present in
+        # the activation rollback list, so compensate here and require exact
+        # SID-absence readback before surfacing the original grant failure.
+        try:
+            _remove_runtime_read(
+                root,
+                app_sid,
+                timeout_seconds=timeout_seconds,
+            )
+        except HostMutationSandboxResidualAuthority as cleanup_error:
+            raise HostMutationSandboxResidualAuthority(
+                f"runtime ACL grant for {root} failed and compensating cleanup "
+                f"could not prove AppContainer SID removal: {cleanup_error}"
+            ) from grant_error
+        raise
 
 
 def _remove_runtime_read(
