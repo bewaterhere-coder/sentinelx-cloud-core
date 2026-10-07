@@ -5,7 +5,7 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 2
 development:
-  stage: planning
+  stage: plan_review
   implementation_execution_complete: false
   gates:
     requirement_ready: true
@@ -17,7 +17,7 @@ development:
   latest_plan_review: pending_round_3
   latest_plan_remediation: null
   review_disposition: pending
-  next_expected_actor: planner
+  next_expected_actor: reviewer
   acceptance_disposition: invalidated_by_requirement_revision_2
   blocking_findings: []
   authorization:
@@ -25,14 +25,15 @@ development:
     ref: docs/authorizations/PR-015-direct-codex-development-host-invocation-bridge-v1-development-authorization.yaml
 artifacts:
   plan: docs/plans/PR-015-direct-codex-development-host-invocation-bridge-v1-plan.md
+  plan_blob_sha: 6552329d7fc07526569956db8ebee477fcd08af3
   prior_plan_review: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r2.md
   historical_plan_review_r1: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r1.md
   prior_plan_remediation: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-remediation-r2-20261006.yaml
   prior_execution_slice_set: docs/execution/PR-015-direct-codex-development-host-invocation-bridge-v1-slices.yaml
   requirement_change_impact: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-requirement-r2-impact-analysis.md
   proposed_slice_impact: docs/execution/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-r3-slice-impact.yaml
-  latest_slice_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-s03-completion-20261007.yaml
-  latest_slice_completion_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-s03-completion-receipt.yaml
+  prior_slice_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-s03-completion-20261007.yaml
+  prior_slice_completion_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-s03-completion-receipt.yaml
   prior_acceptance: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r1.md
   prior_acceptance_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r1-decision-required-20261007.yaml
   acceptance_invalidation: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r1-invalidation-r2.md
@@ -40,7 +41,8 @@ implementation_entry:
   bootstrap_required: true
   intended_target: direct:codebuddy
   override_state: not_issued_for_plan_r3
-  override_ref: docs/overrides/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-execution-override.yaml
+  override_ref: null
+  prior_override_ref: docs/overrides/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-execution-override.yaml
   effective_provider: null
   explicit_command: "#开发引导执行 PR-015-direct-codex-development-host-invocation-bridge-v1 direct:codebuddy"
 transport:
@@ -66,7 +68,7 @@ requirement_readiness:
 
 ## Problem
 
-The DevForge project binding for `sentinelx-cloud-core` is explicitly:
+The DevForge project binding for `sentinelx-cloud-core` remains explicitly:
 
 ```yaml
 execution_binding:
@@ -74,33 +76,32 @@ execution_binding:
   adapter: codex
 ```
 
-The current Windows Host has Codex CLI installed for the active interactive user, but ChatGPT/DevForge has no bounded Agent-owned surface that can invoke that direct Development Host.
+Requirement Revision 1 and Plan R2 delivered the bounded Agent-owned `devforge_direct_codex` bridge, isolated execution workspace, active-user Codex invocation, containment, exact transport admission and structured receipt validation.
 
-The current SentinelX surfaces do not solve this:
+Acceptance R1 then exposed the remaining end-to-end gap on the real host: the installed Codex Development Host performs implementation edits and verification inside the isolated checkout but does not create a Git commit. The checkout therefore remains dirty at the admitted head; provider publication does not fire; the bridge correctly returns `implementation_not_persisted`.
 
-- `exec` is not exposed by the live Agent;
-- `script_run` is governed by scoped-mutation execution-profile policy and is not a lawful direct-Codex launcher;
-- `devforge_runtime.execute_scoped` is a Host Runtime scoped-execution surface, not the direct/Codex adapter;
-- `repository_transaction_v1` is owned by PR-013 and must not be copied or required to invoke the direct adapter;
-- production `mcp.sentinelx.app` is an immutable external transport boundary.
+The persistence owner must be deterministic and cannot depend on model compliance. At the same time, the repair must not create a generic Git/shell surface, replacement transport, force push, canonical-checkout mutation, permission expansion or provider rebinding.
 
-This blocks `#开发执行 PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1` before implementation admission even though Codex itself is installed.
+`repository_transaction_v1` remains owned by PR-013, and production `mcp.sentinelx.app` remains an immutable external transport boundary.
 
 ## Goal
 
-Add one Agent-owned, model-reachable, structured bridge that lets DevForge invoke **Codex as the existing direct Development Host** while preserving:
+Complete the existing direct/Codex bridge by adding **provider-owned deterministic commit-on-publish** after successful bounded Codex execution:
 
 ```text
 DevForge Task/Plan/Slice authority
 + direct/codex provider identity
-+ canonical PR/branch transport lock
++ canonical PR/branch/expected-head lock
 + active-user Codex authentication context
 + isolated DevForge execution workspace
 + bounded non-interactive Codex invocation
-+ post-run transport/readback receipt
++ provider-owned deterministic commit of eligible checkout changes
++ ordinary fast-forward publication to the same canonical PR branch
++ independent remote readback
++ persisted direct/codex receipt
 ```
 
-SentinelX is transport and policy enforcement only. It does not become the Development Host and does not reinterpret the project binding as `host-runtime`.
+Codex remains the Development Host. SentinelX remains the bounded invocation, persistence and transport enforcement layer and does not reinterpret the project binding as `host-runtime`.
 
 ## Scope
 
