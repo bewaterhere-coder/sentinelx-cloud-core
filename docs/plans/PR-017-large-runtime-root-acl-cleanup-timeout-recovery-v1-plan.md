@@ -4,7 +4,7 @@
 
 ```yaml
 task_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
-plan_revision: 2
+plan_revision: 3
 plan_status: ready_for_review
 implementation_authority: false
 requirement_ref: docs/requirements/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1.md
@@ -21,7 +21,7 @@ Repair the fixed 20-second Windows runtime-root ACL boundary without weakening t
 
 The implementation should make runtime ACL duration provider-owned and bounded, close the partial-grant ambiguity, preserve the existing revoked/terminal lifecycle, and prove the fix against a real large runtime root.
 
-**Revision 2 integration objective:** preserve the already-completed S01/S02 evidence, consume the separately verified PR-018 Unity/AppContainer compatibility candidate as a bounded upstream dependency, and replay only PR-017 S03 / Requirement R8.3 on the combined canonical PR-017 candidate. No S01/S02 replay or PR-018 documentation import is authorized.
+**Revision 3 integration objective:** preserve the already-completed S01/S02 evidence, consume only the production subset of the separately verified PR-018 Unity/AppContainer compatibility candidate, and replay only PR-017 S03 / Requirement R8.3 on the combined canonical PR-017 candidate. No S01/S02 replay, PR-018 diagnostic seam import, or PR-018 documentation import is authorized.
 
 ## Technical Decision
 
@@ -29,9 +29,11 @@ Treat this as a **runtime-root ACL lifecycle reliability** defect inside the exi
 
 Do not redesign `execute_scoped`, scope identity, Job containment or AppContainer authority.
 
-### Revision 2 — PR-018 integration decision
+### Revision 3 — PR-018 production-subset integration decision
 
-The prior S03 blocker is no longer treated as an implementation problem owned by PR-017. PR-018 has separately verified the exact Unity/AppContainer compatibility boundary and produced a verified product candidate:
+Plan Review R2 rejected the exact-12-blob payload because two candidate blobs still contained PR-018/S01-only paired-diagnostic behavior. Revision 3 corrects only that integration boundary; Requirement Revision 1 and the S03 behavioral objective are unchanged.
+
+The upstream evidence remains:
 
 ```text
 PR-018 verified product candidate:
@@ -40,43 +42,170 @@ PR-018 verified product candidate:
 PR-018 exact live source proof:
 86bc881265ee3fb2ab388170a16e627caf6d723e
 
-PR-018 Acceptance R1 disposition:
-Rejected only on cross-Task AC18 integration/replay dependency
-local AC1-AC17 and AC19: pass
+PR-018 local acceptance:
+AC1-AC17 and AC19 pass
+AC18 waits on this PR-017 combined replay
 ```
 
-PR-017 R2 therefore uses PR-018 as an **integration dependency**, not as authority to redesign PR-017.
+PR-017 consumes PR-018 as an integration dependency, not as authority to import PR-018 task-specific diagnostics.
 
-The canonical integration rule is:
+The canonical integration rule is now:
 
 ```text
 current PR-017 canonical branch
-+ exact verified PR-018 non-document runtime/config/test payload
++ frozen PR-018 production-subset manifest
 → combined PR-017 candidate
 → replay PR-017 S03 only
 → prove R8.3 + original PR-017 cleanup/containment requirements
 ```
 
-The integration MUST NOT merge or copy PR-018 Requirement, Plan, Slice, checkpoint, receipt, acceptance, or task-state artifacts into PR-017. The PR-018-only workflow `.github/workflows/pr018-s02-verification.yml` is also excluded from the PR-017 integration payload.
+### Production-subset manifest
 
-The exact R2 payload is frozen to these candidate blobs from `73a52013055a8b3bb70b319a0ed7b7ba832ae0c9`:
+Execution MUST use compare-and-swap semantics. Every `current_blob` below must still match before any product mutation. If any current blob drifts, execution stops for reconciliation.
 
 ```yaml
-config.example.windows.yaml: a76b1772361517838b40de019bee1e9aa9fb9c85
-src/sentinelx_core/handlers/basic.py: 5a99296d9c80b164d344abf519f5627eae5f52fe
-src/sentinelx_core/handlers/mutation_scope.py: af310b650151de168a9ff437140fbe0e1187cf6d
-src/sentinelx_core/handlers/scoped_script.py: 1b8c05b14658f3ffb71e08fbd23851391132b5cf
-src/sentinelx_core/mutation_placement.py: 6ee33bacee65dac566116a4252756e40e25c4662
-src/sentinelx_core/mutation_readiness.py: aa318aec6e25b2b0ce3d13feb9c46c6680852144
-src/sentinelx_core/mutation_scope.py: 1a6dce6d066c07569ea5676cd9a411105171a9f6
-src/sentinelx_core/policy.py: 82cc82615f090f19777161125c1e2aff14e63806
-src/sentinelx_core/windows_mutation_sandbox.py: c5a9ae35b8324adffc31ce9ed6cbbf9ebe172bde
-tests/test_mutation_scope_admission.py: 4dd4db78a3c20487ae442ac312760dd6dbaa4b1e
-tests/test_policy.py: fd1d002d8426f58c71c0b5f66a343f00c786e943
-tests/test_windows_mutation_sandbox.py: 8218fa324a99ba48669a5427fdafaf714f43f25f
+manifest_version: pr017-pr018-production-subset-v1
+reviewed_pr017_head: 0c9ab574ce4d38818e4bb55a2d5f8deaf77f2bcb
+upstream_candidate: 73a52013055a8b3bb70b319a0ed7b7ba832ae0c9
+
+project:
+  - path: config.example.windows.yaml
+    current_blob: 4a2090833cb780c4c9ca85ad436d454ce617dbd9
+    target_blob: a76b1772361517838b40de019bee1e9aa9fb9c85
+
+  - path: src/sentinelx_core/handlers/basic.py
+    current_blob: ef48f514e549b8ac25e5ab4be104845828c78895
+    target_blob: 5a99296d9c80b164d344abf519f5627eae5f52fe
+
+  - path: src/sentinelx_core/handlers/mutation_scope.py
+    current_blob: 6c75e48fec5cd5b11bffc56e6ef84dec79b53392
+    target_blob: af310b650151de168a9ff437140fbe0e1187cf6d
+
+  - path: src/sentinelx_core/mutation_placement.py
+    current_blob: 3aaa686c569dd07d8a2ecce0eb3aca5928758ddc
+    target_blob: 6ee33bacee65dac566116a4252756e40e25c4662
+
+  - path: src/sentinelx_core/mutation_readiness.py
+    current_blob: f1bcbbc8b98a2ff97a776eacb45448516998e947
+    target_blob: aa318aec6e25b2b0ce3d13feb9c46c6680852144
+
+  - path: src/sentinelx_core/mutation_scope.py
+    current_blob: cb5f87642a65f84859a0f60a7b46b7ad2bc3fcec
+    target_blob: 1a6dce6d066c07569ea5676cd9a411105171a9f6
+
+  - path: src/sentinelx_core/policy.py
+    current_blob: f6a664f87b20e7f426de3e2bd47096d4d9935d80
+    target_blob: 82cc82615f090f19777161125c1e2aff14e63806
+
+  - path: src/sentinelx_core/windows_mutation_sandbox.py
+    current_blob: dab8a33dccf842fdbd18ae6e46c11cd4e7b4bcc9
+    target_blob: 1e662eba2dbc61825bc874e102a735e7a9d9a179
+    target_kind: derived_production_subset
+
+  - path: tests/test_mutation_scope_admission.py
+    current_blob: a7d1ab1af121b8fe540841461d731a8691869d20
+    target_blob: 4dd4db78a3c20487ae442ac312760dd6dbaa4b1e
+
+  - path: tests/test_policy.py
+    current_blob: 99ab9e269f6554225dcc358ceac59ccb66f75873
+    target_blob: fd1d002d8426f58c71c0b5f66a343f00c786e943
+
+  - path: tests/test_windows_mutation_sandbox.py
+    current_blob: db8b0271d634322f6083fa34f9d9832960724c8e
+    target_blob: 926900b91055707528a6cfdd5fb131d11abdfc89
+    target_kind: derived_genericized_test
 ```
 
-Before mutation, execution must re-read the current PR-017 head and prove that none of these 12 files have drifted from the reviewed PR-017 baseline. If any has moved independently, stop for reconciliation rather than overwriting it.
+Exactly **11 files** are projected.
+
+### Explicitly preserved file
+
+```yaml
+path: src/sentinelx_core/handlers/scoped_script.py
+required_blob: 4580475ba9bd8ba5301b579ee11a584abbd75d4b
+action: preserve_current_PR017_blob
+reason: PR-018 candidate delta is entirely S01 paired-diagnostic behavior
+```
+
+Execution must assert this blob remains unchanged before and after integration.
+
+### Deterministic derivation rules
+
+The two derived blobs were precomputed during Plan remediation and are not left to implementation judgment.
+
+#### windows_mutation_sandbox.py
+
+Input:
+
+```text
+PR-018 candidate blob:
+c5a9ae35b8324adffc31ce9ed6cbbf9ebe172bde
+```
+
+Mechanical transform:
+
+1. Locate the unique line beginning exactly with:
+   `    def enable_pr018_paired_session_read(`
+2. Locate the next unique line beginning exactly with:
+   `    def enable_verification_descendants(`
+3. Delete the full contiguous text interval from the first marker up to, but not including, the second marker.
+4. Make no other textual change.
+5. The result MUST hash to:
+
+```text
+1e662eba2dbc61825bc874e102a735e7a9d9a179
+```
+
+The resulting blob contains no:
+
+- `enable_pr018_paired_session_read`;
+- `pr018_paired_session_absence`;
+- `PR018_S01_PAIRED_DIAGNOSTIC`;
+- `.pr018-s01-paired`.
+
+This preserves the generic production Session-0 lifecycle while removing PR-018/S01-only diagnostic methods.
+
+#### tests/test_windows_mutation_sandbox.py
+
+Input:
+
+```text
+PR-018 candidate blob:
+8218fa324a99ba48669a5427fdafaf714f43f25f
+```
+
+Mechanical transform:
+
+```text
+test_pr018_session_masks_are_exact_frozen_read_only_values
+→
+test_session_object_masks_are_exact_frozen_read_only_values
+```
+
+No test body changes are authorized.
+
+The result MUST hash to:
+
+```text
+926900b91055707528a6cfdd5fb131d11abdfc89
+```
+
+### Excluded surfaces
+
+The integration MUST NOT import:
+
+```text
+src/sentinelx_core/handlers/scoped_script.py from PR-018
+enable_pr018_paired_session_read(...)
+pr018_paired_session_absence(...)
+PR018_S01_PAIRED_DIAGNOSTIC
+.pr018-s01-paired
+all PR-018 docs/**
+.github/workflows/pr018-s02-verification.yml
+PR-018 task/branch/PR state
+```
+
+The implementation host is not authorized to perform any additional production-subset inference beyond this manifest.
 
 Preferred model:
 
@@ -291,7 +420,7 @@ Then run the repository's affected Windows mutation/security regression set.
 
 ## Expected Files
 
-Plan R2 authorizes no new local design beyond the frozen PR-018 integration payload. The only product/config/test files eligible for S03 integration are the 12 blob-frozen paths listed in the Revision 2 integration decision above.
+Plan R3 authorizes no new local design beyond the frozen production-subset manifest. The only product/config/test files eligible for S03 integration are the 11 CAS-bound paths listed in the Revision 3 decision above; `src/sentinelx_core/handlers/scoped_script.py` is explicitly preserved and is not an integration target.
 
 PR-017 Requirement/Plan/Slice/checkpoint/receipt artifacts may change only to record Plan R2 lineage and S03 evidence.
 
@@ -308,12 +437,12 @@ No protocol schema change is expected.
 
 ## Slice Proposal
 
-Plan Review R2 must preserve S01 and S02 as completed historical slices with their existing receipts and compile only the revised S03 authority.
+Plan Review R3 must preserve S01 and S02 as completed historical slices with their existing receipts and compile only the revised S03 authority.
 
 ```text
 S01 — PRESERVED COMPLETED; no replay
 S02 — PRESERVED COMPLETED; no replay
-S03 — exact PR-018 payload integration on canonical PR-017 branch
+S03 — frozen PR-018 production-subset integration on canonical PR-017 branch
       + combined-candidate real Windows R8.3 replay
       + exact cleanup/security readback
       + affected regression closure
@@ -351,7 +480,7 @@ Mitigation: freeze the exact PR-018 candidate and per-file blob identities; refu
 
 ### RSK-7 — replay accidentally invalidates S01/S02 evidence
 
-Mitigation: preserve their canonical receipts and prohibit replay/mutation unless the 12-file integration materially changes an invariant they own. Plan Review must explicitly decide any such invalidation; implementation must not infer it.
+Mitigation: preserve their canonical receipts and prohibit replay/mutation unless the 11-file production-subset integration materially changes an invariant they own. Plan Review must explicitly decide any such invalidation; implementation must not infer it.
 
 ### RSK-8 — PR-018 proof is mistaken for PR-017 S03 evidence
 
@@ -359,9 +488,9 @@ Mitigation: PR-018 proof is only dependency evidence. PR-017 must create its own
 
 ## Plan Review Questions
 
-1. Is exact 12-blob projection the correct way to consume PR-018 without importing its task lineage?
-2. Are all 12 files necessary and sufficient for the verified compatibility candidate?
-3. Is excluding the PR-018-only workflow correct for PR-017 S03?
+1. Does the frozen 11-file production-subset manifest remove all PR-018/S01 diagnostic-only surfaces while preserving the generic compatibility behavior?
+2. Are the two derived blobs mechanically reproducible and sufficiently immutable for execution authority?
+3. Is preserving the PR-017 `scoped_script.py` blob and excluding the PR-018-only workflow correct for PR-017 S03?
 4. Can S01/S02 receipts remain valid without replay because PR-017 current head has no product drift since the PR-018 stacked base?
 5. Does the revised S03 prove both R8.3 and the original PR-017 runtime-root cleanup/terminal invariants?
 6. Is temporary `runtime_session_object_read_enabled=true` acceptable only for S03 proof with mandatory default-off restoration?
