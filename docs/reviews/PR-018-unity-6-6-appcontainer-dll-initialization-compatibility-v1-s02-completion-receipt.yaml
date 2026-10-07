@@ -1,0 +1,55 @@
+schema_version: "1.0"
+kind: devforge_slice_completion_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1
+slice_id: S02
+source_command: "#开发执行 PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"
+
+lineage:
+  requirement_revision: 1
+  plan_revision: 2
+  product_candidate_commit: "73a52013055a8b3bb70b319a0ed7b7ba832ae0c9"
+  completion_checkpoint_ref: docs/checkpoints/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-s02-completion-20261008.yaml
+  completion_checkpoint_blob_sha: "d418f8957395e84b2eed2a1877e9faebf91bf62f"
+
+verification:
+  default_off_host_boolean: passed
+  policy_digest_binding: passed
+  durable_pregrant_binding_readback: passed
+  exact_session0_masks:
+    window_station: "0x00020103"
+    desktop: "0x00020041"
+  raw_handle_not_durable: passed
+  disabled_path_no_grant: passed
+  first_object_failure_fail_closed: passed
+  second_object_failure_fail_closed: passed
+  dual_sid_absence_before_marker_clear_contract: passed
+  terminal_residual_binding_guard: passed
+  restart_reacquisition_cleanup: passed
+  restart_identity_mismatch_revoked: passed
+  cleanup_retry_terminal: passed
+  verification_trusted_root_regression: passed
+  job_no_breakaway_regression: passed
+  windows_ci:
+    run_id: 37662137958
+    job_id: 112932067140
+    conclusion: success
+    tests_passed: 88
+    duration_seconds: 275.69
+  macos_ci:
+    run_id: 37662137960
+    conclusion: success
+
+postconditions:
+  s02_completion_eligible: true
+  next_slice: S03
+  s03_not_executed: true
+  acceptance_approved: false
+  task_completion_verified: false
+
+completion_guard:
+  status: satisfied
+  no_receipt_no_completion_claim: satisfied
+  this_command_completed_at_most_one_slice: true
+  acceptance_not_executed_by_this_command: true
+  canonical_next_action: "#开发执行 PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"

@@ -1,0 +1,132 @@
+schema_version: "1.0"
+kind: devforge_slice_blocked_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1
+slice_id: S03
+source_command: "#开发执行 PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"
+result: Blocked
+blocker_class: incomplete_exact_candidate_host_activation
+
+canonical:
+  pr_number: 18
+  branch: task/unity-6-6-appcontainer-dll-initialization-compatibility-v1
+  pr_head: "86bc881265ee3fb2ab388170a16e627caf6d723e"
+  product_candidate_commit: "73a52013055a8b3bb70b319a0ed7b7ba832ae0c9"
+  stacked_base_head: "3858c7d0e46295d5e0dc184bb21e76da7c963346"
+
+host_before_activation:
+  host_id: host_7f0e709ded71ab24
+  host_label: windows
+  agent_version: "0.24.1.dev541+g1028030b3"
+  source_commit: "1028030b33f0ea792a884491a431fffe566f6aa5"
+  operational: true
+  host_mutation_sandbox_v1:
+    available: false
+    verified: false
+    reason: "HostMutationScopeCorrupt: invalid scope record: MutationScopeRecord.__init__() got an unexpected keyword argument 'runtime_read_authority_roots'"
+
+s03_host_configuration:
+  scoped_mutation_enabled: true
+  runtime_read_roots:
+    - "C:\\ProgramData\\SentinelX\\.venv"
+    - "C:\\Python314"
+    - "C:\\Program Files\\Unity\\Hub\\Editor\\6000.6.4f1"
+  runtime_acl_timeout_seconds: 300
+  operator_unrestricted_enabled: false
+  runtime_session_object_read_enabled:
+    previous: absent
+    temporary_s03_value: true
+  config_backup: "C:\\ProgramData\\SentinelX\\config.yaml.bak.20261008-021134-733039"
+
+candidate_projection_attempt:
+  files_projected_and_python_validated:
+    - path: src/sentinelx_core/policy.py
+      blob: 82cc82615f090f19777161125c1e2aff14e63806
+    - path: src/sentinelx_core/mutation_placement.py
+      blob: 6ee33bacee65dac566116a4252756e40e25c4662
+    - path: src/sentinelx_core/mutation_scope.py
+      blob: 1a6dce6d066c07569ea5676cd9a411105171a9f6
+    - path: src/sentinelx_core/windows_mutation_sandbox.py
+      blob: c5a9ae35b8324adffc31ce9ed6cbbf9ebe172bde
+    - path: src/sentinelx_core/handlers/basic.py
+      blob: 5a99296d9c80b164d344abf519f5627eae5f52fe
+    - path: src/sentinelx_core/handlers/mutation_scope.py
+      blob: af310b650151de168a9ff437140fbe0e1187cf6d
+    - path: src/sentinelx_core/handlers/scoped_script.py
+      blob: 1b8c05b14658f3ffb71e08fbd23851391132b5cf
+    - path: src/sentinelx_core/mutation_readiness.py
+      blob: aa318aec6e25b2b0ce3d13feb9c46c6680852144
+  normalized_readback:
+    small_files: exact
+    windows_mutation_sandbox:
+      prefix_readback: exact_through_agent_read_cap
+      tail_lines_1400_to_eof: exact
+  restart:
+    initiated: true
+    expected_disconnect_observed: true
+    reconnect_observed: false
+    last_disconnected_at: "2026-10-07T18:12:48.813179+00:00"
+
+full_git_tree_reconciliation:
+  old_tree: "493d30f638aad46b4a4502acbc4536608cd617d3"
+  candidate_tree: "a6281aeca211722794e2644868f769612558c0bb"
+  sentinelx_core_old_blob_count: 61
+  sentinelx_core_candidate_blob_count: 51
+  differing_paths: 21
+  additional_candidate_files_not_projected_before_restart:
+    - src/sentinelx_core/handlers/__init__.py
+    - src/sentinelx_core/handlers/devforge_runtime.py
+    - src/sentinelx_core/user_git.py
+  installed_only_candidate_absent_modules:
+    - src/sentinelx_core/direct_codex_acl.py
+    - src/sentinelx_core/direct_codex_discovery.py
+    - src/sentinelx_core/direct_codex_handoff.py
+    - src/sentinelx_core/direct_codex_persistence.py
+    - src/sentinelx_core/direct_codex_result.py
+    - src/sentinelx_core/direct_codex_transport.py
+    - src/sentinelx_core/direct_codex_workspace.py
+    - src/sentinelx_core/handlers/direct_codex.py
+    - src/sentinelx_core/user_process.py
+    - src/sentinelx_core/windows_integrity.py
+  conclusion: >-
+    The live package was not an exact PR-018 candidate after the first projection.
+    The Host disconnect therefore cannot be classified as a PR-018 runtime,
+    Unity, Session-0, AppContainer, or cleanup failure.
+
+s03_evidence:
+  scoped_python_marker: not_executed
+  unity_raw_child_probe: not_executed
+  unity_deterministic_version_probe: not_executed
+  runtime_root_sid_cleanup: not_executed
+  session0_window_station_cleanup: not_executed
+  session0_desktop_cleanup: not_executed
+  durable_session_binding_clear: not_executed
+  no_breakaway_proof: not_executed
+  regression_replay: not_executed
+
+recovery:
+  preferred: exact_source_reinstall
+  exact_source_ref: "86bc881265ee3fb2ab388170a16e627caf6d723e"
+  rationale: >-
+    Reinstalling the exact PR-018 commit is safer than continuing a partial
+    site-packages overlay because it reconciles changed and candidate-absent
+    package files as one source identity.
+  after_reinstall:
+    - restart SentinelX
+    - confirm windows Host reconnects
+    - confirm host_mutation_sandbox_v1.available=true and verified=true
+    - confirm runtime_session_object_read_enabled=true
+    - resume S03 without replaying S01 or S02
+
+task_state:
+  stage: implementation
+  current_slice: S03
+  current_slice_state: pending
+  completed_slices: [S01, S02]
+  s03_completed: false
+
+completion_guard:
+  completion_receipt_created: false
+  feature_acceptance_executed: false
+  pr017_mutated: false
+  canonical_next_action: "restore exact PR-018 Host candidate, then #开发执行 PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"

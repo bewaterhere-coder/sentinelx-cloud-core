@@ -1,0 +1,60 @@
+schema_version: "1.0"
+kind: devforge_plan_remediation_checkpoint
+task_id: PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1
+source_command: "#开发计划修复 PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"
+
+runtime:
+  devforge_version: "2.93.0"
+  devforge_revision: 041f390592a78c13f5eabdc542735dc72485e0ef
+  sentinelx_canonical_main: 018b78ca20984176d53fbe90039dc795a7f2742f
+
+input:
+  requirement_revision: 1
+  rejected_plan_revision: 1
+  rejected_plan_blob_sha: 12e8c73c3b232bfa4b7b74cf86facff68eabadac
+  rejected_review_ref: docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-plan-review-r1.md
+  rejected_review_blob_sha: f8f1b59709c32965ece81cef236e323129aa1240
+
+output:
+  revised_plan_revision: 2
+  revised_plan_ref: docs/plans/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-plan.md
+  revised_plan_blob_sha: 1d171bce2815a5dba428746ad65f5cab408794a0
+  requirement_semantics_changed: false
+  transport_changed: false
+  project_binding_changed: false
+  implementation_started: false
+
+addressed_findings:
+  - id: PR018CrossTaskTransportBoundary
+    resolution: "PR-018 S03 now stops at exact PR-018 candidate proof; PR-018 finalization owns integration into its configured base and PR-017 S03 remains PR-017-owned"
+  - id: GenericSessionObjectAuthorityNotDurable
+    resolution: "generic Session-0 compatibility now requires a MutationScopeStore durable cleanup-required binding persisted/read back before shared-DACL grant, dual-object SID-absence cleanup readback, restart-safe reacquisition, and fail-closed retry"
+
+frozen_plan_r2:
+  host_policy_key: mutation_execution.runtime_session_object_read_enabled
+  host_policy_default: false
+  caller_override: forbidden
+  maximum_masks: requirement_r4_pr011_exact
+  durable_authority_store: MutationScopeStore
+  second_ledger: forbidden
+  marker_semantics: cleanup_may_be_required
+  pre_grant_readback_required: true
+  restart_safe_cleanup_required: true
+  cross_task_mutation_from_pr018_slices: forbidden
+
+safety:
+  canonical_main_mutated: false
+  product_code_mutated: false
+  host_policy_mutated: false
+  production_hub_mutated: false
+  project_binding_mutated: false
+  permission_expansion_used: false
+  credential_mutation_used: false
+  self_approval_performed: false
+
+next_state:
+  stage: plan_review
+  plan_revision: 2
+  plan_approved: false
+  implementation_authorized: false
+  next_expected_actor: reviewer

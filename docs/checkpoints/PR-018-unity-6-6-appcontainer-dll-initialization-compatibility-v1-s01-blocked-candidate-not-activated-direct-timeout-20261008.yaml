@@ -1,0 +1,70 @@
+schema_version: "1.0"
+kind: devforge_slice_blocked_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1
+slice_id: S01
+source_command: "#开发执行 PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"
+result: Blocked
+blocker_class: pr018_candidate_not_activated_after_direct_provider_timeout
+
+canonical:
+  pr_number: 18
+  branch: task/unity-6-6-appcontainer-dll-initialization-compatibility-v1
+  head_sha: cc4eef1f8c5896556d2850e978164dde125b9e25
+  product_drift_reconciliation:
+    status: admitted
+    disposition: bounded_s01_diagnostic_fixture
+    files:
+      - src/sentinelx_core/handlers/scoped_script.py
+      - src/sentinelx_core/windows_mutation_sandbox.py
+    properties:
+      - exact PR-018/S01 lineage guard
+      - PR018_S01_PAIRED_DIAGNOSTIC must equal "1"
+      - reuses existing PR-011 _grant_verification_session_read primitive
+      - reads back exact window-station and desktop masks
+      - reads back post-terminal dual SID absence
+      - no generic production admission change
+
+preserved_evidence:
+  variant_a:
+    status: confirmed
+    raw_unity_status: "0xC0000142"
+    classification: STATUS_DLL_INIT_FAILED
+    replay_required: false
+  variant_b:
+    status: not_executed
+  hypothesis_disposition: unresolved
+
+host_runtime:
+  host_label: windows
+  agent_version: 0.24.1.dev530+g7adfa7a74
+  host_mutation_sandbox_v1_verified: true
+  pre_execution_audit_lineage_v1_verified: true
+  scoped_verification_node_npm_v1_verified: true
+  installed_pr018_paired_diagnostic_marker_present: false
+  conclusion: PR-018 branch diagnostic seam is not activated in the installed Host runtime
+
+provider_attempt:
+  provider: direct
+  adapter: codex
+  run_id: run-pr018-s01-20261008-003
+  attempt_id: attempt-001
+  slice_id: S01
+  admitted_remote_head: cc4eef1f8c5896556d2850e978164dde125b9e25
+  response: timeout_after_60_seconds
+  canonical_publish_observed: false
+  installed_runtime_activation_observed: false
+  same_attempt_replay_forbidden: true
+
+task_state:
+  stage: implementation
+  current_slice: S01
+  current_slice_state: pending
+  completed_slices: []
+  s01_completed: false
+  s02_eligible: false
+
+completion_guard:
+  completion_receipt_created: false
+  no_completion_claim: true
+  canonical_next_action: "activate exact PR-018 candidate on SentinelX Host runtime, verify paired marker + host_mutation_sandbox_v1, then resume S01 Variant B"

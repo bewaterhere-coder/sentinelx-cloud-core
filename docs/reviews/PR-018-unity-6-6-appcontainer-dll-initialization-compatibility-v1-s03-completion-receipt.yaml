@@ -1,0 +1,73 @@
+schema_version: "1.0"
+kind: devforge_slice_completion_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1
+slice_id: S03
+source_command: "#开发执行 PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"
+
+lineage:
+  requirement_revision: 1
+  plan_revision: 2
+  product_candidate_commit: "73a52013055a8b3bb70b319a0ed7b7ba832ae0c9"
+  exact_host_source_ref: "86bc881265ee3fb2ab388170a16e627caf6d723e"
+  completion_checkpoint_ref: docs/checkpoints/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-s03-completion-20261008.yaml
+  completion_checkpoint_blob_sha: "9799b8d6045fd31c3a6ef677f5df3ed952f739a7"
+  run_id: run-pr018-s03-20261008-001
+
+verification:
+  scoped_python_marker:
+    passed: true
+    returncode: 0
+    terminal_state: terminal
+  unity:
+    exact_version: "6000.6.4f1"
+    raw_windows_status_hex: "0x00000000"
+    status_not_0xC0000142: true
+    deterministic_version_output: "6000.6.4f1"
+    terminal_state: terminal
+  live_containment:
+    appcontainer: true
+    session_id: 0
+    process_in_job: true
+    exact_appcontainer_sid: "S-1-15-2-3228266759-651623209-2363826891-4191451228-766042073-2320857649-922393761"
+  live_session_object_authority:
+    window_station_identity: "session:0/window-station:Service-0x0-3e7$"
+    desktop_identity: "session:0/window-station:Service-0x0-3e7$/desktop:Default"
+    window_station_mask_hex: "0x00020103"
+    desktop_mask_hex: "0x00020041"
+    noninheriting: true
+    broader_rights_observed: false
+  post_cleanup_readback:
+    exact_previous_sid_absent_from_window_station: true
+    exact_previous_sid_absent_from_desktop: true
+    exact_previous_sid_absent_from_unity_runtime_root: true
+    durable_binding_clear_gate_satisfied_by_terminal_readback: true
+  post_proof_self_check:
+    host_mutation_sandbox_v1_verified: true
+    scoped_verification_node_npm_v1_verified: true
+    pre_execution_audit_lineage_v1_verified: true
+    canonical_repository_mutation_firewall_v1_verified: true
+    job_no_breakaway: true
+    terminal_non_active: true
+    residual_authority_absent: true
+  regressions:
+    windows_run_id: 37662137958
+    windows_result: success
+    windows_tests: 88
+    macos_run_id: 37662137960
+    macos_result: success
+    product_or_test_drift_after_candidate: false
+
+temporary_authority_cleanup:
+  runtime_session_object_read_enabled_restored_to_false: true
+  temporary_state_read_path_removed: true
+  Host_restarted_and_verified: true
+
+completion_guard:
+  status: satisfied
+  no_receipt_no_completion_claim: satisfied
+  all_plan_slices_completed: true
+  acceptance_not_executed: true
+  task_completion_verified: false
+  pr017_not_mutated_or_replayed: true
+  canonical_next_action: "#开发验收 PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"

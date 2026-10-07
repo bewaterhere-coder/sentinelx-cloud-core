@@ -1,0 +1,53 @@
+schema_version: "1.0"
+kind: devforge_slice_blocked_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1
+slice_id: S01
+source_command: "#开发执行 PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"
+result: Blocked
+blocker_class: bootstrap_restore_safety_gate
+
+host_runtime:
+  host_label: windows
+  agent_version: 0.24.1.dev530+g7adfa7a74
+  schema_mismatch_status: resolved_after_service_restart
+  prior_schema_error_present: false
+  scoped_mutation_enabled: false
+  host_mutation_sandbox_v1:
+    available: false
+    verified: false
+    reason: scoped mutation policy/workspace_root is not enabled
+  pre_execution_audit_lineage_v1:
+    available: false
+    verified: false
+    reason: scoped mutation policy/workspace_root is not enabled
+
+bootstrap_recovery:
+  temporary_change:
+    scoped_mutation_enabled: false
+  purpose: break execution_profile/bootstrap deadlock while attempting exact PR-017 runtime activation
+  unrestricted_operator_after_attempt: false
+  direct_package_overwrite_performed: false
+  exact_pr017_install_performed: false
+  restore_attempts:
+    - direct config edit scoped_mutation_enabled false -> true
+    - safe-edit original config backup restore
+  restore_result: blocked_by_tool_safety_layer
+  current_security_posture: more_restrictive_than_original
+
+s01_evidence:
+  real_windows_ab_discriminator: not_run
+  hypothesis_disposition: unresolved
+  s01_completed: false
+  s02_eligible: false
+
+task_state:
+  stage: implementation
+  current_slice: S01
+  current_slice_state: pending
+  completed_slices: []
+
+completion_guard:
+  slice_completed: false
+  completion_receipt_created: false
+  canonical_next_action: "restore scoped_mutation_enabled=true through an authorized Host configuration path, restart SentinelX, verify host_mutation_sandbox_v1=true, then #开发执行 PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"

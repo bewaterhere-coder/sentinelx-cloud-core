@@ -1,0 +1,151 @@
+schema_version: "1.0"
+kind: devforge_acceptance_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1
+source_command: "#开发验收 PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"
+created_at: "2026-10-08"
+
+runtime:
+  devforge_version: "2.102.0"
+  devforge_main_sha: "7b45640926dac9c559d558f8ddbbb137ba30b69b"
+  acceptance_contract_version: "1.5"
+  acceptance_contract_blob_sha: "1c5e96a20d665e68b1f68e18b7d294945e501ec2"
+  artifact_state_transition_contract_version: "1.1"
+  artifact_state_transition_contract_blob_sha: "4af7d9b41313f43bf4cc1fb3ab7927de722718ed"
+
+canonical_transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 18
+  branch: task/unity-6-6-appcontainer-dll-initialization-compatibility-v1
+  evaluated_head_sha: "c4bc3a5fa4477328fa26998dbcc54a322db00a2c"
+  transport_consistency: pass
+
+lineage:
+  requirement_revision: 1
+  plan_revision: 2
+  exact_product_candidate: "73a52013055a8b3bb70b319a0ed7b7ba832ae0c9"
+  s03_completion_receipt_blob_sha: "18c854e6bda38c586c59fac38862090c0b3f4e3c"
+  prior_acceptance_r2_blob_sha: "b73e7af6a42bde40bd0343c6984595cdb5bbdb09"
+  current_head_delta_since_product_candidate:
+    ahead_by: 17
+    product_files_changed: []
+    task_evidence_files_only: true
+  requirement_semantics_changed_since_plan: false
+  product_candidate_changed_since_s03: false
+
+implementation_quality:
+  exact_product_candidate_preserved: true
+  product_code_changed_after_verified_candidate: false
+  product_tests_changed_after_verified_candidate: false
+  prior_s03_real_host_proof_preserved: true
+  prior_regression_evidence_preserved: true
+  unrestricted_fallback_introduced: false
+
+real_unity_evidence:
+  exact_version: "6000.6.4f1"
+  raw_windows_status_hex: "0x00000000"
+  deterministic_stdout: "6000.6.4f1"
+  status_not_0xC0000142: true
+  appcontainer: true
+  process_in_job: true
+  broader_session_rights_observed: false
+  exact_sid_cleanup_verified: true
+  no_active_job_or_process_authority: true
+  terminal_state_verified: true
+
+cross_task_pr017_closure:
+  task_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
+  acceptance_r3_blob_sha: "4e22d9537ae9e742c19ee3639c674ed8121995bc"
+  integration_receipt_blob_sha: "ae7a93de6d4ea782f350f55d40779dc3f2084fd0"
+  acceptance_result: Approved
+  completion_verified: true
+  merged_to_main: true
+  merge_commit: "f72ac8bfe643cd9fbdea231e4a69f9e88a0595e9"
+  exact_integrated_product_candidate: "f9e07da9cc37f6e882c3258280869b415cafcb5c"
+  pr018_dependency_candidate: "73a52013055a8b3bb70b319a0ed7b7ba832ae0c9"
+  combined_s03_replay_verified: true
+  unity_6000_6_4f1_verified: true
+  current_node_npm_readiness:
+    exact_agent_version: "0.24.1.dev473+gf9e07da9c"
+    readback_count: 2
+    available: true
+    verified: true
+    appcontainer_node: true
+    appcontainer_npm: true
+    dns_denied: true
+    http_denied: true
+    protected_root_denied: true
+    terminal_non_active: true
+    transient_toolchain_authority_absent: true
+  fixing_product_candidate_changed: false
+  host_config_mutated_by_fixing: false
+  permission_expanded_by_fixing: false
+
+prior_blockers:
+  acceptance_r1:
+    code: AC18CombinedPR017S03ReplayMissing
+    status: resolved
+    resolution: PR-017 combined-candidate S03 replay completed and was later integrated to main
+  acceptance_r2:
+    code: AC16CurrentPR011ReadinessContradiction
+    status: resolved
+    resolution: PR-017 Acceptance R3 physically re-proved the exact-candidate Node/npm capability twice with all required security checks true
+
+requirement_traceability:
+  R1_evidence_first_ab_discriminator: pass
+  R2_hard_stop_if_hypothesis_false: pass_not_triggered_positive_hypothesis
+  R3_host_owned_generic_compatibility_admission: pass
+  R4_maximum_v1_window_object_masks: pass
+  R5_exact_sid_lifecycle_fail_closed_cleanup: pass
+  R6_policy_drift_and_audit_evidence: pass
+  R7_no_interactive_desktop_escape: pass
+  R8_real_unity_6_6_initialization_proof: pass
+  R9_regression_compatibility: pass
+  R10_stacked_integration_closes_pr017_s03: pass
+
+acceptance_criteria:
+  AC01: pass
+  AC02: pass
+  AC03: pass
+  AC04: pass
+  AC05: pass
+  AC06: pass
+  AC07: pass
+  AC08: pass
+  AC09: pass
+  AC10: pass
+  AC11: pass
+  AC12: pass
+  AC13: pass
+  AC14: pass
+  AC15: pass
+  AC16: pass
+  AC17: pass
+  AC18: pass
+  AC19: pass
+
+residual_risk:
+  - PR-017 recorded that process-generation readiness caching can preserve a transient negative readiness result until generation reset
+  - the original transient HandlerError trigger remains unknown
+  - this is non-blocking because the same exact product/agent candidate was physically re-proven twice, all security checks were true, and the repair changed neither product code nor permissions
+
+decision:
+  result: Approved
+  reason_code: AllCurrentAcceptanceCriteriaVerified
+  transport_drift: false
+  material_decision_required: false
+  acceptance_approved: true
+  completion_verified: false
+
+safety:
+  acceptance_did_not_modify_product_code: true
+  acceptance_did_not_modify_host_config: true
+  acceptance_did_not_expand_permissions: true
+  acceptance_did_not_merge_pr: true
+  acceptance_did_not_claim_done: true
+
+result:
+  intended_stage_after_transition: accepted
+  acceptance_approved: true
+  completion_verified: false
+  canonical_next_action: "#开发完成 PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"

@@ -1,0 +1,65 @@
+schema_version: "1.0"
+kind: devforge_artifact_state_transition_receipt
+task_id: PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1
+from_stage: plan_review_rejected
+to_stage: plan_review
+transition_rule: revised_plan_verified_and_read_back
+source_command: "#开发计划修复 PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  canonical_branch: main
+  version: "2.93.0"
+  revision: 041f390592a78c13f5eabdc542735dc72485e0ef
+  review_contract_version: "1.3"
+
+evidence_refs:
+  - docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-plan-review-r1.md@f8f1b59709c32965ece81cef236e323129aa1240
+  - docs/plans/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-plan.md@1d171bce2815a5dba428746ad65f5cab408794a0
+  - docs/checkpoints/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-plan-remediation-r2-20261007.yaml@6548f7a514197990f196cb478520f070acf69e3f
+
+task_before_digest: 987f66eb182e9a526c50be9680c0a8665bbbde19
+task_after_digest: 74ec2e438d05bdf93b2b8ceb81ab98007b32d66c
+semantic_after_state_digest: 74ec2e438d05bdf93b2b8ceb81ab98007b32d66c
+semantic_after_digest_basis: canonical_task_blob_readback
+verified: true
+
+plan_remediation:
+  prior_plan_revision: 1
+  prior_plan_blob_sha: 12e8c73c3b232bfa4b7b74cf86facff68eabadac
+  revised_plan_revision: 2
+  revised_plan_blob_sha: 1d171bce2815a5dba428746ad65f5cab408794a0
+  rejected_review_blob_sha: f8f1b59709c32965ece81cef236e323129aa1240
+  requirement_revision: 1
+  requirement_semantics_changed: false
+  addressed_findings:
+    - PR018CrossTaskTransportBoundary
+    - GenericSessionObjectAuthorityNotDurable
+
+state_after:
+  stage: plan_review
+  requirement_ready: true
+  plan_revision: 2
+  plan_approved: false
+  implementation_authorized: false
+  acceptance_approved: false
+  completion_verified: false
+  next_expected_actor: reviewer
+
+slice_authority:
+  plan_r2_slice_set_compiled: false
+  compilation_allowed_only_after_plan_r2_approval: true
+
+safety:
+  canonical_main_mutated: false
+  product_implementation_mutated: false
+  host_policy_mutated: false
+  project_binding_mutated: false
+  permission_or_credential_expansion_used: false
+  self_approval_performed: false
+
+completion_guard:
+  revised_plan_read_back_verified: true
+  task_transition_read_back_verified: true
+  transition_receipt_required: true
+  canonical_next_action: "#开发评审 PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"

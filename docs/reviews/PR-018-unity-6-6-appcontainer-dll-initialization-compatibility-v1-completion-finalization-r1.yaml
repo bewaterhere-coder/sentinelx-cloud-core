@@ -1,0 +1,93 @@
+schema_version: "1.0"
+kind: devforge_merge_finalization
+project_id: sentinelx-cloud-core
+task_id: PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1
+source_command: "#开发完成 PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"
+created_at: "2026-10-08"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  version: "2.102.0"
+  main_sha: "12cf21254a6c7ca89840dc0cb8445793e913eed8"
+  merge_finalization_contract:
+    version: "1.1"
+    blob_sha: "6dfc6d6c7960bad2179b93f164c0bf732d99ffd6"
+  transport_contract:
+    version: "1.2"
+    blob_sha: "eb1c3c5e03444b9a8688944d2812fcdb8072d0be"
+
+lineage:
+  requirement_revision: 1
+  plan_revision: 2
+  plan_blob_sha: "2afe62163351bdba062ae698aa7cd7ab833d609a"
+  acceptance_revision: 3
+  acceptance_blob_sha: "e89f80f4a4e15b39f0699b02cd931e553307d189"
+  acceptance_transition_blob_sha: "c8e0175bb6b9f61aefa3c324acbe41cea3a207b8"
+  exact_product_candidate: "73a52013055a8b3bb70b319a0ed7b7ba832ae0c9"
+
+stacked_integration:
+  original_base_branch: task/large-runtime-root-acl-cleanup-timeout-recovery-v1
+  predecessor_pr: 17
+  predecessor_completion_verified: true
+  predecessor_merged_to_main: true
+  predecessor_merge_commit: "f72ac8bfe643cd9fbdea231e4a69f9e88a0595e9"
+  pr018_product_payload_integrated_via_predecessor: true
+  combined_pr017_s03_verified: true
+  transport_normalization_commit: "46edcc83c6d73021855f148b2169a5de229b2a3a"
+  normalization_semantics:
+    - preserve all PR-018 canonical Task, Plan, execution and evidence artifacts
+    - take current main product tree as authoritative because it already contains the accepted PR-018 production subset plus later verified PR-017 fixes
+    - do not replay or overwrite product code from the stale stacked branch
+    - retarget the same PR number and same head branch to main
+  transport_migration: false
+  implementation_replayed: false
+  product_code_replayed: false
+
+transport:
+  type: github-pr
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 18
+  branch: task/unity-6-6-appcontainer-dll-initialization-compatibility-v1
+  base_branch: main
+  finalization_entry_head: "1d564c9000898175ad88ccb88bf5b965b129ddda"
+  current_main_before_merge: "b0c5addad3aab0c63271dc241a6942b313d6b82d"
+  draft: false
+  mergeable: true
+  transport_drift: false
+
+verification:
+  acceptance_approved: true
+  acceptance_transition_verified: true
+  current_plan_slices_completed: true
+  plan_execution_metadata_synchronized: true
+  exact_product_candidate_verified: true
+  real_windows_unity_6000_6_4f1_proof: true
+  pr011_node_npm_readiness_reproved: true
+  product_code_diff_against_current_main_after_normalization: none
+  canonical_state_verified: true
+  plan_execution_state_verified: true
+  evidence_verified: true
+  transport_preconditions_verified: true
+
+finalization:
+  ready_for_merge: true
+  stage: accepted
+  completion_verified: false
+  merge_pending: true
+  next_expected_actor: integration
+
+safety:
+  canonical_main_mutated_before_merge: false
+  product_implementation_replayed: false
+  unity_replayed: false
+  s03_replayed: false
+  host_config_mutated: false
+  permission_expansion_used: false
+  operator_unrestricted_used: false
+  replacement_pr_created: false
+  done_claimed_before_integration: false
+
+post_merge_requirement:
+  integration_receipt_required: true
+  authoritative_done_requires_main_readback: true
+  transition: accepted_to_done_only_after_verified_merge_and_completion_state_persistence

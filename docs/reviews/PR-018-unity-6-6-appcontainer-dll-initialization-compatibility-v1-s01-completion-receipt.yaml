@@ -1,0 +1,43 @@
+schema_version: "1.0"
+kind: devforge_slice_completion_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1
+slice_id: S01
+source_command: "#开发执行 PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"
+
+lineage:
+  requirement_revision: 1
+  plan_revision: 2
+  product_candidate_commit: "e771b91f6cb4b424e30a8755d18e06e15c93b418"
+  completion_checkpoint_ref: docs/checkpoints/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-s01-completion-20261008.yaml
+  completion_checkpoint_blob_sha: "85ebc7cb3bb4c8d20ee0640566a8eec55b13ed26"
+  run_id: run-pr018-s01-20261008-004
+  attempt_id: attempt-001
+
+verification:
+  variant_a_raw_unity_status: "0xC0000142"
+  variant_b_raw_unity_status: "0x00000000"
+  variant_b_stdout: "6000.6.4f1"
+  exact_pr011_masks_observed: true
+  window_station_mask_hex: "0x00020103"
+  desktop_mask_hex: "0x00020041"
+  exact_appcontainer_sid_captured: true
+  job_contained: true
+  breakaway_allowed: false
+  pre_b_dual_sid_absence: true
+  during_b_dual_sid_presence: true
+  post_terminal_dual_sid_absence: true
+  scope_terminal: true
+  host_mutation_sandbox_v1_post_run_verified: true
+  residual_authority_absent: true
+
+decision:
+  hypothesis_confirmed: true
+  s02_eligible: true
+
+completion_guard:
+  status: satisfied
+  no_receipt_no_completion_claim: satisfied
+  this_command_completed_at_most_one_slice: true
+  s02_not_executed: true
+  acceptance_not_executed: true

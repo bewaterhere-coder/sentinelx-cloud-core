@@ -1,0 +1,112 @@
+schema_version: "1.0"
+kind: devforge_slice_completion_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1
+slice_id: S02
+source_command: "#开发执行 PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"
+
+lineage:
+  requirement_revision: 1
+  plan_revision: 2
+  s01_outcome: hypothesis_confirmed
+  product_candidate_commit: "73a52013055a8b3bb70b319a0ed7b7ba832ae0c9"
+  product_implementation_commit: "8a758ff9b257ddc03946fd78a092d91b53ec348d"
+  focused_test_completion_commit: "73a52013055a8b3bb70b319a0ed7b7ba832ae0c9"
+
+implementation:
+  policy:
+    field: runtime_session_object_read_enabled
+    ownership: Host
+    default: false
+    type: boolean
+    caller_override_surface: absent
+    participates_in_placement_policy_digest: true
+    readiness_projection_bounded: true
+  durable_authority:
+    store: MutationScopeStore
+    second_ledger_introduced: false
+    binding:
+      cleanup_required: true
+      session_id: 0
+      window_station_identity: provider_observed_restart_reacquirable
+      desktop_identity: provider_observed_restart_reacquirable
+      window_station_mask: "0x00020103"
+      desktop_mask: "0x00020041"
+    raw_HANDLE_persisted: false
+    pre_grant_persist_and_readback: true
+    terminal_residual_authority_guard: true
+  windows_runtime:
+    generic_grant_boundary: suspended_root_after_AppContainer_and_no_breakaway_Job_binding_before_resume
+    verification_generic_pregrant: false
+    verification_trusted_root_handshake_preserved: true
+    shared_exact_sid_dacl_primitive: true
+    exact_noninheriting_masks_only: true
+    restart_cleanup_reacquires_and_compares_durable_identity: true
+    identity_mismatch_fails_closed: true
+    marker_clear_requires_cleanup_readback: true
+  configuration:
+    example_default_off: true
+    permission_above_requirement_r4: false
+    interactive_desktop_fallback: false
+
+verification:
+  hosted_windows:
+    workflow: pr018-s02-verification
+    run_id: 37662137958
+    job_id: 112932067140
+    head_sha: "73a52013055a8b3bb70b319a0ed7b7ba832ae0c9"
+    conclusion: success
+    result: "88 passed in 275.69s"
+    suites:
+      - tests/test_policy.py
+      - tests/test_mutation_scope_admission.py
+      - tests/test_windows_mutation_sandbox.py
+      - tests/test_scoped_script_execution.py
+      - tests/test_verification_windows_materialization.py
+      - tests/test_verification_scoped_execution.py
+  hosted_windows_prior_candidate:
+    run_id: 37661253630
+    head_sha: "8a758ff9b257ddc03946fd78a092d91b53ec348d"
+    conclusion: success
+    result: "86 passed in 240.19s"
+    disposition: superseded_by_final_candidate_after_explicit_first_and_second_object_failure_coverage
+  macos_compatibility:
+    run_id: 37662137960
+    head_sha: "73a52013055a8b3bb70b319a0ed7b7ba832ae0c9"
+    conclusion: success
+
+acceptance_matrix:
+  default_false_and_strict_boolean: passed
+  caller_selected_enablement_sid_mask_absent: passed
+  policy_digest_changes_with_toggle: passed
+  disabled_path_grants_nothing: passed
+  durable_binding_persisted_before_grant: passed
+  exact_pr011_masks_only: passed
+  first_object_failure_compensates: passed
+  second_object_failure_reverse_compensates: passed
+  cleanup_marker_requires_proven_cleanup: passed
+  terminalization_treats_marker_as_residual_authority: passed
+  restart_reacquisition_without_process_local_handle_map: passed
+  restart_identity_mismatch_remains_revoked: passed
+  retry_after_exact_identity_cleanup_reaches_terminal: passed
+  verification_handshake_regression: passed
+  job_no_breakaway_regression: passed
+  scoped_execution_regression: passed
+
+safety:
+  pr017_task_mutated: false
+  pr017_branch_mutated: false
+  appcontainer_weakened: false
+  job_breakaway_used: false
+  unrestricted_execution_used: false
+  interactive_session_used: false
+  raw_handle_durable_identity_used: false
+  broader_session_rights_used: false
+
+completion:
+  s02_completion_eligible: true
+  s02_completed: true
+  s03_eligible: true
+  s03_executed_by_this_command: false
+  one_execute_one_slice_preserved: true
+  acceptance_not_executed_by_this_command: true

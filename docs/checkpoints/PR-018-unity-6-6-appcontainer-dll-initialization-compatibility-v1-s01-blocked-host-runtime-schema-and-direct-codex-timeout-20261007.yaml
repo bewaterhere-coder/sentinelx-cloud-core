@@ -1,0 +1,81 @@
+schema_version: "1.0"
+kind: devforge_slice_blocked_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1
+slice_id: S01
+source_command: "#开发执行 PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"
+result: Blocked
+blocker_class: host_runtime_schema_incompatibility_and_unconfirmed_direct_codex_attempt
+
+execution_run:
+  run_id: run-pr018-s01-20261007-001
+  attempt_id: attempt-001
+  provider: direct
+  adapter: codex
+  state: BLOCKED
+  reason_code: HostCapabilityBlocked
+  canonical_pr: 18
+  canonical_branch: task/unity-6-6-appcontainer-dll-initialization-compatibility-v1
+  admitted_remote_head: dec7bcf7899819b9d473c7ced28f138bace79264
+  provider_response:
+    status: timeout
+    hub_timeout_seconds: 60
+    remote_publish_observed: false
+    retry_performed: false
+  no_replay_guard:
+    same_attempt_reinvocation: forbidden_while_external_state_unconfirmed
+    canonical_head_advance_after_checkpoint: invalidates_old_expected_remote_sha
+    late_publish_must_fail_closed_on_transport_drift: true
+
+host_runtime:
+  host_label: windows
+  hostname: Cherie_li
+  agent_version: 0.24.1.dev530+g7adfa7a74
+  runtime_changed_from: 0.24.1.dev439+gf7249aef0
+  development_host_direct_codex_v1:
+    available: true
+    verified: true
+  host_mutation_sandbox_v1:
+    available: false
+    verified: false
+    reason: "HostMutationScopeCorrupt: invalid scope record: MutationScopeRecord.__init__() got an unexpected keyword argument 'runtime_read_authority_roots'"
+  pre_execution_audit_lineage_v1:
+    available: false
+    verified: false
+    reason: "same MutationScopeRecord schema incompatibility"
+  scoped_verification_node_npm_v1:
+    available: false
+    verified: false
+    reason: base_scoped_mutation_unavailable
+
+s01_required_evidence:
+  real_windows_ab_discriminator: not_observed
+  variant_a_raw_unity_child_status: not_observed_this_run
+  variant_b_pr011_session0_only_delta: not_observed
+  exact_appcontainer_sid: not_observed
+  job_no_breakaway: not_observed_this_run
+  diagnostic_sid_absent_from_window_station_and_desktop: not_observed_this_run
+  runtime_root_cleanup_and_terminal_closure: not_observed_this_run
+  hypothesis_disposition: unresolved
+
+assessment:
+  - The installed Host runtime cannot currently provision/execute the scoped AppContainer boundary required by S01 because its MutationScopeRecord reader is older than the persisted PR-017 runtime_read_authority_roots schema.
+  - Direct/Codex remains a valid development provider, but its timed-out execute_task call produced no canonical remote commit by repeated PR #18 readback.
+  - Replaying the same Attempt is unsafe while the original external execution state is unconfirmed.
+  - S01 cannot be completed or classified hypothesis_confirmed/hypothesis_rejected without real Session-0/AppContainer evidence.
+
+task_state:
+  stage: implementation
+  current_slice: S01
+  current_slice_state: pending
+  completed_slices: []
+  plan_revision: 2
+  implementation_authorized: true
+  acceptance_approved: false
+  completion_verified: false
+
+completion_guard:
+  slice_completed: false
+  completion_receipt_created: false
+  implementation_progression_to_s02: forbidden
+  canonical_next_action: "restore/activate a PR-017-compatible SentinelX Host runtime, then #开发执行 PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"
