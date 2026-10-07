@@ -1,0 +1,314 @@
+schema_version: "1.0"
+kind: devforge_thin_execution_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-021-minimal-runtime-complexity-reduction-boundary-v1
+run_id: RUN-PR021-S01-001
+attempt_id: ATTEMPT-001
+slice_id: S01
+source_command: "#开发执行 PR-021-minimal-runtime-complexity-reduction-boundary-v1"
+
+runtime:
+  devforge:
+    repository: bewaterhere-coder/DevForge
+    version: "2.100.0"
+    revision: bb737a2a9354d9cf518422d2c32ec527d5ff0be7
+    slicing_contract_version: "1.1"
+  execution_mode: direct_short
+  codebuddy_invoked: false
+  codex_invoked: false
+  host_workspace_materialization_required: false
+
+transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 21
+  branch: task/minimal-runtime-complexity-reduction-boundary-v1
+  canonical_main: 1028030b33f0ea792a884491a431fffe566f6aa5
+  task_branch_head_at_admission: e52f8c9843ce082849487d3c9914881e171eb49e
+
+evidence_inventory:
+  canonical_main:
+    revision: 1028030b33f0ea792a884491a431fffe566f6aa5
+
+  projection_and_short_control:
+    - component: src/sentinelx_core/local_api.py
+      blob_sha: 9c7cbb0b853669090eca81adeeea2d49a1d95bac
+      observed_role: generic structured HTTP/JSON-RPC host-local projection with bounded response and endpoint timeout
+      ownership: SentinelX
+      runtime_class: projection
+      candidate_direction: KEEP
+    - component: src/sentinelx_core/handlers/local_api.py
+      blob_sha: 5fab057318c11e7dd378cbb1daf89d677505a856
+      observed_role: list/describe/call dispatcher for configured and builtin local_api providers
+      ownership: SentinelX
+      runtime_class: projection
+      candidate_direction: KEEP
+    - component: src/sentinelx_core/handlers/devforge_runtime.py
+      blob_sha: 41373dce1784b112af71b2b680b2d07e8182aa2e
+      observed_role: bounded DevForge builtin provider composing existing scoped executor rather than a second executor
+      ownership: SentinelX
+      runtime_class: short_control_and_scoped_execution
+      candidate_direction: SIMPLIFY_OR_KEEP
+
+  generic_background_delivery:
+    - component: src/sentinelx_core/jobs.py
+      blob_sha: 47d43cf382583a7e62c938ccb9018a00dfcb62c1
+      observed_role: generic Agent background completion/event helper with BACKGROUND_TIMEOUT_MAX=3600
+      ownership: SentinelX
+      runtime_class: background_delivery
+      candidate_direction: KEEP_PENDING_INDEPENDENT_VALUE_REVIEW
+    - component: src/sentinelx_core/pending_results.py
+      blob_sha: 50b84daa30fb7340174663650131862e155d53ca
+      observed_role: persists completion answers for reconnect replay; explicitly not a job registry and does not preserve running work across Agent restart
+      ownership: SentinelX
+      runtime_class: delivery_replay
+      candidate_direction: KEEP
+    - component: src/sentinelx_core/client.py
+      blob_sha: 00acf7d1c4f7cadf92257dc7eabffa847c9c93e3
+      observed_role: starts background jobs, emits job_completed and replays pending results
+      ownership: SentinelX
+      runtime_class: background_delivery
+      candidate_direction: KEEP_PENDING_SCOPE_REVIEW
+    - component: src/sentinelx_core/handlers/script.py
+      blob_sha: 18aa3598b978a54277442b79c51fecb0ad10939a
+      observed_role: supports background=true and uses generic one-hour background ceiling
+      ownership: SentinelX
+      runtime_class: generic_execution
+      candidate_direction: KEEP_WITH_LONG_DEVELOPMENT_ROUTING_GUARD
+    - component: src/sentinelx_core/handlers/exec.py
+      blob_sha: 1e75ca62e5aded9ac53101ec151af55f2c88710b
+      observed_role: supports generic background execution using shared background ceiling
+      ownership: SentinelX
+      runtime_class: generic_execution
+      candidate_direction: KEEP_WITH_LONG_DEVELOPMENT_ROUTING_GUARD
+
+  mutation_security:
+    - component: src/sentinelx_core/mutation_scope.py
+      blob_sha: bceda460cb6a69fad5afdbf3630acb0cdb77a096
+      observed_role: durable provider-owned mutation-scope lease authority and lifecycle
+      ownership: SentinelX
+      runtime_class: security
+      candidate_direction: KEEP
+    - component: src/sentinelx_core/mutation_audit.py
+      blob_sha: f6bbbf15aeab785a8fc414c388dd09b3463a8408
+      observed_role: fail-closed write-ahead mutation audit required before workspace materialization/process spawn
+      ownership: SentinelX
+      runtime_class: security
+      candidate_direction: KEEP
+    - component: src/sentinelx_core/mutation_sandbox.py
+      blob_sha: 9f419cf59781baf2d7cecc5f60d8a196fa5fc8a5
+      observed_role: platform-neutral sandbox contract; no silent ordinary-token/path-filter fallback
+      ownership: SentinelX
+      runtime_class: security
+      candidate_direction: KEEP
+    - component: src/sentinelx_core/windows_mutation_sandbox.py
+      blob_sha: d6a7f31c0290de43858fcaddf61464af1daebb62
+      observed_role: fail-closed Windows AppContainer + exact ACL + Job containment
+      ownership: SentinelX
+      runtime_class: security
+      candidate_direction: KEEP
+    - component: src/sentinelx_core/operation_registry.py
+      blob_sha: df263ff3565f5d6a165dda9cc5d785f4f949d588
+      observed_role: authoritative operation/effect registry feeding repository safety/readiness
+      ownership: SentinelX
+      runtime_class: security_projection
+      candidate_direction: KEEP
+    - component: src/sentinelx_core/canonical_repository_firewall.py
+      blob_sha: 9698bd1199b092edffcb15c69157c27150f78cea
+      observed_role: provider-owned canonical repository write-target admission/firewall
+      ownership: SentinelX
+      runtime_class: security
+      candidate_direction: KEEP
+
+  verification:
+    - component: src/sentinelx_core/verification_profile.py
+      blob_sha: 3dc11ed6949a65017d5a63e7dced457b104f687d
+      observed_role: pure verification profile/input validation; no execution authority
+      ownership: SentinelX
+      runtime_class: verification
+      candidate_direction: KEEP_OR_SIMPLIFY
+    - component: src/sentinelx_core/verification_execution.py
+      blob_sha: 4a795e509478f290931b3dde397e890103eccf18
+      observed_role: composes deterministic inputs for existing scoped executor; grants no authority
+      ownership: SentinelX
+      runtime_class: verification
+      candidate_direction: KEEP_OR_SIMPLIFY
+    - component: src/sentinelx_core/verification_runtime.py
+      blob_sha: 8c295b435e9b7c3d89fd520f0b3ce4dafcd533bd
+      observed_role: pre-SPAWN materialization of admitted verification inputs; sandbox retains OS authority
+      ownership: SentinelX
+      runtime_class: verification
+      candidate_direction: KEEP_OR_SIMPLIFY
+    - component: src/sentinelx_core/verification_readiness.py
+      blob_sha: ebff6c36f98820e95788b77c54e6d49d46524519
+      observed_role: fail-closed physical readiness probe using canonical scoped executor
+      ownership: SentinelX
+      runtime_class: verification
+      candidate_direction: KEEP_OR_SIMPLIFY
+    - component: src/sentinelx_core/handlers/scoped_script.py
+      blob_sha: 5f8fbb843e5a809a039e5bedbebf97d86cbbf1de
+      observed_role: separate scoped_mutation path reusing scope/audit/AppContainer authority while legacy execution remains independent
+      ownership: SentinelX
+      runtime_class: short_execution_security
+      candidate_direction: KEEP_OR_SIMPLIFY
+
+  direct_codex:
+    - component: src/sentinelx_core/handlers/direct_codex.py
+      blob_sha: 9fb4765bed432bf06a83fb50167e721a751c1ace
+      observed_role: closed Agent-owned devforge_direct_codex provider that owns Codex process lifecycle, containment proof and execution path
+      evidence_detail: CODEX_PROBE_TIMEOUT_SECONDS=300
+      ownership: SentinelX
+      runtime_class: long_agent_orchestration
+      candidate_direction: DEPRECATE_AFTER_GUIDED_CLI_REPLACEMENT
+    - component: src/sentinelx_core/direct_codex_acl.py
+      blob_sha: abf3011a655bf4846524d97a516b7e208a0ce4c4
+      observed_role: Codex-specific exact-workspace ACL handoff
+      ownership: SentinelX
+      runtime_class: long_agent_support
+      candidate_direction: DEPRECATE_IF_NO_BOUNDED_REMAINING_OWNER
+    - component: src/sentinelx_core/direct_codex_discovery.py
+      blob_sha: 6f497e742302fa41030538fe01cb7214f60c025a
+      observed_role: verified Codex CLI chain discovery and contract probe
+      ownership: SentinelX
+      runtime_class: long_agent_support
+      candidate_direction: DEPRECATE_IF_GUIDED_CLI_OWNS_AGENT_DISCOVERY
+    - component: src/sentinelx_core/direct_codex_handoff.py
+      blob_sha: c43d1e34d1cdf5f17e72dd54f23d00de8018e6b6
+      observed_role: deterministic internal direct-Codex handoff compiler
+      ownership: SentinelX
+      runtime_class: long_agent_support
+      candidate_direction: REPLACE_OR_REUSE_AS_GUIDED_HANDOFF_INPUT_AFTER_ADR
+    - component: src/sentinelx_core/direct_codex_persistence.py
+      blob_sha: 57fdc762471b7b1db030d9e4c23e8b2e52bce95b
+      observed_role: Codex-specific persistence and canonical publication closure
+      ownership: SentinelX
+      runtime_class: long_agent_transport_and_persistence
+      candidate_direction: DEPRECATE_OR_SPLIT_AFTER_GUIDED_CLI_EVIDENCE_MODEL
+    - component: src/sentinelx_core/direct_codex_result.py
+      blob_sha: c406f0ad17ee024340bc8bc2f18632d812a9ac9d
+      observed_role: direct-Codex result/receipt normalization; does not own Acceptance
+      ownership: SentinelX
+      runtime_class: agent_result_projection
+      candidate_direction: SIMPLIFY_OR_REUSE_FOR_RETURN_EVIDENCE
+    - component: src/sentinelx_core/direct_codex_transport.py
+      blob_sha: 47c7bf7596438b0871d6ff74454077e7d68a3c93
+      observed_role: Codex-specific canonical PR branch bootstrap and CAS-style transport admission
+      ownership: SentinelX
+      runtime_class: long_agent_transport
+      candidate_direction: DEPRECATE_OR_SPLIT_AFTER_GUIDED_CLI
+    - component: src/sentinelx_core/direct_codex_workspace.py
+      blob_sha: 90a3263cddaaa9f818235b05bd7659a4f66a7b93
+      observed_role: Codex-specific provider-derived execution workspace identity
+      ownership: SentinelX
+      runtime_class: long_agent_workspace
+      candidate_direction: DEPRECATE_IF_NOT_REQUIRED_BY_BOUNDED_SECURITY_PATH
+
+active_task_lineage:
+  pr014:
+    requirement_blob_sha: 3ac88e2d15534682ebd2545d4d393a110a68a5a7
+    stage: implementation
+    plan_revision: 5
+    current_slice: S02
+    completed_slices: [S01]
+    execution_state: blocked
+    blocker: DirectDevelopmentHostInvocationProjectionUnavailable
+    bootstrap_target: direct:codebuddy
+    observed_branch_only_security_substrate:
+      workspace_placement_blob_sha: 036e7727e174e7d3115dcca5ae6f1874fffd3ac3
+      workspace_materialization_blob_sha: caf8b5d0df1b2d6ddf2dc05f812e083cfe6c0625
+      note: S01 branch code explicitly reuses existing MutationScopeStore and WindowsMutationSandbox and stops before repository materialization
+    architecture_question: whether this placement/sandbox substrate is independently required for bounded short mutation after long-Agent orchestration moves to guided CLI
+
+  pr019:
+    requirement_blob_sha: 1017f9f54cd34d7868d5c0438eadac6e076f16df
+    stage: implementation
+    current_slice: S01
+    execution_state: blocked_dependency
+    observed_role: Stable Baseline and stabilization-exit owner
+    current_blocker: Host mutation-scope schema incompatibility during exact-candidate verification
+    architecture_question: whether Direct Codex remains a mandatory baseline capability after minimal-runtime boundary adoption
+
+  pr020:
+    requirement_blob_sha: 2c2c33e6b969e271c4acb7277b08cd212f2f3de3
+    stage: implementation
+    plan_revision: 4
+    current_slice: S01
+    execution_state: blocked
+    blocker: WorkspaceMaterializationProviderUnavailable
+    bootstrap_target: direct:codebuddy
+    observed_role: generic Durable Async Operation Runtime proposal motivated by long operation exceeding synchronous request window
+    architecture_question: whether any independent non-development product use justifies durable long-operation truth after long development Agents leave the Hub lifecycle
+
+  devforge_core_slicing:
+    repository: bewaterhere-coder/DevForge
+    current_main: bb737a2a9354d9cf518422d2c32ec527d5ff0be7
+    version: "2.100.0"
+    contract: system/incremental-plan-execution-slicing-checkpoint-contract.md
+    contract_version: "1.1"
+    original_core_pr: bewaterhere-coder/DevForge#3
+    original_core_pr_state: merged
+    observed_role: Task/Plan execution decomposition, one explicit execute at most one Slice, durable checkpoint/readback
+    ownership: DevForge
+    architecture_observation: Slice identity/boundedness does not prove a Slice fits Hub duration
+
+  harness_pr229:
+    repository: bewaterhere-coder/devforge-harness
+    pr_number: 229
+    title: Incremental Execution Slice V1
+    state: open
+    draft: true
+    observed_role: capability-gated Harness consumer support for incremental_execution.slice_v1
+    current_body_boundary: no unsliced fallback; task-scoped direct:codex bootstrap required by its current approved plan
+    ownership: devforge-harness
+    architecture_observation: this is a consumer capability task, not SentinelX lifecycle authority
+
+project_binding:
+  registry_blob_sha: 08f50a36cbb90d5a08856d7dce2adf65248a7584
+  current:
+    provider: direct
+    adapter: codex
+    source: explicit_project_binding
+  note: PR-021 does not authorize changing this binding; successor planning must account for it
+
+dependency_map:
+  - edge: PR-020 -> PR-014
+    reason: PR-020 currently requires compliant execution workspace materialization before direct:codebuddy S01
+  - edge: PR-020 -> PR-013
+    reason: recorded by PR-020 as underlying repository materialization/publication predecessor
+  - edge: PR-014 current S02 -> direct CodeBuddy invocation projection
+    reason: current canonical blocker
+  - edge: devforge-harness#229 -> DevForge incremental_execution.slice_v1 contract
+    reason: Harness consumer capability must echo Slice context/receipt semantics
+  - edge: SentinelX direct Codex -> Codex-specific workspace/ACL/discovery/transport/persistence/result modules
+    reason: current provider owns full development Agent lifecycle
+
+unknowns_to_resolve_in_S02_S03:
+  - id: U1
+    question: Is PR-014 S01 workspace placement/sandbox substrate independently necessary for safe short bounded mutations after long Agent work moves to guided CLI?
+  - id: U2
+    question: Does PR-020 have a currently required non-development consumer that needs durable long-operation truth beyond existing background jobs and pending-results delivery replay?
+  - id: U3
+    question: Which direct-Codex result/receipt or transport validation pieces remain useful as short evidence validation after CLI owns the Agent lifecycle?
+  - id: U4
+    question: Must PR-019 Stable Baseline be revised so Direct Codex is no longer a mandatory baseline capability?
+  - id: U5
+    question: Which verification operations are short/bounded enough for direct mode versus guided CLI without using a fragile seconds-only heuristic?
+  - id: U6
+    question: What successor task changes the current DevForge project binding from direct/codex, if any, without making PR-021 itself mutate project binding?
+
+verification:
+  canonical_evidence_collected: true
+  active_lineage_evidence_collected: true
+  devforge_slice_contract_resolved: true
+  harness_pr229_resolved: true
+  ownership_dependency_unknowns_recorded: true
+  disposition_finalized: false
+  reason_disposition_not_finalized: S01 inventories evidence; S02/S03 own ADR and final disposition
+  product_source_mutated: false
+  tests_mutated: false
+  production_hub_mutated: false
+  active_related_pr_state_mutated: false
+  project_binding_mutated: false
+
+result:
+  state: succeeded
+  s01_completion_candidate: true

@@ -1,0 +1,52 @@
+schema_version: "1.0"
+kind: devforge_thin_execution_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-021-minimal-runtime-complexity-reduction-boundary-v1
+run_id: RUN-PR021-S03-001
+attempt_id: ATTEMPT-001
+slice_id: S03
+source_command: "#开发执行 PR-021-minimal-runtime-complexity-reduction-boundary-v1"
+
+runtime:
+  devforge:
+    repository: bewaterhere-coder/DevForge
+    version: "2.100.0"
+    revision: 3d0880d271bd2e1e3955c81eb09344faf5cd6f69
+    slicing_contract_version: "1.1"
+  execution_mode: direct_short
+  codebuddy_invoked: false
+  codex_invoked: false
+  host_workspace_materialization_required: false
+
+transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 21
+  branch: task/minimal-runtime-complexity-reduction-boundary-v1
+  canonical_main: 1028030b33f0ea792a884491a431fffe566f6aa5
+
+artifact:
+  ref: docs/architecture/sentinelx-capability-disposition-matrix-v1.md
+  blob_sha: 05b6906614715e14450a2fd03e0699200e016074
+  read_back_verified: true
+
+verification:
+  required_capability_groups_covered: true
+  all_four_dispositions_defined_and_used: true
+  pr014_relation_explicit: true
+  pr020_relation_explicit: true
+  pr019_relation_explicit: true
+  pr229_relation_explicit: true
+  direct_codex_ownership_explicit: true
+  direct_codebuddy_ownership_explicit: true
+  project_binding_debt_explicit: true
+  hold_items_have_reentry_preconditions: true
+  deprecate_items_have_removal_preconditions: true
+  security_critical_boundaries_keep: true
+  product_source_mutated: false
+  tests_mutated: false
+  project_binding_mutated: false
+  active_related_pr_state_mutated: false
+
+result:
+  state: succeeded
+  s03_completion_candidate: true

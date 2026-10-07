@@ -8,28 +8,46 @@ task_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
 title: SentinelX Large Runtime Root ACL Cleanup Timeout & Recovery V1
 requirement_revision: 1
 development:
-  stage: implementation
+  stage: done
   gates:
     requirement_ready: true
     plan_approved: true
-    acceptance_approved: false
-    completion_verified: false
-  plan_revision: 1
-  implementation_authorized: true
-  next_expected_actor: implementer
-  blocking_findings:
-    - S02 cleanup/recovery is fully evidenced on exact candidate f7249aef0d25085eb98e741596b6f567ebd83966, including live retry of preserved scope mss_JB_VJlJg4Np6LdrxgKd_fCw9 from revoked to terminal.
-    - S03 Python proof passed with returncode 0 and terminal closure.
-    - S03 PowerShell proof is deterministically fail-closed on the configured system runtime root: ACL grant is denied by Windows and the scope still terminalizes with no residual authority.
-    - Unity 6000.6.4f1 large-runtime scopes repeatedly reached terminal under runtime_acl_timeout_seconds=300, proving the original 20-second ACL cleanup blocker is repaired.
-    - Unity process compatibility remains blocked: a classified scoped probe on the exact candidate maps the Unity child early exit to Windows status 0xC0000142 (DLL initialization failed).
-    - Requirement R8.3 therefore remains unsatisfied. General Windows application compatibility under AppContainer is explicitly a PR-017 Non-Goal, so fixing Unity DLL initialization inside PR-017 would be an unauthorized scope expansion.
-    - Host configuration has been restored to the original four runtime_read_roots; the temporary exact-file audit read permission used for bounded evidence readback has been removed.
+    acceptance_approved: true
+    completion_verified: true
+  plan_revision: 5
+  acceptance_revision: 3
+  completion_revision: 1
+  implementation_authorized: false
+  finalization:
+    ready_for_merge: false
+    canonical_state_verified: true
+    plan_execution_state_verified: true
+    evidence_verified: true
+    transport_preconditions_verified: true
+    integration_verified: true
+    integration_ref: f72ac8bfe643cd9fbdea231e4a69f9e88a0595e9
+    merge_pending: false
+  next_expected_actor: null
+  acceptance_disposition: approved_r3
+  execution_disposition: completion_r1_verified
+  post_merge_reconciliation:
+    state: verified
+    cause: workflow_state_mismatch
+    conflicting_merge: 14669e4069dcd9117e19590b434204408142bbb9
+    source_snapshot: eef06259406cd4f83625ac26403d57f993f495c9
+    implementation_replayed: false
+  blocking_findings: []
+  repair_evidence:
+    - Fixing R1 preserved exact product candidate f9e07da9cc37f6e882c3258280869b415cafcb5c and did not replay S03 or Unity.
+    - SentinelX service generation reset preserved agent 0.24.1.dev473+gf9e07da9c and did not mutate Host config or permissions.
+    - Current host readback twice reports scoped_verification_node_npm_v1 available=true / verified=true with Node, npm, DNS deny, HTTP deny, protected-root deny, terminal cleanup and transient-toolchain-authority cleanup all passing.
+    - The prior inconsistent state is attributed to process-generation readiness cache persistence; the original transient HandlerError trigger remains unknown and Acceptance must independently reverify current behavior.
   current_slice: S03
-  current_slice_state: blocked
+  current_slice_state: completed
   authorization:
     mode: legacy_command_scoped
-  completed_slices:
+  completed_slices: [S03]
+  historical_completed_evidence:
     - S01
     - S02
 transport:
@@ -39,17 +57,50 @@ transport:
   base_branch: main
 artifacts:
   plan: docs/plans/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan.md
-  latest_plan_review: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-review-r1.md
-  latest_plan_review_transition_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-review-r1-transition-receipt.yaml
+  plan_blob_sha: 25398f342e5f032d8c838f33ee941562c987d15c
+  latest_plan_review: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-review-r5.md
+  latest_plan_review_transition_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-review-r5-transition-receipt.yaml
+  latest_plan_remediation_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-remediation-r5-20261008.yaml
+  latest_plan_remediation_transition_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-remediation-r5-transition-receipt.yaml
   execution_slice_set: docs/execution/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-slices.yaml
-  latest_slice_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-blocked-unity-dll-initialization-20261007.yaml
-  latest_slice_completion_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-repair-completion-receipt-r4.yaml
-  latest_slice_invalidation: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-live-invalidation-r3.md
-  latest_s03_blocker_review: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-unity-appcontainer-compatibility-blocker-r1.md
+  execution_slice_set_plan_revision: 5
+  execution_slice_set_blob_sha: "493f54282df837f3923aa0c986b01b46329ca2ec"
+  latest_slice_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-completion-20261008.yaml
+  latest_slice_checkpoint_blob_sha: "68e213815b82f9cf99f8cc607034815ae7f29dc6"
+  latest_slice_completion_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-completion-receipt.yaml
+  latest_slice_completion_receipt_blob_sha: "aef10dfe56da8db7ae09aa4d47c29caa1e57b66f"
+  latest_integrated_candidate: "f9e07da9cc37f6e882c3258280869b415cafcb5c"
+  prior_s03_blocker_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-blocked-exact-candidate-host-activation-unavailable-20261008.yaml
+  prior_acceptance_attempt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-acceptance-r1-blocked-incomplete-slices-20261008.yaml
+  latest_acceptance: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-acceptance-r3.yaml
+  latest_acceptance_blob_sha: 4e22d9537ae9e742c19ee3639c674ed8121995bc
+  latest_acceptance_transition_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-acceptance-r3-transition-receipt.yaml
+  latest_acceptance_transition_receipt_blob_sha: abcd48115684955aacc0d6b79fbb41e16809e9ad
+  latest_fixing_execution_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-fixing-r1-readiness-restored-20261008.yaml
+  latest_fixing_execution_checkpoint_blob_sha: 3c0119777435813278f111839fcd9f4ff743d80e
+  latest_fixing_transition_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-fixing-r1-to-acceptance-transition-receipt.yaml
+  latest_fixing_transition_receipt_blob_sha: da74adac606ba764f8914a4cd8135af22ac0f0ea
+  completion_finalization: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-completion-finalization-r1.yaml
+  completion_finalization_blob_sha: 319aeed703515d3339bff78323f83a35bbf40663
+  integration_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-integration-receipt-r1.yaml
+  integration_receipt_blob_sha: ae7a93de6d4ea782f350f55d40779dc3f2084fd0
+  completion_review: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-completion-r1.md
+  completion_review_blob_sha: 66863506fbbc0a8267ae8813f4d6eed990b9cee3
+  completion_transition_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-completion-transition-receipt-r1.yaml
+  completion_transition_receipt_blob_sha: 153d03f20854bcdaf292a09552afb648e87d4074
+  completion_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-completed-20261008.yaml
+  completion_checkpoint_blob_sha: 72c9aa311d6248400f4a5d8b374f93918fff69b6
+  post_merge_reconciliation: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-post-merge-reconciliation-r1.yaml
+  post_merge_reconciliation_blob_sha: 77f582ae85b525ddb818e7827d94b4d2465fa71e
+  workspace_gc_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-workspace-gc-blocked-20261008.yaml
+  workspace_gc_checkpoint_blob_sha: ac9eac0d8e5d28ecde988612e93fafefeed22e21
+  workspace_gc_disposition: blocked_by_tool_fail_closed
 related_tasks:
   predecessor:
     - PR-012-execute-scoped-explicit-execution-profile-v1
     - PR-011-scoped-verification-toolchain-dependency-capsule-v1
+  integration_dependency:
+    - PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1@73a52013055a8b3bb70b319a0ed7b7ba832ae0c9
   downstream_consumer:
     - DemonTD/CLIENT-CODE-ARCHITECTURE-BASELINE-V1/C01
 ```

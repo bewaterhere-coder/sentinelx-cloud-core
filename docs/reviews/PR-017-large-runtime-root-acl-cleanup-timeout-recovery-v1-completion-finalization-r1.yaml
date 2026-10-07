@@ -1,0 +1,89 @@
+schema_version: "1.0"
+kind: devforge_merge_finalization
+project_id: sentinelx-cloud-core
+task_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
+source_command: "#开发完成 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1"
+created_at: "2026-10-08"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  version: "2.101.0"
+  main_sha: f7e191baece0c328b1f910d0ab0e678ca5993fa3
+  merge_finalization_contract:
+    path: system/development-merge-finalization-contract.md
+    version: "1.1"
+    blob_sha: 6dfc6d6c7960bad2179b93f164c0bf732d99ffd6
+
+lineage:
+  requirement_revision: 1
+  plan_revision: 5
+  plan_ref: docs/plans/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan.md
+  plan_blob_sha: 25398f342e5f032d8c838f33ee941562c987d15c
+  acceptance_revision: 3
+  acceptance_ref: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-acceptance-r3.yaml
+  acceptance_blob_sha: 4e22d9537ae9e742c19ee3639c674ed8121995bc
+  acceptance_transition_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-acceptance-r3-transition-receipt.yaml
+  acceptance_transition_receipt_blob_sha: abcd48115684955aacc0d6b79fbb41e16809e9ad
+  exact_product_candidate: f9e07da9cc37f6e882c3258280869b415cafcb5c
+
+transport:
+  type: github-pr
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 17
+  branch: task/large-runtime-root-acl-cleanup-timeout-recovery-v1
+  base_branch: main
+  finalization_entry_head: cb66d1f37d2a4d0b4ea21da385307962b371513d
+  current_main_before_merge: 1028030b33f0ea792a884491a431fffe566f6aa5
+  draft: false
+  mergeable: true
+  transport_drift: false
+  competing_active_pr_on_same_task_branch: false
+
+verification:
+  acceptance_approved: true
+  acceptance_transition_verified: true
+  current_plan_slices_completed: true
+  historical_s01_s02_preserved: true
+  plan_execution_metadata_synchronized: true
+  exact_product_candidate_workflows:
+    total: 13
+    all_completed: true
+    all_success: true
+  current_finalization_head_workflows:
+    product_code_drift_from_exact_candidate: false
+    failed_runs_observed: 0
+    queued_doc_only_runs_observed: true
+  real_windows_unity_proof: true
+  current_node_npm_readiness_verified: true
+  host_mutation_sandbox_verified: true
+  pre_execution_audit_lineage_verified: true
+  canonical_repository_mutation_firewall_verified: true
+  canonical_state_verified: true
+  plan_execution_state_verified: true
+  evidence_verified: true
+  transport_preconditions_verified: true
+
+finalization:
+  ready_for_merge: true
+  stage: accepted
+  completion_verified: false
+  merge_pending: true
+  next_expected_actor: integration
+
+safety:
+  canonical_main_mutated_before_merge: false
+  product_implementation_replayed: false
+  unity_replayed: false
+  s03_replayed: false
+  host_config_mutated: false
+  permission_expansion_used: false
+  operator_unrestricted_used: false
+  transport_migration_used: false
+  requirement_semantics_rewritten: false
+  plan_semantics_rewritten: false
+  done_claimed_before_integration: false
+
+post_merge_requirement:
+  integration_receipt_required: true
+  authoritative_done_requires_main_readback: true
+  transition: accepted_to_done_only_after_verified_merge_and_completion_state_persistence

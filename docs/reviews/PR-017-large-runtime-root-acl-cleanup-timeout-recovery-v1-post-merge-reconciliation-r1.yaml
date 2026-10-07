@@ -1,0 +1,69 @@
+schema_version: "1.0"
+kind: devforge_post_merge_reconciliation_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
+source_command: "#开发完成 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1"
+created_at: "2026-10-08"
+
+reconciliation:
+  cause: workflow_state_mismatch
+  original_integration_ref: f72ac8bfe643cd9fbdea231e4a69f9e88a0595e9
+  original_final_consistent_main_snapshot: eef06259406cd4f83625ac26403d57f993f495c9
+  conflicting_later_merge:
+    pr_number: 21
+    merge_commit: 14669e4069dcd9117e19590b434204408142bbb9
+    effect: removed_pr017_canonical_workflow_artifacts
+  implementation_replayed: false
+  acceptance_replayed: false
+  unity_or_s03_replayed: false
+  product_code_mutated_by_reconciliation: false
+  task_identity_preserved: true
+  original_transport_preserved: true
+
+repaired_artifacts:
+  - docs/requirements/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1.md
+  - docs/plans/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan.md
+  - docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-review-r5.md
+  - docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-review-r5-transition-receipt.yaml
+  - docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-remediation-r5-20261008.yaml
+  - docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-remediation-r5-transition-receipt.yaml
+  - docs/execution/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-slices.yaml
+  - docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-completion-20261008.yaml
+  - docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-completion-receipt.yaml
+  - docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-blocked-exact-candidate-host-activation-unavailable-20261008.yaml
+  - docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-acceptance-r1-blocked-incomplete-slices-20261008.yaml
+  - docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-acceptance-r3.yaml
+  - docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-acceptance-r3-transition-receipt.yaml
+  - docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-fixing-r1-readiness-restored-20261008.yaml
+  - docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-fixing-r1-to-acceptance-transition-receipt.yaml
+  - docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-completion-finalization-r1.yaml
+  - docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-integration-receipt-r1.yaml
+  - docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-completion-r1.md
+  - docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-completion-transition-receipt-r1.yaml
+  - docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-completed-20261008.yaml
+
+readback:
+  task_blob_sha: cdedb3004c8b50746e83b0323412a5c13e48fcd8
+  plan_blob_sha: 25398f342e5f032d8c838f33ee941562c987d15c
+  acceptance_r3_blob_sha: 4e22d9537ae9e742c19ee3639c674ed8121995bc
+  acceptance_transition_blob_sha: abcd48115684955aacc0d6b79fbb41e16809e9ad
+  finalization_blob_sha: 319aeed703515d3339bff78323f83a35bbf40663
+  integration_receipt_blob_sha: ae7a93de6d4ea782f350f55d40779dc3f2084fd0
+  completion_review_blob_sha: 66863506fbbc0a8267ae8813f4d6eed990b9cee3
+  completion_transition_blob_sha: 153d03f20854bcdaf292a09552afb648e87d4074
+  completion_checkpoint_blob_sha: 72c9aa311d6248400f4a5d8b374f93918fff69b6
+  workspace_gc_checkpoint_blob_sha: ac9eac0d8e5d28ecde988612e93fafefeed22e21
+  task_stage: done
+  completion_verified: true
+  read_back_verified: true
+
+safety:
+  replacement_development_task_created: false
+  replacement_development_pr_created: false
+  product_implementation_replayed: false
+  destructive_cleanup_used: false
+  permission_expansion_used: false
+
+result:
+  workflow_state_mismatch_repaired: true
+  task_completion_remains_verified: true

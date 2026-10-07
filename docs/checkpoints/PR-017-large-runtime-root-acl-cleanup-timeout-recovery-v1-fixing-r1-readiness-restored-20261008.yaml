@@ -1,0 +1,115 @@
+schema_version: "1.0"
+kind: devforge_fixing_attempt_completion_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
+source_command: "#开发执行 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1"
+created_at: "2026-10-08"
+
+attempt:
+  attempt_id: fixing-r1-node-npm-readiness-restoration
+  stage_before: fixing
+  stage_after: acceptance
+  state: completed
+  fixing_scope: acceptance_r2_node_npm_readiness_drift_only
+
+acceptance_finding:
+  id: CurrentNodeNpmVerificationReadinessContradictsCompletionReceipt
+  prior_classification: inconsistent_evidence
+  prior_acceptance_ref: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-acceptance-r2.yaml
+  required_correction:
+    - restore_or_reprove_current_pr011_node_npm_scoped_verification
+    - preserve_appcontainer_network_denial_protected_root_denial_terminalization_and_transient_authority_cleanup
+    - preserve_s03_unity_and_cleanup_evidence_unless_materially_invalidated
+
+diagnosis:
+  product_candidate_changed: false
+  exact_agent_version_before_and_after: "0.24.1.dev473+gf9e07da9c"
+  configured_profile_preserved: node_npm
+  runtime_session_object_read_enabled: false
+  service_generation_reset:
+    performed: true
+    service: SentinelX
+    old_session_id: sess_9c7a6332762b
+    new_session_id: sess_6985c590bc19
+    agent_version_preserved: true
+    config_mutated: false
+    permission_expanded: false
+  cold_readiness_behavior:
+    first_capabilities_calls_exceeded_hub_60_second_window: true
+    host_ping_remained_healthy: true
+    eventual_physical_probe_completed: true
+  cache_mechanism_readback:
+    module: src/sentinelx_core/verification_readiness.py
+    cache_scope: process_generation
+    negative_result_cached: true
+    normal_capabilities_forces_reprobe: false
+    persistence_mechanism_confirmed: true
+  original_transient_handlererror_trigger:
+    status: unknown
+    product_repair_proven_required: false
+
+repair:
+  type: host_runtime_readiness_restoration
+  product_code_mutated: false
+  plan_revision_changed: false
+  requirement_revision_changed: false
+  transport_changed: false
+  branch_or_pr_replaced: false
+  s03_replayed: false
+  unity_replayed: false
+  speculative_timeout_patch:
+    created_then_fully_reverted: true
+    net_file_diff_from_acceptance_r2_head: []
+    excluded_from_repair_evidence: true
+  preserved_integrated_product_candidate: "f9e07da9cc37f6e882c3258280869b415cafcb5c"
+
+live_readback:
+  host_id: host_7f0e709ded71ab24
+  service_running: true
+  agent_version: "0.24.1.dev473+gf9e07da9c"
+  readback_count: 2
+  host_mutation_sandbox_v1:
+    available: true
+    verified: true
+    runtime_session_object_read_enabled: false
+  scoped_verification_node_npm_v1:
+    available: true
+    verified: true
+    profile_id: node_npm
+    toolchain_kind: node_npm_v1
+    toolchain_digest: e39649cf3799721598195cf5771901f09fdf587e7118706c671d4f50f9e10703
+    checks:
+      windows: true
+      base_scoped_mutation: true
+      profile_configured: true
+      profile_stores: true
+      toolchain_integrity: true
+      appcontainer_node: true
+      appcontainer_npm: true
+      dns_denied: true
+      http_denied: true
+      protected_root_denied: true
+      terminal_non_active: true
+      transient_toolchain_authority_absent: true
+  pre_execution_audit_lineage_v1:
+    available: true
+    verified: true
+  canonical_repository_mutation_firewall_v1:
+    available: true
+    verified: true
+
+preserved_evidence:
+  s03_completion_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-completion-20261008.yaml
+  s03_completion_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-completion-receipt.yaml
+  unity_6000_6_4f1_proof_replayed: false
+  runtime_root_cleanup_replayed: false
+  session0_sid_cleanup_replayed: false
+
+disposition:
+  fixing_result: readiness_restored_and_reproved_without_product_change
+  transition_authorized: true
+  next_stage: acceptance
+  next_expected_actor: verifier
+  acceptance_approved: false
+  completion_verified: false
+  canonical_next_command: "#开发验收 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1"
