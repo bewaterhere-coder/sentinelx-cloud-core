@@ -25,11 +25,12 @@ executor:
   adapter: github_repository_api
   execution_mode: direct_short
 runtime:
-  state: RUNNING
+  state: COMPLETED
   reason_code: null
   current_attempt: ATTEMPT-001
   devforge_version: "2.100.0"
   devforge_revision: 3d0880d271bd2e1e3955c81eb09344faf5cd6f69
+  finished_on: "2026-10-08"
 attempt:
   attempt_id: ATTEMPT-001
   codebuddy_invoked: false
@@ -59,4 +60,14 @@ verification:
     - PR-014 PR-019 PR-020 remain unmodified in state
     - canonical main remains unchanged
     - acceptance criteria 1 through 18 have evidence pointers
+artifacts:
+  refs:
+    - docs/architecture/sentinelx-minimal-runtime-boundary-v1.md
+    - docs/architecture/sentinelx-capability-disposition-matrix-v1.md
+    - docs/checkpoints/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s04-acceptance-evidence-20261008.yaml
+    - docs/execution/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s04-attempt-001-receipt.yaml
+    - docs/execution/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s04-run-001-ledger.yaml
+verification_result:
+  state: passed
+  finalization_blob_sha: 488efc2f84a59290d7c7b07227286b79f2d655d5
 finalization_ref: docs/execution/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s04-run-001-finalization.yaml
