@@ -102,5 +102,19 @@ verification:
   verified: true
 
 canonical_recovery:
-  required_change: "Add and verify incremental_execution.slice_v1 support to devforge-harness canonical consumer, including execution.slice_id/context.slice_ref contract parsing and receipt echo, then retry the same #开发引导执行 command."
-  retry_command: "#开发引导执行 PR-014-devforge-execution-workspace-materialization-bridge-v1 harness"
+  upstream_task:
+    repository: bewaterhere-coder/devforge-harness
+    pr: 229
+    task_id: PR-229-incremental-execution-slice-v1
+    branch: task/incremental-execution-slice-v1
+    stage: implementation
+    current_state:
+      S01: completed
+      S02: pending
+      S03: pending
+    bootstrap_override: active
+    bootstrap_target: direct:codex
+    pr_head: 23322be22902123e791294e5cc079be965fd168e
+  required_change: "Complete PR-229 so devforge-harness main truthfully supports incremental_execution.slice_v1 end to end, including slice-bound context/cache/recovery and receipt echo; then retry the PR-014 Harness bootstrap."
+  upstream_next_action: "#开发执行 PR-229-incremental-execution-slice-v1"
+  retry_command_after_upstream_completion: "#开发引导执行 PR-014-devforge-execution-workspace-materialization-bridge-v1 harness"
