@@ -53,7 +53,7 @@ slices:
   - slice_id: S01
     objective: Add the provider-owned bounded runtime ACL timeout contract, policy identity participation, deterministic ACL timeout classification, exact-root cleanup readback, and focused tests.
     depends_on: []
-    state: pending
+    state: completed
     scope:
       refs:
         - src/sentinelx_core/policy.py
@@ -92,8 +92,16 @@ slices:
         - existing Windows sandbox unit regressions pass
     checkpoint:
       required: true
-    run_refs: []
-    completion_receipt_ref: null
+    run_refs:
+      - commit:dd41ded99569078ddfcb0bf8ca6588b20f77d994
+      - commit:809fb6b62c0318013f85b53b5486c15a4a3dcd42
+      - commit:347d74013d96e75f49e7615986f0470856ae636c
+      - commit:1165dede238b62e357d352928d67dfca52a3d7af
+      - https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37611894384/job/112760842691
+      - https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37611894324/job/112760843102
+      - https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37611894350/job/112760842652
+      - https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37611894311/job/112760842344
+    completion_receipt_ref: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s01-completion-receipt.yaml
 
   - slice_id: S02
     objective: Close partial runtime-root grant ambiguity and prove fail-closed revoked/retry terminalization recovery.
@@ -166,10 +174,10 @@ slices:
     run_refs: []
     completion_receipt_ref: null
 execution_state:
-  current_slice: S01
+  current_slice: S02
   current_slice_state: pending
-  completed_slices: []
-  pending_slices: [S01, S02, S03]
+  completed_slices: [S01]
+  pending_slices: [S02, S03]
   all_slices_completed: false
 acceptance_boundary:
   all_current_plan_slices_must_be_completed: true
