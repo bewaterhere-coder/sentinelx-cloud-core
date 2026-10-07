@@ -5,25 +5,27 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 1
 development:
-  stage: acceptance
+  stage: accepted
   gates:
     requirement_ready: true
     plan_approved: true
-    acceptance_approved: false
+    acceptance_approved: true
     completion_verified: false
   plan_revision: 1
   implementation_authorized: false
   blocking_findings: []
-  next_expected_actor: verifier
+  next_expected_actor: integration
   current_slice: S04
   current_slice_state: completed
   completed_slices: [S01, S02, S03, S04]
   implementation_execution_complete: true
-  formal_acceptance_performed: false
-  canonical_next_action: "#开发验收 PR-021-minimal-runtime-complexity-reduction-boundary-v1"
+  formal_acceptance_performed: true
+  canonical_next_action: "#开发完成 PR-021-minimal-runtime-complexity-reduction-boundary-v1"
   latest_execution_run: docs/execution/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s04-run-001.yaml
   latest_execution_checkpoint: docs/checkpoints/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s04-completion-20261008.yaml
-  latest_gate_transition: docs/checkpoints/PR-021-minimal-runtime-complexity-reduction-boundary-v1-implementation-to-acceptance-transition-receipt.yaml
+  latest_acceptance_review: docs/reviews/PR-021-minimal-runtime-complexity-reduction-boundary-v1-acceptance-r1.md
+  latest_acceptance_receipt: docs/reviews/PR-021-minimal-runtime-complexity-reduction-boundary-v1-acceptance-r1-receipt.yaml
+  latest_gate_transition: docs/checkpoints/PR-021-minimal-runtime-complexity-reduction-boundary-v1-acceptance-to-accepted-transition-receipt.yaml
 transport:
   type: github-pr
   pr_number: 21
@@ -41,6 +43,8 @@ artifacts:
   architecture_decision: docs/architecture/sentinelx-minimal-runtime-boundary-v1.md
   disposition_matrix: docs/architecture/sentinelx-capability-disposition-matrix-v1.md
   pre_acceptance_evidence: docs/checkpoints/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s04-acceptance-evidence-20261008.yaml
+  acceptance_review: docs/reviews/PR-021-minimal-runtime-complexity-reduction-boundary-v1-acceptance-r1.md
+  acceptance_receipt: docs/reviews/PR-021-minimal-runtime-complexity-reduction-boundary-v1-acceptance-r1-receipt.yaml
 related_tasks:
   workspace_materialization_bridge: PR-014-devforge-execution-workspace-materialization-bridge-v1
   direct_codex_bridge: PR-015-direct-codex-development-host-invocation-bridge-v1
