@@ -10,16 +10,21 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from sentinelx_core.direct_codex_persistence import (
+    PERSISTENCE_MODE,
+    PersistenceOutcome,
+)
 from sentinelx_core.direct_codex_transport import TransportBootstrap
 from sentinelx_core.mutation_placement import RepositoryIdentity
 from sentinelx_core.user_process import UserProcessResult
 
-RECEIPT_VERSION = 1
+RECEIPT_VERSION = 2
 
 _REQUIRED_RECEIPT_FIELDS = (
     "execution",
     "workspace",
     "transport",
+    "persistence",
     "verification",
     "receipt",
 )
@@ -56,8 +61,15 @@ def normalize_result(
     actual_branch: str,
     local_head: str,
     remote_head_readback: str,
+    persistence: PersistenceOutcome | None,
 ) -> dict[str, Any]:
-    """Build the bounded provider result from verified execution evidence."""
+    """Build the bounded provider result from verified execution evidence.
+
+    A valid persisted success now additionally requires provider-owned
+    persistence evidence (PR-015/S04): the exact candidate commit, an ordinary
+    fast-forward publish and a remote readback equal to the candidate. A verified
+    no-change outcome is reported distinctly and is not a persisted success.
+    """
     lineage = params["lineage"]
     transport = params["transport"]
     development = params["development"]
@@ -70,9 +82,16 @@ def normalize_result(
     exit_disposition = (
         "timeout" if process.timed_out else ("completed" if process.returncode == 0 else "failed")
     )
-    published = local_head != bootstrap.expected_remote_sha
     consistent = actual_branch == bootstrap.branch and remote_head_readback == local_head
-    persisted = published and consistent
+    persistence_block = persistence.to_dict() if persistence is not None else None
+    persisted = bool(
+        persistence is not None
+        and persistence.status == "persisted"
+        and persistence.published
+        and persistence.consistent
+        and remote_head_readback == persistence.candidate_commit
+    )
+    published = persisted and consistent
     structured = _extract_structured(process.stdout)
     receipt_valid = bool(
         exit_disposition == "completed"
@@ -131,12 +150,17 @@ def normalize_result(
             "provider_fallback_used": False,
         },
     }
+    if persistence_block is not None:
+        payload["persistence"] = persistence_block
     if not receipt_valid:
-        payload["receipt"]["incomplete_reason"] = (
-            "implementation_not_persisted"
-            if exit_disposition == "completed" and not persisted
-            else f"direct_codex_execution_{exit_disposition}"
-        )
+        if exit_disposition != "completed":
+            payload["receipt"]["incomplete_reason"] = (
+                f"direct_codex_execution_{exit_disposition}"
+            )
+        elif persistence is not None and persistence.status == "no_change":
+            payload["receipt"]["incomplete_reason"] = "no_eligible_change"
+        else:
+            payload["receipt"]["incomplete_reason"] = "implementation_not_persisted"
     return payload
 
 
@@ -186,6 +210,20 @@ def validate_receipt(
         return (False, "receipt_branch_mismatch")
     if transport.get("replacement_transport_created") is not False:
         return (False, "receipt_replacement_transport")
+    persistence = payload.get("persistence")
+    if not isinstance(persistence, dict):
+        return (False, "receipt_persistence_invalid")
+    if persistence.get("mode") != PERSISTENCE_MODE:
+        return (False, "receipt_persistence_mode_invalid")
+    if persistence.get("status") != "persisted" or persistence.get("published") is not True:
+        return (False, "receipt_not_persisted")
+    candidate = persistence.get("candidate_commit")
+    if not candidate or candidate != transport.get("local_head"):
+        return (False, "receipt_candidate_mismatch")
+    if transport.get("remote_head_readback") != candidate:
+        return (False, "receipt_readback_mismatch")
+    if persistence.get("base_head") != transport.get("expected_remote_sha"):
+        return (False, "receipt_base_head_mismatch")
     workspace = payload.get("workspace")
     if not isinstance(workspace, dict) or workspace.get("isolated") is not True:
         return (False, "receipt_workspace_not_isolated")

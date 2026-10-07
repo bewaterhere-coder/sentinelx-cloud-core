@@ -21,6 +21,10 @@ from sentinelx_core.direct_codex_discovery import (
     verify_package,
 )
 from sentinelx_core.direct_codex_handoff import compile_handoff
+from sentinelx_core.direct_codex_persistence import (
+    PERSISTENCE_MODE,
+    PersistenceOutcome,
+)
 from sentinelx_core.direct_codex_result import normalize_result, validate_receipt
 from sentinelx_core.direct_codex_transport import (
     DirectCodexTransportError,
@@ -125,8 +129,18 @@ def test_workspace_refuses_canonical_intersection(tmp_path: Path) -> None:
 # ── transport admission ──────────────────────────────────────────────────
 
 
-async def _fake_git(root: Path, *args: str, timeout: float) -> tuple[int, bytes, bytes]:
-    """Run real git without the Windows WTS substrate (tests run as the user)."""
+async def _fake_git(
+    root: Path, *args: str, timeout: float, env: dict[str, str] | None = None
+) -> tuple[int, bytes, bytes]:
+    """Run real git without the Windows WTS substrate (tests run as the user).
+
+    ``env`` carries only the provider-owned keys in ``GIT_ENV_ALLOWLIST`` (for
+    example the provider-owned candidate index), so the harness mirrors the fixed
+    primitive's contract.
+    """
+    child_env = dict(os.environ)
+    if env:
+        child_env.update(env)
     proc = await asyncio.create_subprocess_exec(
         _GIT,
         "-C",
@@ -134,6 +148,7 @@ async def _fake_git(root: Path, *args: str, timeout: float) -> tuple[int, bytes,
         *args,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
+        env=child_env,
     )
     out, err = await proc.communicate()
     return proc.returncode, out, err
@@ -461,7 +476,74 @@ def _receipt_kwargs(**overrides: Any) -> dict[str, Any]:
     return kwargs
 
 
-def test_local_only_run_is_not_a_success_receipt() -> None:
+def _persistence(
+    *,
+    status: str = "persisted",
+    base_head: str = "a" * 40,
+    candidate: str | None = "b" * 40,
+    remote: str = "b" * 40,
+    published: bool = True,
+    consistent: bool = True,
+    local_head: str = "b" * 40,
+    actual_branch: str = "task/bridge",
+) -> PersistenceOutcome:
+    """A provider-owned persistence outcome for the receipt-contract tests."""
+    return PersistenceOutcome(
+        mode=PERSISTENCE_MODE,
+        status=status,
+        base_head=base_head,
+        eligible_change_count=1,
+        changed_paths_digest="c" * 64,
+        candidate_commit=candidate,
+        commit_provenance_digest="e" * 64,
+        published=published,
+        remote_head_readback=remote,
+        consistent=consistent,
+        actual_branch=actual_branch,
+        local_head=local_head,
+        snapshot_digest="f" * 64,
+        state="published" if published else "publish_intent",
+    )
+
+
+def _success_payload() -> dict[str, Any]:
+    return normalize_result(
+        params=_params(),
+        bootstrap=_Bootstrap(),  # type: ignore[arg-type]
+        process=_Process(),  # type: ignore[arg-type]
+        handoff_digest="d" * 64,
+        actual_branch="task/bridge",
+        local_head="b" * 40,
+        remote_head_readback="b" * 40,
+        persistence=_persistence(),
+    )
+
+
+def test_unpersisted_dirty_worktree_is_not_a_success_receipt() -> None:
+    """Dirty but unpublished work must never be reported as canonical success."""
+    payload = normalize_result(
+        params=_params(),
+        bootstrap=_Bootstrap(),  # type: ignore[arg-type]
+        process=_Process(),  # type: ignore[arg-type]
+        handoff_digest="d" * 64,
+        actual_branch="task/bridge",
+        local_head="b" * 40,
+        remote_head_readback="a" * 40,
+        persistence=_persistence(
+            status="publication_failed",
+            remote="a" * 40,
+            published=False,
+            consistent=False,
+        ),
+    )
+    assert payload["transport"]["published"] is False
+    assert payload["receipt"]["valid"] is False
+    assert payload["receipt"]["incomplete_reason"] == "implementation_not_persisted"
+    ok, reason = validate_receipt(payload, **_receipt_kwargs())
+    assert ok is False and reason == "receipt_transport_inconsistent"
+
+
+def test_no_eligible_change_outcome_is_distinct_from_persisted_success() -> None:
     payload = normalize_result(
         params=_params(),
         bootstrap=_Bootstrap(),  # type: ignore[arg-type]
@@ -470,42 +552,34 @@ def test_local_only_run_is_not_a_success_receipt() -> None:
         actual_branch="task/bridge",
         local_head="a" * 40,
         remote_head_readback="a" * 40,
+        persistence=_persistence(
+            status="no_change",
+            candidate=None,
+            remote="a" * 40,
+            published=False,
+            consistent=False,
+            local_head="a" * 40,
+        ),
     )
-    assert payload["transport"]["published"] is False
+    assert payload["receipt"]["persisted"] is False
     assert payload["receipt"]["valid"] is False
-    assert payload["receipt"]["incomplete_reason"] == "implementation_not_persisted"
-    ok, reason = validate_receipt(payload, **_receipt_kwargs())
-    assert ok is False and reason == "receipt_not_valid"
+    assert payload["receipt"]["incomplete_reason"] == "no_eligible_change"
+    assert validate_receipt(payload, **_receipt_kwargs()) == (False, "receipt_not_persisted")
 
 
 def test_persisted_consistent_run_produces_valid_receipt() -> None:
-    payload = normalize_result(
-        params=_params(),
-        bootstrap=_Bootstrap(),  # type: ignore[arg-type]
-        process=_Process(),  # type: ignore[arg-type]
-        handoff_digest="d" * 64,
-        actual_branch="task/bridge",
-        local_head="b" * 40,
-        remote_head_readback="b" * 40,
-    )
+    payload = _success_payload()
     assert payload["execution"]["provider"] == "direct"
     assert payload["execution"]["adapter"] == "codex"
     assert payload["receipt"]["valid"] is True
     assert payload["receipt"]["acceptance_claim"] is False
+    assert payload["persistence"]["candidate_commit"] == "b" * 40
     assert validate_receipt(payload, **_receipt_kwargs()) == (True, "ok")
     assert validate_receipt(payload, **_receipt_kwargs(slice_id="S03"))[0] is False
 
 
 def test_receipt_echoes_exact_run_attempt_pr_and_repository() -> None:
-    payload = normalize_result(
-        params=_params(),
-        bootstrap=_Bootstrap(),  # type: ignore[arg-type]
-        process=_Process(),  # type: ignore[arg-type]
-        handoff_digest="d" * 64,
-        actual_branch="task/bridge",
-        local_head="b" * 40,
-        remote_head_readback="b" * 40,
-    )
+    payload = _success_payload()
     assert payload["repository"] == "git://github.com/o/r"
     assert payload["transport"]["canonical_pr"] == 15
     assert validate_receipt(payload, **_receipt_kwargs()) == (True, "ok")
@@ -532,19 +606,18 @@ def test_receipt_echoes_exact_run_attempt_pr_and_repository() -> None:
 
 def test_claimed_consistent_receipt_with_branch_drift_fails_closed() -> None:
     """A forged receipt claiming consistency while the actual branch drifted."""
-    payload = normalize_result(
-        params=_params(),
-        bootstrap=_Bootstrap(),  # type: ignore[arg-type]
-        process=_Process(),  # type: ignore[arg-type]
-        handoff_digest="d" * 64,
-        actual_branch="task/bridge",
-        local_head="b" * 40,
-        remote_head_readback="b" * 40,
-    )
+    payload = _success_payload()
     payload["transport"]["actual_branch"] = "task/replacement"
     assert payload["transport"]["consistent"] is True  # forged claim
     ok, reason = validate_receipt(payload, **_receipt_kwargs())
     assert ok is False and reason == "receipt_branch_mismatch"
+
+
+def test_persisted_claim_with_remote_readback_drift_fails_closed() -> None:
+    payload = _success_payload()
+    payload["transport"]["remote_head_readback"] = "c" * 40
+    ok, reason = validate_receipt(payload, **_receipt_kwargs())
+    assert ok is False and reason == "receipt_readback_mismatch"
 
 
 def test_remote_readback_drift_is_not_a_success_receipt() -> None:
@@ -556,6 +629,7 @@ def test_remote_readback_drift_is_not_a_success_receipt() -> None:
         actual_branch="task/bridge",
         local_head="b" * 40,
         remote_head_readback="c" * 40,
+        persistence=_persistence(remote="c" * 40, consistent=False),
     )
     assert payload["transport"]["consistent"] is False
     assert payload["receipt"]["persisted"] is False
@@ -564,17 +638,27 @@ def test_remote_readback_drift_is_not_a_success_receipt() -> None:
     assert validate_receipt(payload, **_receipt_kwargs())[0] is False
 
 
-def test_malformed_receipt_shapes_fail_closed() -> None:
-    """PR-015/S03 negatives: a malformed receipt must never validate."""
-    base = normalize_result(
+def test_local_only_run_without_persistence_is_not_a_success_receipt() -> None:
+    """No persistence evidence at all can never validate a receipt."""
+    payload = normalize_result(
         params=_params(),
         bootstrap=_Bootstrap(),  # type: ignore[arg-type]
         process=_Process(),  # type: ignore[arg-type]
         handoff_digest="d" * 64,
         actual_branch="task/bridge",
-        local_head="b" * 40,
-        remote_head_readback="b" * 40,
+        local_head="a" * 40,
+        remote_head_readback="a" * 40,
+        persistence=None,
     )
+    assert "persistence" not in payload
+    assert payload["receipt"]["valid"] is False
+    ok, reason = validate_receipt(payload, **_receipt_kwargs())
+    assert ok is False and reason == "receipt_missing_fields:persistence"
+
+
+def test_malformed_receipt_shapes_fail_closed() -> None:
+    """PR-015/S03+S04 negatives: a malformed receipt must never validate."""
+    base = _success_payload()
 
     def drop(field: str) -> Any:
         payload = json.loads(json.dumps(base))
@@ -594,6 +678,7 @@ def test_malformed_receipt_shapes_fail_closed() -> None:
     cases: list[tuple[Any, str]] = [
         ("not-an-object", "receipt_not_object"),
         (drop("transport"), "receipt_missing_fields:transport"),
+        (drop("persistence"), "receipt_missing_fields:persistence"),
         (drop("workspace"), "receipt_missing_fields:workspace"),
         (set_execution("provider", "codex"), "receipt_provider_mismatch"),
         (set_execution("adapter", "codebuddy"), "receipt_provider_mismatch"),
@@ -603,6 +688,12 @@ def test_malformed_receipt_shapes_fail_closed() -> None:
         (set_execution("slice_id", "S99"), "receipt_slice_mismatch"),
         (set_block("transport", "consistent", False), "receipt_transport_inconsistent"),
         (set_block("transport", "replacement_transport_created", True), "receipt_replacement_transport"),
+        (set_block("persistence", "mode", "generic_git_broker"), "receipt_persistence_mode_invalid"),
+        (set_block("persistence", "status", "no_change"), "receipt_not_persisted"),
+        (set_block("persistence", "published", False), "receipt_not_persisted"),
+        (set_block("persistence", "candidate_commit", "x" * 40), "receipt_candidate_mismatch"),
+        (set_block("transport", "remote_head_readback", "c" * 40), "receipt_readback_mismatch"),
+        (set_block("persistence", "base_head", "c" * 40), "receipt_base_head_mismatch"),
         (set_block("workspace", "isolated", False), "receipt_workspace_not_isolated"),
         (set_block("workspace", "canonical_checkout_mutated", True), "receipt_canonical_checkout_mutated"),
         (set_block("receipt", "valid", False), "receipt_not_valid"),
@@ -620,6 +711,7 @@ def test_replacement_branch_is_inconsistent() -> None:
         actual_branch="task/replacement",
         local_head="b" * 40,
         remote_head_readback="b" * 40,
+        persistence=_persistence(actual_branch="task/replacement", consistent=False),
     )
     assert payload["transport"]["consistent"] is False
     assert validate_receipt(payload, **_receipt_kwargs())[0] is False
@@ -628,20 +720,14 @@ def test_replacement_branch_is_inconsistent() -> None:
 # ── end-to-end execute_task with a fixture Codex ─────────────────────────
 
 
-def _fixture_codex(path: Path, *, commit: bool) -> Path:
+def _fixture_codex(path: Path, *, edit: bool = True) -> Path:
     """Stand-in for the installed Codex CLI.
 
-    It only ever works inside the execution workspace: publishing is owned by
-    the provider, not by the direct host.
+    Real-host behaviour (Acceptance R1): the direct host edits the isolated
+    checkout and never creates a Git commit. Publishing and persistence are owned
+    by the provider, not by the direct host.
     """
-    commit_body = (
-        "const cp=require('child_process');"
-        "const run=(...a)=>cp.execFileSync('git',a,{stdio:'ignore'});"
-        "run('-c','user.email=fixture@example.com','-c','user.name=fixture','add','CHANGE.md');"
-        "run('-c','user.email=fixture@example.com','-c','user.name=fixture','commit','-m','slice');"
-        if commit
-        else ""
-    )
+    edit_body = "fs.writeFileSync('CHANGE.md','slice work\\n');" if edit else ""
     path.write_text(
         "const fs=require('fs');"
         "if(process.argv.includes('--help')){"
@@ -649,19 +735,40 @@ def _fixture_codex(path: Path, *, commit: bool) -> Path:
         "  -s, --sandbox <SANDBOX_MODE>\\n"
         "      --json\\n');"
         "process.exit(0);}"
-        "fs.writeFileSync('CHANGE.md','slice work\\n');"
-        + commit_body
+        + edit_body
         + "console.log(JSON.stringify({status:'ok'}));",
         encoding="utf-8",
     )
     return path
 
 
-@WINDOWS_ONLY
-@pytest.mark.asyncio
-async def test_execute_task_reports_local_only_run_as_incomplete(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def _remote_rev(bare: Path, ref: str) -> str:
+    return subprocess.run(
+        [_GIT, "-C", str(bare), "rev-parse", ref],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+
+
+def _remote_commit_count(bare: Path, ref: str) -> int:
+    return int(
+        subprocess.run(
+            [_GIT, "-C", str(bare), "rev-list", "--count", ref],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+    )
+
+
+async def _run_fixture_execute(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    edit: bool,
+) -> tuple[dict[str, Any], Path, str]:
+    """Run one real provider ``execute_task`` with the fixture Codex host."""
     node = _node()
     if node is None:
         pytest.skip("node is not available")
@@ -676,7 +783,7 @@ async def test_execute_task_reports_local_only_run_as_incomplete(
     monkeypatch.setattr(
         "sentinelx_core.direct_codex_transport.remote_url_for", lambda _repository: str(bare)
     )
-    script = _fixture_codex(tmp_path / "codex.js", commit=False)
+    script = _fixture_codex(tmp_path / "codex.js", edit=edit)
     chain = CodexChain(
         node_executable=Path(node),
         codex_script=script,
@@ -702,71 +809,67 @@ async def test_execute_task_reports_local_only_run_as_incomplete(
     params["transport"]["branch"] = "task/bridge"
     params["transport"]["expected_remote_sha"] = head
     payload = await provider.call(_context_like(), "execute_task", params)
-
-    assert payload["transport"]["local_head"] == head
-    assert payload["transport"]["published"] is False
-    assert payload["receipt"]["valid"] is False
-    assert payload["receipt"]["incomplete_reason"] == "implementation_not_persisted"
-    assert payload["workspace"]["canonical_checkout_mutated"] is False
-    assert payload["receipt"]["acceptance_claim"] is False
+    return payload, bare, head
 
 
 @WINDOWS_ONLY
 @pytest.mark.asyncio
-async def test_execute_task_completes_exact_transport_and_receipt(
+async def test_execute_task_provider_persists_real_host_edits(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    node = _node()
-    if node is None:
-        pytest.skip("node is not available")
+    """The provider owns the commit: a non-committing host still persists."""
+    payload, bare, head = await _run_fixture_execute(tmp_path, monkeypatch, edit=True)
 
-    from sentinelx_core.handlers import direct_codex as provider_module
-    from sentinelx_core.handlers.direct_codex import make_devforge_direct_codex_provider
-
-    monkeypatch.setattr(
-        "sentinelx_core.direct_codex_transport.run_user_scoped_git", _fake_git
-    )
-    bare, head = _bare_remote(tmp_path, "task/bridge")
-    monkeypatch.setattr(
-        "sentinelx_core.direct_codex_transport.remote_url_for", lambda _repository: str(bare)
-    )
-    script = _fixture_codex(tmp_path / "codex.js", commit=True)
-    chain = CodexChain(
-        node_executable=Path(node),
-        codex_script=script,
-        package_dir=script.parent,
-        package_name="@openai/codex",
-        package_version="0.0.0",
-        npm_root=script.parent,
-        json_output_supported=False,
-    )
-    monkeypatch.setattr(
-        provider_module,
-        "discover_codex_chain",
-        lambda *args, **kwargs: _await_chain(chain),
-    )
-
-    policy = _full_policy(tmp_path, node_executable=Path(node))
-    provider = make_devforge_direct_codex_provider(
-        policy, platform_name="Windows", canonical_roots=[]
-    )
-    await provider.prove_containment(repository=_repository(), semantic=_semantic())
-
-    params = _params(repository=_repository(), semantic=_semantic())
-    params["transport"]["branch"] = "task/bridge"
-    params["transport"]["expected_remote_sha"] = head
-    payload = await provider.call(_context_like(), "execute_task", params)
-
+    candidate = payload["persistence"]["candidate_commit"]
     assert payload["transport"]["actual_branch"] == "task/bridge"
     assert payload["transport"]["consistent"] is True
     assert payload["transport"]["published"] is True
     assert payload["transport"]["local_head"] != head
+    assert payload["transport"]["local_head"] == candidate
+    assert payload["transport"]["remote_head_readback"] == candidate
     assert payload["transport"]["replacement_transport_created"] is False
+    assert payload["persistence"]["mode"] == "provider_owned_commit_on_publish"
+    assert payload["persistence"]["status"] == "persisted"
+    assert payload["persistence"]["base_head"] == head
+    assert payload["persistence"]["eligible_change_count"] >= 1
+    assert payload["persistence"]["published"] is True
+    assert payload["persistence"]["snapshot_digest"]
     assert payload["receipt"]["valid"] is True
+    assert payload["receipt"]["persisted"] is True
     assert payload["receipt"]["reason"] == "ok"
+    assert payload["receipt"]["acceptance_claim"] is False
     assert payload["execution"]["provider"] == "direct"
     assert payload["execution"]["adapter"] == "codex"
-    assert "CHANGE.md" in payload["verification"]["summary"] or payload["ok"] is True
+    assert payload["workspace"]["canonical_checkout_mutated"] is False
+    # The canonical fixture branch really advanced to the provider candidate and
+    # exactly one new commit exists (the provider's; the host never committed).
+    assert _remote_rev(bare, "task/bridge") == candidate
+    assert _remote_commit_count(bare, "task/bridge") == 2
+
+
+@WINDOWS_ONLY
+@pytest.mark.asyncio
+async def test_execute_task_no_change_is_distinct_and_not_published(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A no-eligible-change run never manufactures an empty implementation commit."""
+    payload, bare, head = await _run_fixture_execute(tmp_path, monkeypatch, edit=False)
+
+    assert payload["persistence"]["status"] == "no_change"
+    assert payload["persistence"]["candidate_commit"] is None
+    assert payload["persistence"]["published"] is False
+    assert payload["transport"]["published"] is False
+    assert payload["transport"]["local_head"] == head
+    assert payload["transport"]["remote_head_readback"] == head
+    assert payload["receipt"]["persisted"] is False
+    assert payload["receipt"]["valid"] is False
+    assert payload["receipt"]["incomplete_reason"] == "no_eligible_change"
+    assert payload["receipt"]["acceptance_claim"] is False
+    # The canonical fixture branch was not advanced and no commit was created.
+    assert _remote_rev(bare, "task/bridge") == head
+    assert _remote_commit_count(bare, "task/bridge") == 1
+    # The provider handoff written into the checkout never entered the candidate.
+    assert not payload["persistence"]["published"]
 
 
 def _await_chain(chain: Any) -> Any:

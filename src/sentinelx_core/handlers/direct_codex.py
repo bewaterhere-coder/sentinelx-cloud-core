@@ -29,12 +29,11 @@ from sentinelx_core.direct_codex_discovery import (
     verify_cli_contract,
 )
 from sentinelx_core.direct_codex_handoff import compile_handoff, write_handoff
+from sentinelx_core.direct_codex_persistence import persist_implementation
 from sentinelx_core.direct_codex_result import normalize_result, validate_receipt
 from sentinelx_core.direct_codex_transport import (
     DirectCodexTransportError,
     bootstrap_execution_checkout,
-    read_remote_head,
-    transport_git,
 )
 from sentinelx_core.direct_codex_workspace import (
     DirectCodexWorkspaceError,
@@ -746,30 +745,34 @@ class DevforgeDirectCodexProvider:
             raise HandlerError(exc.code, str(exc)) from exc
 
         revalidate_workspace(workspace, policy, repository, semantic)
-        local_head, actual_branch = await self._local_state(bootstrap, budget)
-        remote_head = await read_remote_head(
-            cwd=bootstrap.workspace,
-            repository=repository,
-            branch=str(transport["branch"]),
-            timeout=budget,
-        )
-        # The direct host runs inside the integrity sandbox and must never own
-        # the canonical transport, so the provider publishes the exact admitted
-        # branch itself after re-checking the remote head (CAS).
-        if local_head != str(transport["expected_remote_sha"]):
-            remote_head = await self._publish(
-                bootstrap, repository, str(transport["branch"]),
-                str(transport["expected_remote_sha"]), remote_head, budget,
+        # The direct host runs inside the integrity sandbox and never owns the
+        # canonical transport. After Codex exits, the provider owns deterministic
+        # local persistence (one provenance-bound candidate commit) and ordinary
+        # fast-forward publication of the exact checkout changes, followed by an
+        # independent remote readback.
+        try:
+            persistence = await persist_implementation(
+                workspace=workspace,
+                bootstrap=bootstrap,
+                repository=repository,
+                semantic=semantic,
+                canonical_pr=int(transport["pr_number"]),
+                branch=str(transport["branch"]),
+                expected_remote_sha=str(transport["expected_remote_sha"]),
+                timeout=budget,
             )
+        except (DirectCodexTransportError, DirectCodexWorkspaceError) as exc:
+            raise HandlerError(exc.code, str(exc)) from exc
 
         payload = normalize_result(
             params=validated,
             bootstrap=bootstrap,
             process=process,
             handoff_digest=handoff.digest,
-            actual_branch=actual_branch,
-            local_head=local_head,
-            remote_head_readback=remote_head,
+            actual_branch=persistence.actual_branch,
+            local_head=persistence.local_head,
+            remote_head_readback=persistence.remote_head_readback,
+            persistence=persistence,
         )
         ok, reason = validate_receipt(
             payload,
@@ -829,46 +832,6 @@ class DevforgeDirectCodexProvider:
             raise HandlerError(
                 getattr(exc, "code", "direct_codex_chain_unavailable"), str(exc)
             ) from exc
-
-    async def _publish(
-        self,
-        bootstrap: Any,
-        repository: RepositoryIdentity,
-        branch: str,
-        expected_remote_sha: str,
-        observed_remote_head: str,
-        budget: float,
-    ) -> str:
-        """Publish the exact admitted branch under provider-owned transport."""
-        if observed_remote_head != expected_remote_sha:
-            # Canonical transport moved under us: no publish, no read-back claim.
-            return observed_remote_head
-        code, _stdout, _stderr = await transport_git(
-            bootstrap.workspace, "push", "origin", f"HEAD:{branch}", timeout=budget
-        )
-        if code != 0:
-            return observed_remote_head
-        return await read_remote_head(
-            cwd=bootstrap.workspace,
-            repository=repository,
-            branch=branch,
-            timeout=budget,
-        )
-
-    async def _local_state(self, bootstrap: Any, budget: float) -> tuple[str, str]:
-        code, stdout, _stderr = await transport_git(
-            bootstrap.workspace, "rev-parse", "HEAD", timeout=budget
-        )
-        if code != 0:
-            raise HandlerError(
-                "direct_codex_head_read_failed", "cannot read the execution checkout head"
-            )
-        local_head = stdout.decode("utf-8", errors="replace").strip()
-        code, stdout, _stderr = await transport_git(
-            bootstrap.workspace, "rev-parse", "--abbrev-ref", "HEAD", timeout=budget
-        )
-        actual_branch = stdout.decode("utf-8", errors="replace").strip() if code == 0 else ""
-        return local_head, actual_branch
 
 
 def make_devforge_direct_codex_provider(

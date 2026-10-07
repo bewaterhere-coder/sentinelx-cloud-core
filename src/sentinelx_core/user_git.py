@@ -25,11 +25,55 @@ LEGACY_FEATURE_NAME = "host_runtime.git_authenticated_v1"
 
 _SECRET_URL_RE = re.compile(r"(https?://)([^/@:\s]+):([^/@\s]+)@", re.IGNORECASE)
 
+# Provider-owned, closed environment allowlist for the fixed Git primitive
+# (PR-015/S04). Every key here is set only by provider code (the direct-Codex
+# transport/persistence brokers) with a provider-derived constant value:
+# a provider-owned index file path, the frozen deterministic commit identity or
+# the provider-owned neutralization of ambient Git configuration/attributes.
+#
+# WHY AN ALLOWLIST: the persistence broker needs ``GIT_INDEX_FILE`` (a
+# provider-owned candidate index that is never the Codex-owned index) and
+# ``GIT_AUTHOR_*``/``GIT_COMMITTER_*`` (a frozen, deterministic commit
+# identity). Threading an open ``env`` mapping through the runner would turn it
+# into a generic environment-injection surface; the closed allowlist keeps the
+# primitive Git-specific and provider-only. No operation and no local_api action
+# exposes this parameter, so no caller or model can reach it.
+GIT_ENV_ALLOWLIST = frozenset(
+    {
+        "GIT_INDEX_FILE",
+        "GIT_AUTHOR_NAME",
+        "GIT_AUTHOR_EMAIL",
+        "GIT_AUTHOR_DATE",
+        "GIT_COMMITTER_NAME",
+        "GIT_COMMITTER_EMAIL",
+        "GIT_COMMITTER_DATE",
+        "GIT_CONFIG_NOSYSTEM",
+        "GIT_CONFIG_GLOBAL",
+        "GIT_CONFIG_SYSTEM",
+        "GIT_ATTR_NOSYSTEM",
+        "GIT_LITERAL_PATHSPECS",
+    }
+)
+
 
 class UserScopedGitError(RuntimeError):
     def __init__(self, code: str, message: str) -> None:
         super().__init__(message)
         self.code = code
+
+
+def validate_git_env(env: Mapping[str, str]) -> dict[str, str]:
+    """Fail closed unless every key is a provider-owned Git environment key."""
+    validated: dict[str, str] = {}
+    for key, value in env.items():
+        name = str(key)
+        if name not in GIT_ENV_ALLOWLIST:
+            raise UserScopedGitError(
+                "GitEnvironmentRejected",
+                f"environment key is not provider-owned: {name}",
+            )
+        validated[name] = str(value)
+    return validated
 
 
 def redact_git_output(text: str) -> str:
@@ -150,8 +194,18 @@ def active_user_base_environment(token: int) -> dict[str, str]:
         userenv.DestroyEnvironmentBlock(env_ptr)
 
 
-def _run_windows_user_git(root: Path, args: tuple[str, ...], timeout: float) -> tuple[int, bytes, bytes]:
-    """Run fixed Git argv as the active interactive Windows user."""
+def _run_windows_user_git(
+    root: Path,
+    args: tuple[str, ...],
+    timeout: float,
+    env: Mapping[str, str] | None = None,
+) -> tuple[int, bytes, bytes]:
+    """Run fixed Git argv as the active interactive Windows user.
+
+    ``env`` may carry only the provider-owned keys in ``GIT_ENV_ALLOWLIST``; the
+    value is validated here and merged *under* the fixed non-interactive guards
+    so a provider cannot override ``GIT_TERMINAL_PROMPT``/``GIT_ASKPASS``.
+    """
     if sys.platform != "win32":
         raise UserScopedGitError(
             "GitExecutionContextUnavailable",
@@ -251,6 +305,8 @@ def _run_windows_user_git(root: Path, args: tuple[str, ...], timeout: float) -> 
     pi = PROCESS_INFORMATION()
     try:
         base_env = active_user_base_environment(int(token.value))
+        if env:
+            base_env.update(validate_git_env(env))
         env_buffer = _build_environment_buffer(base_env)
 
         argv = [
@@ -326,10 +382,15 @@ async def run_user_scoped_git(
     root: Path,
     *args: str,
     timeout: float,
+    env: Mapping[str, str] | None = None,
 ) -> tuple[int, bytes, bytes]:
-    """Async wrapper around the Windows token-bound Git runner."""
+    """Async wrapper around the Windows token-bound Git runner.
+
+    ``env`` is restricted to the provider-owned ``GIT_ENV_ALLOWLIST`` keys and is
+    validated before the child is started.
+    """
     try:
-        return await asyncio.to_thread(_run_windows_user_git, root, tuple(args), timeout)
+        return await asyncio.to_thread(_run_windows_user_git, root, tuple(args), timeout, env)
     except UserScopedGitError:
         raise
     except Exception as exc:  # noqa: BLE001
