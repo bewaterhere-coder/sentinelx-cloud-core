@@ -26,11 +26,12 @@ executor:
   adapter: github_repository_api
   execution_mode: direct_short
 runtime:
-  state: RUNNING
+  state: COMPLETED
   reason_code: null
   current_attempt: ATTEMPT-001
   devforge_version: "2.100.0"
   devforge_revision: bb737a2a9354d9cf518422d2c32ec527d5ff0be7
+  finished_on: "2026-10-08"
 attempt:
   attempt_id: ATTEMPT-001
   codebuddy_invoked: false
@@ -56,4 +57,11 @@ verification:
     - DevForge current slicing contract resolved
     - ownership dependency unknowns explicitly recorded
     - no product or external runtime mutation
+artifacts:
+  refs:
+    - docs/execution/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s01-attempt-001-receipt.yaml
+    - docs/execution/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s01-run-001-ledger.yaml
+verification_result:
+  state: passed
+  finalization_blob_sha: 29d84da26ccc8750399cdc410e7a10c33b9ce7c8
 finalization_ref: docs/execution/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s01-run-001-finalization.yaml
