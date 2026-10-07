@@ -1,0 +1,106 @@
+schema_version: "1.1"
+kind: devforge_task_scoped_bootstrap_execution_override_receipt
+task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
+source_command: "#开发引导执行 PR-014-devforge-execution-workspace-materialization-bridge-v1 harness"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  canonical_branch: main
+  revision: 9551d38b1d70b5bfb3f692725e8f5c70b74693a6
+  contract: system/task-scoped-bootstrap-execution-override-contract.md
+  contract_version: "1.1"
+
+admission:
+  disposition: BlockedByContext
+  reason_code: BootstrapTargetUnavailable
+  detail_reason_code: HostCapabilityBlocked
+  missing_capability: incremental_execution.slice_v1
+  mode: implementation_bootstrap
+  override_created: false
+  override_state: absent
+
+bindings:
+  requirement_ref: docs/requirements/PR-014-devforge-execution-workspace-materialization-bridge-v1.md
+  requirement_revision: 2
+  requirement_blob_sha: 81f9879239a7678860879d8d2a119d6f2dbf4bd8
+  approved_plan_ref: docs/plans/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan.md
+  approved_plan_revision: 4
+  approved_plan_blob_sha: 2c930c0f9dc8c901691ebd8819f1f0bd19d6dc50
+  slice_set_ref: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-r4-slices.yaml
+  slice_set_blob_sha: c8786d85e081986e3d3c4ed7ede2f290a8756f7e
+  current_slice: S02
+  canonical_transport: github-pr:bewaterhere-coder/sentinelx-cloud-core#14@task/devforge-execution-workspace-materialization-bridge-v1
+
+project_binding:
+  provider: direct
+  adapter: codex
+  source: explicit_project_binding
+  mutated: false
+
+self_host_relation:
+  verified: true
+  blocked_provider: direct:codex
+  missing_or_broken_capability: development.execution_workspace_materialize
+  task_delivers_or_repairs_capability: true
+  evidence_refs:
+    - docs/plans/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan.md@2c930c0f9dc8c901691ebd8819f1f0bd19d6dc50
+    - docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-r4-slices.yaml@c8786d85e081986e3d3c4ed7ede2f290a8756f7e
+
+target:
+  provider: harness
+  registered_target_class: true
+  repository_checkout_present: true
+  live_checkout:
+    host_id: host_7f0e709ded71ab24
+    repository: bewaterhere-coder/devforge-harness
+    path_role: host_evidence_only
+    branch: main
+    head: f703fdb89327
+    ahead: 0
+    behind: 0
+    dirty: false
+  cli_entrypoint_present: true
+  required_consumer_capability: incremental_execution.slice_v1
+  required_capability_verified: false
+  capability_evidence:
+    production_harness_files_searched: 58
+    production_slice_id_matches: 0
+    production_slice_ref_matches: 0
+    repository_files_searched: 853
+    incremental_execution_slice_v1_marker_matches: 0
+  contract_effect:
+    required_slice_identity_echo: unsupported_or_unverified
+    unsliced_fallback: forbidden
+
+decision:
+  bootstrap_override_may_be_created: false
+  later_execute_authorized_by_this_command: false
+  reason: "Current live devforge-harness checkout cannot prove support for incremental_execution.slice_v1 required by the exact R4 Slice Set. Slice identity cannot be safely handed off/echoed, and unsliced whole-Plan fallback is forbidden."
+
+safety:
+  product_implementation_executed: false
+  harness_invoked_for_product_execution: false
+  development_host_invoked: false
+  canonical_main_mutated: false
+  task_branch_product_code_mutated: false
+  project_binding_mutated: false
+  permission_expansion_used: false
+  credential_expansion_used: false
+  provider_fallback_used: false
+  unsliced_fallback_used: false
+  pr013_s03_replayed: false
+
+verification:
+  exact_task_readback_verified: true
+  exact_plan_readback_verified: true
+  exact_slice_set_readback_verified: true
+  canonical_transport_verified: true
+  self_host_relation_verified: true
+  target_checkout_readback_verified: true
+  target_required_capability_verified: false
+  blocked_result_readback_required: true
+  verified: true
+
+canonical_recovery:
+  required_change: "Add and verify incremental_execution.slice_v1 support to devforge-harness canonical consumer, including execution.slice_id/context.slice_ref contract parsing and receipt echo, then retry the same #开发引导执行 command."
+  retry_command: "#开发引导执行 PR-014-devforge-execution-workspace-materialization-bridge-v1 harness"
