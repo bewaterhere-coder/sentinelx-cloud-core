@@ -202,7 +202,10 @@ slices:
     external_availability_rule: real Host proof requires separately admitted live execution authority; unavailable Host evidence checkpoints Blocked without fallback
     checkpoint:
       required: true
-    run_refs: []
+    run_refs:
+      - docs/checkpoints/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-s03-blocked-incomplete-host-candidate-activation-20261008.yaml@e5c9a7a5e7805258960df596889bc03c11ce2f92
+      - host_activation:partial_candidate_projection:host_offline_after_restart
+      - git_tree_reconciliation:old_493d30f638aad46b4a4502acbc4536608cd617d3:candidate_a6281aeca211722794e2644868f769612558c0bb
     completion_receipt_ref: null
 
 execution_state:
