@@ -407,3 +407,22 @@ def test_runtime_acl_cleanup_requires_exact_root_sid_absence_readback(
         match="read-back still contains AppContainer SID",
     ):
         _remove_runtime_read(root, app_sid, timeout_seconds=45)
+
+
+
+def test_runtime_acl_cleanup_timeout_is_residual_authority(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "runtime"
+    root.mkdir()
+
+    def timeout(*_args, **kwargs):
+        raise subprocess.TimeoutExpired(cmd="icacls", timeout=kwargs["timeout"])
+
+    monkeypatch.setattr(windows_sandbox.subprocess, "run", timeout)
+
+    with pytest.raises(
+        HostMutationSandboxResidualAuthority,
+        match=r"cleanup could not prove AppContainer SID removal",
+    ):
+        _remove_runtime_read(root, "S-1-15-2-717171", timeout_seconds=88)
