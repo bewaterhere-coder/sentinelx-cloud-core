@@ -89,7 +89,9 @@ slices:
         negative_effect: stop current Plan; S02 and S03 remain ineligible; new Plan revision required
     checkpoint:
       required: true
-    run_refs: []
+    run_refs:
+      - docs/checkpoints/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-s01-blocked-host-runtime-schema-and-direct-codex-timeout-20261007.yaml@3150b248a871f2a9945b753bfc70c1f9aa464fcc
+      - direct_codex_run:run-pr018-s01-20261007-001:attempt-001:response_timeout_no_remote_publish_observed
     completion_receipt_ref: null
 
   - slice_id: S02
