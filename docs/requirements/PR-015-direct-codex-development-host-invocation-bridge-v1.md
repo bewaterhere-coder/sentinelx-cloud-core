@@ -17,9 +17,12 @@ development:
   latest_plan_review: approved_round_6
   latest_plan_remediation: r6_applied
   review_disposition: approved
-  next_expected_actor: verifier
-  acceptance_disposition: pending_requirement_revision_2
-  blocking_findings: []
+  next_expected_actor: operator
+  acceptance_disposition: blocked_external_activation
+  blocking_findings:
+    - Live Agent activation blocked: running Agent is 0.24.1.dev403+g9948eb4d4 and local_api exposes only devforge_runtime; the exact PR-015 candidate is not active.
+    - The current model-facing script_run installation path fails before execution with execution_profile_required, so Acceptance cannot install the exact candidate through the available SentinelX surface.
+    - AC12 remains blocked until live devforge_direct_codex completes a persisted direct/Codex run and PR-013 direct/Codex provider admission succeeds without Task/Plan/Slice/project-binding change.
   authorization:
     mode: durable
     ref: docs/authorizations/PR-015-direct-codex-development-host-invocation-bridge-v1-development-authorization.yaml
@@ -53,6 +56,10 @@ artifacts:
   implementation_evidence_head: 783af5cacdaab9b325c48e2bbd4acded63109b02
   execution_reconciliation_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-s04-execution-reconciliation-receipt.yaml
   execution_reconciliation_receipt_blob_sha: bd1a9d9b9c12b8c001d60845ef831b2be8b50dd4
+  implementation_to_acceptance_transition_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-implementation-to-acceptance-transition-receipt.yaml
+  implementation_to_acceptance_transition_receipt_blob_sha: 31291ffb38ee22dbcfd4a5020198a1ceb6be940c
+  latest_acceptance_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r2-activation-blocked-20261007.yaml
+  latest_acceptance_checkpoint_blob_sha: c708f49ebb801e662273693e0fddcf4bfba22d18
   prior_slice_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-s03-completion-20261007.yaml
   prior_slice_completion_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-s03-completion-receipt.yaml
   prior_acceptance: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r1.md
