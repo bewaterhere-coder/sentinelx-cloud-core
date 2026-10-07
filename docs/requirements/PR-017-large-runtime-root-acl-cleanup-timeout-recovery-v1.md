@@ -15,10 +15,20 @@ development:
     acceptance_approved: true
     completion_verified: false
   plan_revision: 5
-  implementation_authorized: true
+  acceptance_revision: 3
+  completion_revision: 1
+  implementation_authorized: false
+  finalization:
+    ready_for_merge: true
+    canonical_state_verified: true
+    plan_execution_state_verified: true
+    evidence_verified: true
+    transport_preconditions_verified: true
+    integration_verified: false
+    merge_pending: true
   next_expected_actor: integration
   acceptance_disposition: approved_r3
-  execution_disposition: accepted_ready_for_finalization
+  execution_disposition: finalization_r1_ready_for_merge
   blocking_findings: []
   repair_evidence:
     - Fixing R1 preserved exact product candidate f9e07da9cc37f6e882c3258280869b415cafcb5c and did not replay S03 or Unity.
@@ -40,6 +50,7 @@ transport:
   base_branch: main
 artifacts:
   plan: docs/plans/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan.md
+  plan_blob_sha: 25398f342e5f032d8c838f33ee941562c987d15c
   latest_plan_review: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-review-r5.md
   latest_plan_review_transition_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-review-r5-transition-receipt.yaml
   latest_plan_remediation_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-remediation-r5-20261008.yaml
@@ -62,6 +73,8 @@ artifacts:
   latest_fixing_execution_checkpoint_blob_sha: 3c0119777435813278f111839fcd9f4ff743d80e
   latest_fixing_transition_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-fixing-r1-to-acceptance-transition-receipt.yaml
   latest_fixing_transition_receipt_blob_sha: da74adac606ba764f8914a4cd8135af22ac0f0ea
+  completion_finalization: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-completion-finalization-r1.yaml
+  completion_finalization_blob_sha: 319aeed703515d3339bff78323f83a35bbf40663
 related_tasks:
   predecessor:
     - PR-012-execute-scoped-explicit-execution-profile-v1
