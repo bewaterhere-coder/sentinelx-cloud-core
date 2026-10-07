@@ -63,7 +63,10 @@ slices:
         - no product or external state mutation
     checkpoint:
       required: true
-    state: pending
+    state: completed
+    run_refs:
+      - docs/execution/PR-023-minimal-runtime-successor-roadmap-v1-s01-run-001.yaml
+    completion_receipt_ref: docs/checkpoints/PR-023-minimal-runtime-successor-roadmap-v1-s01-completion-20261008.yaml
 
   - slice_id: S02
     objective: Build the evidence-backed Active Work Reconciliation Matrix for every open SentinelX PR in the S01 baseline.
@@ -150,7 +153,7 @@ slices:
     state: pending
 
 current:
-  slice_id: S01
+  slice_id: S02
   state: pending
 
 execution_summary:
