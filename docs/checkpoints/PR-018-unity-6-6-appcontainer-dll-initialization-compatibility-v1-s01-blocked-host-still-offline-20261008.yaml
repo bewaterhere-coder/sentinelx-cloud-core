@@ -1,0 +1,57 @@
+schema_version: "1.0"
+kind: devforge_slice_blocked_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1
+slice_id: S01
+source_command: "#开发执行 PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"
+result: Blocked
+blocker_class: host_still_offline_after_variant_b_bootstrap_failure
+
+runtime:
+  devforge_version: "2.95.0"
+  devforge_revision: 162337cc2fffa710d49a9cd38ab4cc8643f09ffb
+  host_label: windows
+  host_id: host_7f0e709ded71ab24
+  last_known_agent_version: 0.24.1.dev530+g7adfa7a74
+  host_connection:
+    status: offline
+    last_connected_at: "2026-10-07T16:00:07.205008+00:00"
+    last_disconnected_at: "2026-10-07T16:19:36.703147+00:00"
+
+preserved_evidence:
+  variant_a:
+    status: confirmed
+    raw_unity_status: "0xC0000142"
+    classification: STATUS_DLL_INIT_FAILED
+    run_id: run-pr018-s01-20261008-002
+    attempt_id: attempt-001
+    scope_id: mss_ptmPg4zvCgHavtofz_aFrWuY
+    terminal_state: terminal
+  variant_b:
+    status: not_executed
+    reason: host_offline
+  hypothesis_disposition: unresolved
+
+recovery:
+  exact_original_config_backup: "C:\\ProgramData\\SentinelX\\config.yaml.bak.20261008-001925-344277"
+  required_operator_action:
+    - restore the exact backup over C:\\ProgramData\\SentinelX\\config.yaml
+    - restart SentinelX
+    - confirm the windows host reconnects
+    - confirm host_mutation_sandbox_v1.verified=true
+  replay_guard:
+    variant_a_replay_required: false
+    resume_target: Variant_B_only
+
+task_state:
+  stage: implementation
+  current_slice: S01
+  current_slice_state: pending
+  completed_slices: []
+  s01_completed: false
+  s02_eligible: false
+
+completion_guard:
+  completion_receipt_created: false
+  product_code_mutated: false
+  canonical_next_action: "restore Host connectivity, then #开发执行 PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"
