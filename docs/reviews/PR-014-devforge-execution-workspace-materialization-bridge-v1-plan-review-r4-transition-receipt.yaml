@@ -1,0 +1,93 @@
+schema_version: "1.1"
+kind: devforge_artifact_state_transition_receipt
+task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
+from_stage: plan_review
+to_stage: implementation
+transition_rule: plan_review_approved_with_current_slice_set
+source_command: "#开发评审 PR-014-devforge-execution-workspace-materialization-bridge-v1"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  canonical_branch: main
+  revision: 9551d38b1d70b5bfb3f692725e8f5c70b74693a6
+  review_contract_version: "1.3"
+  slicing_contract_version: "1.1"
+  bootstrap_override_contract_version: "1.1"
+
+evidence_refs:
+  - docs/requirements/PR-014-devforge-execution-workspace-materialization-bridge-v1.md@6dea17d1fd01a7e90802dbaca4172e34e1108735
+  - docs/plans/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan.md@2c930c0f9dc8c901691ebd8819f1f0bd19d6dc50
+  - docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r4.md@3de8413c84733f8c233762965e3500cc3c307608
+  - docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-r4-slices.yaml@c8786d85e081986e3d3c4ed7ede2f290a8756f7e
+
+task_before_digest: 6dea17d1fd01a7e90802dbaca4172e34e1108735
+task_after_digest: 81f9879239a7678860879d8d2a119d6f2dbf4bd8
+semantic_after_state_digest: 81f9879239a7678860879d8d2a119d6f2dbf4bd8
+semantic_after_digest_basis: canonical_task_blob_readback
+verified: true
+
+transition:
+  decision: approved
+  next_expected_actor: implementer
+
+lineage:
+  requirement_revision: 2
+  plan_revision: 4
+  plan_blob_sha: 2c930c0f9dc8c901691ebd8819f1f0bd19d6dc50
+  review_blob_sha: 3de8413c84733f8c233762965e3500cc3c307608
+  slice_set_blob_sha: c8786d85e081986e3d3c4ed7ede2f290a8756f7e
+
+repository_reality:
+  canonical_main: 1028030b33f0ea792a884491a431fffe566f6aa5
+  reviewed_task_head_before_review_artifacts: 661b68bd27f840feae8be02769f550848f874d52
+  transport_pr: 14
+  transport_branch: task/devforge-execution-workspace-materialization-bridge-v1
+
+state_after:
+  stage: implementation
+  requirement_ready: true
+  plan_revision: 4
+  plan_approved: true
+  implementation_authorized: true
+  acceptance_approved: false
+  completion_verified: false
+  current_slice: S02
+  current_slice_state: pending
+  completed_slices: [S01]
+  bootstrap_required_before_current_slice: true
+  bootstrap_target: harness
+
+slice_authority:
+  slice_set_id: PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-r4
+  s01_state: completed_reused
+  s02_state: pending
+  s03_state: pending
+  one_execute_one_slice: true
+
+bootstrap_entry:
+  explicit_command_required: true
+  command: "#开发引导执行 PR-014-devforge-execution-workspace-materialization-bridge-v1 harness"
+  bootstrap_execution_performed: false
+  target_availability_not_assumed: true
+  required_harness_capability: incremental_execution.slice_v1
+  project_binding:
+    provider: direct
+    adapter: codex
+    mutated: false
+  fallback: forbidden
+
+safety:
+  product_implementation_executed: false
+  harness_invoked: false
+  host_mutation_performed: false
+  canonical_main_mutated: false
+  project_binding_mutated: false
+  permission_or_credential_expansion_used: false
+  pr013_s03_replayed: false
+  unmerged_pr013_code_imported: false
+
+completion_guard:
+  approved_review_read_back_verified: true
+  exact_plan_slice_set_read_back_verified: true
+  task_transition_read_back_verified: true
+  canonical_next_action: "#开发引导执行 PR-014-devforge-execution-workspace-materialization-bridge-v1 harness"
