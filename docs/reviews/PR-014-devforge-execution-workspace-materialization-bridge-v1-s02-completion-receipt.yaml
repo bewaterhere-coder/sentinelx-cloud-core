@@ -1,0 +1,60 @@
+schema_version: "1.1"
+kind: devforge_slice_completion_receipt
+task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
+slice_id: S02
+run_id: RUN-PR014-S02-001
+attempt_id: ATTEMPT-001
+status: Completed
+completed_at: "2026-10-08"
+identity:
+  project_id: sentinelx-cloud-core
+  requirement_revision: 2
+  plan_revision: 5
+  plan_blob_sha: ff8581ec026a0d123ae89d9595271397429145c0
+  slice_set_blob_sha: 2c16dc7b5c4d0e99a9aa745652251c2de3a79c2a
+  operation_class: devforge_execution_workspace_materialize
+bootstrap_authority:
+  override_ref: docs/overrides/PR-014-devforge-execution-workspace-materialization-bridge-v1-bootstrap-execution-override.yaml
+  override_blob_sha: a016e7f108da7b639196d6668a7a2d0bdf450e42
+  state: active
+  read_back_before_first_source_mutation: true
+  target: direct:codebuddy
+  consumed_slice_completions_before: 0
+  consumed_slice_completions_after: 1
+transport:
+  type: github-pr-identity
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  branch: task/devforge-execution-workspace-materialization-bridge-v1
+  head_after_slice: 45dc99d15a23c499b4c1500fab60ed5e76475aeb
+  canonical_main: 1028030b33f0ea792a884491a431fffe566f6aa5
+  expected_head_compare_and_set: verified_before_each_structured_push
+  changed_blob_readback: all 9 changed blobs byte-identical to the verified candidate
+  resulting_head_readback: verified
+implementation:
+  objective: >-
+    Bootstrap-safe minimal path-free devforge_runtime.materialize_workspace
+    seed preserving S01 placement, mutation-scope authority, audit ordering,
+    AppContainer/Job containment, Host-owned handoff and receipt/retry
+    semantics (Plan R5 D1-D10).
+  design_coverage:
+    D1_host_derived_source_role: implemented in devforge_workspace_source.py
+    D2_exact_source_identity: implemented (refs/heads logical ref + full sha1, remote and object-store proof, object-format fail-closed)
+    D3_user_scoped_git_transport_only: reused sentinelx_core.user_git; no caller argv or remote URL; prompts disabled
+    D4_provider_private_source_capsule: digest-sealed durable capsule with ceilings, traversal/symlink/gitlink fail-closed, idempotent reuse
+    D5_trusted_contained_materializer: self-contained stdlib worker; no clone, fetch, network Git or credentials; exact Git readback contract
+    D6_scope_and_audit_ordering: placement receipt -> capsule -> provision_devforge_scope -> revalidate -> durable OPERATION_STARTED -> sandbox activate -> spawn -> readback -> closure -> handoff probe -> receipt
+    D7_host_owned_handoff_transition: workspace-local inheritance restore, foreign-AppContainer-SID read-back, user-scoped Git access probe
+    D8_bounded_local_api_projection: closed path-free materialize_workspace schema with explicit caller-authority denylist; fail-closed effect metadata until seed active
+    D9_receipt_and_retry: durable same-Attempt receipt store; same identity -> readback and return same evidence with zero replay; changed identity -> conflict fail-closed
+    D10_pr013_relationship: no PR-013 completion gate, no S03 replay, no unmerged PR-013 import
+verification_evidence:
+  local_deterministic_suite_on_exact_head: 147 passed, 1 skipped
+  repository_hosted_ci: recorded_unavailable (workflow policy triggers on main only; no PR object exists for the canonical_pr identity)
+  no_new_authority_or_permission_expansion: true
+bounds_respected:
+  one_execute_one_slice: true
+  product_write_allowlist_exact: true
+  no_canonical_main_write: true
+  no_replacement_branch_or_pr: true
+  no_provider_fallback: true
+checkpoint_ref: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-completion-20261008.yaml

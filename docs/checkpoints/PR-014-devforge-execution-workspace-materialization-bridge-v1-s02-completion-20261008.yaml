@@ -1,0 +1,104 @@
+schema_version: "1.1"
+kind: devforge_slice_completion_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
+slice_id: S02
+run_id: RUN-PR014-S02-001
+attempt_id: ATTEMPT-001
+source_command: "#开发执行 PR-014-devforge-execution-workspace-materialization-bridge-v1"
+completed_at: "2026-10-08"
+runtime:
+  repository: bewaterhere-coder/DevForge
+  revision: 395949ff447df412c0db9c5e4e5ae6fb043bb6f2
+  release: v2.99.0
+lineage:
+  requirement_revision: 2
+  plan_revision: 5
+  plan_blob_sha: ff8581ec026a0d123ae89d9595271397429145c0
+  slice_set_blob_sha: 2c16dc7b5c4d0e99a9aa745652251c2de3a79c2a
+  bootstrap_override_blob_sha: a016e7f108da7b639196d6668a7a2d0bdf450e42
+  bootstrap_receipt_blob_sha: 7907eaabc68d1fb026303cab8555c6a612fb604e
+bootstrap:
+  override_active: true
+  override_readback_verified_before_first_mutation: true
+  target:
+    provider: direct
+    adapter: codebuddy
+  target_session: direct CodeBuddy engineering runtime host (this execution)
+  recovery_from:
+    checkpoint: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-blocked-direct-invocation-projection-20261008.yaml
+    action_taken: same canonical command submitted in CodeBuddy; no new bootstrap required per block checkpoint recovery
+transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  task_pr_identity: PR-014
+  branch: task/devforge-execution-workspace-materialization-bridge-v1
+  head_before_slice_execution: d9588a4c4787906d422f502a0a8073e98adc3489
+  head_after_slice_execution: 45dc99d15a23c499b4c1500fab60ed5e76475aeb
+  canonical_main_before: 1028030b33f0ea792a884491a431fffe566f6aa5
+  canonical_main_after: 1028030b33f0ea792a884491a431fffe566f6aa5
+  canonical_main_mutated: false
+product:
+  disposition: Implemented
+  changed_paths:
+    - src/sentinelx_core/devforge_workspace_source.py
+    - src/sentinelx_core/devforge_workspace_materializer.py
+    - src/sentinelx_core/devforge_workspace_materialization.py
+    - src/sentinelx_core/handlers/devforge_runtime.py
+    - src/sentinelx_core/handlers/__init__.py
+    - tests/test_devforge_workspace_source.py
+    - tests/test_devforge_workspace_materializer.py
+    - tests/test_devforge_workspace_materialization.py
+    - tests/test_devforge_runtime_local_api.py
+  changed_path_set_exactly_matches_s02_allowlist: true
+  blob_readback:
+    method: fetch origin head and byte-diff every changed blob against the locally verified candidate
+    result: all 9 blobs byte-identical
+verification:
+  deterministic:
+    suite: focused S02 files plus S01 placement, local_api, canonical repository firewall, mutation scope registry and handlers regression subsets
+    command_context: PYTHONPATH=src pytest on the exact pushed head tree extracted from origin/task/devforge-execution-workspace-materialization-bridge-v1@45dc99d
+    result: 147 passed, 1 skipped (skip is pre-existing)
+    syntax_and_import_failures: none
+  repository_hosted_ci:
+    observed: false
+    reason: >-
+      repository workflow policy triggers only on push/pull_request to main;
+      the task transport is branch-only and no GitHub PR object exists for the
+      canonical_pr identity, so no exact-head run is available
+    disposition: recorded_unavailable_not_silently_skipped
+    boundary_note: >-
+      exact-head CI observation and any PR-object question are carried to the
+      acceptance/decision boundary unchanged
+safety:
+  provider_fallback_used: false
+  harness_used: false
+  direct_codex_used: false
+  generic_git_used_in_product_path: false
+  shell_exec_script_run_used_in_product_path: false
+  generic_host_filesystem_write_used_in_product_path: false
+  caller_selected_host_path_used: false
+  permission_credential_write_scope_expansion: false
+  canonical_main_mutated: false
+  replacement_branch_or_pr_created: false
+  project_binding_mutated: false
+  s01_replayed: false
+  pr013_s03_replayed: false
+  unmerged_pr013_imported: false
+s01_non_conflict:
+  compared_against: origin/main 1028030b vs merge-base e7064c9 over S01 scope files
+  result: >-
+    only windows_mutation_sandbox.py evolved on main (PR-011 additive
+    hardening, verification runtime integration); S01 semantics preserved;
+    recorded as merge-time reconciliation note, not a stop condition
+slice_set_digest_drift_note: >-
+  The bound slice-set digest 0ece3549 changed to 2c16dc7b before this
+  execution solely to bind the S02 blocked-run checkpoint and run ref;
+  objective, scope, allowlist and invariants are unchanged, so the
+  bootstrap-override plan-semantic-change expiry condition is not triggered.
+completion_guard:
+  status: satisfied
+  slice_completed: true
+  receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-completion-receipt.yaml
+  acceptance_eligible_note: >-
+    S02 completion is an implementation checkpoint, not physical Windows
+    Acceptance; the exact-candidate physical gate remains with #开发验收.
