@@ -14,7 +14,8 @@ development:
   plan_revision: 3
   latest_plan_review: null
   prior_plan_review: approved_round_2
-  latest_plan_remediation: plan_r2_remediation_r1
+  latest_plan_remediation: null
+  prior_plan_remediation: plan_r2_remediation_r1
   implementation_authorized: false
   blocking_findings: []
   current_slice: null
