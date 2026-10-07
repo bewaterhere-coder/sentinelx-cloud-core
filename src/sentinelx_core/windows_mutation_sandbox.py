@@ -1639,6 +1639,109 @@ class WindowsMutationSandbox:
             raise
         return managed
 
+    def enable_pr018_paired_session_read(
+        self,
+        activation: ActivatedMutationSandbox,
+        process: ManagedMutationProcess,
+        marker_root: Path,
+        *,
+        timeout_seconds: float = 30.0,
+    ) -> dict[str, object]:
+        """Grant exact PR-011 masks only after paired Variant A completed."""
+        if (
+            self.semantic.project_id != "sentinelx-cloud-core"
+            or self.semantic.task_id != "PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"
+            or self.semantic.slice_id != "S01"
+            or self.repository.path != "bewaterhere-coder/sentinelx-cloud-core"
+        ):
+            raise HostMutationSandboxBindingMismatch("PR-018 paired diagnostic lineage mismatch")
+        if process._owner is not self or process.activation != activation:
+            raise HostMutationSandboxBindingMismatch("PR-018 paired process/activation mismatch")
+        key = (activation.scope_id, activation.generation)
+        if key in self._verification_session_reads:
+            raise HostMutationSandboxBindingMismatch("Session-0 authority already exists")
+        variant_a_done = marker_root / "variant-a-done"
+        variant_b_ready = marker_root / "variant-b-ready"
+        deadline = time.monotonic() + max(0.1, float(timeout_seconds))
+        while not variant_a_done.exists():
+            if process.wait(0):
+                raise HostMutationSandboxUnavailable(
+                    "paired diagnostic root exited before Variant A completion"
+                )
+            if time.monotonic() >= deadline:
+                raise HostMutationSandboxUnavailable(
+                    "paired diagnostic Variant A completion marker timed out"
+                )
+            time.sleep(0.05)
+
+        window_station, desktop = _user32_window_objects()
+        before_window = {
+            sid: mask for sid, mask, _flags in _window_object_dacl_entries(
+                window_station, "window station"
+            )
+        }
+        before_desktop = {
+            sid: mask for sid, mask, _flags in _window_object_dacl_entries(
+                desktop, "desktop"
+            )
+        }
+        app_sid = activation.sandbox_identity
+        if app_sid in before_window or app_sid in before_desktop:
+            raise HostMutationSandboxAclViolation(
+                "paired diagnostic SID existed before Variant B grant"
+            )
+        handles = _grant_verification_session_read(app_sid)
+        self._verification_session_reads[key] = handles
+        after_window = {
+            sid: mask for sid, mask, _flags in _window_object_dacl_entries(
+                window_station, "window station"
+            )
+        }
+        after_desktop = {
+            sid: mask for sid, mask, _flags in _window_object_dacl_entries(
+                desktop, "desktop"
+            )
+        }
+        if (
+            after_window.get(app_sid) != WINDOW_STATION_VERIFICATION_READ
+            or after_desktop.get(app_sid) != DESKTOP_VERIFICATION_READ
+        ):
+            raise HostMutationSandboxAclViolation(
+                "paired diagnostic did not observe exact PR-011 masks"
+            )
+        variant_b_ready.write_text("ready", encoding="ascii")
+        return {
+            "sandbox_identity": app_sid,
+            "window_station_mask": WINDOW_STATION_VERIFICATION_READ,
+            "desktop_mask": DESKTOP_VERIFICATION_READ,
+            "window_station_sid_present_before_b": False,
+            "desktop_sid_present_before_b": False,
+            "window_station_sid_present_during_b": True,
+            "desktop_sid_present_during_b": True,
+        }
+
+    def pr018_paired_session_absence(self, app_sid: str) -> dict[str, object]:
+        window_station, desktop = _user32_window_objects()
+        window_present = any(
+            sid == app_sid
+            for sid, _mask, _flags in _window_object_dacl_entries(
+                window_station, "window station"
+            )
+        )
+        desktop_present = any(
+            sid == app_sid
+            for sid, _mask, _flags in _window_object_dacl_entries(desktop, "desktop")
+        )
+        if window_present or desktop_present:
+            raise HostMutationSandboxResidualAuthority(
+                "paired diagnostic SID remains on Session-0 objects"
+            )
+        return {
+            "sandbox_identity": app_sid,
+            "window_station_sid_absent": True,
+            "desktop_sid_absent": True,
+        }
+
     def enable_verification_descendants(
         self,
         activation: ActivatedMutationSandbox,
