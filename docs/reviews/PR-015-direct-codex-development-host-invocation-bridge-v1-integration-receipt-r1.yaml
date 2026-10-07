@@ -1,0 +1,77 @@
+schema_version: "1.0"
+kind: devforge_integration_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-015-direct-codex-development-host-invocation-bridge-v1
+source_command: "#开发完成 PR-015-direct-codex-development-host-invocation-bridge-v1"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  main_sha: 041f390592a78c13f5eabdc542735dc72485e0ef
+  version: "2.93.0"
+  merge_finalization_contract:
+    version: "1.1"
+    blob_sha: 6dfc6d6c7960bad2179b93f164c0bf732d99ffd6
+
+lineage:
+  requirement_revision: 2
+  plan_revision: 6
+  acceptance_revision: 8
+  completion_revision: 1
+  finalization_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-completion-finalization-r1.yaml
+
+transport:
+  type: github-pr
+  pr_number: 15
+  branch: task/direct-codex-development-host-invocation-bridge-v1
+  finalized_head: a5cec60d7315418509e3bd9a4d1a4f39eba9fb56
+  base_before_merge: 018b78ca20984176d53fbe90039dc795a7f2742f
+  merge_method: merge
+
+integration:
+  result: verified
+  pr_state: closed
+  merged: true
+  merge_commit: c55c43a183de35e1f12dbe1d7f54c165f4eb2363
+  main_readback: c55c43a183de35e1f12dbe1d7f54c165f4eb2363
+  head_match_verified: true
+  main_match_verified: true
+  finalized_head_tree: dc5a9b965a96136ad31e5076342944703a7e65ec
+  merge_tree: dc5a9b965a96136ad31e5076342944703a7e65ec
+  merge_tree_equals_finalized_head: true
+
+verification:
+  exact_product_candidate: 7adfa7a74c437ccc29cdcd7078373c6e8d224904
+  acceptance_r8_approved: true
+  finalization_ready_for_merge: true
+  finalized_head_workflows_total: 13
+  finalized_head_workflows_success: 13
+  finalized_head_workflows_failed: 0
+  generic_ci_run_id: 37643041755
+  generic_ci_result: success
+  macos_agent_run_id: 37643041803
+  macos_agent_result: success
+  pr010_regressions_s01_s05: success
+  pr011_regressions_s01_s05: success
+  live_agent_version: 0.24.1.dev530+g7adfa7a74
+  live_direct_codex_readiness_verified: true
+  live_fixture_persisted_head: 900e29a349a8e65d54ab1cad45507c88641d59d3
+  pr013_provider_admission_verified: true
+  pr013_s03_executed: false
+  product_code_changed_after_verified_candidate: false
+  product_tree_changed_by_merge: false
+
+safety:
+  hub_modified: false
+  canonical_local_checkout_mutated: false
+  permission_expansion_used: false
+  allowlist_expansion_used: false
+  operator_unrestricted_used: false
+  unrestricted_fallback_used: false
+  implementation_replayed: false
+  replacement_development_pr_created: false
+  workspace_gc_performed: false
+
+completion:
+  integration_verified: true
+  completion_state_persistence_required: true
+  completion_verified: false
