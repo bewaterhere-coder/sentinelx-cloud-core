@@ -1,0 +1,217 @@
+schema_version: "1.1"
+kind: devforge_execution_slice_set
+identity:
+  task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
+  slice_set_id: PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-r4
+
+plan:
+  ref: docs/plans/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan.md
+  revision: 4
+  blob_sha: 2c930c0f9dc8c901691ebd8819f1f0bd19d6dc50
+  requirement_revision: 2
+
+review:
+  ref: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r4.md
+  blob_sha: 3de8413c84733f8c233762965e3500cc3c307608
+  decision: Approved
+
+repository_baseline:
+  main_sha: 1028030b33f0ea792a884491a431fffe566f6aa5
+  reviewed_task_head: 661b68bd27f840feae8be02769f550848f874d52
+
+runtime_provenance:
+  devforge_main_sha: 9551d38b1d70b5bfb3f692725e8f5c70b74693a6
+  slicing_contract_version: "1.1"
+  bootstrap_override_contract_version: "1.1"
+
+implementation_entry_guard:
+  required_before_each_slice: true
+  current_slice_after_transition: S02
+  s02_bootstrap_required: true
+  s02_bootstrap_target: harness
+  s02_bootstrap_command: "#开发引导执行 PR-014-devforge-execution-workspace-materialization-bridge-v1 harness"
+  rules:
+    - re-read current Task, exact Approved Plan R4 blob, this Slice Set, canonical main and PR #14 head before mutation
+    - preserve exact PR #14 and task branch transport identity
+    - preserve project binding direct/codex
+    - fail closed on Requirement, Plan, Slice Set, transport or security-boundary drift
+    - S02 product mutation is forbidden until the explicit task-scoped Harness bootstrap override is admitted and read back
+    - Harness target availability and incremental_execution.slice_v1 capability are verified by bootstrap admission, not assumed by Plan prose
+    - Harness ingress must not require PR-014 materialize_workspace capability before S02
+    - repository.write is persistence only inside admitted Harness execution and is not provider authority
+    - no orchestration-side direct repository implementation
+    - no provider fallback
+    - no replacement branch or PR
+    - no permission credential Host-policy or write-scope expansion
+    - one explicit #开发执行 invocation completes at most one pending Slice
+    - completed S01 evidence is immutable and must not be replayed
+    - PR-013 S03 replay and unmerged PR-013 code import are forbidden
+
+slices:
+  - slice_id: S01
+    objective: Preserve the already-verified DevForge-specific durable Placement Receipt, Host-derived execution-root binding, and provider-only scope/sandbox root-selection foundation.
+    depends_on: []
+    state: completed
+    provenance:
+      reused_from_prior_plan: true
+      original_requirement_revision: 1
+      original_plan_revision: 2
+      exact_product_candidate: a1a14908ff2a95c87b9a6eeb96d5e18e354b5548
+      reuse_reason: Requirement R2 preserves the same placement/root/scope/sandbox semantics and adds only downstream source materialization and handoff work.
+    scope:
+      refs:
+        - src/sentinelx_core/devforge_workspace_placement.py
+        - src/sentinelx_core/devforge_workspace_materialization.py
+        - src/sentinelx_core/mutation_scope.py
+        - src/sentinelx_core/windows_mutation_sandbox.py
+        - tests/test_devforge_workspace_placement.py
+    verification:
+      required:
+        - canonical S01 completion checkpoint remains readable and internally verified
+        - before S02 mutation, current canonical main is compared against relevant S01 seams
+        - any material semantic conflict stops before S02 mutation and does not replay S01
+    checkpoint:
+      required: true
+      ref: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-s01-completion-20261005.yaml
+    run_refs:
+      - github-actions:37298434667
+      - github-actions:37298434715
+      - github-actions:37298434713
+    completion_receipt_ref: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-s01-completion-20261005.yaml
+
+  - slice_id: S02
+    objective: Implement the independent bootstrap-safe source capsule, contained Git checkout materializer, bounded path-free devforge_runtime.materialize_workspace projection, retry/readback semantics, and Host-owned Development Host handoff.
+    depends_on: [S01]
+    state: pending
+    bootstrap:
+      required: true
+      target: harness
+      command: "#开发引导执行 PR-014-devforge-execution-workspace-materialization-bridge-v1 harness"
+      mode: implementation_bootstrap
+      required_consumer_capability: incremental_execution.slice_v1
+      project_binding_remains: direct/codex
+      fallback: forbidden
+    scope:
+      refs:
+        - src/sentinelx_core/devforge_workspace_source.py
+        - src/sentinelx_core/devforge_workspace_materializer.py
+        - src/sentinelx_core/devforge_workspace_materialization.py
+        - src/sentinelx_core/handlers/devforge_runtime.py
+        - src/sentinelx_core/handlers/__init__.py
+        - src/sentinelx_core/user_git.py
+        - src/sentinelx_core/windows_mutation_sandbox.py
+        - focused source/materialization/runtime/sandbox tests
+      authorized_changes:
+        - Host-derived canonical source-role resolution
+        - exact-ref/exact-commit provider-owned source acquisition
+        - immutable provider-private source capsule and digest evidence
+        - bounded provider Git object/ref inspection and acquisition without caller argv/remote/credential authority
+        - trusted AppContainer/Job checkout materializer from sealed capsule
+        - exact Git worktree and metadata reconstruction for the admitted commit
+        - durable scope revalidation and pre-execution audit START before first workspace write
+        - path-free devforge_runtime.materialize_workspace action
+        - materialization receipt and same-Attempt no-replay retry convergence
+        - temporary materializer/AppContainer authority closure
+        - Host-owned workspace-local ACL/inheritance handoff and user-scoped Git probe
+      forbidden_changes:
+        - general repository_transaction_v1 lifecycle
+        - retained multi-operation execute_scoped transaction lifecycle
+        - repository publication/checkpoint/push/CAS
+        - caller-selected destination source path remote URL credential SID ACL write root operation class executable or argv
+        - generic Git clone/worktree/shell/filesystem bootstrap outside admitted Harness execution
+        - import/copy of unmerged PR-013 code
+        - PR-013 S03 replay
+        - canonical source checkout branch switching reset merge or use as mutation workspace
+        - production Hub changes
+        - Host policy/allowlist widening
+    verification:
+      required:
+        - exact Harness bootstrap override is active and read back before product mutation
+        - source path is Host-derived and wrong repository/origin/branch/dirty source fails closed
+        - exact ref and immutable expected commit are independently verified
+        - unavailable provider source credential/transport is bounded and has no generic fallback
+        - source capsule excludes secrets and is digest-bound
+        - traversal reparse ADS and unsupported special-entry semantics fail closed
+        - local_api schema exposes no caller writable path credential SID ACL operation-class executable or argv authority
+        - Placement Receipt and mutation scope are current and mutually bound
+        - durable audit START precedes first execution-workspace write
+        - materializer executes inside existing AppContainer + no-breakaway Job boundary
+        - exact Git root repository identity branch HEAD remote and clean status read back after materialization
+        - canonical source branch/worktree remain main + clean and unchanged
+        - temporary source/materializer/AppContainer grants are closed and read back
+        - Host-owned handoff ACL/inheritance is workspace-local and user-scoped Git probe succeeds
+        - same identity/source verified retry does not rematerialize
+        - mismatched or unbound pre-existing target fails closed
+        - S01 placement/scope/sandbox and canonical firewall regressions pass
+        - no PR-013 general transaction/publication implementation is absorbed
+        - candidate changes and verification evidence are durable on exact PR #14 branch and remotely read back
+    checkpoint:
+      required: true
+    run_refs: []
+    completion_receipt_ref: null
+
+  - slice_id: S03
+    objective: Prove the exact S02 candidate physically exposes development.execution_workspace_materialize on Windows, activates it through the existing admitted candidate workflow, and leaves an isolated Git workspace consumable by a normal user-level Development Host.
+    depends_on: [S02]
+    state: pending
+    scope:
+      refs:
+        - exact S02 candidate commit and PR #14 remote branch
+        - Windows exact-candidate Agent activation evidence
+        - live devforge_runtime local_api description
+        - benign repository materialization fixture
+        - live materialization/handoff receipts
+        - directly related checkpoints and review evidence
+      authorized_changes:
+        - verification fixtures and evidence persistence
+        - exact-candidate installation/activation through existing separately admitted workflow
+        - deterministic benign materialization and retry verification
+      forbidden_changes:
+        - product-scope expansion beyond S02 implementation
+        - generic workspace materialization fallback
+        - Host policy allowlist credential or permission expansion
+        - PR-013 S03 replay
+        - unmerged PR-013 code import
+        - canonical main mutation
+        - production Hub mutation
+    verification:
+      required:
+        - installed Agent exact candidate/version/commit is read back
+        - capabilities and local_api.describe expose materialize_workspace
+        - live request is path-free and binds exact repository lineage placement scope source ref and expected commit
+        - exact workspace is under Host DevForge execution root
+        - materialization receipt proves source capsule audit containment workspace readback and handoff readiness
+        - exact Git HEAD branch repository root origin normalization and clean status read back
+        - normal user-level Development Host equivalent Git access succeeds after handoff
+        - retry converges without replay
+        - canonical source remains main + clean before and after
+        - no generic Git/worktree/shell/file fallback is observed
+        - no Host policy/allowlist/credential expansion is observed
+        - canonical firewall mutation scope audit lineage AppContainer Job and explicit-execution-profile regressions pass
+        - PR-013 current state is evidence only and is not a completion gate
+        - PR-013 S03 is not executed or replayed
+        - exact candidate transport readback matches persisted verification receipts
+    checkpoint:
+      required: true
+    run_refs: []
+    completion_receipt_ref: null
+
+execution_state:
+  current_slice: S02
+  current_slice_state: pending
+  completed_slices: [S01]
+  pending_slices: [S02, S03]
+  all_slices_completed: false
+  bootstrap_required_before_current_slice: true
+  bootstrap_target: harness
+
+acceptance_boundary:
+  all_current_plan_slices_must_be_completed: true
+  acceptance_command: "#开发验收 PR-014-devforge-execution-workspace-materialization-bridge-v1"
+  acceptance_requires:
+    - Requirement R2 AC1 through AC16 verified
+    - S01 preserved evidence remains compatible
+    - S02 exact source capsule/materialization/handoff implementation evidence
+    - S03 Windows physical live materialize_workspace and user-level handoff evidence
+    - no PR-013 dependency/replay/import
+    - canonical security and authority regressions
