@@ -1,7 +1,8 @@
 schema_version: "1.1"
 kind: devforge_task_scoped_bootstrap_execution_override
-state: active
+state: expired
 mode: fixing_recovery
+expired_reason: task_left_fixing_for_acceptance
 override_revision: 3
 
 authority:
@@ -148,3 +149,7 @@ receipt:
   admission_readback_blob_sha: febaefbb0850ed90ad59ad1013abcbcb4417d3ee
   admission_readback_commit: 52ca7f5fe3849693aefb748fc9661a0faba5ab32
   checkpoint_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-fixing-recovery-r1-20261007.yaml
+  expiry_verified: true
+  expired_by_command: "#开发执行 PR-015-direct-codex-development-host-invocation-bridge-v1"
+  fixing_completion_head: d441e95b6eb65834f52ffdb42026e7328f5c9478
+  fixing_completion_checkpoint_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-attempt-r1-completed-20261007.yaml

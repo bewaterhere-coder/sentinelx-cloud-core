@@ -5,7 +5,7 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 2
 development:
-  stage: fixing
+  stage: acceptance
   implementation_execution_complete: true
   gates:
     requirement_ready: true
@@ -17,14 +17,14 @@ development:
   latest_plan_review: approved_round_6
   latest_plan_remediation: r6_applied
   review_disposition: approved
-  next_expected_actor: implementer
-  acceptance_disposition: rejected_repair_local
-  execution_disposition: fixing_bootstrap_authorized
-  blocking_findings:
-    - Acceptance R5 rejected the exact candidate with repair_local finding direct_codex_containment_proof_lifecycle_unreachable.
-    - Host opt-in and provider projection now succeed, but live readiness remains direct_codex_containment_unproven.
-    - The provider implements prove_containment, yet the production registry does not invoke it and execute_task refuses while _containment_proof is absent; the delivered lifecycle therefore cannot reach verified readiness.
-    - Repair must establish a provider-owned production containment-proof lifecycle under existing Requirement R3/R10 semantics, then rerun full live AC12 verification.
+  next_expected_actor: verifier
+  acceptance_disposition: pending_reverification
+  execution_disposition: fixing_r1_completed_ready_for_acceptance
+  blocking_findings: []
+  repair_evidence:
+    - fixing-r1-codebuddy repaired direct_codex_containment_proof_lifecycle_unreachable at d441e95b6eb65834f52ffdb42026e7328f5c9478.
+    - GitHub CI run 37615911292 completed successfully.
+    - Acceptance must now independently rerun live direct/codex readiness and AC12; repair completion is not Acceptance approval.
   authorization:
     mode: durable
     ref: docs/authorizations/PR-015-direct-codex-development-host-invocation-bridge-v1-development-authorization.yaml
@@ -54,8 +54,8 @@ artifacts:
   latest_slice_checkpoint_blob_sha: c1191c57146ea35efd821f1d2b234c506fa25fba
   latest_slice_completion_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-s04-completion-receipt.yaml
   latest_slice_completion_receipt_blob_sha: bb842ee9179d94a9661be67114f32a84950a93a6
-  exact_product_candidate: 02eb3de2ec9c137b3285398e555f1e037b574965
-  implementation_evidence_head: 783af5cacdaab9b325c48e2bbd4acded63109b02
+  exact_product_candidate: d441e95b6eb65834f52ffdb42026e7328f5c9478
+  implementation_evidence_head: d441e95b6eb65834f52ffdb42026e7328f5c9478
   execution_reconciliation_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-s04-execution-reconciliation-receipt.yaml
   execution_reconciliation_receipt_blob_sha: bd1a9d9b9c12b8c001d60845ef831b2be8b50dd4
   implementation_to_acceptance_transition_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-implementation-to-acceptance-transition-receipt.yaml
@@ -66,8 +66,10 @@ artifacts:
   latest_acceptance_checkpoint_blob_sha: 0eabbbcd27bb4233bd1746acb0a0d6a76180d194
   latest_acceptance_transition_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r5-transition-receipt.yaml
   latest_acceptance_transition_receipt_blob_sha: cb6470ae5593c4d8dbaaa762352184d3f680b9dd
-  latest_fixing_execution_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-execution-r1-provider-deadlock-20261007.yaml
-  latest_fixing_execution_checkpoint_blob_sha: 3d00499f039fcddd6c34952ec3528efab324bae0
+  latest_fixing_execution_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-attempt-r1-completed-20261007.yaml
+  latest_fixing_execution_checkpoint_blob_sha: 2b8677e87463a4320ab9a47039b834f5ac7159db
+  latest_fixing_transition_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-r1-to-acceptance-transition-receipt.yaml
+  latest_fixing_transition_receipt_blob_sha: 82be3c208a39fcfce2df18e76188c3b0833ecfa3
   latest_bootstrap_fixing_recovery_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-fixing-recovery-r1-20261007.yaml
   latest_bootstrap_fixing_recovery_checkpoint_blob_sha: fbd3be7c884d0b7f12e20fd87ad265ce36345d86
   prior_slice_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-s03-completion-20261007.yaml
@@ -79,15 +81,15 @@ artifacts:
 implementation_entry:
   bootstrap_required: true
   intended_target: direct:codebuddy
-  override_state: active
+  override_state: expired
   override_mode: fixing_recovery
   override_revision: 3
   override_ref: docs/overrides/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-execution-override.yaml
-  override_blob_sha: a33802c2eeba930283a24f573c390ab4ee7bd7b7
+  override_blob_sha: 936f56ae64b248dc802053df1b2d091ca8cf64cb
   override_receipt_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-fixing-recovery-r1-20261007.yaml
   prior_override_ref: docs/overrides/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-execution-override.yaml
-  effective_provider: direct
-  effective_adapter: codebuddy
+  effective_provider: null
+  effective_adapter: null
   project_binding_fallback:
     provider: direct
     adapter: codex
@@ -111,7 +113,8 @@ requirement_readiness:
     implementation_execution_complete: true
     all_current_plan_slices_completed: true
     bootstrap_override_expired_by_slice_completion: true
-    fixing_bootstrap_override_active: true
+    fixing_bootstrap_override_active: false
+    fixing_bootstrap_override_expired_by_stage_exit: true
     fixing_bootstrap_override_revision: 3
     fixing_bootstrap_override_mode: fixing_recovery
     pr013_relation: related_unblocker_not_same_task
