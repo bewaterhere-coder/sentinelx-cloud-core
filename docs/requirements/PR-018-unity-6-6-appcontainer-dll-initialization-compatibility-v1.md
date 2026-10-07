@@ -7,7 +7,7 @@ project_id: sentinelx-cloud-core
 task_id: PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1
 requirement_revision: 1
 development:
-  stage: plan_review
+  stage: plan_review_rejected
   gates:
     requirement_ready: true
     plan_approved: false
@@ -15,13 +15,11 @@ development:
     completion_verified: false
   plan_revision: 1
   implementation_authorized: false
-  next_expected_actor: reviewer
+  next_expected_actor: planner
   blocking_findings:
-    - Product implementation is blocked until Plan Review approves the diagnostic discriminator and minimum authority boundary.
-    - PR-017 proves Unity.exe child creation succeeds but Unity 6000.6.4f1 exits with 0xC0000142 / STATUS_DLL_INIT_FAILED under generic scoped AppContainer execution.
-    - PR-011 already proved the same DLL-initialization symptom for USER32-dependent descendants in the LocalSystem service session when the unique AppContainer SID lacked minimum window-station/desktop read authority.
-    - That PR-011 authority is verification-only; generic execute_scoped does not receive it.
-    - PR-018 must first prove or falsify that Unity is the same compatibility class before generic scoped authority is widened.
+    - Plan Review R1 rejected Plan Revision 1; Requirement Revision 1 remains Ready.
+    - PR-018 implementation Slices must not directly mutate PR-017 transport/Task state or replay PR-017 S03; integration belongs to PR-018 finalization and PR-017 replay remains PR-017-owned.
+    - Generic Session-0 window-object authority requires durable MutationScopeStore representation and fail-closed cleanup/readback ordering; process-local _verification_session_reads is insufficient for the generic untrusted path.
   current_slice: null
   current_slice_state: not_compiled
 transport:
@@ -30,6 +28,11 @@ transport:
   branch: task/unity-6-6-appcontainer-dll-initialization-compatibility-v1
   base_branch: task/large-runtime-root-acl-cleanup-timeout-recovery-v1
   stacked_on_pr: 17
+artifacts:
+  plan: docs/plans/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-plan.md
+  latest_plan_review: docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-plan-review-r1.md
+  latest_plan_review_transition_receipt: docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-plan-review-r1-transition-receipt.yaml
+  execution_slice_set: null
 related_tasks:
   predecessor:
     - PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
