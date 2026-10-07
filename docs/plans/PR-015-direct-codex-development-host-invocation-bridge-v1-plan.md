@@ -2,7 +2,7 @@
 
 Requirement: `docs/requirements/PR-015-direct-codex-development-host-invocation-bridge-v1.md`, revision 2.
 
-Status: **Accepted / Merge Finalization Pending**. Plan R6 was approved; implementation and Acceptance R8 are complete. Semantic Plan content below is historical design intent.
+Status: **Accepted / Ready for Merge**. Plan R6 was approved; implementation, Acceptance R8, and merge finalization are verified. Semantic Plan content below is historical design intent.
 
 ## 0. Planning baseline
 

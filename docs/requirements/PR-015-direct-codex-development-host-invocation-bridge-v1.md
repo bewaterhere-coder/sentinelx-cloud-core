@@ -21,16 +21,16 @@ development:
   acceptance_disposition: approved
   execution_disposition: acceptance_r8_approved_ready_for_finalization
   finalization:
-    ready_for_merge: false
+    ready_for_merge: true
     canonical_state_verified: true
     plan_execution_state_verified: true
     evidence_verified: true
     transport_preconditions_verified: true
-    readback_verified: false
+    readback_verified: true
     merge_pending: true
     completion_verified: false
     ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-completion-finalization-r1.yaml
-    blob_sha: ebed5ff3e700498931c765ec46a52741c7f2f6bd
+    blob_sha: 72910acd93611f9c750ac1e28871588964ce7b5a
   blocking_findings: []
   repair_evidence:
     - fixing-r1-codebuddy repaired direct_codex_containment_proof_lifecycle_unreachable at d441e95b6eb65834f52ffdb42026e7328f5c9478.

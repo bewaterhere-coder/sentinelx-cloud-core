@@ -56,13 +56,19 @@ verification:
   transport_preconditions_verified: true
 
 finalization:
-  ready_for_merge: false
+  ready_for_merge: true
   stage: accepted
   completion_verified: false
   merge_pending: true
   next_expected_actor: integration
   readback_required: true
-  readback_verified: false
+  readback_verified: true
+  readback_verification_commit: 705f4ed385bf5dbd90ab02faf8b1da3910d98286
+  finalized_state_head: 705f4ed385bf5dbd90ab02faf8b1da3910d98286
+  finalized_head_workflows_total: 13
+  finalized_head_workflows_success: 13
+  finalized_head_workflows_failed: 0
+  finalized_head_workflows_pending: 0
 
 safety:
   canonical_local_checkout_mutated: false
