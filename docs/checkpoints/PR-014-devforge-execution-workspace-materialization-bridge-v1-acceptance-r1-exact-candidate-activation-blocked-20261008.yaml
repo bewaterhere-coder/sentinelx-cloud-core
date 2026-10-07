@@ -1,0 +1,120 @@
+schema_version: "1.1"
+kind: devforge_acceptance_block_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
+acceptance_round: 1
+source_command: "#开发验收 PR-014-devforge-execution-workspace-materialization-bridge-v1"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  canonical_branch: main
+  revision: e0ea49441c410a7008fbcd61f1782d90f014a773
+
+lineage:
+  requirement_revision: 2
+  plan_revision: 6
+  plan_blob_sha: 4fc74fba9d787120798d5ed6a4f04b7da9cb6a5f
+  slice_set_ref: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-r6-slices.yaml
+  slice_set_blob_sha: f332c20ca398507a635f0c4abc6a1f43117c8dc6
+  implementation_to_acceptance_transition_ref: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-implementation-to-acceptance-transition-receipt.yaml
+  implementation_to_acceptance_transition_blob_sha: 10d1090bd3a5da185993adff575d07fb3a2bb790
+  s02_reconciliation_ref: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-r6-reconciliation-receipt.yaml
+  s02_reconciliation_blob_sha: 21f6072b43bd9c33213d4579b6030f064b11b3cf
+
+acceptance:
+  disposition: BlockedByContext
+  acceptance_decision_created: false
+  acceptance_approved: false
+  formal_acceptance_completed: false
+  failed_postcondition: exact_candidate_physical_windows_runtime_active
+  reason_code: ExactCandidateActivationUnavailable
+  detail_reason_code: MaterializeWorkspaceProjectionAbsentOnLiveAgent
+
+expected_candidate:
+  product_commit: 45dc99d15a23c499b4c1500fab60ed5e76475aeb
+  deterministic_suite: "147 passed / 1 skipped / 0 failed"
+  changed_blob_readback: "9/9 byte-identical"
+  replay: forbidden
+
+live_host:
+  host_id: host_7f0e709ded71ab24
+  hostname: Cherie_li
+  platform: Windows-11-10.0.26200-SP0
+  operational: true
+  agent_version: 0.24.1.dev480+g73a520130
+  candidate_commit_match: false
+  runtime_state_readback: true
+
+live_projection:
+  local_api_endpoint: devforge_runtime
+  action_count: 5
+  actions:
+    - provision_scope
+    - revalidate_scope
+    - inspect_scope
+    - terminalize_scope
+    - execute_scoped
+  materialize_workspace_present: false
+  exact_candidate_activation_proven: false
+
+physical_gate:
+  path_free_materialize_workspace_call_executed: false
+  host_owned_placement_readback: false
+  source_capsule_binding_readback: false
+  mutation_scope_binding_readback: false
+  pre_execution_audit_start_readback: false
+  appcontainer_job_containment_readback: false
+  exact_git_head_branch_origin_clean_readback: false
+  temporary_materializer_authority_closure_readback: false
+  user_level_development_host_handoff_probe: false
+  same_identity_retry_no_replay_readback: false
+  ac8_satisfied: false
+  ac10_satisfied: false
+  ac14_satisfied: false
+
+activation_authority:
+  dedicated_windows_candidate_install_action_available_in_current_tool_surface: false
+  canonical_repository_activation_script_found: false
+  generic_shell_or_pip_activation_invented_by_acceptance: false
+  service_restart_only_is_insufficient: true
+  operator_protected_activation_required: true
+
+hosted_ci:
+  applicability: NotEvaluated
+  gating: false
+  invoked: false
+  workflow_creation_or_modification: false
+
+safety:
+  product_source_mutated: false
+  tests_mutated: false
+  workflow_created_or_modified: false
+  ci_invoked: false
+  generic_shell_used: false
+  generic_pip_install_used: false
+  service_restarted: false
+  host_mutation_performed: false
+  canonical_main_mutated: false
+  project_binding_mutated: false
+  task_moved_to_fixing: false
+  pr013_s03_replayed: false
+
+state_after:
+  stage: acceptance
+  acceptance_approved: false
+  formal_acceptance_performed: false
+  implementation_execution_complete: true
+  next_expected_actor: verifier
+
+recovery:
+  required_action: >-
+    Activate/install the exact PR-014 candidate
+    45dc99d15a23c499b4c1500fab60ed5e76475aeb on the registered Windows
+    SentinelX host through the existing protected/operator activation path,
+    then re-run the same acceptance command.
+  rerun_command: "#开发验收 PR-014-devforge-execution-workspace-materialization-bridge-v1"
+  implementation_replay_required: false
+  code_fix_required: false
+
+readback:
+  verified: true
