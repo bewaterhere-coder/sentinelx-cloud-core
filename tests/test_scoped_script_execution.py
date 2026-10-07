@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytest
 
+import sentinelx_core.windows_mutation_sandbox as windows_sandbox
 from sentinelx_core.executor import HandlerError
 from sentinelx_core.handlers.devforge_runtime import make_devforge_execute_scoped_adapter
 from sentinelx_core.handlers.mutation_scope import make_mutation_scope_handler
@@ -526,3 +527,50 @@ def test_devforge_execute_scoped_adapter_reuses_existing_executor(tmp_path: Path
     assert "script_path" not in result
     assert "workdir" not in result
     assert store.read_scope(record.scope_id).state == "terminal"
+
+
+def test_activation_residual_runtime_authority_never_false_terminal(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    handler, context, store, record, mutation, lineage, repo = _fixture(
+        tmp_path,
+        attempt_id="activation-residual-runtime-authority",
+        interpreter="python3",
+    )
+
+    def residual_grant(*_args, **_kwargs):
+        raise windows_sandbox.HostMutationSandboxResidualAuthority(
+            "injected grant compensation ambiguity"
+        )
+
+    def residual_cleanup(*_args, **_kwargs):
+        raise windows_sandbox.HostMutationSandboxResidualAuthority(
+            "injected cleanup ambiguity"
+        )
+
+    monkeypatch.setattr(windows_sandbox, "_grant_runtime_read", residual_grant)
+    monkeypatch.setattr(windows_sandbox, "_remove_runtime_read", residual_cleanup)
+
+    with pytest.raises(HandlerError) as exc_info:
+        _run(
+            handler,
+            context,
+            {
+                "interpreter": "python3",
+                "content": "print('must not spawn')",
+                "timeout": 30,
+                "mutation": mutation,
+                "lineage": lineage,
+                "repository": repo,
+            },
+        )
+    assert exc_info.value.code == "HostMutationSandboxResidualAuthority"
+
+    current = store.read_scope(record.scope_id)
+    assert current.state == "revoked"
+    assert current.runtime_read_authority_roots
+    assert current.terminalized_at is None
+
+    events = MutationAuditJournal(store.root.parent, evidence_retention_days=7).read_events()
+    assert [event["event"] for event in events] == [EVENT_STARTED]
+    assert EVENT_FINISHED not in [event["event"] for event in events]

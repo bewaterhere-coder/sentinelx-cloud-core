@@ -548,3 +548,42 @@ def test_runtime_acl_timeout_policy_contract_and_digest(tmp_path: Path) -> None:
         runtime_acl_timeout_seconds=base.runtime_acl_timeout_seconds + 1,
     )
     assert placement_policy_digest(changed) != placement_policy_digest(base)
+
+
+def test_runtime_read_authority_marker_blocks_terminal_until_cleanup_retry(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fx = Fixture(
+        tmp_path,
+        attempt_id="runtime-read-residual-retry",
+        runtime_read_root=True,
+    )
+    original_remove = windows_sandbox._remove_runtime_read
+
+    def residual_cleanup(*_args, **_kwargs):
+        raise HostMutationSandboxResidualAuthority("injected residual runtime-read authority")
+
+    monkeypatch.setattr(windows_sandbox, "_remove_runtime_read", residual_cleanup)
+    with pytest.raises(HostMutationSandboxResidualAuthority):
+        fx.activate()
+
+    revoked = fx.scope_store.read_scope(fx.record.scope_id)
+    assert revoked.state == "revoked"
+    assert tuple(map(str.casefold, revoked.runtime_read_authority_roots)) == (
+        str(fx.runtime).casefold(),
+    )
+
+    with pytest.raises(HostMutationSandboxResidualAuthority):
+        fx.sandbox.terminalize(fx.record.scope_id, fx.record.generation)
+    still_revoked = fx.scope_store.read_scope(fx.record.scope_id)
+    assert still_revoked.state == "revoked"
+    assert still_revoked.runtime_read_authority_roots
+
+    def proven_cleanup(root: Path, app_sid: str, *, timeout_seconds: int) -> None:
+        del app_sid, timeout_seconds
+        assert root == fx.runtime
+
+    monkeypatch.setattr(windows_sandbox, "_remove_runtime_read", proven_cleanup)
+    terminal = fx.sandbox.terminalize(fx.record.scope_id, fx.record.generation)
+    assert terminal.state == "terminal"
+    assert terminal.runtime_read_authority_roots == ()

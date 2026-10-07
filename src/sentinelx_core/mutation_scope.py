@@ -141,6 +141,7 @@ class MutationScopeRecord:
     active_job_ids: tuple[str, ...] = ()
     active_process_ids: tuple[str, ...] = ()
     sandbox_write_authority_present: bool = False
+    runtime_read_authority_roots: tuple[str, ...] = ()
     terminalized_at: str | None = None
 
     @property
@@ -187,6 +188,7 @@ class MutationScopeRecord:
         result["allowed_operation_classes"] = list(self.allowed_operation_classes)
         result["active_job_ids"] = list(self.active_job_ids)
         result["active_process_ids"] = list(self.active_process_ids)
+        result["runtime_read_authority_roots"] = list(self.runtime_read_authority_roots)
         return result
 
     @classmethod
@@ -196,6 +198,9 @@ class MutationScopeRecord:
             payload["allowed_operation_classes"] = tuple(payload.get("allowed_operation_classes") or ())
             payload["active_job_ids"] = tuple(payload.get("active_job_ids") or ())
             payload["active_process_ids"] = tuple(payload.get("active_process_ids") or ())
+            payload["runtime_read_authority_roots"] = tuple(
+                payload.get("runtime_read_authority_roots") or ()
+            )
             record = cls(**payload)
         except (KeyError, TypeError, ValueError) as exc:
             raise HostMutationScopeCorrupt(f"invalid scope record: {exc}") from exc
@@ -215,6 +220,7 @@ class MutationRuntimeClosure:
     active_job_ids: tuple[str, ...] = ()
     active_process_ids: tuple[str, ...] = ()
     sandbox_write_authority_present: bool = False
+    runtime_read_authority_roots: tuple[str, ...] = ()
 
 
 _LOCKS_GUARD = threading.Lock()
@@ -819,6 +825,94 @@ class MutationScopeStore:
             self._durable_write_state(state)
             return self._record(self._load_state(), scope_id)
 
+    def reserve_runtime_read_authority(
+        self,
+        scope_id: str,
+        generation: int,
+        sandbox_identity: str,
+        runtime_root: str,
+    ) -> MutationScopeRecord:
+        """Pessimistically record one runtime-root SID authority before ACL grant."""
+        if not isinstance(runtime_root, str) or not runtime_root.strip():
+            raise ValueError("runtime_root must be a non-empty string")
+        runtime_root = runtime_root.strip()
+        with _exclusive_file_lock(self._lock_path):
+            state = self._load_state()
+            record = self._record(state, scope_id)
+            if record.generation != generation or record.state != "active":
+                raise HostMutationScopeNotCurrent(
+                    "runtime-read authority can only be reserved on the active scope generation"
+                )
+            if (
+                record.sandbox_identity != sandbox_identity
+                or not record.sandbox_write_authority_present
+            ):
+                raise HostMutationScopeConflict(
+                    "runtime-read authority does not match active sandbox identity"
+                )
+            roots = list(record.runtime_read_authority_roots)
+            if not any(value.casefold() == runtime_root.casefold() for value in roots):
+                roots.append(runtime_root)
+            updated = replace(
+                record,
+                runtime_read_authority_roots=tuple(
+                    sorted(roots, key=str.casefold)
+                ),
+            )
+            self._put_record(state, updated)
+            self._durable_write_state(state)
+            confirmed = self._record(self._load_state(), scope_id)
+            if not any(
+                value.casefold() == runtime_root.casefold()
+                for value in confirmed.runtime_read_authority_roots
+            ):
+                raise HostMutationScopeCorrupt(
+                    "runtime-read authority reservation read-back failed"
+                )
+            return confirmed
+
+    def clear_runtime_read_authority(
+        self,
+        scope_id: str,
+        generation: int,
+        sandbox_identity: str,
+        runtime_root: str,
+    ) -> MutationScopeRecord:
+        """Clear one exact runtime-root marker only after OS SID-removal read-back."""
+        if not isinstance(runtime_root, str) or not runtime_root.strip():
+            raise ValueError("runtime_root must be a non-empty string")
+        runtime_root = runtime_root.strip()
+        with _exclusive_file_lock(self._lock_path):
+            state = self._load_state()
+            record = self._record(state, scope_id)
+            if record.generation != generation:
+                raise HostMutationScopeNotCurrent("scope generation is not current")
+            if record.state == "terminal":
+                raise HostMutationScopeNotCurrent(
+                    "terminal scope cannot clear runtime-read authority"
+                )
+            if record.sandbox_identity != sandbox_identity:
+                raise HostMutationScopeConflict(
+                    "runtime-read cleanup identity mismatch"
+                )
+            remaining = tuple(
+                value
+                for value in record.runtime_read_authority_roots
+                if value.casefold() != runtime_root.casefold()
+            )
+            updated = replace(record, runtime_read_authority_roots=remaining)
+            self._put_record(state, updated)
+            self._durable_write_state(state)
+            confirmed = self._record(self._load_state(), scope_id)
+            if any(
+                value.casefold() == runtime_root.casefold()
+                for value in confirmed.runtime_read_authority_roots
+            ):
+                raise HostMutationScopeCorrupt(
+                    "runtime-read authority cleanup read-back failed"
+                )
+            return confirmed
+
     def clear_sandbox_write_authority(
         self,
         scope_id: str,
@@ -927,6 +1021,7 @@ class MutationScopeStore:
                 record.active_job_ids
                 or record.active_process_ids
                 or record.sandbox_write_authority_present
+                or record.runtime_read_authority_roots
             )
             if has_runtime_authority:
                 if runtime_cleanup is None:
@@ -935,7 +1030,7 @@ class MutationScopeStore:
                             "bound Job/process authority remains; terminalization requires OS cleanup"
                         )
                     raise HostMutationResidualAuthorityDetected(
-                        "sandbox write authority remains; terminalization requires OS cleanup"
+                        "sandbox/runtime-read authority remains; terminalization requires OS cleanup"
                     )
                 cleanup_record = replace(record, state="revoked")
                 self._put_record(state, cleanup_record)
@@ -979,6 +1074,10 @@ class MutationScopeStore:
             raise HostMutationResidualAuthorityDetected(
                 "runtime cleanup still reports sandbox write authority"
             )
+        if closure.runtime_read_authority_roots:
+            raise HostMutationResidualAuthorityDetected(
+                "runtime cleanup still reports runtime-read authority"
+            )
 
         with _exclusive_file_lock(self._lock_path):
             state = self._load_state()
@@ -998,6 +1097,7 @@ class MutationScopeStore:
                 active_job_ids=closure.active_job_ids,
                 active_process_ids=closure.active_process_ids,
                 sandbox_write_authority_present=closure.sandbox_write_authority_present,
+                runtime_read_authority_roots=closure.runtime_read_authority_roots,
                 terminalized_at=_iso(now),
             )
             self._put_record(state, terminal)
@@ -1010,6 +1110,7 @@ class MutationScopeStore:
                 or confirmed.active_job_ids
                 or confirmed.active_process_ids
                 or confirmed.sandbox_write_authority_present
+                or confirmed.runtime_read_authority_roots
             ):
                 raise HostMutationScopeTerminalizationFailed(
                     "authoritative read-back did not prove terminal residual-authority closure"

@@ -1357,11 +1357,32 @@ class WindowsMutationSandbox:
                     raise HostMutationSandboxPathViolation(
                         f"runtime_read_root is unavailable: {runtime_root}"
                     )
-                _grant_runtime_read(
-                    runtime_root,
+                self.scope_store.reserve_runtime_read_authority(
+                    current.scope_id,
+                    current.generation,
                     app_sid,
-                    timeout_seconds=self.policy.runtime_acl_timeout_seconds,
+                    str(runtime_root),
                 )
+                try:
+                    _grant_runtime_read(
+                        runtime_root,
+                        app_sid,
+                        timeout_seconds=self.policy.runtime_acl_timeout_seconds,
+                    )
+                except HostMutationSandboxResidualAuthority:
+                    # The exact root marker must remain durable: compensation
+                    # could not prove closure.
+                    raise
+                except (RuntimeError, OSError, ValueError):
+                    # _grant_runtime_read only re-raises its original grant
+                    # failure after compensating removal has proved SID absence.
+                    self.scope_store.clear_runtime_read_authority(
+                        current.scope_id,
+                        current.generation,
+                        app_sid,
+                        str(runtime_root),
+                    )
+                    raise
                 granted_runtime.append(runtime_root)
             _assert_no_reparse(_normal_path(self.policy.workspace_root), workspace)
             _assert_final_path(workspace)
@@ -1379,6 +1400,12 @@ class WindowsMutationSandbox:
                         runtime_root,
                         app_sid,
                         timeout_seconds=self.policy.runtime_acl_timeout_seconds,
+                    )
+                    self.scope_store.clear_runtime_read_authority(
+                        current.scope_id,
+                        current.generation,
+                        app_sid,
+                        str(runtime_root),
                     )
                 except (RuntimeError, OSError, ValueError) as cleanup_error:
                     cleanup_errors.append(f"runtime read grant: {cleanup_error}")
@@ -1716,23 +1743,39 @@ class WindowsMutationSandbox:
             verification_root = self._verification_toolchain_reads.pop(key, None)
             if verification_root is not None:
                 _remove_verification_toolchain_read(verification_root, app_sid)
-            for root in self.policy.runtime_read_roots:
+            durable_runtime_roots = tuple(record.runtime_read_authority_roots)
+            runtime_roots = (
+                tuple(Path(value) for value in durable_runtime_roots)
+                if durable_runtime_roots
+                else tuple(self.policy.runtime_read_roots)
+            )
+            for root in runtime_roots:
+                runtime_root = _normal_path(root)
                 _remove_runtime_read(
-                    _normal_path(root),
+                    runtime_root,
                     app_sid,
                     timeout_seconds=self.policy.runtime_acl_timeout_seconds,
                 )
+                if durable_runtime_roots:
+                    self.scope_store.clear_runtime_read_authority(
+                        record.scope_id,
+                        record.generation,
+                        app_sid,
+                        str(runtime_root),
+                    )
             workspace_traverse = self._workspace_traverse_reads.pop(
                 (record.scope_id, record.generation), ()
             )
             _remove_workspace_traverse(workspace_traverse, app_sid)
             _delete_appcontainer_profile(_profile_name(record.unique_lease_key))
 
+        current = self.scope_store.read_scope(record.scope_id)
         return MutationRuntimeClosure(
             sandbox_identity=app_sid,
             active_job_ids=(),
             active_process_ids=(),
             sandbox_write_authority_present=False,
+            runtime_read_authority_roots=current.runtime_read_authority_roots,
         )
 
     def terminalize(self, scope_id: str, generation: int) -> MutationScopeRecord:
