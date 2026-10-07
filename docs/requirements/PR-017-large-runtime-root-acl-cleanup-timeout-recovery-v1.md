@@ -8,19 +8,19 @@ task_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
 title: SentinelX Large Runtime Root ACL Cleanup Timeout & Recovery V1
 requirement_revision: 1
 development:
-  stage: plan_review_rejected
+  stage: plan_review
   gates:
     requirement_ready: true
     plan_approved: false
     acceptance_approved: false
     completion_verified: false
-  plan_revision: 2
+  plan_revision: 3
   implementation_authorized: false
-  next_expected_actor: planner
+  next_expected_actor: reviewer
   blocking_findings:
-    - Plan Review R2 rejected the exact-12-blob integration payload because src/sentinelx_core/handlers/scoped_script.py carries only PR-018/S01 paired-diagnostic behavior and is not required by PR-017 S03.
-    - Plan Review R2 also rejected exact projection of src/sentinelx_core/windows_mutation_sandbox.py because that blob mixes required production Session-0 lifecycle code with PR-018/S01-only diagnostic methods. Plan remediation must freeze a deterministic production-subset integration source rather than importing the diagnostic seam.
-    - Requirement Revision 1 remains unchanged. S01 and S02 remain canonically completed and must not be replayed. The existing Plan-R1 Slice Set remains historical until a corrected Plan revision is approved.
+    - Plan Remediation R3 addressed PR018DiagnosticSeamIncludedInIntegrationPayload by excluding PR-018 scoped_script.py from the integration payload and preserving PR-017 blob 4580475ba9bd8ba5301b579ee11a584abbd75d4b.
+    - Plan Remediation R3 addressed PR018DiagnosticMethodsEmbeddedInWindowsSandboxBlob by precomputing production-subset blob 1e662eba2dbc61825bc874e102a735e7a9d9a179 from the verified PR-018 candidate with the entire paired-diagnostic method interval removed.
+    - Requirement Revision 1 remains unchanged. S01 and S02 remain canonically completed and must not be replayed. Plan Revision 3 now waits for review; no product mutation or Slice recompilation is authorized yet.
   current_slice: S03
   current_slice_state: blocked
   authorization:
@@ -39,6 +39,8 @@ artifacts:
   latest_plan_review_transition_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-review-r2-transition-receipt.yaml
   latest_plan_revision_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-revision-r2-pr018-integration-20261008.yaml
   latest_plan_revision_transition_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-revision-r2-transition-receipt.yaml
+  latest_plan_remediation_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-remediation-r3-20261008.yaml
+  latest_plan_remediation_transition_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-remediation-r3-transition-receipt.yaml
   execution_slice_set: docs/execution/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-slices.yaml
   latest_slice_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-blocked-unity-dll-initialization-20261007.yaml
   latest_slice_completion_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-repair-completion-receipt-r4.yaml
