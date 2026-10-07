@@ -1,0 +1,74 @@
+schema_version: "1.0"
+kind: devforge_slice_dependency_blocker_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-019-stable-baseline-stabilization-exit-gate-v1
+slice_id: S01
+source_command: "#开发执行 PR-019-stable-baseline-stabilization-exit-gate-v1"
+
+runtime:
+  devforge_version: "2.96.0"
+  devforge_revision: 99d7becdf15ca7631867ea2a39dd213750600ef6
+  installed_agent_version: 0.24.1.dev530+g7adfa7a74
+
+candidate:
+  sha: 4ffb2dc312fac8d1030eb521641f6c61c33f11f0
+  published: true
+  remote_readback_verified: true
+  product_tree_unchanged_since_candidate: true
+
+verification:
+  required_tests:
+    - tests/test_direct_codex_provider.py
+    - tests/test_direct_codex_execution.py
+    - tests/test_stable_baseline.py
+  exact_candidate_focused_pytest_completed: false
+  attempted_executor: devforge_runtime.execute_scoped
+  result: blocked_by_host_runtime
+  error: "'WindowsMutationSandbox' object has no attribute 'terminalize'"
+
+scope:
+  scope_id: mss_AWbjOEbZ-KKm1ZfdLdetC-Bu
+  generation: 1
+  workspace_id: msw_XCpPG9ZG5jPO22F8mMxwaO88
+  state_after_restart: active
+  expires_at: "2026-10-07T18:32:38.868408Z"
+  terminalization_attempted: true
+  terminalization_verified: false
+  service_process_tree_restarted: true
+  residual_scope_authority_unresolved: true
+
+dependency:
+  owner_task: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
+  owner_pr: 17
+  owner_head: 3858c7d0e46295d5e0dc184bb21e76da7c963346
+  owner_stage: implementation
+  owner_completed_slices: [S01, S02]
+  owner_current_slice: S03
+  owner_current_slice_state: blocked
+  evidence:
+    terminalize_method_present_on_pr17_head: true
+    current_installed_agent_terminalize_method_present: false
+  policy:
+    pr019_must_not_copy_pr17_fix: true
+    pr019_must_not_activate_unmerged_pr17_candidate: true
+    provider_fallback_forbidden: true
+    permission_expansion_forbidden: true
+
+classification:
+  kind: BlockedByDependency
+  baseline_disposition: NotReady
+  reason_code: HostMutationSandboxTerminalizationUnavailable
+  defect_proven: true
+  blocks_s01_completion: true
+  blocks_s02_progression: true
+
+result:
+  stage: implementation
+  current_slice: S01
+  current_slice_state: pending
+  completed_slices: []
+  next_recovery_condition: >-
+    A PR-017-compatible Host runtime with working WindowsMutationSandbox.terminalize
+    is activated and the preserved verification scope is terminalized/read back,
+    after which exact-candidate focused pytest may resume.
+  canonical_next_action: "#开发执行 PR-019-stable-baseline-stabilization-exit-gate-v1"
