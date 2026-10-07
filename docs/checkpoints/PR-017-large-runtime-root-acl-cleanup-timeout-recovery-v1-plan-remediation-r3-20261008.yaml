@@ -1,0 +1,101 @@
+schema_version: "1.0"
+kind: devforge_plan_remediation_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
+source_command: "#开发计划修复 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1"
+
+input:
+  requirement_revision: 1
+  rejected_plan_revision: 2
+  rejected_plan_blob_sha: "350b3c07778f5a6f5bd1eb78bf50e375fde8a94e"
+  rejected_review_ref: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-review-r2.md
+  rejected_review_blob_sha: "8edf8cc863f70ee0c66e9255c74a23d3b06fe322"
+  rejected_findings:
+    - PR018DiagnosticSeamIncludedInIntegrationPayload
+    - PR018DiagnosticMethodsEmbeddedInWindowsSandboxBlob
+
+output:
+  revised_plan_revision: 3
+  revised_plan_ref: docs/plans/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan.md
+  revised_plan_blob_sha: "4c73e1b33489c5965ff2fd42156e680b74a6887e"
+  requirement_semantics_changed: false
+  transport_changed: false
+  implementation_started: false
+  slice_set_recompiled: false
+
+production_subset:
+  manifest_version: pr017-pr018-production-subset-v1
+  upstream_candidate: "73a52013055a8b3bb70b319a0ed7b7ba832ae0c9"
+  reviewed_pr017_head_before_remediation: "0c9ab574ce4d38818e4bb55a2d5f8deaf77f2bcb"
+  projected_file_count: 11
+
+  preserve:
+    path: src/sentinelx_core/handlers/scoped_script.py
+    blob: "4580475ba9bd8ba5301b579ee11a584abbd75d4b"
+    reason: all PR-018 candidate delta is S01 paired-diagnostic-only
+
+  derived_blobs:
+    windows_mutation_sandbox:
+      source_blob: "c5a9ae35b8324adffc31ce9ed6cbbf9ebe172bde"
+      derived_blob: "1e662eba2dbc61825bc874e102a735e7a9d9a179"
+      transform:
+        start_marker: "    def enable_pr018_paired_session_read("
+        end_marker: "    def enable_verification_descendants("
+        operation: delete_contiguous_interval_start_inclusive_end_exclusive
+        other_changes: forbidden
+      forbidden_terms_absent:
+        - enable_pr018_paired_session_read
+        - pr018_paired_session_absence
+        - PR018_S01_PAIRED_DIAGNOSTIC
+        - .pr018-s01-paired
+
+    windows_sandbox_tests:
+      source_blob: "8218fa324a99ba48669a5427fdafaf714f43f25f"
+      derived_blob: "926900b91055707528a6cfdd5fb131d11abdfc89"
+      transform:
+        from: test_pr018_session_masks_are_exact_frozen_read_only_values
+        to: test_session_object_masks_are_exact_frozen_read_only_values
+        test_body_changes: forbidden
+
+finding_resolution:
+  PR018DiagnosticSeamIncludedInIntegrationPayload:
+    status: addressed
+    evidence:
+      - scoped_script removed from integration payload
+      - exact PR-017 scoped_script blob preserved
+  PR018DiagnosticMethodsEmbeddedInWindowsSandboxBlob:
+    status: addressed
+    evidence:
+      - production-subset blob precomputed before implementation
+      - diagnostic method interval mechanically excluded
+      - derived blob identity frozen
+
+preserved_evidence:
+  s01:
+    state: completed
+    replay: forbidden
+  s02:
+    state: completed
+    replay: forbidden
+  s03:
+    current_r1_state: blocked_historical
+    r3_recompile_pending: true
+
+safety:
+  canonical_main_mutated: false
+  product_code_mutated: false
+  tests_mutated: false
+  host_policy_mutated: false
+  pr017_s01_replayed: false
+  pr017_s02_replayed: false
+  pr018_task_state_mutated: false
+  derived_blobs_attached_to_branch: false
+  self_approval_performed: false
+
+next_state:
+  stage: plan_review
+  plan_revision: 3
+  plan_approved: false
+  implementation_authorized: false
+  next_expected_actor: reviewer
+  canonical_next_action: "#开发评审 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1"

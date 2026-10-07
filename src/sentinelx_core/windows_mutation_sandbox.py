@@ -41,6 +41,7 @@ from sentinelx_core.mutation_scope import (
     MutationRuntimeClosure,
     MutationScopeRecord,
     MutationScopeStore,
+    SessionObjectReadBinding,
 )
 from sentinelx_core.policy import MutationExecutionPolicy
 from sentinelx_core.verification_runtime import (
@@ -97,6 +98,7 @@ FILE_FLAG_BACKUP_SEMANTICS = 0x02000000
 PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
 SYNCHRONIZE = 0x00100000
 STILL_ACTIVE = 259
+UOI_NAME = 2
 
 
 class _SID_AND_ATTRIBUTES(ctypes.Structure):
@@ -177,6 +179,12 @@ def _windows_only() -> tuple[ctypes.WinDLL, ctypes.WinDLL, ctypes.WinDLL]:
     userenv = ctypes.WinDLL("userenv", use_last_error=True)
 
     k32.GetCurrentProcess.restype = wintypes.HANDLE
+    k32.GetCurrentProcessId.argtypes = []
+    k32.GetCurrentProcessId.restype = wintypes.DWORD
+    k32.ProcessIdToSessionId.argtypes = [
+        wintypes.DWORD, ctypes.POINTER(wintypes.DWORD)
+    ]
+    k32.ProcessIdToSessionId.restype = wintypes.BOOL
     k32.GetCurrentThreadId.argtypes = []
     k32.GetCurrentThreadId.restype = wintypes.DWORD
     k32.LocalFree.argtypes = [ctypes.c_void_p]
@@ -754,28 +762,98 @@ def _assert_no_foreign_appcontainer_sid(path: Path, expected_sid: str | None = N
             )
 
 
-def _run_icacls(args: list[str]) -> None:
-    completed = subprocess.run(
-        ["icacls", *args],
-        capture_output=True,
-        creationflags=0x08000000,
-        timeout=20,
-        check=False,
-    )
+def _run_icacls(
+    args: list[str],
+    *,
+    timeout_seconds: int = 20,
+    operation: str = "ACL update",
+) -> None:
+    try:
+        completed = subprocess.run(
+            ["icacls", *args],
+            capture_output=True,
+            creationflags=0x08000000,
+            timeout=timeout_seconds,
+            check=False,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise HostMutationSandboxAclViolation(
+            f"{operation} timed out after {timeout_seconds}s"
+        ) from exc
     if completed.returncode != 0:
         detail = (completed.stderr or completed.stdout).decode(errors="replace").strip()
-        raise HostMutationSandboxAclViolation(f"icacls failed: {detail}")
+        raise HostMutationSandboxAclViolation(f"{operation} failed: {detail}")
 
 
-def _grant_runtime_read(root: Path, app_sid: str) -> None:
+def _grant_runtime_read(
+    root: Path,
+    app_sid: str,
+    *,
+    timeout_seconds: int,
+) -> None:
     _assert_no_reparse(root, root)
     _assert_final_path(root)
-    _run_icacls([str(root), "/grant:r", f"*{app_sid}:(OI)(CI)(RX)"])
+    try:
+        _run_icacls(
+            [str(root), "/grant:r", f"*{app_sid}:(OI)(CI)(RX)"],
+            timeout_seconds=timeout_seconds,
+            operation=f"runtime ACL grant for {root}",
+        )
+    except HostMutationSandboxAclViolation as grant_error:
+        # icacls may time out or fail after Windows has already applied some
+        # inherited ACEs. The currently-attempted root is not yet present in
+        # the activation rollback list, so compensate here and require exact
+        # SID-absence readback before surfacing the original grant failure.
+        try:
+            _remove_runtime_read(
+                root,
+                app_sid,
+                timeout_seconds=timeout_seconds,
+            )
+        except HostMutationSandboxResidualAuthority as cleanup_error:
+            raise HostMutationSandboxResidualAuthority(
+                f"runtime ACL grant for {root} failed and compensating cleanup "
+                f"could not prove AppContainer SID removal: {cleanup_error}"
+            ) from grant_error
+        raise
 
 
-def _remove_runtime_read(root: Path, app_sid: str) -> None:
-    if root.exists():
-        _run_icacls([str(root), "/remove:g", f"*{app_sid}"])
+def _remove_runtime_read(
+    root: Path,
+    app_sid: str,
+    *,
+    timeout_seconds: int,
+) -> None:
+    if not root.exists():
+        return
+    try:
+        entries = _dacl_entries(root)
+    except (RuntimeError, OSError, ValueError) as exc:
+        raise HostMutationSandboxResidualAuthority(
+            f"runtime ACL cleanup could not read back AppContainer SID state on {root}: {exc}"
+        ) from exc
+
+    if not any(sid == app_sid for sid, _mask, _flags in entries):
+        # Closure is already proven. Avoid a needless ACL mutation on protected
+        # runtime roots where the original grant may have failed before the SID
+        # was ever installed.
+        return
+
+    try:
+        _run_icacls(
+            [str(root), "/remove:g", f"*{app_sid}"],
+            timeout_seconds=timeout_seconds,
+            operation=f"runtime ACL cleanup for {root}",
+        )
+        entries = _dacl_entries(root)
+    except (RuntimeError, OSError, ValueError) as exc:
+        raise HostMutationSandboxResidualAuthority(
+            f"runtime ACL cleanup could not prove AppContainer SID removal on {root}: {exc}"
+        ) from exc
+    if any(sid == app_sid for sid, _mask, _flags in entries):
+        raise HostMutationSandboxResidualAuthority(
+            f"runtime ACL cleanup read-back still contains AppContainer SID on {root}"
+        )
 
 
 def _verification_toolchain_traverse_ancestors(root: Path) -> tuple[Path, ...]:
@@ -806,6 +884,84 @@ def _user32_window_objects() -> tuple[int, int]:
     if not desktop:
         raise _win32_error("GetThreadDesktop failed")
     return int(window_station), int(desktop)
+
+
+def _current_session_id() -> int:
+    k32, _, _ = _windows_only()
+    session_id = wintypes.DWORD()
+    if not k32.ProcessIdToSessionId(
+        k32.GetCurrentProcessId(), ctypes.byref(session_id)
+    ):
+        raise _win32_error("ProcessIdToSessionId failed")
+    return int(session_id.value)
+
+
+def _user_object_name(handle: int, label: str) -> str:
+    user32 = ctypes.WinDLL("user32", use_last_error=True)
+    user32.GetUserObjectInformationW.argtypes = [
+        wintypes.HANDLE,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        wintypes.DWORD,
+        ctypes.POINTER(wintypes.DWORD),
+    ]
+    user32.GetUserObjectInformationW.restype = wintypes.BOOL
+    needed = wintypes.DWORD()
+    user32.GetUserObjectInformationW(
+        wintypes.HANDLE(handle), UOI_NAME, None, 0, ctypes.byref(needed)
+    )
+    if needed.value <= 0:
+        raise _win32_error(f"GetUserObjectInformationW sizing failed for {label}")
+    wchar_size = ctypes.sizeof(ctypes.c_wchar)
+    buffer = ctypes.create_unicode_buffer(max(2, needed.value // wchar_size + 1))
+    if not user32.GetUserObjectInformationW(
+        wintypes.HANDLE(handle),
+        UOI_NAME,
+        buffer,
+        ctypes.sizeof(buffer),
+        ctypes.byref(needed),
+    ):
+        raise _win32_error(f"GetUserObjectInformationW failed for {label}")
+    value = buffer.value.strip()
+    if not value:
+        raise HostMutationSandboxBindingMismatch(f"{label} identity is empty")
+    return value
+
+
+def _observed_session_object_read_binding(
+) -> tuple[SessionObjectReadBinding, tuple[int, int]]:
+    session_id = _current_session_id()
+    if session_id != 0:
+        raise HostMutationSandboxUnavailable(
+            f"generic Session-0 compatibility requires broker Session 0, observed {session_id}"
+        )
+    window_station, desktop = _user32_window_objects()
+    window_station_name = _user_object_name(window_station, "window station")
+    desktop_name = _user_object_name(desktop, "desktop")
+    binding = SessionObjectReadBinding(
+        cleanup_required=True,
+        session_id=session_id,
+        window_station_identity=(
+            f"session:{session_id}/window-station:{window_station_name}"
+        ),
+        desktop_identity=(
+            f"session:{session_id}/window-station:{window_station_name}/desktop:{desktop_name}"
+        ),
+        window_station_mask=WINDOW_STATION_VERIFICATION_READ,
+        desktop_mask=DESKTOP_VERIFICATION_READ,
+    )
+    return binding, (window_station, desktop)
+
+
+def _reacquire_session_object_read_binding(
+    expected: SessionObjectReadBinding,
+) -> tuple[int, int]:
+    observed, handles = _observed_session_object_read_binding()
+    if observed != expected:
+        raise HostMutationSandboxBindingMismatch(
+            "current broker Session-0 objects do not match durable cleanup binding"
+        )
+    return handles
 
 
 def _window_object_dacl_entries(handle: int, label: str) -> list[tuple[str, int, int]]:
@@ -911,15 +1067,11 @@ def _merge_window_object_access(
             k32.LocalFree(descriptor)
 
 
-def _grant_verification_session_read(app_sid: str) -> tuple[int, int]:
-    """Grant read-only access to the service session's window objects.
-
-    USER32-linked descendants created by a LocalSystem service AppContainer
-    need read access to the non-interactive session window station/desktop.
-    This grant is verification-only, SID-scoped, non-inheriting, and revoked
-    during terminalization.
-    """
-    window_station, desktop = _user32_window_objects()
+def _grant_session_object_read(
+    handles: tuple[int, int], app_sid: str
+) -> None:
+    """Grant the exact frozen PR-011 masks on provider-selected objects."""
+    window_station, desktop = handles
     objects = (
         (window_station, "window station", WINDOW_STATION_VERIFICATION_READ),
         (desktop, "desktop", DESKTOP_VERIFICATION_READ),
@@ -938,15 +1090,15 @@ def _grant_verification_session_read(app_sid: str) -> tuple[int, int]:
                 handle, label, app_sid, mode=GRANT_ACCESS, mask=mask
             )
             granted.append((handle, label))
-            observed = {
-                sid: ace_mask
-                for sid, ace_mask, _flags in _window_object_dacl_entries(handle, label)
-            }
-            if observed.get(app_sid, 0) & mask != mask:
+            observed = [
+                (ace_mask, flags)
+                for sid, ace_mask, flags in _window_object_dacl_entries(handle, label)
+                if sid == app_sid
+            ]
+            if observed != [(mask, 0)]:
                 raise HostMutationSandboxAclViolation(
-                    f"{label} did not retain the required verification read ACE"
+                    f"{label} did not retain the exact Session-0 read ACE"
                 )
-        return window_station, desktop
     except Exception:
         for handle, label in reversed(granted):
             try:
@@ -958,7 +1110,7 @@ def _grant_verification_session_read(app_sid: str) -> tuple[int, int]:
         raise
 
 
-def _remove_verification_session_read(
+def _remove_session_object_read(
     handles: tuple[int, int], app_sid: str
 ) -> None:
     window_station, desktop = handles
@@ -966,9 +1118,11 @@ def _remove_verification_session_read(
         (desktop, "desktop"),
         (window_station, "window station"),
     ):
-        _merge_window_object_access(
-            handle, label, app_sid, mode=REVOKE_ACCESS, mask=0
-        )
+        entries = _window_object_dacl_entries(handle, label)
+        if any(sid == app_sid for sid, _mask, _flags in entries):
+            _merge_window_object_access(
+                handle, label, app_sid, mode=REVOKE_ACCESS, mask=0
+            )
         if any(
             sid == app_sid
             for sid, _ace_mask, _flags in _window_object_dacl_entries(handle, label)
@@ -976,6 +1130,19 @@ def _remove_verification_session_read(
             raise HostMutationSandboxResidualAuthority(
                 f"{label} DACL still contains the mutation AppContainer SID"
             )
+
+
+def _grant_verification_session_read(app_sid: str) -> tuple[int, int]:
+    """Preserve the existing trusted-root handshake on the shared primitive."""
+    handles = _user32_window_objects()
+    _grant_session_object_read(handles, app_sid)
+    return handles
+
+
+def _remove_verification_session_read(
+    handles: tuple[int, int], app_sid: str
+) -> None:
+    _remove_session_object_read(handles, app_sid)
 
 
 def _grant_verification_toolchain_read(root: Path, app_sid: str) -> None:
@@ -1300,7 +1467,32 @@ class WindowsMutationSandbox:
                     raise HostMutationSandboxPathViolation(
                         f"runtime_read_root is unavailable: {runtime_root}"
                     )
-                _grant_runtime_read(runtime_root, app_sid)
+                self.scope_store.reserve_runtime_read_authority(
+                    current.scope_id,
+                    current.generation,
+                    app_sid,
+                    str(runtime_root),
+                )
+                try:
+                    _grant_runtime_read(
+                        runtime_root,
+                        app_sid,
+                        timeout_seconds=self.policy.runtime_acl_timeout_seconds,
+                    )
+                except HostMutationSandboxResidualAuthority:
+                    # The exact root marker must remain durable: compensation
+                    # could not prove closure.
+                    raise
+                except (RuntimeError, OSError, ValueError):
+                    # _grant_runtime_read only re-raises its original grant
+                    # failure after compensating removal has proved SID absence.
+                    self.scope_store.clear_runtime_read_authority(
+                        current.scope_id,
+                        current.generation,
+                        app_sid,
+                        str(runtime_root),
+                    )
+                    raise
                 granted_runtime.append(runtime_root)
             _assert_no_reparse(_normal_path(self.policy.workspace_root), workspace)
             _assert_final_path(workspace)
@@ -1314,7 +1506,17 @@ class WindowsMutationSandbox:
                 cleanup_errors.append(f"workspace traverse grant: {cleanup_error}")
             for runtime_root in reversed(granted_runtime):
                 try:
-                    _remove_runtime_read(runtime_root, app_sid)
+                    _remove_runtime_read(
+                        runtime_root,
+                        app_sid,
+                        timeout_seconds=self.policy.runtime_acl_timeout_seconds,
+                    )
+                    self.scope_store.clear_runtime_read_authority(
+                        current.scope_id,
+                        current.generation,
+                        app_sid,
+                        str(runtime_root),
+                    )
                 except (RuntimeError, OSError, ValueError) as cleanup_error:
                     cleanup_errors.append(f"runtime read grant: {cleanup_error}")
             try:
@@ -1342,6 +1544,76 @@ class WindowsMutationSandbox:
                     + "; ".join(cleanup_errors)
                 ) from activation_error
             raise
+
+    def _enable_generic_session_object_read(
+        self,
+        activation: ActivatedMutationSandbox,
+    ) -> SessionObjectReadBinding:
+        binding, handles = _observed_session_object_read_binding()
+        if (
+            binding.window_station_mask != WINDOW_STATION_VERIFICATION_READ
+            or binding.desktop_mask != DESKTOP_VERIFICATION_READ
+        ):
+            raise HostMutationSandboxBindingMismatch(
+                "generic Session-0 binding does not contain the frozen PR-011 masks"
+            )
+        self.scope_store.reserve_session_object_read_binding(
+            activation.scope_id,
+            activation.generation,
+            activation.sandbox_identity,
+            binding,
+        )
+        try:
+            _grant_session_object_read(handles, activation.sandbox_identity)
+        except Exception as grant_error:
+            try:
+                _remove_session_object_read(handles, activation.sandbox_identity)
+                self.scope_store.clear_session_object_read_binding(
+                    activation.scope_id,
+                    activation.generation,
+                    activation.sandbox_identity,
+                    binding,
+                )
+            except Exception as cleanup_error:
+                raise HostMutationSandboxResidualAuthority(
+                    "generic Session-0 grant failed and cleanup could not prove dual SID absence: "
+                    f"{cleanup_error}"
+                ) from grant_error
+            raise
+        return binding
+
+    def _cleanup_durable_session_object_read(
+        self,
+        record: MutationScopeRecord,
+    ) -> None:
+        binding = record.session_object_read_binding
+        if binding is None:
+            return
+        app_sid = record.sandbox_identity
+        if not app_sid:
+            raise HostMutationSandboxResidualAuthority(
+                "durable Session-0 cleanup binding has no sandbox identity"
+            )
+        try:
+            handles = _reacquire_session_object_read_binding(binding)
+            _remove_session_object_read(handles, app_sid)
+            self.scope_store.clear_session_object_read_binding(
+                record.scope_id,
+                record.generation,
+                app_sid,
+                binding,
+            )
+        except HostMutationSandboxResidualAuthority:
+            raise
+        except Exception as exc:
+            raise HostMutationSandboxResidualAuthority(
+                f"cannot prove durable Session-0 cleanup closure: {exc}"
+            ) from exc
+        confirmed = self.scope_store.read_scope(record.scope_id)
+        if confirmed.session_object_read_binding is not None:
+            raise HostMutationSandboxResidualAuthority(
+                "durable Session-0 cleanup marker remains after clear read-back"
+            )
 
     def _assert_activation_current(
         self, activation: ActivatedMutationSandbox, audit_start: MutationAuditStart
@@ -1499,6 +1771,11 @@ class WindowsMutationSandbox:
             managed._release()
 
         try:
+            if (
+                verification is None
+                and self.policy.runtime_session_object_read_enabled
+            ):
+                self._enable_generic_session_object_read(activation)
             executable_final_path = _process_image_path(raw._process)
             cwd_final_path = str(_final_path(spawn_cwd))
             spawn_evidence = MutationSpawnEvidence(
@@ -1635,6 +1912,8 @@ class WindowsMutationSandbox:
 
         app_sid = record.sandbox_identity
         if app_sid:
+            if record.session_object_read_binding is not None:
+                self._cleanup_durable_session_object_read(record)
             workspace = _normal_path(Path(record.exact_workspace))
             if workspace.exists():
                 _assert_no_reparse(_normal_path(self.policy.workspace_root), workspace)
@@ -1651,19 +1930,40 @@ class WindowsMutationSandbox:
             verification_root = self._verification_toolchain_reads.pop(key, None)
             if verification_root is not None:
                 _remove_verification_toolchain_read(verification_root, app_sid)
-            for root in self.policy.runtime_read_roots:
-                _remove_runtime_read(_normal_path(root), app_sid)
+            durable_runtime_roots = tuple(record.runtime_read_authority_roots)
+            runtime_roots = (
+                tuple(Path(value) for value in durable_runtime_roots)
+                if durable_runtime_roots
+                else tuple(self.policy.runtime_read_roots)
+            )
+            for root in runtime_roots:
+                runtime_root = _normal_path(root)
+                _remove_runtime_read(
+                    runtime_root,
+                    app_sid,
+                    timeout_seconds=self.policy.runtime_acl_timeout_seconds,
+                )
+                if durable_runtime_roots:
+                    self.scope_store.clear_runtime_read_authority(
+                        record.scope_id,
+                        record.generation,
+                        app_sid,
+                        str(runtime_root),
+                    )
             workspace_traverse = self._workspace_traverse_reads.pop(
                 (record.scope_id, record.generation), ()
             )
             _remove_workspace_traverse(workspace_traverse, app_sid)
             _delete_appcontainer_profile(_profile_name(record.unique_lease_key))
 
+        current = self.scope_store.read_scope(record.scope_id)
         return MutationRuntimeClosure(
             sandbox_identity=app_sid,
             active_job_ids=(),
             active_process_ids=(),
             sandbox_write_authority_present=False,
+            runtime_read_authority_roots=current.runtime_read_authority_roots,
+            session_object_read_binding=current.session_object_read_binding,
         )
 
     def terminalize(self, scope_id: str, generation: int) -> MutationScopeRecord:

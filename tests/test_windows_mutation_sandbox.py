@@ -4,11 +4,13 @@ import shutil
 import subprocess
 import sys
 import time
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
 
+import sentinelx_core.windows_mutation_sandbox as windows_sandbox
 from sentinelx_core.mutation_audit import (
     MutationAuditBinding,
     MutationAuditJournal,
@@ -19,20 +21,26 @@ from sentinelx_core.mutation_placement import (
     HostMutationScopeBindingMismatch,
     RepositoryIdentity,
     SemanticIdentity,
+    placement_policy_digest,
 )
 from sentinelx_core.mutation_sandbox import (
     HostMutationSandboxAclViolation,
     HostMutationSandboxPathViolation,
+    HostMutationSandboxResidualAuthority,
 )
-from sentinelx_core.mutation_scope import MutationScopeStore
-from sentinelx_core.policy import MutationExecutionPolicy
+from sentinelx_core.mutation_scope import MutationScopeStore, SessionObjectReadBinding
+from sentinelx_core.policy import MutationExecutionPolicy, Policy
 from sentinelx_core.request_context import MutationLineage, RequestContext
 from sentinelx_core.windows_mutation_sandbox import (
     WindowsMutationSandbox,
     _dacl_entries,
     _delete_appcontainer_profile,
     _ensure_appcontainer_profile,
+    _grant_runtime_read,
     _profile_name,
+    _remove_runtime_read,
+    WINDOW_STATION_VERIFICATION_READ,
+    DESKTOP_VERIFICATION_READ,
     _set_exact_acl,
     final_executable_path,
     requested_mutation_identity,
@@ -43,7 +51,14 @@ pytestmark = pytest.mark.skipif(sys.platform != "win32", reason="Windows AppCont
 
 
 class Fixture:
-    def __init__(self, tmp_path: Path, *, attempt_id: str) -> None:
+    def __init__(
+        self,
+        tmp_path: Path,
+        *,
+        attempt_id: str,
+        runtime_read_root: bool = False,
+        session_object_read_enabled: bool = False,
+    ) -> None:
         self.root = tmp_path / "fixture"
         self.workspace_root = self.root / "workspaces"
         self.sibling = self.root / "sibling"
@@ -59,7 +74,8 @@ class Fixture:
             scoped_mutation_enabled=True,
             workspace_root=self.workspace_root,
             protected_roots=(self.protected,),
-            runtime_read_roots=(),
+            runtime_read_roots=(self.runtime,) if runtime_read_root else (),
+            runtime_session_object_read_enabled=session_object_read_enabled,
             scope_ttl_seconds=600,
             evidence_retention_days=7,
         )
@@ -313,7 +329,11 @@ def test_preexisting_foreign_appcontainer_acl_is_rejected(tmp_path: Path) -> Non
 
 
 def test_terminal_cleanup_failure_stays_revoked_until_real_cleanup(tmp_path: Path) -> None:
-    fx = Fixture(tmp_path, attempt_id="terminal-fail-closed")
+    fx = Fixture(
+        tmp_path,
+        attempt_id="terminal-fail-closed",
+        runtime_read_root=True,
+    )
     activation = fx.activate()
 
     def fail_cleanup(_record):
@@ -340,3 +360,640 @@ def test_terminal_cleanup_failure_stays_revoked_until_real_cleanup(tmp_path: Pat
     assert terminal.active_job_ids == ()
     assert terminal.active_process_ids == ()
     assert terminal.sandbox_write_authority_present is False
+    assert all(
+        sid != activation.sandbox_identity
+        for sid, _mask, _flags in _dacl_entries(fx.runtime)
+    )
+
+
+
+def test_runtime_acl_helpers_use_configured_timeout(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "runtime"
+    root.mkdir()
+    app_sid = "S-1-15-2-424242"
+    calls: list[tuple[tuple[str, ...], int, str]] = []
+
+    def record_icacls(
+        args: list[str], *, timeout_seconds: int = 20, operation: str = "ACL update"
+    ) -> None:
+        calls.append((tuple(args), timeout_seconds, operation))
+
+    monkeypatch.setattr(windows_sandbox, "_run_icacls", record_icacls)
+    reads = iter([
+        [(app_sid, 0x1200A9, 0)],
+        [],
+    ])
+    monkeypatch.setattr(windows_sandbox, "_dacl_entries", lambda _root: next(reads))
+
+    _grant_runtime_read(root, app_sid, timeout_seconds=123)
+    _remove_runtime_read(root, app_sid, timeout_seconds=234)
+
+    assert calls[0][1:] == (123, f"runtime ACL grant for {root}")
+    assert calls[1][1:] == (234, f"runtime ACL cleanup for {root}")
+
+
+def test_runtime_acl_timeout_is_deterministic_sandbox_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "runtime"
+    root.mkdir()
+    calls = 0
+
+    def grant_timeout_then_cleanup_success(*_args, **kwargs):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise subprocess.TimeoutExpired(cmd="icacls", timeout=kwargs["timeout"])
+        return subprocess.CompletedProcess(args=["icacls"], returncode=0, stdout=b"", stderr=b"")
+
+    monkeypatch.setattr(
+        windows_sandbox.subprocess,
+        "run",
+        grant_timeout_then_cleanup_success,
+    )
+    monkeypatch.setattr(windows_sandbox, "_dacl_entries", lambda _root: [])
+
+    with pytest.raises(
+        HostMutationSandboxAclViolation,
+        match=r"runtime ACL grant .* timed out after 77s",
+    ):
+        _grant_runtime_read(root, "S-1-15-2-515151", timeout_seconds=77)
+
+    assert calls == 1
+
+
+def test_runtime_acl_grant_failure_compensates_exact_attempted_root(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "runtime"
+    root.mkdir()
+    app_sid = "S-1-15-2-525252"
+    calls: list[tuple[str, ...]] = []
+
+    def fail_grant_then_cleanup(args: list[str], **_kwargs) -> None:
+        calls.append(tuple(args))
+        if "/grant:r" in args:
+            raise HostMutationSandboxAclViolation("injected grant failure")
+
+    monkeypatch.setattr(windows_sandbox, "_run_icacls", fail_grant_then_cleanup)
+    reads = iter([
+        [(app_sid, 0x1200A9, 0)],
+        [],
+    ])
+    monkeypatch.setattr(windows_sandbox, "_dacl_entries", lambda _root: next(reads))
+
+    with pytest.raises(
+        HostMutationSandboxAclViolation,
+        match="injected grant failure",
+    ):
+        _grant_runtime_read(root, app_sid, timeout_seconds=91)
+
+    assert calls == [
+        (str(root), "/grant:r", f"*{app_sid}:(OI)(CI)(RX)"),
+        (str(root), "/remove:g", f"*{app_sid}"),
+    ]
+
+
+def test_runtime_acl_grant_failure_with_ambiguous_compensation_is_residual_authority(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "runtime"
+    root.mkdir()
+    app_sid = "S-1-15-2-535353"
+    calls: list[tuple[str, ...]] = []
+
+    def fail_grant_and_cleanup(args: list[str], **_kwargs) -> None:
+        calls.append(tuple(args))
+        raise HostMutationSandboxAclViolation("injected ACL failure")
+
+    monkeypatch.setattr(windows_sandbox, "_run_icacls", fail_grant_and_cleanup)
+    monkeypatch.setattr(
+        windows_sandbox,
+        "_dacl_entries",
+        lambda _root: [(app_sid, 0x1200A9, 0)],
+    )
+
+    with pytest.raises(
+        HostMutationSandboxResidualAuthority,
+        match=r"grant .* failed and compensating cleanup could not prove AppContainer SID removal",
+    ):
+        _grant_runtime_read(root, app_sid, timeout_seconds=92)
+
+    assert calls == [
+        (str(root), "/grant:r", f"*{app_sid}:(OI)(CI)(RX)"),
+        (str(root), "/remove:g", f"*{app_sid}"),
+    ]
+
+
+def test_runtime_acl_cleanup_requires_exact_root_sid_absence_readback(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "runtime"
+    root.mkdir()
+    app_sid = "S-1-15-2-616161"
+
+    monkeypatch.setattr(windows_sandbox, "_run_icacls", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(
+        windows_sandbox,
+        "_dacl_entries",
+        lambda _root: [(app_sid, 0x1200A9, 0)],
+    )
+
+    with pytest.raises(
+        HostMutationSandboxResidualAuthority,
+        match="read-back still contains AppContainer SID",
+    ):
+        _remove_runtime_read(root, app_sid, timeout_seconds=45)
+
+
+
+def test_runtime_acl_cleanup_timeout_is_residual_authority(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "runtime"
+    root.mkdir()
+
+    def timeout(*_args, **kwargs):
+        raise subprocess.TimeoutExpired(cmd="icacls", timeout=kwargs["timeout"])
+
+    app_sid = "S-1-15-2-717171"
+    monkeypatch.setattr(windows_sandbox.subprocess, "run", timeout)
+    monkeypatch.setattr(
+        windows_sandbox,
+        "_dacl_entries",
+        lambda _root: [(app_sid, 0x1200A9, 0)],
+    )
+
+    with pytest.raises(
+        HostMutationSandboxResidualAuthority,
+        match=r"cleanup could not prove AppContainer SID removal",
+    ):
+        _remove_runtime_read(root, app_sid, timeout_seconds=88)
+
+
+
+def test_runtime_acl_cleanup_already_absent_skips_acl_mutation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "runtime"
+    root.mkdir()
+    app_sid = "S-1-15-2-818181"
+    writes = 0
+
+    def unexpected_write(*_args, **_kwargs):
+        nonlocal writes
+        writes += 1
+        raise AssertionError("cleanup must not mutate ACL when exact SID is already absent")
+
+    monkeypatch.setattr(windows_sandbox, "_run_icacls", unexpected_write)
+    monkeypatch.setattr(windows_sandbox, "_dacl_entries", lambda _root: [])
+
+    _remove_runtime_read(root, app_sid, timeout_seconds=99)
+
+    assert writes == 0
+
+
+def test_runtime_acl_cleanup_present_sid_removes_then_proves_absence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "runtime"
+    root.mkdir()
+    app_sid = "S-1-15-2-828282"
+    calls: list[tuple[str, ...]] = []
+    reads = iter([
+        [(app_sid, 0x1200A9, 0)],
+        [],
+    ])
+
+    monkeypatch.setattr(windows_sandbox, "_dacl_entries", lambda _root: next(reads))
+    monkeypatch.setattr(
+        windows_sandbox,
+        "_run_icacls",
+        lambda args, **_kwargs: calls.append(tuple(args)),
+    )
+
+    _remove_runtime_read(root, app_sid, timeout_seconds=100)
+
+    assert calls == [(str(root), "/remove:g", f"*{app_sid}")]
+
+
+def test_runtime_acl_cleanup_preread_failure_is_residual_authority(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "runtime"
+    root.mkdir()
+    app_sid = "S-1-15-2-838383"
+
+    def unreadable(_root: Path):
+        raise HostMutationSandboxAclViolation("injected DACL read failure")
+
+    monkeypatch.setattr(windows_sandbox, "_dacl_entries", unreadable)
+
+    with pytest.raises(
+        HostMutationSandboxResidualAuthority,
+        match=r"could not read back AppContainer SID state",
+    ):
+        _remove_runtime_read(root, app_sid, timeout_seconds=101)
+
+
+def test_runtime_acl_cleanup_present_sid_remove_denied_is_residual_authority(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "runtime"
+    root.mkdir()
+    app_sid = "S-1-15-2-848484"
+
+    monkeypatch.setattr(
+        windows_sandbox,
+        "_dacl_entries",
+        lambda _root: [(app_sid, 0x1200A9, 0)],
+    )
+
+    def denied(*_args, **_kwargs):
+        raise HostMutationSandboxAclViolation("injected access denied")
+
+    monkeypatch.setattr(windows_sandbox, "_run_icacls", denied)
+
+    with pytest.raises(
+        HostMutationSandboxResidualAuthority,
+        match=r"cleanup could not prove AppContainer SID removal",
+    ):
+        _remove_runtime_read(root, app_sid, timeout_seconds=102)
+
+
+def test_runtime_acl_timeout_policy_contract_and_digest(tmp_path: Path) -> None:
+    default = Policy.from_dict({"mutation_execution": {}})
+    assert default.mutation_execution.runtime_acl_timeout_seconds == 20
+
+    configured = Policy.from_dict(
+        {"mutation_execution": {"runtime_acl_timeout_seconds": 300}}
+    )
+    assert configured.mutation_execution.runtime_acl_timeout_seconds == 300
+
+    for value in ("300", 5.5, True, None):
+        with pytest.raises(
+            ValueError,
+            match="mutation_execution.runtime_acl_timeout_seconds must be an integer",
+        ):
+            Policy.from_dict(
+                {"mutation_execution": {"runtime_acl_timeout_seconds": value}}
+            )
+
+    for value in (4, 601):
+        with pytest.raises(
+            ValueError,
+            match="mutation_execution.runtime_acl_timeout_seconds must be between 5 and 600",
+        ):
+            Policy.from_dict(
+                {"mutation_execution": {"runtime_acl_timeout_seconds": value}}
+            )
+
+    base = MutationExecutionPolicy(
+        configured=True,
+        scoped_mutation_enabled=True,
+        workspace_root=tmp_path / "workspaces",
+    )
+    changed = replace(
+        base,
+        runtime_acl_timeout_seconds=base.runtime_acl_timeout_seconds + 1,
+    )
+    assert placement_policy_digest(changed) != placement_policy_digest(base)
+
+
+def test_runtime_read_authority_marker_blocks_terminal_until_cleanup_retry(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fx = Fixture(
+        tmp_path,
+        attempt_id="runtime-read-residual-retry",
+        runtime_read_root=True,
+    )
+    original_remove = windows_sandbox._remove_runtime_read
+
+    def residual_cleanup(*_args, **_kwargs):
+        raise HostMutationSandboxResidualAuthority("injected residual runtime-read authority")
+
+    activation = fx.activate()
+    assert activation.sandbox_identity
+    active = fx.scope_store.read_scope(fx.record.scope_id)
+    assert active.state == "active"
+    assert tuple(map(str.casefold, active.runtime_read_authority_roots)) == (
+        str(fx.runtime).casefold(),
+    )
+
+    monkeypatch.setattr(windows_sandbox, "_remove_runtime_read", residual_cleanup)
+    with pytest.raises(HostMutationSandboxResidualAuthority):
+        fx.sandbox.terminalize(fx.record.scope_id, fx.record.generation)
+
+    revoked = fx.scope_store.read_scope(fx.record.scope_id)
+    assert revoked.state == "revoked"
+    assert tuple(map(str.casefold, revoked.runtime_read_authority_roots)) == (
+        str(fx.runtime).casefold(),
+    )
+    still_revoked = fx.scope_store.read_scope(fx.record.scope_id)
+    assert still_revoked.state == "revoked"
+    assert still_revoked.runtime_read_authority_roots
+
+    def proven_cleanup(root: Path, app_sid: str, *, timeout_seconds: int) -> None:
+        del app_sid, timeout_seconds
+        assert root == fx.runtime
+
+    monkeypatch.setattr(windows_sandbox, "_remove_runtime_read", proven_cleanup)
+    terminal = fx.sandbox.terminalize(fx.record.scope_id, fx.record.generation)
+    assert terminal.state == "terminal"
+    assert terminal.runtime_read_authority_roots == ()
+
+
+def _fake_session_binding() -> SessionObjectReadBinding:
+    return SessionObjectReadBinding(
+        cleanup_required=True,
+        session_id=0,
+        window_station_identity="session:0/window-station:Service-0x0-3e7$",
+        desktop_identity=(
+            "session:0/window-station:Service-0x0-3e7$/desktop:Default"
+        ),
+        window_station_mask=WINDOW_STATION_VERIFICATION_READ,
+        desktop_mask=DESKTOP_VERIFICATION_READ,
+    )
+
+
+def test_session_object_masks_are_exact_frozen_read_only_values() -> None:
+    assert WINDOW_STATION_VERIFICATION_READ == 0x00020103
+    assert DESKTOP_VERIFICATION_READ == 0x00020041
+
+
+def test_generic_session_read_disabled_path_grants_nothing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fx = Fixture(tmp_path, attempt_id="generic-session-disabled")
+    activation = fx.activate()
+
+    def forbidden_observe():
+        raise AssertionError("disabled generic path must not observe Session-0 objects")
+
+    monkeypatch.setattr(
+        windows_sandbox, "_observed_session_object_read_binding", forbidden_observe
+    )
+    process = fx.sandbox.spawn(
+        activation,
+        audit=fx.audit,
+        audit_start=fx.start,
+        argv=["cmd.exe", "/d", "/c", "exit", "0"],
+    )
+    assert process.wait(10)
+    current = fx.scope_store.read_scope(fx.record.scope_id)
+    assert current.session_object_read_binding is None
+    fx.sandbox.terminalize(fx.record.scope_id, fx.record.generation)
+
+
+def test_generic_session_read_persists_before_grant_and_cleans_on_terminal(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fx = Fixture(
+        tmp_path,
+        attempt_id="generic-session-read",
+        session_object_read_enabled=True,
+    )
+    activation = fx.activate()
+    binding = _fake_session_binding()
+    handles = (101, 202)
+    observations: list[str] = []
+
+    monkeypatch.setattr(
+        windows_sandbox,
+        "_observed_session_object_read_binding",
+        lambda: (binding, handles),
+    )
+
+    def grant(observed_handles, app_sid):
+        assert observed_handles == handles
+        current = fx.scope_store.read_scope(fx.record.scope_id)
+        assert current.session_object_read_binding == binding
+        assert current.sandbox_identity == app_sid
+        observations.append("grant-after-durable-readback")
+
+    monkeypatch.setattr(windows_sandbox, "_grant_session_object_read", grant)
+    monkeypatch.setattr(
+        windows_sandbox,
+        "_reacquire_session_object_read_binding",
+        lambda expected: handles
+        if expected == binding
+        else (_ for _ in ()).throw(AssertionError("unexpected binding")),
+    )
+    monkeypatch.setattr(
+        windows_sandbox,
+        "_remove_session_object_read",
+        lambda observed_handles, _sid: observations.append(
+            "cleanup-dual-absence-proven"
+        )
+        if observed_handles == handles
+        else None,
+    )
+
+    process = fx.sandbox.spawn(
+        activation,
+        audit=fx.audit,
+        audit_start=fx.start,
+        argv=["cmd.exe", "/d", "/c", "exit", "0"],
+    )
+    assert process.contained is True
+    assert process.breakaway_allowed is False
+    assert process.wait(10)
+
+    active = fx.scope_store.read_scope(fx.record.scope_id)
+    assert active.session_object_read_binding == binding
+    terminal = fx.sandbox.terminalize(fx.record.scope_id, fx.record.generation)
+    assert terminal.state == "terminal"
+    assert terminal.session_object_read_binding is None
+    assert observations == [
+        "grant-after-durable-readback",
+        "cleanup-dual-absence-proven",
+    ]
+
+
+def test_generic_session_grant_failure_clears_marker_only_after_cleanup(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fx = Fixture(
+        tmp_path,
+        attempt_id="generic-session-grant-failure",
+        session_object_read_enabled=True,
+    )
+    activation = fx.activate()
+    binding = _fake_session_binding()
+    handles = (303, 404)
+    cleaned: list[bool] = []
+    monkeypatch.setattr(
+        windows_sandbox,
+        "_observed_session_object_read_binding",
+        lambda: (binding, handles),
+    )
+
+    def fail_grant(_handles, _sid):
+        current = fx.scope_store.read_scope(fx.record.scope_id)
+        assert current.session_object_read_binding == binding
+        raise HostMutationSandboxAclViolation("injected second-object grant failure")
+
+    monkeypatch.setattr(windows_sandbox, "_grant_session_object_read", fail_grant)
+    monkeypatch.setattr(
+        windows_sandbox,
+        "_remove_session_object_read",
+        lambda _handles, _sid: cleaned.append(True),
+    )
+
+    with pytest.raises(
+        HostMutationSandboxAclViolation,
+        match="injected second-object grant failure",
+    ):
+        fx.sandbox.spawn(
+            activation,
+            audit=fx.audit,
+            audit_start=fx.start,
+            argv=["cmd.exe", "/d", "/c", "exit", "0"],
+        )
+
+    current = fx.scope_store.read_scope(fx.record.scope_id)
+    assert cleaned == [True]
+    assert current.session_object_read_binding is None
+    assert current.active_job_ids == ()
+    assert current.active_process_ids == ()
+    fx.sandbox.terminalize(fx.record.scope_id, fx.record.generation)
+
+
+def test_restart_cleanup_identity_mismatch_stays_revoked_then_retry_closes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fx = Fixture(tmp_path, attempt_id="generic-session-restart")
+    activation = fx.activate()
+    binding = _fake_session_binding()
+    fx.scope_store.reserve_session_object_read_binding(
+        fx.record.scope_id,
+        fx.record.generation,
+        activation.sandbox_identity,
+        binding,
+    )
+
+    restarted = WindowsMutationSandbox(
+        policy=fx.policy,
+        scope_store=fx.scope_store,
+        repository=fx.repository,
+        semantic=fx.semantic,
+        provider_protected_roots=(fx.protected,),
+    )
+
+    def mismatch(_binding):
+        raise HostMutationScopeBindingMismatch(
+            "injected durable object identity mismatch"
+        )
+
+    monkeypatch.setattr(
+        windows_sandbox, "_reacquire_session_object_read_binding", mismatch
+    )
+    with pytest.raises(
+        HostMutationSandboxResidualAuthority,
+        match="cannot prove durable Session-0 cleanup closure",
+    ):
+        restarted.terminalize(fx.record.scope_id, fx.record.generation)
+
+    revoked = fx.scope_store.read_scope(fx.record.scope_id)
+    assert revoked.state == "revoked"
+    assert revoked.session_object_read_binding == binding
+
+    handles = (505, 606)
+    monkeypatch.setattr(
+        windows_sandbox,
+        "_reacquire_session_object_read_binding",
+        lambda expected: handles
+        if expected == binding
+        else (_ for _ in ()).throw(AssertionError("unexpected binding")),
+    )
+    monkeypatch.setattr(
+        windows_sandbox, "_remove_session_object_read", lambda _handles, _sid: None
+    )
+    terminal = restarted.terminalize(fx.record.scope_id, fx.record.generation)
+    assert terminal.state == "terminal"
+    assert terminal.session_object_read_binding is None
+
+
+def test_verification_path_keeps_existing_trusted_root_handshake() -> None:
+    source = Path(windows_sandbox.__file__).read_text(encoding="utf-8")
+    assert "verification is None" in source
+    assert "self.policy.runtime_session_object_read_enabled" in source
+    assert "enable_verification_descendants" in source
+
+
+def test_session_object_first_object_readback_failure_compensates_exact_sid(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    app_sid = "S-1-15-2-7001"
+    handles = (101, 202)
+    entries: dict[int, list[tuple[str, int, int]]] = {101: [], 202: []}
+    calls: list[tuple[int, int, int]] = []
+
+    def dacl(handle: int, _label: str):
+        return list(entries[handle])
+
+    def merge(handle: int, _label: str, sid: str, *, mode: int, mask: int):
+        calls.append((handle, mode, mask))
+        if mode == windows_sandbox.GRANT_ACCESS:
+            assert sid == app_sid
+            # Simulate a grant that read-backs with the wrong mask on the
+            # first object. The helper must compensate before surfacing error.
+            entries[handle] = [(sid, mask ^ 0x1, 0)]
+        else:
+            entries[handle] = []
+
+    monkeypatch.setattr(windows_sandbox, "_window_object_dacl_entries", dacl)
+    monkeypatch.setattr(windows_sandbox, "_merge_window_object_access", merge)
+
+    with pytest.raises(
+        HostMutationSandboxAclViolation,
+        match="window station did not retain the exact Session-0 read ACE",
+    ):
+        windows_sandbox._grant_session_object_read(handles, app_sid)
+
+    assert entries == {101: [], 202: []}
+    assert calls == [
+        (101, windows_sandbox.GRANT_ACCESS, WINDOW_STATION_VERIFICATION_READ),
+        (101, windows_sandbox.REVOKE_ACCESS, 0),
+    ]
+
+
+def test_session_object_second_object_readback_failure_revokes_both_in_reverse_order(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    app_sid = "S-1-15-2-7002"
+    handles = (303, 404)
+    entries: dict[int, list[tuple[str, int, int]]] = {303: [], 404: []}
+    calls: list[tuple[int, int, int]] = []
+
+    def dacl(handle: int, _label: str):
+        return list(entries[handle])
+
+    def merge(handle: int, _label: str, sid: str, *, mode: int, mask: int):
+        calls.append((handle, mode, mask))
+        if mode == windows_sandbox.GRANT_ACCESS:
+            assert sid == app_sid
+            observed_mask = mask if handle == 303 else (mask ^ 0x1)
+            entries[handle] = [(sid, observed_mask, 0)]
+        else:
+            entries[handle] = []
+
+    monkeypatch.setattr(windows_sandbox, "_window_object_dacl_entries", dacl)
+    monkeypatch.setattr(windows_sandbox, "_merge_window_object_access", merge)
+
+    with pytest.raises(
+        HostMutationSandboxAclViolation,
+        match="desktop did not retain the exact Session-0 read ACE",
+    ):
+        windows_sandbox._grant_session_object_read(handles, app_sid)
+
+    assert entries == {303: [], 404: []}
+    assert calls == [
+        (303, windows_sandbox.GRANT_ACCESS, WINDOW_STATION_VERIFICATION_READ),
+        (404, windows_sandbox.GRANT_ACCESS, DESKTOP_VERIFICATION_READ),
+        (404, windows_sandbox.REVOKE_ACCESS, 0),
+        (303, windows_sandbox.REVOKE_ACCESS, 0),
+    ]

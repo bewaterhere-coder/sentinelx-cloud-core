@@ -358,6 +358,8 @@ class MutationExecutionPolicy:
     workspace_root: Path | None = None
     protected_roots: tuple[Path, ...] = ()
     runtime_read_roots: tuple[Path, ...] = ()
+    runtime_session_object_read_enabled: bool = False
+    runtime_acl_timeout_seconds: int = 20
     scope_ttl_seconds: int = 3600
     evidence_retention_days: int = 30
     operator_unrestricted_enabled: bool = False
@@ -446,6 +448,24 @@ class MutationExecutionPolicy:
             canonical_repositories=canonical_repositories,
         )
 
+        runtime_session_object_read_enabled = block.get(
+            "runtime_session_object_read_enabled", False
+        )
+        if not isinstance(runtime_session_object_read_enabled, bool):
+            raise ValueError(
+                "mutation_execution.runtime_session_object_read_enabled must be a boolean"
+            )
+
+        runtime_acl_timeout = block.get("runtime_acl_timeout_seconds", 20)
+        if isinstance(runtime_acl_timeout, bool) or not isinstance(runtime_acl_timeout, int):
+            raise ValueError(
+                "mutation_execution.runtime_acl_timeout_seconds must be an integer"
+            )
+        if runtime_acl_timeout < 5 or runtime_acl_timeout > 600:
+            raise ValueError(
+                "mutation_execution.runtime_acl_timeout_seconds must be between 5 and 600"
+            )
+
         try:
             scope_ttl_seconds = int(block.get("scope_ttl_seconds", 3600))
             evidence_retention_days = int(block.get("evidence_retention_days", 30))
@@ -464,6 +484,8 @@ class MutationExecutionPolicy:
             workspace_root=workspace_root,
             protected_roots=protected_roots,
             runtime_read_roots=runtime_read_roots,
+            runtime_session_object_read_enabled=runtime_session_object_read_enabled,
+            runtime_acl_timeout_seconds=runtime_acl_timeout,
             scope_ttl_seconds=scope_ttl_seconds,
             evidence_retention_days=evidence_retention_days,
             operator_unrestricted_enabled=bool(block.get("operator_unrestricted_enabled", False)),

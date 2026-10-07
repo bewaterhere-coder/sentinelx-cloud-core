@@ -307,3 +307,55 @@ def test_preferred_profile_invalid_degrades_to_none() -> None:
         {"agent": {"preferred_profile": "tiny"}, "allowed_commands": ["ls"]}
     )
     assert p.preferred_profile is None
+
+
+
+def test_mutation_runtime_acl_timeout_defaults_and_accepts_bounded_value() -> None:
+    default = Policy.from_dict({"mutation_execution": {}})
+    assert default.mutation_execution.runtime_acl_timeout_seconds == 20
+
+    configured = Policy.from_dict(
+        {"mutation_execution": {"runtime_acl_timeout_seconds": 300}}
+    )
+    assert configured.mutation_execution.runtime_acl_timeout_seconds == 300
+
+
+@pytest.mark.parametrize("value", [True, False, "300", 5.5, None])
+def test_mutation_runtime_acl_timeout_requires_integer(value) -> None:
+    with pytest.raises(
+        ValueError,
+        match="mutation_execution.runtime_acl_timeout_seconds must be an integer",
+    ):
+        Policy.from_dict(
+            {"mutation_execution": {"runtime_acl_timeout_seconds": value}}
+        )
+
+
+@pytest.mark.parametrize("value", [4, 601])
+def test_mutation_runtime_acl_timeout_enforces_bounds(value: int) -> None:
+    with pytest.raises(
+        ValueError,
+        match="mutation_execution.runtime_acl_timeout_seconds must be between 5 and 600",
+    ):
+        Policy.from_dict(
+            {"mutation_execution": {"runtime_acl_timeout_seconds": value}}
+        )
+
+
+def test_runtime_session_object_read_policy_is_default_off_and_host_boolean() -> None:
+    default = Policy.from_dict({"mutation_execution": {}})
+    assert default.mutation_execution.runtime_session_object_read_enabled is False
+
+    enabled = Policy.from_dict(
+        {"mutation_execution": {"runtime_session_object_read_enabled": True}}
+    )
+    assert enabled.mutation_execution.runtime_session_object_read_enabled is True
+
+    for value in (1, 0, "true", "false", None, [], {}):
+        with pytest.raises(
+            ValueError,
+            match="mutation_execution.runtime_session_object_read_enabled must be a boolean",
+        ):
+            Policy.from_dict(
+                {"mutation_execution": {"runtime_session_object_read_enabled": value}}
+            )

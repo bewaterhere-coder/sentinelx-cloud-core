@@ -1,0 +1,49 @@
+schema_version: "1.0"
+kind: devforge_slice_repair_completion_receipt
+task_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
+slice_id: S02
+receipt_revision: 2
+source_command: "#开发执行 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1"
+decision: CompletedAfterRepair
+lineage:
+  requirement_revision: 1
+  plan_revision: 1
+  invalidation_ref: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-live-invalidation-r1.md
+  historical_invalidated_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-completion-receipt.yaml
+  repair_candidate: 4896a55cb951dec47422c738ccb1ba98762e13a9
+verification:
+  durable_runtime_read_authority_marker: pass
+  exact_root_cleanup_readback_before_clear: pass
+  residual_authority_blocks_terminal: pass
+  handler_generic_exception_does_not_auto_terminalize_residual_authority: pass
+  explicit_cleanup_retry_can_terminalize_after_closure: pass
+  handler_level_end_to_end_regression: pass
+  windows_process_firewall: pass
+  windows_incident_security_regression: pass
+  verification_materialization: pass
+  windows_regression_coverage: pass
+  devforge_runtime_regression: pass
+  node_npm_regression: pass
+  macos_regression: pass
+concurrency:
+  pr015_current_head: 080d31229b614c8fc753117fa7152618e4ff1e50
+  pr016_current_head: f22ee1881526002547b59df2226fa57aa8f10af6
+  s02_repair_primary_file_collision_with_pr016: false
+host_activation:
+  repair_candidate_activated: false
+  current_agent: d441e95b6eb65834f52ffdb42026e7328f5c9478
+  current_agent_lineage: concurrent_PR_015
+  prior_live_residual_sid_absence_proven: false
+postconditions:
+  s01_state: completed
+  s02_state: completed
+  s03_state: blocked
+  current_slice: S03
+  task_completion_verified: false
+  acceptance_approved: false
+completion_guard:
+  status: satisfied_for_s02_repair_only
+  next_live_gate:
+    - independently prove/clean the exact SID from failed scope mss_62URoGdXBbPJCnNK6Xdm_dye
+    - activate PR-017 repair candidate 4896a55cb951dec47422c738ccb1ba98762e13a9 or an explicitly reconciled descendant
+    - then resume S03 physical proof

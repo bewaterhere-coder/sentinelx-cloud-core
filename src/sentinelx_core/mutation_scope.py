@@ -107,6 +107,57 @@ def _attempt_key(repository_digest: str, semantic: SemanticIdentity) -> str:
 
 
 @dataclass(frozen=True)
+class SessionObjectReadBinding:
+    """Restart-reacquirable provider-owned Session-0 cleanup authority."""
+
+    cleanup_required: bool
+    session_id: int
+    window_station_identity: str
+    desktop_identity: str
+    window_station_mask: int
+    desktop_mask: int
+
+    def __post_init__(self) -> None:
+        if self.cleanup_required is not True:
+            raise ValueError("session-object cleanup_required must be true")
+        if self.session_id != 0:
+            raise ValueError("session-object binding must target service Session 0")
+        for field_name, value in (
+            ("window_station_identity", self.window_station_identity),
+            ("desktop_identity", self.desktop_identity),
+        ):
+            if not isinstance(value, str) or not value.strip():
+                raise ValueError(f"{field_name} must be a non-empty provider identity")
+            if len(value) > 512:
+                raise ValueError(f"{field_name} exceeds the bounded identity length")
+        for field_name, value in (
+            ("window_station_mask", self.window_station_mask),
+            ("desktop_mask", self.desktop_mask),
+        ):
+            if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+                raise ValueError(f"{field_name} must be a positive integer mask")
+
+    def to_json(self) -> dict[str, Any]:
+        return asdict(self)
+
+    @classmethod
+    def from_json(cls, value: dict[str, Any]) -> "SessionObjectReadBinding":
+        if not isinstance(value, dict):
+            raise ValueError("session-object binding must be a mapping")
+        allowed = {
+            "cleanup_required",
+            "session_id",
+            "window_station_identity",
+            "desktop_identity",
+            "window_station_mask",
+            "desktop_mask",
+        }
+        if set(value) != allowed:
+            raise ValueError("session-object binding fields are malformed")
+        return cls(**value)
+
+
+@dataclass(frozen=True)
 class MutationScopeRecord:
     workspace_id: str
     scope_id: str
@@ -141,6 +192,8 @@ class MutationScopeRecord:
     active_job_ids: tuple[str, ...] = ()
     active_process_ids: tuple[str, ...] = ()
     sandbox_write_authority_present: bool = False
+    runtime_read_authority_roots: tuple[str, ...] = ()
+    session_object_read_binding: SessionObjectReadBinding | None = None
     terminalized_at: str | None = None
 
     @property
@@ -187,6 +240,7 @@ class MutationScopeRecord:
         result["allowed_operation_classes"] = list(self.allowed_operation_classes)
         result["active_job_ids"] = list(self.active_job_ids)
         result["active_process_ids"] = list(self.active_process_ids)
+        result["runtime_read_authority_roots"] = list(self.runtime_read_authority_roots)
         return result
 
     @classmethod
@@ -196,6 +250,15 @@ class MutationScopeRecord:
             payload["allowed_operation_classes"] = tuple(payload.get("allowed_operation_classes") or ())
             payload["active_job_ids"] = tuple(payload.get("active_job_ids") or ())
             payload["active_process_ids"] = tuple(payload.get("active_process_ids") or ())
+            payload["runtime_read_authority_roots"] = tuple(
+                payload.get("runtime_read_authority_roots") or ()
+            )
+            raw_session_binding = payload.get("session_object_read_binding")
+            payload["session_object_read_binding"] = (
+                SessionObjectReadBinding.from_json(raw_session_binding)
+                if raw_session_binding is not None
+                else None
+            )
             record = cls(**payload)
         except (KeyError, TypeError, ValueError) as exc:
             raise HostMutationScopeCorrupt(f"invalid scope record: {exc}") from exc
@@ -215,6 +278,8 @@ class MutationRuntimeClosure:
     active_job_ids: tuple[str, ...] = ()
     active_process_ids: tuple[str, ...] = ()
     sandbox_write_authority_present: bool = False
+    runtime_read_authority_roots: tuple[str, ...] = ()
+    session_object_read_binding: SessionObjectReadBinding | None = None
 
 
 _LOCKS_GUARD = threading.Lock()
@@ -819,6 +884,169 @@ class MutationScopeStore:
             self._durable_write_state(state)
             return self._record(self._load_state(), scope_id)
 
+    def reserve_runtime_read_authority(
+        self,
+        scope_id: str,
+        generation: int,
+        sandbox_identity: str,
+        runtime_root: str,
+    ) -> MutationScopeRecord:
+        """Pessimistically record one runtime-root SID authority before ACL grant."""
+        if not isinstance(runtime_root, str) or not runtime_root.strip():
+            raise ValueError("runtime_root must be a non-empty string")
+        runtime_root = runtime_root.strip()
+        with _exclusive_file_lock(self._lock_path):
+            state = self._load_state()
+            record = self._record(state, scope_id)
+            if record.generation != generation or record.state != "active":
+                raise HostMutationScopeNotCurrent(
+                    "runtime-read authority can only be reserved on the active scope generation"
+                )
+            if (
+                record.sandbox_identity != sandbox_identity
+                or not record.sandbox_write_authority_present
+            ):
+                raise HostMutationScopeConflict(
+                    "runtime-read authority does not match active sandbox identity"
+                )
+            roots = list(record.runtime_read_authority_roots)
+            if not any(value.casefold() == runtime_root.casefold() for value in roots):
+                roots.append(runtime_root)
+            updated = replace(
+                record,
+                runtime_read_authority_roots=tuple(
+                    sorted(roots, key=str.casefold)
+                ),
+            )
+            self._put_record(state, updated)
+            self._durable_write_state(state)
+            confirmed = self._record(self._load_state(), scope_id)
+            if not any(
+                value.casefold() == runtime_root.casefold()
+                for value in confirmed.runtime_read_authority_roots
+            ):
+                raise HostMutationScopeCorrupt(
+                    "runtime-read authority reservation read-back failed"
+                )
+            return confirmed
+
+    def clear_runtime_read_authority(
+        self,
+        scope_id: str,
+        generation: int,
+        sandbox_identity: str,
+        runtime_root: str,
+    ) -> MutationScopeRecord:
+        """Clear one exact runtime-root marker only after OS SID-removal read-back."""
+        if not isinstance(runtime_root, str) or not runtime_root.strip():
+            raise ValueError("runtime_root must be a non-empty string")
+        runtime_root = runtime_root.strip()
+        with _exclusive_file_lock(self._lock_path):
+            state = self._load_state()
+            record = self._record(state, scope_id)
+            if record.generation != generation:
+                raise HostMutationScopeNotCurrent("scope generation is not current")
+            if record.state == "terminal":
+                raise HostMutationScopeNotCurrent(
+                    "terminal scope cannot clear runtime-read authority"
+                )
+            if record.sandbox_identity != sandbox_identity:
+                raise HostMutationScopeConflict(
+                    "runtime-read cleanup identity mismatch"
+                )
+            remaining = tuple(
+                value
+                for value in record.runtime_read_authority_roots
+                if value.casefold() != runtime_root.casefold()
+            )
+            updated = replace(record, runtime_read_authority_roots=remaining)
+            self._put_record(state, updated)
+            self._durable_write_state(state)
+            confirmed = self._record(self._load_state(), scope_id)
+            if any(
+                value.casefold() == runtime_root.casefold()
+                for value in confirmed.runtime_read_authority_roots
+            ):
+                raise HostMutationScopeCorrupt(
+                    "runtime-read authority cleanup read-back failed"
+                )
+            return confirmed
+
+    def reserve_session_object_read_binding(
+        self,
+        scope_id: str,
+        generation: int,
+        sandbox_identity: str,
+        binding: SessionObjectReadBinding,
+    ) -> MutationScopeRecord:
+        """Persist cleanup responsibility before the first shared-DACL grant."""
+        if not isinstance(binding, SessionObjectReadBinding):
+            raise ValueError("binding must be SessionObjectReadBinding")
+        with _exclusive_file_lock(self._lock_path):
+            state = self._load_state()
+            record = self._record(state, scope_id)
+            if record.generation != generation or record.state != "active":
+                raise HostMutationScopeNotCurrent(
+                    "session-object authority can only be reserved on the active scope generation"
+                )
+            if (
+                record.sandbox_identity != sandbox_identity
+                or not record.sandbox_write_authority_present
+            ):
+                raise HostMutationScopeConflict(
+                    "session-object authority does not match active sandbox identity"
+                )
+            if record.session_object_read_binding not in (None, binding):
+                raise HostMutationScopeConflict(
+                    "scope is already bound to different Session-0 objects"
+                )
+            updated = replace(record, session_object_read_binding=binding)
+            self._put_record(state, updated)
+            self._durable_write_state(state)
+            confirmed = self._record(self._load_state(), scope_id)
+            if confirmed.session_object_read_binding != binding:
+                raise HostMutationScopeCorrupt(
+                    "session-object authority reservation read-back failed"
+                )
+            return confirmed
+
+    def clear_session_object_read_binding(
+        self,
+        scope_id: str,
+        generation: int,
+        sandbox_identity: str,
+        binding: SessionObjectReadBinding,
+    ) -> MutationScopeRecord:
+        """Clear only after the caller proved dual exact-SID absence."""
+        if not isinstance(binding, SessionObjectReadBinding):
+            raise ValueError("binding must be SessionObjectReadBinding")
+        with _exclusive_file_lock(self._lock_path):
+            state = self._load_state()
+            record = self._record(state, scope_id)
+            if record.generation != generation:
+                raise HostMutationScopeNotCurrent("scope generation is not current")
+            if record.state == "terminal":
+                raise HostMutationScopeNotCurrent(
+                    "terminal scope cannot clear session-object authority"
+                )
+            if record.sandbox_identity != sandbox_identity:
+                raise HostMutationScopeConflict(
+                    "session-object cleanup identity mismatch"
+                )
+            if record.session_object_read_binding != binding:
+                raise HostMutationScopeConflict(
+                    "session-object cleanup binding mismatch"
+                )
+            updated = replace(record, session_object_read_binding=None)
+            self._put_record(state, updated)
+            self._durable_write_state(state)
+            confirmed = self._record(self._load_state(), scope_id)
+            if confirmed.session_object_read_binding is not None:
+                raise HostMutationScopeCorrupt(
+                    "session-object authority cleanup read-back failed"
+                )
+            return confirmed
+
     def clear_sandbox_write_authority(
         self,
         scope_id: str,
@@ -927,6 +1155,8 @@ class MutationScopeStore:
                 record.active_job_ids
                 or record.active_process_ids
                 or record.sandbox_write_authority_present
+                or record.runtime_read_authority_roots
+                or record.session_object_read_binding is not None
             )
             if has_runtime_authority:
                 if runtime_cleanup is None:
@@ -935,7 +1165,8 @@ class MutationScopeStore:
                             "bound Job/process authority remains; terminalization requires OS cleanup"
                         )
                     raise HostMutationResidualAuthorityDetected(
-                        "sandbox write authority remains; terminalization requires OS cleanup"
+                        "sandbox/runtime-read/session-object authority remains; "
+                        "terminalization requires OS cleanup"
                     )
                 cleanup_record = replace(record, state="revoked")
                 self._put_record(state, cleanup_record)
@@ -979,6 +1210,14 @@ class MutationScopeStore:
             raise HostMutationResidualAuthorityDetected(
                 "runtime cleanup still reports sandbox write authority"
             )
+        if closure.runtime_read_authority_roots:
+            raise HostMutationResidualAuthorityDetected(
+                "runtime cleanup still reports runtime-read authority"
+            )
+        if closure.session_object_read_binding is not None:
+            raise HostMutationResidualAuthorityDetected(
+                "runtime cleanup still reports Session-0 cleanup responsibility"
+            )
 
         with _exclusive_file_lock(self._lock_path):
             state = self._load_state()
@@ -998,6 +1237,8 @@ class MutationScopeStore:
                 active_job_ids=closure.active_job_ids,
                 active_process_ids=closure.active_process_ids,
                 sandbox_write_authority_present=closure.sandbox_write_authority_present,
+                runtime_read_authority_roots=closure.runtime_read_authority_roots,
+                session_object_read_binding=closure.session_object_read_binding,
                 terminalized_at=_iso(now),
             )
             self._put_record(state, terminal)
@@ -1010,6 +1251,8 @@ class MutationScopeStore:
                 or confirmed.active_job_ids
                 or confirmed.active_process_ids
                 or confirmed.sandbox_write_authority_present
+                or confirmed.runtime_read_authority_roots
+                or confirmed.session_object_read_binding is not None
             ):
                 raise HostMutationScopeTerminalizationFailed(
                     "authoritative read-back did not prove terminal residual-authority closure"

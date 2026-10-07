@@ -139,6 +139,8 @@ def placement_policy_digest(policy: MutationExecutionPolicy) -> str:
             "workspace_root": _path_text(policy.workspace_root) if policy.workspace_root else None,
             "protected_roots": sorted(_path_text(p) for p in policy.protected_roots),
             "runtime_read_roots": sorted(_path_text(p) for p in policy.runtime_read_roots),
+            "runtime_session_object_read_enabled": policy.runtime_session_object_read_enabled,
+            "runtime_acl_timeout_seconds": policy.runtime_acl_timeout_seconds,
         }
     )
 

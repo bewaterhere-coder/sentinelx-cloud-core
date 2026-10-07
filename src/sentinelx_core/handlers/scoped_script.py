@@ -38,6 +38,7 @@ from sentinelx_core.mutation_audit import (
 )
 from sentinelx_core.mutation_placement import RepositoryIdentity, SemanticIdentity
 from sentinelx_core.mutation_sandbox import build_mutation_sandbox
+from sentinelx_core.mutation_sandbox import HostMutationSandboxResidualAuthority
 from sentinelx_core.mutation_scope import (
     SCOPED_SCRIPT_OPERATION_CLASS,
     MutationScopeRecord,
@@ -645,7 +646,15 @@ async def _run_scoped(
         return response
     except Exception as exc:
         terminal = None
-        if start is not None and not terminalized and record is not None:
+        residual_authority_ambiguous = isinstance(
+            exc, HostMutationSandboxResidualAuthority
+        )
+        if (
+            start is not None
+            and not terminalized
+            and record is not None
+            and not residual_authority_ambiguous
+        ):
             try:
                 if sandbox is not None:
                     terminal = sandbox.terminalize(scope_id, generation)

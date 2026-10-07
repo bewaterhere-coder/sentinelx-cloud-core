@@ -1,0 +1,42 @@
+schema_version: "1.0"
+kind: devforge_slice_completion_receipt
+task_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
+slice_id: S02
+source_command: "#开发执行 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1"
+decision: Completed
+lineage:
+  requirement_revision: 1
+  plan_revision: 1
+  slice_set_ref: docs/execution/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-slices.yaml
+  product_candidate: d083921b3f0146455bd4b0732d8e0ce219728344
+verification:
+  exact_attempted_root_compensation: pass
+  exact_sid_absence_readback: pass
+  ambiguous_compensation_fail_closed: pass
+  revoked_on_cleanup_failure: pass
+  terminalization_retry: pass
+  runtime_root_sid_absence_after_retry: pass
+  windows_sandbox_regression: pass
+  scoped_script_regression: pass
+  incident_security_regression: pass
+concurrency:
+  pr015_current_head: 71ee5d83958f6622bdfdea9f088703d2007571d6
+  pr015_s02_product_overlap: false
+  pr016_current_head: f22ee1881526002547b59df2226fa57aa8f10af6
+  pr016_product_overlap: false
+  reconciliation_required_before_s03: true
+host_activation:
+  performed_for_candidate: false
+  delegated_to_slice: S03
+postconditions:
+  s01_state: completed
+  s02_state: completed
+  current_slice: S03
+  current_slice_state: pending
+  task_stage: implementation
+  task_completion_verified: false
+  acceptance_approved: false
+  s03_product_or_host_execution_executed: false
+completion_guard:
+  status: satisfied_for_slice_only
+  canonical_next_action: "#开发执行 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1"

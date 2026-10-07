@@ -1,0 +1,51 @@
+schema_version: "1.0"
+kind: devforge_artifact_state_transition_receipt
+task_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
+source_command: "#开发评审 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1"
+
+transition:
+  from_stage: plan_review
+  to_stage: plan_review_rejected
+  rule: blocking_plan_authority_reference_inconsistency_requires_remediation
+
+lineage:
+  requirement_revision: 1
+  requirement_blob_sha: "c1f6eddf91dcf13aab6d0e4abf457b6465df3267"
+  plan_revision: 4
+  plan_blob_sha: "7191bfdf51153bb07bac1e912ec83f4699fcbee5"
+  reviewed_head: "bf27ce33085cfaeee0023790cdd8d1e45504ec46"
+  review_ref: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-review-r4.md
+  review_blob_sha: "3bbe2469ce368cebeaf8bc74e5676a824b07336c"
+
+decision:
+  result: Rejected
+  requirement_change_required: false
+  blocking_findings:
+    - StalePlanR3AuthorityReferences
+  plan_approved: false
+  implementation_authorized: false
+
+validated_r4_content:
+  production_subset_manifest: pass
+  current_blob_cas_readback: pass
+  diagnostic_seam_absence: pass
+  derived_blob_identities: pass
+  scoped_script_preservation: pass
+  s01_s02_preservation: pass
+  r8_3_traceability: pass
+  stale_plan_r2_references: 0
+
+state_after:
+  stage: plan_review_rejected
+  next_expected_actor: planner
+  canonical_next_action: "#开发计划修复 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1"
+
+safety:
+  canonical_main_mutated: false
+  product_code_mutated: false
+  tests_mutated: false
+  host_policy_mutated: false
+  slice_set_mutated: false
+  pr017_s01_replayed: false
+  pr017_s02_replayed: false
+  pr018_task_state_mutated: false
