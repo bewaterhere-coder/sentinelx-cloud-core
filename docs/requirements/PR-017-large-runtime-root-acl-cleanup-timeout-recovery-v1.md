@@ -8,7 +8,7 @@ task_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
 title: SentinelX Large Runtime Root ACL Cleanup Timeout & Recovery V1
 requirement_revision: 1
 development:
-  stage: fixing
+  stage: acceptance
   gates:
     requirement_ready: true
     plan_approved: true
@@ -16,11 +16,15 @@ development:
     completion_verified: false
   plan_revision: 5
   implementation_authorized: true
-  next_expected_actor: implementer
-  blocking_findings:
-    - Acceptance R2 rejected CurrentNodeNpmVerificationReadinessContradictsCompletionReceipt: the exact candidate completed S03 with scoped_verification_node_npm_v1 verified=true, but Acceptance observed the same exact agent version twice with available=false / verified=false while the profile config remained intact and the SentinelX service remained running.
-    - This is classified as inconsistent_evidence. Current PR-011 Node/npm scoped verification must be restored or re-proven without weakening AppContainer, network denial, protected-root denial, terminalization, or transient-authority cleanup semantics.
-    - S03 completion evidence, Unity 6000.6.4f1 proof, runtime-root cleanup, Session-0 SID cleanup, and all green automatic regressions remain preserved unless the fixing change materially invalidates them.
+  next_expected_actor: verifier
+  acceptance_disposition: pending_reverification
+  execution_disposition: fixing_r1_readiness_restored_ready_for_acceptance
+  blocking_findings: []
+  repair_evidence:
+    - Fixing R1 preserved exact product candidate f9e07da9cc37f6e882c3258280869b415cafcb5c and did not replay S03 or Unity.
+    - SentinelX service generation reset preserved agent 0.24.1.dev473+gf9e07da9c and did not mutate Host config or permissions.
+    - Current host readback twice reports scoped_verification_node_npm_v1 available=true / verified=true with Node, npm, DNS deny, HTTP deny, protected-root deny, terminal cleanup and transient-toolchain-authority cleanup all passing.
+    - The prior inconsistent state is attributed to process-generation readiness cache persistence; the original transient HandlerError trigger remains unknown and Acceptance must independently reverify current behavior.
   current_slice: S03
   current_slice_state: completed
   authorization:
@@ -54,6 +58,10 @@ artifacts:
   latest_acceptance_blob_sha: 6cce15de869cc7ed77f42d37c8d10e13edf18e3e
   latest_acceptance_transition_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-acceptance-r2-transition-receipt.yaml
   latest_acceptance_transition_receipt_blob_sha: fdae4397b2594d3db3353fc6e4013beeb7632b0d
+  latest_fixing_execution_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-fixing-r1-readiness-restored-20261008.yaml
+  latest_fixing_execution_checkpoint_blob_sha: 3c0119777435813278f111839fcd9f4ff743d80e
+  latest_fixing_transition_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-fixing-r1-to-acceptance-transition-receipt.yaml
+  latest_fixing_transition_receipt_blob_sha: 2768d31497656eb7af16624a78ad6433127d2a75
 related_tasks:
   predecessor:
     - PR-012-execute-scoped-explicit-execution-profile-v1
