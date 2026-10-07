@@ -1,0 +1,101 @@
+schema_version: "1.0"
+kind: devforge_plan_remediation_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-015-direct-codex-development-host-invocation-bridge-v1
+source_command: "#开发计划修复 PR-015-direct-codex-development-host-invocation-bridge-v1"
+created_at: "2026-10-07"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  version: "2.82.0"
+  revision: 748004cc3ec3932e5c4106e0d62ff06b19c5f883
+
+transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 15
+  branch: task/direct-codex-development-host-invocation-bridge-v1
+  canonical_main: 018b78ca20984176d53fbe90039dc795a7f2742f
+  replacement_transport_created: false
+
+lineage:
+  requirement_revision: 2
+  prior_plan_revision: 5
+  revised_plan_revision: 6
+  prior_plan_blob_sha: c45a373e4f7a62ae11fceba89316dd8cf6353969
+  revised_plan_blob_sha: 2bcea2a44f88e51c8b9378ba6297b61897e638da
+  rejected_review_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r5.md
+  rejected_review_blob_sha: 3afc30bb85f25004c204cae275f85b4362f11e61
+  revised_slice_impact_ref: docs/execution/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-r6-slice-impact.yaml
+  revised_slice_impact_blob_sha: 5d4520edb5aceb9178e0551419fa60f9001b98cf
+
+findings_addressed:
+  - finding: CheckoutCanonicalizationAuthorityIncomplete
+    resolution: >-
+      Plan R6 separates authenticated remote object acquisition from local
+      worktree materialization. Before checkout it captures and durably reads
+      back the allowlisted safe normalization snapshot, seeds a provider
+      inspection index from expected_remote_sha, neutralizes system/global
+      attributes, requires .git/info/attributes absent/empty, scans all tracked
+      paths for effective custom filter assignments without executing filters,
+      and then performs checkout under provider clamps. Persistence must reuse
+      the same snapshot and expected-tree attribute authority; V1 rejects any
+      versioned .gitattributes mutation after Codex.
+
+requirement:
+  semantic_change: false
+  revision_changed: false
+
+shared_checkout_persistence_boundary:
+  remote_object_acquisition_materializes_worktree: false
+  snapshot_before_checkout: true
+  safe_scalar_snapshot:
+    - core.autocrlf
+    - core.eol
+    - core.safecrlf
+    - core.checkRoundtripEncoding_when_required
+  expected_tree_attribute_snapshot_before_checkout: true
+  all_tracked_paths_filter_checked_before_checkout: true
+  system_attributes_disabled: true
+  global_attributes_provider_empty: true
+  git_info_attributes_absent_or_empty: true
+  custom_filter_rejected_before_checkout: true
+  provider_empty_hooks_path: true
+  fsmonitor_disabled: true
+  submodule_recurse_disabled: true
+  checkout_and_persistence_same_snapshot: true
+  versioned_gitattributes_mutation_in_v1: forbidden
+  snapshot_drift: fail_closed
+
+retained_persistence_boundary:
+  codex_owned_index_trusted: false
+  provider_temporary_candidate_index_required: true
+  recovery_journal_required: true
+  journal_outside_candidate_set: true
+  commit_sha_inputs_frozen_before_commit_creation: true
+  same_attempt_bit_identical_reconstruction_required: true
+  publish_intent_before_first_push: true
+  uncertain_push_readback_only: true
+  automatic_repush_after_uncertainty: false
+
+slice_authority:
+  formal_plan_r6_slice_set_compiled: false
+  compilation_allowed_only_after_plan_r6_approval: true
+  proposed_delta_slice: S04
+  historical_s01_s03_replay_required: false
+
+safety:
+  product_code_mutated: false
+  canonical_main_mutated: false
+  live_agent_mutated: false
+  project_binding_mutated: false
+  provider_binding: direct/codex
+  new_bootstrap_override_created: false
+  permission_or_credential_expansion_used: false
+  self_approval_performed: false
+
+postconditions:
+  revised_plan_durable: true
+  revised_plan_readback_verified: true
+  next_stage: plan_review
+  next_expected_actor: reviewer
+  canonical_next_action: "#开发评审 PR-015-direct-codex-development-host-invocation-bridge-v1"
