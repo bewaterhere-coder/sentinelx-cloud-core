@@ -190,7 +190,18 @@ slices:
     external_availability_rule: live Agent activation requires separately admitted authority; if unavailable, checkpoint Blocked without fallback
     checkpoint:
       required: true
-    run_refs: []
+    run_refs:
+      - host_candidate:f7249aef0d25085eb98e741596b6f567ebd83966
+      - retry_scope:mss_JB_VJlJg4Np6LdrxgKd_fCw9:revoked_to_terminal
+      - python_scope:mss_LYcEztB2Tgf2Uv8MjSFjVc2k:returncode_0:terminal
+      - powershell_scope:mss_Xm5WKsMrHRlmY37fCse78xeE:HostMutationSandboxAclViolation:terminal
+      - unity_scope:mss_NgKCbAFve96a2cp5xRbx3AEM:returncode_0_wrapper:terminal
+      - unity_scope:mss_By25SNCI-5slwpGCtb6TxkQH:returncode_0_wrapper:terminal
+      - unity_version_scope:mss_lrSnR5loSxD-rqRSt_Ca4NP0:returncode_0_wrapper:terminal
+      - unity_spawn_scope:mss_XVQaRAUDz6J0R9qd-zq8wvSs:returncode_0_wrapper:terminal
+      - unity_health_scope:mss_ZeDUEM6nvAOSIwGN1Z44iD_b:returncode_42:terminal
+      - unity_exit_classify_scope:mss_RzzUMrqRePo3BZHfc1m83rAw:returncode_82:terminal
+      - blocker:unity_windows_status_0xC0000142_dll_initialization_failed
     completion_receipt_ref: null
 execution_state:
   current_slice: S03

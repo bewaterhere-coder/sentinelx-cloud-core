@@ -18,9 +18,13 @@ development:
   implementation_authorized: true
   next_expected_actor: implementer
   blocking_findings:
-    - S02 cleanup-proof ordering repair is complete on exact candidate f7249aef0d25085eb98e741596b6f567ebd83966.
-    - S03 cannot resume until that exact candidate is activated on the Windows Host; the Host currently runs prior PR-017 candidate a214921cd34fcab5874696f45281306622a73421.
-    - Preserve real revoked scope mss_JB_VJlJg4Np6LdrxgKd_fCw9 for the first post-activation retry; do not replace it with a fresh scope before revoked -> cleanup retry -> terminal evidence.
+    - S02 cleanup/recovery is fully evidenced on exact candidate f7249aef0d25085eb98e741596b6f567ebd83966, including live retry of preserved scope mss_JB_VJlJg4Np6LdrxgKd_fCw9 from revoked to terminal.
+    - S03 Python proof passed with returncode 0 and terminal closure.
+    - S03 PowerShell proof is deterministically fail-closed on the configured system runtime root: ACL grant is denied by Windows and the scope still terminalizes with no residual authority.
+    - Unity 6000.6.4f1 large-runtime scopes repeatedly reached terminal under runtime_acl_timeout_seconds=300, proving the original 20-second ACL cleanup blocker is repaired.
+    - Unity process compatibility remains blocked: a classified scoped probe on the exact candidate maps the Unity child early exit to Windows status 0xC0000142 (DLL initialization failed).
+    - Requirement R8.3 therefore remains unsatisfied. General Windows application compatibility under AppContainer is explicitly a PR-017 Non-Goal, so fixing Unity DLL initialization inside PR-017 would be an unauthorized scope expansion.
+    - Host configuration has been restored to the original four runtime_read_roots; the temporary exact-file audit read permission used for bounded evidence readback has been removed.
   current_slice: S03
   current_slice_state: blocked
   authorization:
@@ -38,9 +42,10 @@ artifacts:
   latest_plan_review: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-review-r1.md
   latest_plan_review_transition_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-review-r1-transition-receipt.yaml
   execution_slice_set: docs/execution/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-slices.yaml
-  latest_slice_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-cleanup-proof-repair-completion-20261007.yaml
+  latest_slice_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-blocked-unity-dll-initialization-20261007.yaml
   latest_slice_completion_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-repair-completion-receipt-r4.yaml
   latest_slice_invalidation: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-live-invalidation-r3.md
+  latest_s03_blocker_review: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-unity-appcontainer-compatibility-blocker-r1.md
 related_tasks:
   predecessor:
     - PR-012-execute-scoped-explicit-execution-profile-v1
