@@ -922,3 +922,78 @@ def test_verification_path_keeps_existing_trusted_root_handshake() -> None:
     assert "verification is None" in source
     assert "self.policy.runtime_session_object_read_enabled" in source
     assert "enable_verification_descendants" in source
+
+
+def test_session_object_first_object_readback_failure_compensates_exact_sid(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    app_sid = "S-1-15-2-7001"
+    handles = (101, 202)
+    entries: dict[int, list[tuple[str, int, int]]] = {101: [], 202: []}
+    calls: list[tuple[int, int, int]] = []
+
+    def dacl(handle: int, _label: str):
+        return list(entries[handle])
+
+    def merge(handle: int, _label: str, sid: str, *, mode: int, mask: int):
+        calls.append((handle, mode, mask))
+        if mode == windows_sandbox.GRANT_ACCESS:
+            assert sid == app_sid
+            # Simulate a grant that read-backs with the wrong mask on the
+            # first object. The helper must compensate before surfacing error.
+            entries[handle] = [(sid, mask ^ 0x1, 0)]
+        else:
+            entries[handle] = []
+
+    monkeypatch.setattr(windows_sandbox, "_window_object_dacl_entries", dacl)
+    monkeypatch.setattr(windows_sandbox, "_merge_window_object_access", merge)
+
+    with pytest.raises(
+        HostMutationSandboxAclViolation,
+        match="window station did not retain the exact Session-0 read ACE",
+    ):
+        windows_sandbox._grant_session_object_read(handles, app_sid)
+
+    assert entries == {101: [], 202: []}
+    assert calls == [
+        (101, windows_sandbox.GRANT_ACCESS, WINDOW_STATION_VERIFICATION_READ),
+        (101, windows_sandbox.REVOKE_ACCESS, 0),
+    ]
+
+
+def test_session_object_second_object_readback_failure_revokes_both_in_reverse_order(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    app_sid = "S-1-15-2-7002"
+    handles = (303, 404)
+    entries: dict[int, list[tuple[str, int, int]]] = {303: [], 404: []}
+    calls: list[tuple[int, int, int]] = []
+
+    def dacl(handle: int, _label: str):
+        return list(entries[handle])
+
+    def merge(handle: int, _label: str, sid: str, *, mode: int, mask: int):
+        calls.append((handle, mode, mask))
+        if mode == windows_sandbox.GRANT_ACCESS:
+            assert sid == app_sid
+            observed_mask = mask if handle == 303 else (mask ^ 0x1)
+            entries[handle] = [(sid, observed_mask, 0)]
+        else:
+            entries[handle] = []
+
+    monkeypatch.setattr(windows_sandbox, "_window_object_dacl_entries", dacl)
+    monkeypatch.setattr(windows_sandbox, "_merge_window_object_access", merge)
+
+    with pytest.raises(
+        HostMutationSandboxAclViolation,
+        match="desktop did not retain the exact Session-0 read ACE",
+    ):
+        windows_sandbox._grant_session_object_read(handles, app_sid)
+
+    assert entries == {303: [], 404: []}
+    assert calls == [
+        (303, windows_sandbox.GRANT_ACCESS, WINDOW_STATION_VERIFICATION_READ),
+        (404, windows_sandbox.GRANT_ACCESS, DESKTOP_VERIFICATION_READ),
+        (404, windows_sandbox.REVOKE_ACCESS, 0),
+        (303, windows_sandbox.REVOKE_ACCESS, 0),
+    ]
