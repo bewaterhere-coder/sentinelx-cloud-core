@@ -5,27 +5,26 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 2
 development:
-  stage: plan_review_rejected
+  stage: plan_review
   gates:
     requirement_ready: true
     plan_approved: false
     acceptance_approved: false
     completion_verified: false
-  plan_revision: 3
+  plan_revision: 4
   latest_plan_review: rejected_round_3
   prior_plan_review: approved_round_2
-  latest_plan_remediation: null
+  latest_plan_remediation: plan_r4_remediation_r1
   prior_plan_remediation: plan_r2_remediation_r1
   implementation_authorized: false
-  blocking_findings:
-    - BootstrapExecutionAuthorityUndefined
+  blocking_findings: []
   current_slice: null
   current_slice_state: null
   completed_slices_preserved: [S01]
-  prior_plan_revision: 2
+  prior_plan_revision: 3
   prior_slice_set_status: invalidated_by_requirement_revision_2
   requirement_change_impact: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-requirement-r2-invalidation.md
-  next_expected_actor: planner
+  next_expected_actor: reviewer
   authorization:
     mode: legacy_command_scoped
 artifacts:
@@ -33,6 +32,8 @@ artifacts:
   plan: docs/plans/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan.md
   latest_plan_review: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r3.md
   latest_plan_review_transition_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r3-transition-receipt.yaml
+  latest_plan_remediation: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-remediation-r4-20261008.yaml
+  latest_plan_remediation_transition_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-remediation-r4-transition-receipt.yaml
   prior_plan_review: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r2.md
   prior_plan_remediation: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-remediation-r1.yaml
   prior_execution_slice_set: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-slices.yaml
