@@ -5,20 +5,19 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 4
 development:
-  stage: plan_review_rejected
+  stage: plan_review
   gates:
     requirement_ready: true
     plan_approved: false
     acceptance_approved: false
     completion_verified: false
-  plan_revision: 8
+  plan_revision: 9
   latest_plan_review: rejected_round_8
   prior_plan_review: approved_round_6
-  latest_plan_remediation: requirement_r4_architecture_reconciliation
+  latest_plan_remediation: plan_r9_readonly_s03a_remediation
   prior_plan_remediation: plan_r2_remediation_r1
   implementation_authorized: false
-  blocking_findings:
-    - IncompleteExecutableSliceAdmission
+  blocking_findings: []
   current_slice: null
   current_slice_state: null
   completed_slices: [S01, S02]
@@ -48,7 +47,7 @@ development:
   bootstrap_override_state: expired_by_requirement_revision_3
   prior_bootstrap_override: docs/overrides/PR-014-devforge-execution-workspace-materialization-bridge-v1-bootstrap-execution-override.yaml
   latest_bootstrap_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-bootstrap-execution-override-r1-receipt.yaml
-  execution_disposition: plan_review_r8_rejected
+  execution_disposition: plan_r9_pending_review_no_product_authority
   execution_blocker: null
   execution_failure_state: null
   execution_failure_reason: null
@@ -59,8 +58,8 @@ development:
   prior_bootstrap_receipt: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-harness-bootstrap-blocked-20261008.yaml
   superseded_slice_set_status: invalidated_by_requirement_revision_4
   planned_pending_delta_slice: null
-  next_expected_actor: planner
-  canonical_next_action: "#开发计划修复 PR-014-devforge-execution-workspace-materialization-bridge-v1"
+  next_expected_actor: reviewer
+  canonical_next_action: "#开发评审 PR-014-devforge-execution-workspace-materialization-bridge-v1"
   authorization:
     mode: legacy_command_scoped
 artifacts:
@@ -75,7 +74,7 @@ artifacts:
   superseded_plan_review_transition_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r5-transition-receipt.yaml
   latest_plan_remediation: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-remediation-r4-20261008.yaml
   latest_plan_remediation_transition_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-remediation-r4-transition-receipt.yaml
-  latest_replan: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-replan-r8-20261008.yaml
+  latest_replan: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-replan-r7-20261008.yaml
   latest_replan_transition_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-replan-r7-transition-receipt.yaml
   execution_slice_set: null
   superseded_execution_slice_set: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-r6-slices.yaml
