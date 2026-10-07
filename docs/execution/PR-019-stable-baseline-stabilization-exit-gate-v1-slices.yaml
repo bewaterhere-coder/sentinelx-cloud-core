@@ -1,0 +1,193 @@
+schema_version: "1.1"
+kind: devforge_execution_slice_set
+identity:
+  task_id: PR-019-stable-baseline-stabilization-exit-gate-v1
+  slice_set_id: PR-019-stable-baseline-stabilization-exit-gate-v1-plan-r2
+plan:
+  ref: docs/plans/PR-019-stable-baseline-stabilization-exit-gate-v1-plan.md
+  revision: 2
+  blob_sha: 4aff64a35c00d3e854fc63046faf3045caddaf0b
+  requirement_revision: 1
+review:
+  ref: docs/reviews/PR-019-stable-baseline-stabilization-exit-gate-v1-plan-review-r2.md
+  blob_sha: 2bd02010f9cfb81bdc0d0319c35034700ee2abc0
+  decision: Approved
+repository_baseline:
+  main_sha: 1028030b33f0ea792a884491a431fffe566f6aa5
+  reviewed_task_head: 3f13e0c0b1383c24217fa919447342b2086b9e88
+runtime_provenance:
+  devforge_version: "2.95.0"
+  devforge_main_sha: 162337cc2fffa710d49a9cd38ab4cc8643f09ffb
+
+implementation_entry_guard:
+  required_before_each_slice: true
+  rules:
+    - re-read current PR-019 head, exact Plan R2, this Slice Set, canonical main and current overlapping PR state before mutation
+    - preserve PR #19 Task/branch/PR transport identity
+    - fail closed on Requirement, Plan, transport, Host-runtime or security-boundary drift
+    - do not import unmerged PR-017 or PR-018 product changes merely to make Stable Baseline Ready
+    - preserve AppContainer, no-breakaway Job, canonical repository firewall, audit lineage and provider-owned Direct Codex persistence semantics
+    - generic host_runtime.git_execution_context_v1 must not become an accidental Direct Codex baseline prerequisite
+    - local Git-context proof never substitutes for remote GitHub E2E proof
+    - missing/stale/not-attempted evidence remains verification_required rather than an automatic defect claim
+    - no caller-controlled Git argv, credential projection, Host-policy widening, self-update bypass, AppContainer escape or Job breakaway
+    - one explicit #开发执行 invocation completes at most one Slice
+
+concurrent_task_reconciliation:
+  pr016:
+    reviewed_head: c26de0e9fb0d908e9dc6bd16403b07965547f099
+    current_product_overlap: false
+    rule: if Node/npm readiness product semantics drift before S01/S02, re-read and reconcile without importing unmerged task state
+  pr017:
+    reviewed_head: 3858c7d0e46295d5e0dc184bb21e76da7c963346
+    overlaps:
+      - src/sentinelx_core/policy.py
+      - src/sentinelx_core/mutation_scope.py
+      - src/sentinelx_core/windows_mutation_sandbox.py
+      - tests/test_devforge_runtime_local_api.py
+    direct_s01_s02_overlap: false
+    rule: PR-017 remains independent; if canonical main later absorbs it, re-evaluate B1/B2/B4 evidence semantics before the next Slice
+  pr018:
+    reviewed_head: 5c1c97542aa9f23f52bdb892918d72767779f1a8
+    direct_product_overlap: false
+    role: unity_workload_evidence_owner
+    rule: consume evidence only; never mutate PR-018 Requirement/Plan/Slice state or replay its repair work
+
+slices:
+  - slice_id: S01
+    objective: Add the minimum cause-aware Direct Codex readiness evidence and actual user-scoped Git-context proof, then implement the pure windows_dev_v1 Stable Baseline composer.
+    depends_on: []
+    state: pending
+    scope:
+      refs:
+        - src/sentinelx_core/handlers/direct_codex.py
+        - src/sentinelx_core/stable_baseline.py
+        - tests/test_direct_codex_provider.py
+        - tests/test_direct_codex_execution.py
+        - tests/test_stable_baseline.py
+      authorized_changes:
+        - sanitized Direct Codex physical-probe disposition sufficient to distinguish not_attempted failed and verified
+        - fixed provider-owned non-network non-repository-mutating Git context probe using the same user-scoped Git primitive as Direct Codex transport
+        - sanitized transport_context readiness projection with no credential material
+        - pure B1-B6 Stable Baseline predicate validation and cause-aware classification
+        - focused unit tests for Ready Unverified and NotReady semantics
+      forbidden:
+        - generic Git argv or shell surface
+        - caller-controlled environment cwd model or credential fields
+        - remote GitHub publication as part of the local Git-context probe
+        - second durable readiness or authorization state machine
+        - mutation of Host policy installed Agent PR-017 or PR-018
+        - making generic host_runtime.git_execution_context_v1 mandatory for Direct Codex
+    verification:
+      required:
+        - Direct Codex not-attempted containment proof classifies Unverified
+        - attempted real-sandbox or Git-context failure classifies NotReady
+        - explicitly disabled mandatory Direct Codex Host policy classifies NotReady
+        - generic authenticated-Git feature disabled does not independently block a verified Direct Codex baseline
+        - firewall pending solely on mandatory proof absence classifies Unverified
+        - concrete uncovered firewall class classifies NotReady
+        - missing or malformed mandatory aggregate evidence without concrete failure classifies Unverified
+        - all B1-B6 verified classifies Ready
+        - optional unavailable feature does not demote Ready
+        - projection exposes no credential path raw ACL or provider-private command output
+        - composer performs no external I/O or Host mutation
+        - focused Direct Codex and Stable Baseline tests pass
+    checkpoint:
+      required: true
+    run_refs: []
+    completion_receipt_ref: null
+
+  - slice_id: S02
+    objective: Integrate host_runtime.stable_baseline_v1 into capabilities without changing existing capability authority, then run affected security and regression coverage.
+    depends_on: [S01]
+    state: pending
+    scope:
+      refs:
+        - src/sentinelx_core/handlers/basic.py
+        - src/sentinelx_core/stable_baseline.py
+        - tests/test_stable_baseline.py
+        - tests/test_capabilities_policy_evidence.py
+        - tests/test_verification_readiness.py
+        - tests/test_devforge_runtime_local_api.py
+        - tests/test_direct_codex_provider.py
+      authorized_changes:
+        - build existing sanitized execution-feature projections once
+        - append host_runtime.stable_baseline_v1 from B1-B6 evidence
+        - regression tests for existing feature identity meaning disabled-op behavior and non-recursive composition
+        - focused reconciliation changes required solely by current main
+      forbidden:
+        - new Host policy keys
+        - generic authenticated-Git policy becoming Direct Codex admission
+        - changing low-level mutation verification firewall or Direct Codex authorization semantics
+        - new readiness cache durable Ready state or automatic follow-up Task creation
+        - importing unmerged PR-017 or PR-018 product code
+    verification:
+      required:
+        - existing execution feature IDs and semantics remain unchanged
+        - stable baseline projection is sanitized and deterministic for identical evidence
+        - direct-codex mutation firewall verification ownership remains provider-owned
+        - disabled-op behavior remains unchanged
+        - no recursive stable-baseline self-consumption
+        - affected capabilities mutation verification firewall and devforge_runtime regression tests pass
+        - no canonical-main checkout mutation occurs
+    checkpoint:
+      required: true
+    run_refs: []
+    completion_receipt_ref: null
+
+  - slice_id: S03
+    objective: Freeze the exact PR-019 product candidate and obtain exact-candidate Windows activation, live Stable Baseline, real Direct Codex remote E2E, Unity workload and terminal-closure evidence for stabilization exit classification.
+    depends_on: [S02]
+    state: pending
+    scope:
+      refs:
+        - current PR-019 product candidate commit and remote branch readback
+        - existing Windows SentinelX exact-ref venv installation/restart workflow established by PR-015
+        - live capabilities(detail=full) evidence
+        - PR-019 Direct Codex Run Attempt Slice execution and persistence receipts
+        - current PR-018 Unity 6000.6.4f1 workload evidence
+        - docs/checkpoints/PR-019-stable-baseline-stabilization-exit-gate-v1-s03-*.yaml
+        - docs/reviews/PR-019-stable-baseline-stabilization-exit-gate-v1-s03-*.yaml
+      authorized_changes:
+        - evidence/checkpoint/receipt persistence for exact product candidate activation live baseline E2E Unity and closure
+        - existing exact-ref Windows venv install/restart action only when separately admitted by the existing Host/operator workflow
+        - known-good exact Agent rollback through the same existing workflow if candidate activation fails
+        - focused evidence-only reconciliation with current PR-018 workload state
+      forbidden:
+        - Agent self-update capability
+        - Host policy widening
+        - PR-017 or PR-018 implementation/fix execution
+        - connector-side GitHub mutation being treated as Direct Codex E2E proof
+        - arbitrary Unity compatibility repair
+        - generic shell fallback operator_unrestricted AppContainer escape or Job breakaway
+        - Stabilization Exit claim while blockers or mandatory verification_required entries remain
+    verification:
+      required:
+        - exact PR-019 product candidate SHA is frozen and no post-candidate product-code drift is present
+        - exact candidate is installed/activated or S03 durably pauses at the external activation boundary
+        - live Agent version/build deterministically binds to the exact candidate before capabilities evidence is consumed
+        - host_runtime.stable_baseline_v1 live projection is read from that exact candidate
+        - at least one current PR-019 Slice has traversed configured direct/codex with exact Task PR branch admitted-head Run Attempt Slice identity
+        - Direct Codex E2E proves canonical remote-head read independent checkout/fetch deterministic persistence ordinary fast-forward push and independent remote readback
+        - terminal process Job ACL and provider authority closure are proven
+        - current Unity 6000.6.4f1 workload evidence is classified cause-aware as verified Unverified or NotReady
+        - canonical repository safety and main-plus-clean readback are proven where the live canonical checkout is in scope
+        - Ready exit requires zero baseline blockers and zero mandatory verification_required entries
+        - exit evidence binds exact candidate Agent build baseline projection digest E2E lineage Unity evidence and verdict
+    external_availability_rule: exact-candidate Host activation and Unity/live evidence may pause S03 without replaying completed S01/S02; no fallback may manufacture verification
+    checkpoint:
+      required: true
+    run_refs: []
+    completion_receipt_ref: null
+
+execution_state:
+  current_slice: S01
+  current_slice_state: pending
+  completed_slices: []
+  pending_slices: [S01, S02, S03]
+  all_slices_completed: false
+
+acceptance_boundary:
+  all_current_plan_slices_must_be_completed: true
+  acceptance_command: "#开发验收 PR-019-stable-baseline-stabilization-exit-gate-v1"
+  stabilization_exit_rule: exact candidate plus live Ready baseline plus Direct Codex remote E2E plus Unity verified plus terminal closure plus durable receipt
