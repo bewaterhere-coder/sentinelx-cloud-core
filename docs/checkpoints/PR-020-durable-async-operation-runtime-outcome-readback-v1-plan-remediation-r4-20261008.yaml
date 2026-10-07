@@ -1,0 +1,57 @@
+schema_version: "1.0"
+kind: devforge_plan_remediation_checkpoint
+task_id: PR-020-durable-async-operation-runtime-outcome-readback-v1
+source_command: "#开发计划修复 PR-020-durable-async-operation-runtime-outcome-readback-v1"
+
+runtime:
+  devforge_version: "2.95.0"
+  devforge_revision: c44591899fb7c3312ca7a30cc816ca878e12b462
+  sentinelx_canonical_main: 1028030b33f0ea792a884491a431fffe566f6aa5
+
+input:
+  requirement_revision: 1
+  rejected_plan_revision: 3
+  rejected_plan_blob_sha: 2f0de7f19ac29bf77c8c85f452b53ad47ccebc51
+  rejected_review_ref: "https://github.com/bewaterhere-coder/sentinelx-cloud-core/pull/20#issuecomment-6042688379"
+
+output:
+  revised_plan_revision: 4
+  revised_plan_ref: docs/plans/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan.md
+  revised_plan_blob_sha: 304cbf2ab58b4fa3835c35b343bd1214565c2920
+  requirement_semantics_changed: false
+  transport_changed: false
+  project_binding_changed: false
+  implementation_started: false
+
+addressed_findings:
+  - id: ExecutionEntryStalePlanRevisionBinding
+    resolution: "Plan R4 removes all three execution-authoritative Plan R2 references and binds Slice compilation/bootstrap admission to the exact current Approved Plan R4 revision/digest; historical R2/R3 lineage remains historical only."
+
+frozen_plan_r4:
+  exact_current_plan_binding: Plan_R4_revision_and_digest
+  exact_current_slice_set_binding: required
+  stale_prior_plan_execution_authority: forbidden
+  historical_prior_plan_references_preserved: true
+  requirement_semantics_changed: false
+  architecture_changed: false
+  retention_design_changed: false
+  bootstrap_target_changed: false
+  transport_changed: false
+
+safety:
+  canonical_main_mutated: false
+  product_code_mutated: false
+  host_policy_mutated: false
+  installed_agent_mutated: false
+  production_hub_mutated: false
+  project_binding_mutated: false
+  permission_expansion_used: false
+  credential_mutation_used: false
+  self_approval_performed: false
+
+next_state:
+  stage: plan_review
+  plan_revision: 4
+  plan_approved: false
+  implementation_authorized: false
+  next_expected_actor: reviewer
