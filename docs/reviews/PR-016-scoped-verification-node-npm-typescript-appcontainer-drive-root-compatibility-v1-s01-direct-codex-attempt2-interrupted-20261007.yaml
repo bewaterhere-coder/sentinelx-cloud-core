@@ -1,0 +1,47 @@
+schema_version: "1.0"
+kind: devforge_execution_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-016-scoped-verification-node-npm-typescript-appcontainer-drive-root-compatibility-v1
+slice_id: S01
+source_command: "#开发执行 PR-016-scoped-verification-node-npm-typescript-appcontainer-drive-root-compatibility-v1"
+observed_at: "2026-10-07T20:05:00+08:00"
+runtime:
+  devforge_version: "2.90.0"
+  devforge_revision: cff3483ef06870f8b507c01d152d46904f9b8ffe
+transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 16
+  branch: task/scoped-verification-node-npm-typescript-appcontainer-drive-root-compatibility-v1
+  expected_remote_sha: 0f4edc69bd66ba593d0af14c7b3aec25cebc176f
+execution:
+  provider: direct
+  adapter: codex
+  endpoint: devforge_direct_codex
+  feature: development_host.direct_codex_v1
+  feature_available: true
+  feature_verified: true
+  run_id: PR-016-S01-window-3
+  attempt_id: "2"
+  invocation_disposition: interrupted
+  transport_call_result: local_api_timeout
+  timeout_seconds: 60
+  provider_receipt_observed: false
+  automatic_retry_performed: false
+readback:
+  remote_head: 0f4edc69bd66ba593d0af14c7b3aec25cebc176f
+  remote_head_unchanged: true
+  product_commit_observed: false
+  publication_observed: false
+  isolated_workspace_outcome: unresolved
+safety:
+  provider_fallback_used: false
+  host_runtime_substitution_used: false
+  generic_shell_fallback_used: false
+  verified_external_side_effect_replayed: false
+result:
+  state: INTERRUPTED
+  current_slice: S01
+  current_slice_state: pending
+  slice_completion_claimed: false
+  task_completion_claimed: false
+  recovery_requirement: reconcile attempt-2 outcome before any retry
