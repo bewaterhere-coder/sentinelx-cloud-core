@@ -1,0 +1,80 @@
+schema_version: "1.0"
+kind: devforge_user_directed_replan_checkpoint
+task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
+source_command: "#开发 PR-014-devforge-execution-workspace-materialization-bridge-v1 修订当前方案"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  canonical_branch: main
+  revision: e0ea49441c410a7008fbcd61f1782d90f014a773
+  release: v2.103.0
+
+trigger:
+  type: acceptance_material_architecture_decision_consumed
+  acceptance_revision: 2
+  acceptance_review_ref: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-acceptance-r2.md
+  acceptance_review_blob_sha: 1338662633f087218764d67fce0c2332f7f516e5
+  decision_required_code: DevforgePlacementProtectedRootArchitectureConflict
+  secondary_finding: MutationScopeDurableStateSchemaForwardCompatibilityMissing
+
+human_decision:
+  accepted_recommended_architecture: true
+  canonical_source_binding: Host canonical repository inventory under protected D:\coco\repos
+  execution_placement_binding: locations.devforge_execution_workspace_root
+  preferred_execution_root: D:\SentinelX\devforge-workspaces
+  protected_root_narrowing: forbidden
+  protected_root_removal: forbidden
+  carve_out_or_allowlist_exception: forbidden
+  caller_selected_path: forbidden
+  mutation_scope_additive_schema_forward_compatibility_required: true
+
+output:
+  requirement_revision: 3
+  requirement_ref: docs/requirements/PR-014-devforge-execution-workspace-materialization-bridge-v1.md
+  requirement_blob_sha: 3df1b5b9809fdd4ab0ac121aad7f0c004ad1a627
+  requirement_change_impact_ref: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-requirement-r3-change-impact.md
+  requirement_change_impact_blob_sha: f9ecbf4864e8951e457a9e5354f43bd5c5f0b022
+  plan_revision: 7
+  plan_ref: docs/plans/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan.md
+  plan_blob_sha: cd5b3f379b03e778d7fe5368325855866f4fb9c2
+  canonical_transport_changed: false
+  project_binding_changed: false
+  r7_slice_set_compiled: false
+
+preserved_evidence:
+  s01_completion: true
+  s02_product_candidate: 45dc99d15a23c499b4c1500fab60ed5e76475aeb
+  s02_completion_checkpoint: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-completion-20261008.yaml
+  s02_completion_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-completion-receipt.yaml
+  s02_r6_reconciliation_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-r6-reconciliation-receipt.yaml
+  acceptance_r2_live_activation_evidence: true
+  product_mutation_replay: forbidden
+
+planned_execution_shape_after_review:
+  S01: completed_reused
+  S02: completed_reused_historical
+  S03: pending_dual_binding_and_scope_schema_delta
+  additional_slices_planned: false
+
+safety:
+  product_code_mutated: false
+  tests_mutated: false
+  workflow_created_or_modified: false
+  ci_invoked: false
+  host_policy_mutated: false
+  protected_root_narrowed: false
+  carve_out_added: false
+  host_mutation_performed: false
+  canonical_main_mutated: false
+  project_binding_mutated: false
+  pr013_s03_replayed: false
+
+next_state:
+  stage: plan_review
+  requirement_revision: 3
+  plan_revision: 7
+  plan_approved: false
+  implementation_authorized: false
+  current_slice: null
+  current_slice_set: null
+  next_expected_actor: reviewer
