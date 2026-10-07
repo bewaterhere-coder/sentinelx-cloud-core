@@ -1,0 +1,92 @@
+schema_version: "1.0"
+kind: devforge_current_plan_slice_completion_reconciliation_receipt
+task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
+slice_id: S02
+reconciliation_revision: 1
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  canonical_branch: main
+  revision: e0ea49441c410a7008fbcd61f1782d90f014a773
+
+current_plan:
+  revision: 6
+  ref: docs/plans/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan.md
+  blob_sha: 4fc74fba9d787120798d5ed6a4f04b7da9cb6a5f
+  review_ref: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r6.md
+  review_blob_sha: c9798c848dc2769f0ccd9ae7c6fc5e8aeec9a026
+  decision: Approved
+
+historical_completion:
+  plan_revision: 5
+  product_candidate: 45dc99d15a23c499b4c1500fab60ed5e76475aeb
+  checkpoint_ref: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-completion-20261008.yaml
+  checkpoint_blob_sha: cc6352134f7710ee677d4e892e5fb101c8c3401d
+  receipt_ref: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-completion-receipt.yaml
+  receipt_blob_sha: dd40e27c93376b73a95ed4c5ab1d13f91f5df4af
+
+compatibility:
+  requirement_semantics_changed: false
+  implementation_design_changed: false
+  product_scope_changed: false
+  security_boundary_changed: false
+  canonical_transport_changed: false
+  only_plan_change: hosted_ci_completion_policy
+  product_reimplementation_required: false
+  result: compatible_for_current_plan_reuse
+
+verification_evidence:
+  deterministic_suite:
+    passed: 147
+    skipped: 1
+    failed: 0
+  changed_product_test_blobs:
+    count: 9
+    readback: byte_identical
+  safety:
+    canonical_main_mutated_by_s02: false
+    replacement_branch_or_pr_created: false
+    provider_fallback_used: false
+    permission_credential_write_scope_expansion: false
+    s01_replayed: false
+    pr013_s03_replayed: false
+    unmerged_pr013_imported: false
+
+hosted_ci:
+  applicability_under_r6: NotEvaluated
+  gating: false
+  old_r5_reason_subclaim_authoritative: false
+  superseded_subclaim: "no PR object exists for canonical_pr identity"
+  supersession_reason: canonical PR #14 exists; R6 does not rely on hosted CI metadata
+  workflow_creation_or_modification_for_task: forbidden
+  ci_invocation_required: false
+
+canonical_main_drift:
+  s02_completion_main: 1028030b33f0ea792a884491a431fffe566f6aa5
+  reviewed_current_main: cd42e371f18056327c1d8b744f8956a76bc11541
+  relevant_seam_changes_found: false
+  relevant_seams:
+    - devforge_workspace*
+    - windows_mutation_sandbox
+    - mutation_scope
+    - user_git
+    - handlers/devforge_runtime
+    - handlers/__init__
+    - operation_registry
+  acceptance_revalidation_still_required: true
+
+current_plan_slice_projection:
+  state: completed
+  completion_mode: reconciled_historical_execution_evidence
+  completion_candidate: 45dc99d15a23c499b4c1500fab60ed5e76475aeb
+  product_mutation_replay: forbidden
+  new_run_required: false
+  new_bootstrap_required: false
+
+acceptance_boundary:
+  physical_exact_candidate_gate_required: true
+  deterministic_tests_or_blob_readback_substitute_for_physical_gate: false
+  ac8_ac10_ac14_runtime_verification_required: true
+
+readback:
+  verified: true
