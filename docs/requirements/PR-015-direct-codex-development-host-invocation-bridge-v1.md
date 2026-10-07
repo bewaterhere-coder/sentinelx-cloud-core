@@ -17,8 +17,9 @@ development:
   latest_plan_review: approved_round_6
   latest_plan_remediation: r6_applied
   review_disposition: approved
-  next_expected_actor: implementer
+  next_expected_actor: operator
   acceptance_disposition: rejected_repair_local
+  execution_disposition: blocked_execution_provider_self_hosting_deadlock
   blocking_findings:
     - Acceptance R5 rejected the exact candidate with repair_local finding direct_codex_containment_proof_lifecycle_unreachable.
     - Host opt-in and provider projection now succeed, but live readiness remains direct_codex_containment_unproven.
@@ -65,6 +66,8 @@ artifacts:
   latest_acceptance_checkpoint_blob_sha: 0eabbbcd27bb4233bd1746acb0a0d6a76180d194
   latest_acceptance_transition_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r5-transition-receipt.yaml
   latest_acceptance_transition_receipt_blob_sha: cb6470ae5593c4d8dbaaa762352184d3f680b9dd
+  latest_fixing_execution_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-execution-r1-provider-deadlock-20261007.yaml
+  latest_fixing_execution_checkpoint_blob_sha: 3d00499f039fcddd6c34952ec3528efab324bae0
   prior_slice_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-s03-completion-20261007.yaml
   prior_slice_completion_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-s03-completion-receipt.yaml
   prior_acceptance: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r1.md
