@@ -1,0 +1,80 @@
+schema_version: "1.0"
+kind: devforge_slice_blocked_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1
+slice_id: S01
+source_command: "#开发执行 PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"
+result: Blocked
+blocker_class: verification_profile_root_policy_rejection_during_variant_b_bootstrap
+
+runtime:
+  devforge_version: "2.95.0"
+  devforge_revision: 162337cc2fffa710d49a9cd38ab4cc8643f09ffb
+  host_label: windows
+  agent_version: 0.24.1.dev530+g7adfa7a74
+  host_mutation_sandbox_verified_before_b_bootstrap: true
+  pre_execution_audit_lineage_verified_before_b_bootstrap: true
+  scoped_verification_node_npm_verified_before_b_bootstrap: true
+
+variant_a:
+  status: confirmed
+  run_id: run-pr018-s01-20261008-002
+  attempt_id: attempt-001
+  scope_id: mss_ptmPg4zvCgHavtofz_aFrWuY
+  generation: 1
+  audit_operation_id: mao_8fKNvEuuwpyiAE8mSfvgdOhh
+  exact_unity: "C:\\Program Files\\Unity\\Hub\\Editor\\6000.6.4f1\\Editor\\Unity.exe"
+  command: "Unity.exe -version"
+  child_created: true
+  raw_child_returncode: 3221225794
+  windows_status_hex: "0xC0000142"
+  classification: STATUS_DLL_INIT_FAILED
+  elapsed_seconds: 0.031
+  scope_terminal_state: terminal
+  terminalized_at: "2026-10-07T16:16:21.207821Z"
+  conclusion: generic scoped path reproduces the exact PR-017 Unity initialization failure
+  evidence_gaps_remaining_for_s01:
+    - bounded API does not project exact AppContainer SID in execute/inspect response
+    - Variant B not executed yet
+    - exact post-B window-station/desktop SID absence not yet observed
+
+variant_b_bootstrap:
+  intended_mechanism: existing PR-011 trusted verification root plus _grant_verification_session_read
+  product_code_changed: false
+  generic_admission_changed: false
+  diagnostic_store:
+    workspace: "D:\\coco\\workspaces\\bewaterhere-coder\\sentinelx-cloud-core\\pr011-s05-v2\\pr018-s01-diag"
+    source_id: pr018-s01-unity-ab
+    capsule_id: pr018-s01-empty
+    package_lock_sha256: 159e1b99444c64f680f23716706b08bb3093655e9c7e87c911b0d428d97ac1da
+    source_manifest_sha256: 6e122d1cda4ab94030655078ade447d5ead4c1b2bde6bec49c3c5a4ca506d1db
+  temporary_config_change:
+    source_snapshot_root: "D:\\coco\\workspaces\\bewaterhere-coder\\sentinelx-cloud-core\\pr011-s05-v2\\pr018-s01-diag\\sources"
+    dependency_capsule_root: "D:\\coco\\workspaces\\bewaterhere-coder\\sentinelx-cloud-core\\pr011-s05-v2\\pr018-s01-diag\\capsules"
+  failure:
+    class: startup_policy_validation
+    canonical_rule: verification profile roots must not overlap workspace_root, protected_roots, or canonical repositories
+    conflicting_root: "D:\\coco"
+    service_connection_after_restart: offline
+    variant_b_executed: false
+  exact_original_config_backup:
+    path: "C:\\ProgramData\\SentinelX\\config.yaml.bak.20261008-001925-344277"
+    semantics: config before either temporary verification-store replacement
+
+decision:
+  hypothesis_confirmed: false
+  hypothesis_rejected: false
+  status: unresolved
+  s01_completed: false
+  s02_eligible: false
+
+task_state:
+  stage: implementation
+  current_slice: S01
+  current_slice_state: pending
+  completed_slices: []
+
+completion_guard:
+  no_slice_completion_claim: true
+  completion_receipt_created: false
+  canonical_next_action: "restore exact original config backup, restart SentinelX, verify host_mutation_sandbox_v1=true, then resume S01 Variant B"
