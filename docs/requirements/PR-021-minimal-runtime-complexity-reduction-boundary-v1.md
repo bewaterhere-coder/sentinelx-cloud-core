@@ -5,16 +5,16 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 1
 development:
-  stage: implementation
+  stage: acceptance
   gates:
     requirement_ready: true
     plan_approved: true
     acceptance_approved: false
     completion_verified: false
   plan_revision: 1
-  implementation_authorized: true
+  implementation_authorized: false
   blocking_findings: []
-  next_expected_actor: reviewer
+  next_expected_actor: verifier
   current_slice: S04
   current_slice_state: completed
   completed_slices: [S01, S02, S03, S04]
@@ -23,6 +23,7 @@ development:
   canonical_next_action: "#开发验收 PR-021-minimal-runtime-complexity-reduction-boundary-v1"
   latest_execution_run: docs/execution/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s04-run-001.yaml
   latest_execution_checkpoint: docs/checkpoints/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s04-completion-20261008.yaml
+  latest_gate_transition: docs/checkpoints/PR-021-minimal-runtime-complexity-reduction-boundary-v1-implementation-to-acceptance-transition-receipt.yaml
 transport:
   type: github-pr
   pr_number: 21
