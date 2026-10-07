@@ -23,12 +23,15 @@ development:
   completed_slices: [S01, S02]
   pending_slices: []
   implementation_execution_complete: true
-  formal_acceptance_performed: false
-  acceptance_disposition: blocked
-  acceptance_blocker: ExactCandidateActivationUnavailable
-  acceptance_blocker_detail: MaterializeWorkspaceProjectionAbsentOnLiveAgent
-  exact_candidate_activation_required: true
-  latest_acceptance_checkpoint: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-acceptance-r1-exact-candidate-activation-blocked-20261008.yaml
+  formal_acceptance_performed: true
+  acceptance_disposition: decision_required
+  acceptance_blocker: DevforgePlacementProtectedRootArchitectureConflict
+  acceptance_blocker_detail: ExecutionRootIsInsideBroadProtectedRoot
+  material_architecture_decision_required: true
+  secondary_acceptance_finding: MutationScopeDurableStateSchemaForwardCompatibilityMissing
+  exact_candidate_activation_required: false
+  latest_acceptance_checkpoint: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-acceptance-r2-decision-required-20261008.yaml
+  latest_acceptance_review: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-acceptance-r2.md
   completed_slices_preserved: [S01]
   preserved_completed_candidate_slices: [S02]
   preserved_s02_product_candidate: 45dc99d15a23c499b4c1500fab60ed5e76475aeb
@@ -53,8 +56,8 @@ development:
   latest_s02_reconciliation_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-r6-reconciliation-receipt.yaml
   prior_bootstrap_receipt: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-harness-bootstrap-blocked-20261008.yaml
   superseded_slice_set_status: invalidated_by_plan_revision_6
-  next_expected_actor: verifier
-  canonical_next_action: "#开发验收 PR-014-devforge-execution-workspace-materialization-bridge-v1"
+  next_expected_actor: decision_owner
+  canonical_next_action: "#开发 PR-014-devforge-execution-workspace-materialization-bridge-v1 修订当前方案"
   authorization:
     mode: legacy_command_scoped
 artifacts:
@@ -80,7 +83,7 @@ artifacts:
   requirement_change_impact: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-requirement-r2-invalidation.md
   latest_slice_checkpoint: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-completion-20261008.yaml
   latest_gate_transition: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-implementation-to-acceptance-transition-receipt.yaml
-  latest_acceptance_checkpoint: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-acceptance-r1-exact-candidate-activation-blocked-20261008.yaml
+  latest_acceptance_checkpoint: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-acceptance-r2-decision-required-20261008.yaml
 transport:
   type: github-pr
   pr_number: 14
