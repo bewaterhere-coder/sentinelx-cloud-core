@@ -1,0 +1,144 @@
+schema_version: "1.0"
+kind: devforge_pre_acceptance_evidence
+project_id: sentinelx-cloud-core
+task_id: PR-021-minimal-runtime-complexity-reduction-boundary-v1
+slice_id: S04
+source_command: "#开发执行 PR-021-minimal-runtime-complexity-reduction-boundary-v1"
+
+transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 21
+  branch: task/minimal-runtime-complexity-reduction-boundary-v1
+  canonical_main: 1028030b33f0ea792a884491a431fffe566f6aa5
+
+artifacts:
+  requirement:
+    ref: docs/requirements/PR-021-minimal-runtime-complexity-reduction-boundary-v1.md
+    revision: 1
+  plan:
+    ref: docs/plans/PR-021-minimal-runtime-complexity-reduction-boundary-v1-plan.md
+    revision: 1
+  architecture_decision:
+    ref: docs/architecture/sentinelx-minimal-runtime-boundary-v1.md
+    blob_sha: 36e0290de039336a8e4ce8561c22c731f12e9602
+  disposition_matrix:
+    ref: docs/architecture/sentinelx-capability-disposition-matrix-v1.md
+    blob_sha: 05b6906614715e14450a2fd03e0699200e016074
+
+acceptance_criteria_evidence:
+  AC01:
+    criterion: canonical Architecture Decision exists under docs/architecture
+    result: pass
+    evidence: docs/architecture/sentinelx-minimal-runtime-boundary-v1.md
+  AC02:
+    criterion: ADR defines SentinelX as short-duration secure capability bridge
+    result: pass
+    evidence: ADR sections 2 and 21
+  AC03:
+    criterion: direct-short versus guided-CLI execution mode resolution is defined
+    result: pass
+    evidence: ADR section 6
+  AC04:
+    criterion: timeout extension is forbidden as primary long-development solution
+    result: pass
+    evidence: ADR sections 5 and 21
+  AC05:
+    criterion: canonical capability disposition matrix exists under docs/architecture
+    result: pass
+    evidence: docs/architecture/sentinelx-capability-disposition-matrix-v1.md
+  AC06:
+    criterion: material capabilities are classified KEEP SIMPLIFY DEPRECATE or HOLD with evidence and dependency impact
+    result: pass
+    evidence: disposition matrix sections 1 through 12
+  AC07:
+    criterion: PR-014 has explicit disposition and rationale
+    result: pass
+    evidence: ADR section 9 and matrix section 6
+  AC08:
+    criterion: PR-020 has explicit disposition and rationale
+    result: pass
+    evidence: ADR section 10 and matrix section 7
+  AC09:
+    criterion: PR-229 incremental_execution.slice_v1 is separated from SentinelX lifecycle ownership
+    result: pass
+    evidence: ADR section 12 and matrix section 10
+  AC10:
+    criterion: Direct CodeBuddy and Codex execution have explicit ownership/disposition decisions
+    result: pass
+    evidence: ADR sections 11 and 12; matrix sections 5 and 8
+  AC11:
+    criterion: Host Mutation Scope sandbox AppContainer audit canonical repository firewall and receipt/read-back safety are preserved
+    result: pass
+    evidence: ADR sections 3 and 8; matrix sections 3 and 4
+  AC12:
+    criterion: no product source file is deleted or behaviorally disabled by PR-021
+    result: pass
+    evidence: PR #21 changed-file inventory contains no src/ or tests/ path
+  AC13:
+    criterion: no production Hub change occurs
+    result: pass
+    evidence: PR #21 changed-file inventory contains documentation artifacts only
+  AC14:
+    criterion: no project binding changes
+    result: pass
+    evidence:
+      devforge_registry_blob_sha: 08f50a36cbb90d5a08856d7dce2adf65248a7584
+      current_binding:
+        provider: direct
+        adapter: codex
+        source: explicit_project_binding
+  AC15:
+    criterion: strongest Durable Async counterargument is recorded and answered
+    result: pass
+    evidence: ADR section 17
+  AC16:
+    criterion: exactly one primary minimal successor implementation order is frozen
+    result: pass
+    evidence: ADR section 19
+    sequence:
+      - reconcile architecture-conflicting active work
+      - implement provider-neutral guided CLI routing and handoff
+      - migrate sentinelx-cloud-core DevForge execution binding
+      - prove SentinelX Minimal Runtime
+      - retire long-Agent-specific SentinelX surfaces through explicit per-capability tasks
+  AC17:
+    criterion: current main and open-PR evidence used by decision is revisioned or identified
+    result: pass
+    evidence:
+      sentinelx_main: 1028030b33f0ea792a884491a431fffe566f6aa5
+      devforge_main_at_s04: 3d0880d271bd2e1e3955c81eb09344faf5cd6f69
+      related_prs:
+        PR-014: open
+        PR-019: open
+        PR-020: open
+      s01_receipt: docs/execution/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s01-attempt-001-receipt.yaml
+  AC18:
+    criterion: final docs are sufficient for a fresh DevForge session without chat history
+    result: pass
+    evidence:
+      - canonical Requirement and Plan refs are persisted
+      - ADR contains ownership boundary and execution-mode resolver
+      - matrix contains per-capability disposition and migration preconditions
+      - ADR section 19 contains exact successor sequence
+      - all execution Slice receipts/checkpoints are durable in canonical PR transport
+
+pr_level_verification:
+  changed_files_scope: docs_only
+  src_changed: false
+  tests_changed: false
+  production_hub_or_deployment_changed: false
+  related_prs_still_open:
+    PR-014: true
+    PR-019: true
+    PR-020: true
+  canonical_main_unchanged_from_task_start: true
+  project_binding_unchanged: true
+
+formal_acceptance:
+  performed: false
+  reason: S04 produces acceptance input only; formal approval belongs to explicit #开发验收
+  canonical_next_action: "#开发验收 PR-021-minimal-runtime-complexity-reduction-boundary-v1"
+
+result:
+  all_18_acceptance_criteria_have_evidence: true
+  implementation_execution_complete_candidate: true
