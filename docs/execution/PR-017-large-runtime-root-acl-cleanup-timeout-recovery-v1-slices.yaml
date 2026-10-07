@@ -106,7 +106,7 @@ slices:
   - slice_id: S02
     objective: Close partial runtime-root grant ambiguity and prove fail-closed revoked/retry terminalization recovery.
     depends_on: [S01]
-    state: repair_required
+    state: completed
     scope:
       refs:
         - src/sentinelx_core/windows_mutation_sandbox.py
@@ -145,6 +145,7 @@ slices:
       - historical_invalidated_candidate:d083921b3f0146455bd4b0732d8e0ce219728344
       - repair_candidate:4896a55cb951dec47422c738ccb1ba98762e13a9
       - retry_surface_repair_candidate:a214921cd34fcab5874696f45281306622a73421
+      - cleanup_proof_ordering_repair_candidate:f7249aef0d25085eb98e741596b6f567ebd83966
       - https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37617840813/job/112780419756
       - https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37617840524/job/112780419428
       - https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37617840354/job/112780419297
@@ -155,7 +156,7 @@ slices:
       - https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37617840343/job/112780418938
       - https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37617840373/job/112780418739
       - https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37617840360/job/112780418673
-    completion_receipt_ref: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-repair-completion-receipt-r3.yaml
+    completion_receipt_ref: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-repair-completion-receipt-r4.yaml
 
   - slice_id: S03
     objective: Prove the exact candidate on real Windows with a large Unity runtime root and close affected security/regression evidence.
@@ -192,10 +193,10 @@ slices:
     run_refs: []
     completion_receipt_ref: null
 execution_state:
-  current_slice: S02
-  current_slice_state: repair_required
-  completed_slices: [S01]
-  pending_slices: [S02, S03]
+  current_slice: S03
+  current_slice_state: blocked
+  completed_slices: [S01, S02]
+  pending_slices: [S03]
   all_slices_completed: false
 acceptance_boundary:
   all_current_plan_slices_must_be_completed: true
