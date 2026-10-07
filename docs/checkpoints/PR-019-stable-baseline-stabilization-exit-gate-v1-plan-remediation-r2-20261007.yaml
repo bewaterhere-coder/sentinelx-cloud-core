@@ -1,0 +1,63 @@
+schema_version: "1.0"
+kind: devforge_plan_remediation_checkpoint
+task_id: PR-019-stable-baseline-stabilization-exit-gate-v1
+source_command: "#开发计划修复 PR-019-stable-baseline-stabilization-exit-gate-v1"
+
+runtime:
+  devforge_version: "2.95.0"
+  devforge_revision: 162337cc2fffa710d49a9cd38ab4cc8643f09ffb
+  sentinelx_canonical_main: 1028030b33f0ea792a884491a431fffe566f6aa5
+
+input:
+  requirement_revision: 1
+  rejected_plan_revision: 1
+  rejected_plan_blob_sha: 9526340ce709108b53fd2336aa6ec623d5f3e721
+  rejected_review_ref: docs/reviews/PR-019-stable-baseline-stabilization-exit-gate-v1-plan-review-r1.md
+  rejected_review_blob_sha: 7528a44a6ba350f10b18c83ffb48e8b49ac2fc0f
+
+output:
+  revised_plan_revision: 2
+  revised_plan_ref: docs/plans/PR-019-stable-baseline-stabilization-exit-gate-v1-plan.md
+  revised_plan_blob_sha: 4aff64a35c00d3e854fc63046faf3045caddaf0b
+  requirement_semantics_changed: false
+  transport_changed: false
+  project_binding_changed: false
+  implementation_started: false
+
+addressed_findings:
+  - id: PR019ExactCandidateHostActivationMissing
+    resolution: "S03 now freezes the exact product candidate and reuses the PR-015 exact-ref Windows venv install/restart/live-version read-back pattern, with fail-closed mismatch and known-good rollback."
+  - id: DirectCodexTransportGitReadinessAuthorityMismatch
+    resolution: "generic authenticated-Git policy is no longer the Direct Codex baseline authority; Direct Codex readiness proves the actual run_user_scoped_git primitive, while remote fetch/push is owned by the real E2E receipt."
+  - id: UnverifiedVsNotReadyClassificationCollapsed
+    resolution: "Plan R2 freezes cause-aware verified/verification_required/baseline_blocker mapping and requires provider evidence to distinguish not-attempted from attempted-and-failed proofs."
+
+frozen_plan_r2:
+  baseline_id: windows_dev_v1
+  exact_candidate_activation_pattern: pr015_existing_windows_pip_install_restart_version_readback
+  self_update_authority_added: false
+  direct_codex_git_context_authority: run_user_scoped_git_actual_primitive
+  generic_authenticated_git_is_baseline_blocker: false
+  remote_git_publication_authority: exact_direct_codex_e2e_receipt
+  cause_aware_classification: true
+  missing_or_stale_evidence: verification_required
+  concrete_failed_probe_or_required_policy_disabled: baseline_blocker
+  unity_repair_owned_by_pr019: false
+
+safety:
+  canonical_main_mutated: false
+  product_code_mutated: false
+  host_policy_mutated: false
+  installed_agent_mutated: false
+  production_hub_mutated: false
+  project_binding_mutated: false
+  permission_expansion_used: false
+  credential_mutation_used: false
+  self_approval_performed: false
+
+next_state:
+  stage: plan_review
+  plan_revision: 2
+  plan_approved: false
+  implementation_authorized: false
+  next_expected_actor: reviewer
