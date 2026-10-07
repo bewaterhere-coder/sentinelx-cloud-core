@@ -8,19 +8,19 @@ task_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
 title: SentinelX Large Runtime Root ACL Cleanup Timeout & Recovery V1
 requirement_revision: 1
 development:
-  stage: plan_review_rejected
+  stage: plan_review
   gates:
     requirement_ready: true
     plan_approved: false
     acceptance_approved: false
     completion_verified: false
-  plan_revision: 4
+  plan_revision: 5
   implementation_authorized: false
-  next_expected_actor: planner
+  next_expected_actor: reviewer
   blocking_findings:
-    - Plan Review R4 verified the production-subset manifest, all CAS guards, derived blob identities, diagnostic-seam exclusion, scoped_script.py preservation, S01/S02 historical completion evidence, and S03/R8.3 traceability.
-    - Plan Review R4 rejected only StalePlanR3AuthorityReferences: two current authority statements still bind execution/slice compilation to already-rejected Plan R3. Plan remediation must rebind those statements to the current Plan revision without changing technical semantics.
-    - Requirement Revision 1 remains unchanged. S01 and S02 remain canonically completed historical evidence and must not be replayed. No product mutation or Slice recompilation is authorized until the corrected Plan is reviewed and approved.
+    - Plan Remediation R5 addressed StalePlanR3AuthorityReferences by rebinding every current execution/slice-compilation authority sentence to Plan R5; no current authority reference points to a rejected Plan revision.
+    - The 11-file production-subset manifest, CAS guards, derived blob identities, scoped_script.py preservation, S01/S02 historical completion evidence, and S03/R8.3 verification scope are unchanged from the technically validated Plan R4.
+    - Requirement Revision 1 remains unchanged. S01 and S02 remain historical completion evidence and must not be replayed. Plan Revision 5 now waits for review; no product mutation or Slice recompilation is authorized yet.
   current_slice: S03
   current_slice_state: blocked
   authorization:
@@ -43,6 +43,8 @@ artifacts:
   latest_plan_remediation_transition_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-remediation-r3-transition-receipt.yaml
   latest_plan_remediation_checkpoint_r4: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-remediation-r4-20261008.yaml
   latest_plan_remediation_transition_receipt_r4: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-remediation-r4-transition-receipt.yaml
+  latest_plan_remediation_checkpoint_r5: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-remediation-r5-20261008.yaml
+  latest_plan_remediation_transition_receipt_r5: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-remediation-r5-transition-receipt.yaml
   execution_slice_set: docs/execution/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-slices.yaml
   latest_slice_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-blocked-unity-dll-initialization-20261007.yaml
   latest_slice_completion_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-repair-completion-receipt-r4.yaml
