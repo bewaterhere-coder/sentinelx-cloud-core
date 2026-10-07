@@ -1,0 +1,99 @@
+schema_version: "1.0"
+kind: devforge_development_command_completion_receipt
+task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
+source_command: "#开发 PR-014-devforge-execution-workspace-materialization-bridge-v1 修订当前方案：解除 S02 对 PR-013 canonical completion 的循环依赖；先实现 bootstrap-safe 最小 materialize_workspace projection，使 self-host 修复任务能够获得合规 execution workspace。保持 path-free、Host-owned placement、mutation scope、pre-execution audit、sandbox、canonical main + clean、不允许 generic git/shell fallback；不得重放 PR-013 S03。"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  canonical_branch: main
+  latest_release: v2.97.0
+  revision: 5efc2d2b1eabe209d599f08ba5f9574771851374
+
+classification:
+  incoming_requirement: existing_task_revision
+  same_task_lineage_verified: true
+  task_identity_changed: false
+  transport_changed: false
+  requirement_semantics_changed: true
+
+requirement:
+  prior_revision: 1
+  prior_blob_sha: 6c25edc8b3449c6ed51fadbe28ff330b7ea9be5e
+  current_revision: 2
+  current_blob_sha: 3cef067d8952faaa0086196078a21b3da4e94ec1
+  readiness: Ready
+  material_questions: []
+  challenge_completed: true
+  revision_reason: break_self_host_workspace_materialization_dependency_cycle
+
+change_impact:
+  ref: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-requirement-r2-invalidation.md
+  blob_sha: 8f97b247eaf9db535715006b31a6bdbe2905db2d
+  prior_plan_revision: 2
+  prior_plan_current_authority: invalidated
+  prior_slice_set_current_authority: invalidated
+  s01_verified_evidence: preserved_no_replay
+  pr013_blocking_dependency: removed
+  pr013_s03_replay: forbidden
+
+plan:
+  ref: docs/plans/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan.md
+  revision: 3
+  blob_sha: bf44533eec62652b4d252b629c9498df596f43cd
+  status: ready_for_review
+  implementation_authority: false
+  key_design:
+    preserved_s01: true
+    s02_bootstrap_mode: canonical_repository_transport
+    s02_host_local_product_workspace: forbidden
+    bootstrap_safe_source_capsule: true
+    bounded_materialize_workspace: true
+    development_host_handoff: true
+    pr013_completion_dependency: false
+    retained_multi_operation_execution_in_pr014: false
+    publication_in_pr014: false
+
+task_after:
+  stage: plan_review
+  requirement_ready: true
+  plan_revision: 3
+  plan_approved: false
+  implementation_authorized: false
+  current_slice: null
+  completed_slices_preserved: [S01]
+  next_expected_actor: reviewer
+  task_blob_sha: 3cef067d8952faaa0086196078a21b3da4e94ec1
+
+transport:
+  type: github-pr
+  pr_number: 14
+  branch: task/devforge-execution-workspace-materialization-bridge-v1
+  branch_head: cbe055ed2dca2c481073b7458d6ef05d7a7b37fa
+  pr_state: open
+  pr_draft: true
+  pr_title: "[STABILIZATION 3/3 · REPLAN] SentinelX DevForge Execution Workspace Materialization Bridge V1"
+  canonical_main: 1028030b33f0ea792a884491a431fffe566f6aa5
+
+safety:
+  product_implementation_executed: false
+  canonical_main_mutated: false
+  host_local_product_workspace_created: false
+  host_policy_mutated: false
+  permission_expansion_used: false
+  credential_mutation_used: false
+  generic_git_shell_fallback_used: false
+  provider_fallback_used: false
+  pr013_s03_replayed: false
+  unmerged_pr013_code_imported: false
+  project_binding_mutated: false
+
+verification:
+  requirement_readback_verified: true
+  plan_readback_verified: true
+  requirement_change_impact_readback_verified: true
+  task_gate_readback_verified: true
+  transport_readback_verified: true
+  canonical_main_readback_verified: true
+  verified: true
+
+canonical_next_action: "#开发评审 PR-014-devforge-execution-workspace-materialization-bridge-v1"
