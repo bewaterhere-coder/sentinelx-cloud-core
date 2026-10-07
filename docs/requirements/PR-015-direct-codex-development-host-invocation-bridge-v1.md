@@ -5,7 +5,7 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 2
 development:
-  stage: plan_review
+  stage: plan_review_rejected
   implementation_execution_complete: false
   gates:
     requirement_ready: true
@@ -14,18 +14,20 @@ development:
     completion_verified: false
   plan_revision: 4
   implementation_authorized: false
-  latest_plan_review: pending_round_4
-  latest_plan_remediation: r4_applied
-  review_disposition: pending
-  next_expected_actor: reviewer
+  latest_plan_review: rejected_round_4
+  latest_plan_remediation: pending_r5
+  review_disposition: rejected
+  next_expected_actor: planner
   acceptance_disposition: invalidated_by_requirement_revision_2
-  blocking_findings: []
+  blocking_findings:
+    - Canonical blob materialization incomplete: Plan R4 hashes raw no-filter Windows worktree bytes, which can commit checkout-induced CRLF/encoding differences instead of canonical Git content.
   authorization:
     mode: durable
     ref: docs/authorizations/PR-015-direct-codex-development-host-invocation-bridge-v1-development-authorization.yaml
 artifacts:
   plan: docs/plans/PR-015-direct-codex-development-host-invocation-bridge-v1-plan.md
   plan_blob_sha: cc351da6bd5746a171bdd14bdb34fa07e41c6336
+  latest_plan_review: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r4.md
   prior_plan_review_r3: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r3.md
   prior_plan_review: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r2.md
   historical_plan_review_r1: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r1.md
