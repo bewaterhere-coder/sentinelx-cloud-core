@@ -1,0 +1,137 @@
+schema_version: "1.0"
+kind: devforge_execution_preflight_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-019-stable-baseline-stabilization-exit-gate-v1
+slice_id: S01
+source_command: "#开发执行 PR-019-stable-baseline-stabilization-exit-gate-v1"
+observed_date: "2026-10-08"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  version: "2.95.0"
+  revision: 162337cc2fffa710d49a9cd38ab4cc8643f09ffb
+  workflow: project_development
+
+task_scope:
+  repository:
+    vcs: git
+    authority: github.com
+    path: bewaterhere-coder/sentinelx-cloud-core
+  stage: implementation
+  operation: first_implementation
+  transport:
+    type: github-pr
+    pr_number: 19
+    branch: task/stable-baseline-stabilization-exit-gate-v1
+  requirement_revision: 1
+  plan_revision: 2
+  slice_id: S01
+
+canonical_evidence:
+  task_head_before_preflight: b03f913100e0c1a5b57f50e01f49b58d5cdf20e9
+  canonical_main: 1028030b33f0ea792a884491a431fffe566f6aa5
+  task_blob_sha: f9e59d4b42b183902da757596639a8f7ae182641
+  plan_blob_sha: 4aff64a35c00d3e854fc63046faf3045caddaf0b
+  slice_set_blob_sha: ae967163354a646fa8cb801294a1d59506d8fa76
+  project_execution_binding:
+    provider: direct
+    adapter: codex
+    source: explicit_project_binding
+
+concurrent_reconciliation:
+  pr016:
+    reviewed_head: c26de0e9fb0d908e9dc6bd16403b07965547f099
+    current_head: c26de0e9fb0d908e9dc6bd16403b07965547f099
+    material_s01_drift: false
+  pr017:
+    reviewed_head: 3858c7d0e46295d5e0dc184bb21e76da7c963346
+    current_head: 3858c7d0e46295d5e0dc184bb21e76da7c963346
+    material_s01_drift: false
+  pr018:
+    reviewed_head: 5c1c97542aa9f23f52bdb892918d72767779f1a8
+    current_head: 2d9a05ab8e31c5cfb3209c6f5e8e083501803363
+    current_changes_are_control_evidence_only: true
+    direct_s01_product_overlap: false
+    material_s01_drift: false
+
+admissions:
+  task_lineage:
+    state: Admitted
+    evidence_refs:
+      - docs/requirements/PR-019-stable-baseline-stabilization-exit-gate-v1.md@f9e59d4b42b183902da757596639a8f7ae182641
+      - docs/plans/PR-019-stable-baseline-stabilization-exit-gate-v1-plan.md@4aff64a35c00d3e854fc63046faf3045caddaf0b
+      - docs/execution/PR-019-stable-baseline-stabilization-exit-gate-v1-slices.yaml@ae967163354a646fa8cb801294a1d59506d8fa76
+  gate:
+    state: Admitted
+    evidence_refs:
+      - docs/reviews/PR-019-stable-baseline-stabilization-exit-gate-v1-plan-review-r2-transition-receipt.yaml
+  authorization:
+    state: Admitted
+    evidence_refs:
+      - explicit_current_command:#开发执行
+  capability_compatibility:
+    state: Unresolved
+    reason: RequiredCapabilityEvidenceMissing
+    requirement:
+      provider: direct
+      adapter: codex
+    host_projection:
+      available: false
+      current_evidence: absent
+      reason: enrolled_host_offline
+    evidence_refs:
+      - live_sentinel_capabilities:agent_offline
+      - live_sentinel_local_api:agent_offline
+      - live_sentinel_ping:agent_offline
+      - live_sentinel_hosts:host_7f0e709ded71ab24:offline
+
+host_observation:
+  enrolled_host_id: host_7f0e709ded71ab24
+  hostname: Cherie_li
+  label: windows
+  agent_version: 0.24.1.dev530+g7adfa7a74
+  status: offline
+  last_connected_at: "2026-10-07T16:00:07.205008+00:00"
+  last_disconnected_at: "2026-10-07T16:19:36.703147+00:00"
+
+preflight:
+  disposition: Blocked
+  readback_disposition: PreflightBlocked
+  primary_failure:
+    check_id: capability_compatibility
+    domain: Evidence
+    canonical_execution_state: BlockedByContext
+    reason_code: CapabilityCompatibilityUnresolved
+  diagnosis:
+    provider_specific_observation: agent_offline
+    core_reason_code_uses_provider_neutral_taxonomy: true
+
+provider_resolution:
+  required_provider: direct
+  required_adapter: codex
+  explicit_project_binding: true
+  provider_fallback_authorized: false
+  github_connector_product_mutation_substitution: forbidden
+  harness_fallback: forbidden
+  generic_shell_fallback: forbidden
+
+effects:
+  run_allocated: false
+  attempt_allocated: false
+  product_files_mutated: false
+  tests_executed: false
+  execution_workspace_created: false
+  host_scope_provisioned: false
+  host_policy_mutated: false
+  installed_agent_mutated: false
+  canonical_main_mutated: false
+  provider_fallback_used: false
+
+result:
+  stage: implementation
+  current_slice: S01
+  current_slice_state: pending
+  completed_slices: []
+  slice_completion_claimed: false
+  task_completion_claimed: false
+  retry_condition: current Windows SentinelX Host reconnects and fresh live capabilities/local_api evidence can resolve direct/codex compatibility
