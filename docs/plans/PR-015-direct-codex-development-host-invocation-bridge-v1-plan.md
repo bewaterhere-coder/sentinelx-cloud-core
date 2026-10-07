@@ -1,6 +1,6 @@
-# PR-015-direct-codex-development-host-invocation-bridge-v1 — Plan R2
+# PR-015-direct-codex-development-host-invocation-bridge-v1 — Plan R3
 
-Requirement: `docs/requirements/PR-015-direct-codex-development-host-invocation-bridge-v1.md`, revision 1.
+Requirement: `docs/requirements/PR-015-direct-codex-development-host-invocation-bridge-v1.md`, revision 2.
 
 Status: **Pending Plan Review**. No implementation authorization.
 
@@ -8,7 +8,9 @@ Status: **Pending Plan Review**. No implementation authorization.
 
 ```yaml
 sentinelx_main: 018b78ca20984176d53fbe90039dc795a7f2742f
-devforge_main: a13b1113fb3b5938199bad1bf45539eb311ae531
+planning_task_head_before_r3: d67923bd7df7f45186f6852c414d2cc74f5321d6
+devforge_main: cf995df50d392aafdba7d48d27fb5dacab492ecb
+devforge_version: 2.81.0
 project_execution_binding:
   provider: direct
   adapter: codex
@@ -16,473 +18,352 @@ canonical_transport:
   repository: bewaterhere-coder/sentinelx-cloud-core
   pr: 15
   branch: task/direct-codex-development-host-invocation-bridge-v1
-live_windows_evidence:
-  sentinelx_service_identity: service_context
-  active_user_codex_installed: true
-  observed_package: "@openai/codex 0.154.0"
-  shim_shape: "codex.cmd -> node + @openai/codex/bin/codex.js"
-  bootstrap_codebuddy_installation_detected: true
-  bootstrap_codebuddy_devforge_user_rule_detected: true
-current_failure:
-  code: DirectCodexExecutionSurfaceUnavailable
-related_tasks:
-  PR-013: direct_codex_admission_blocked
-  PR-014: host_runtime_workspace_bridge_separate
+requirement_revision: 2
+prior_plan_revision: 2
+prior_acceptance: DecisionRequired
+material_decision:
+  selected: provider_owned_deterministic_commit_on_publish
 ```
 
-The observed Codex version is evidence only. V1 must discover a compatible installed Codex at runtime and fail closed if its supported invocation contract is unavailable.
+Requirement Revision 2 is a material architecture/scope change produced by the explicit user `#开发` command after Acceptance R1. The exact Task and canonical transport are preserved.
 
-## R2 remediation delta
+## 1. Retained implementation baseline
 
-Plan R2 makes only the two corrections required by Plan Review R1. Requirement Revision 1 and the rest of the architecture remain unchanged.
+Plan R3 does **not** replay S01-S03. Their verified implementation remains the baseline:
 
-### R2-F1 — Concrete self-host bootstrap path
+- bounded `devforge_direct_codex` builtin provider and closed model-facing schema;
+- direct/codex execution identity preserved;
+- provider-wide local-api repository-effect/firewall composition;
+- fixed active-user `@openai/codex` + Node/`codex.js` execution chain;
+- isolated provider-derived checkout;
+- exact PR/branch/expected-head admission;
+- real Windows MIC containment and bounded process-tree lifecycle;
+- active-user environment reuse through `CreateEnvironmentBlock`;
+- exact Task/Run/Attempt/Slice/repository/PR/branch receipt validation;
+- fail-closed malformed receipt, local-only, timeout and transport-drift behavior.
 
-The one intended bootstrap execution target is:
+Historical product candidate: `a84db15a8770599718a665fd9c201c7b82b3dd91`.
+
+Acceptance R1's real-host finding is retained as the disconfirming fixture: Codex edits and verifies successfully but does not commit, so persistence must be provider-owned.
+
+## 2. R3 architecture delta
+
+### D13 — Provider-owned persistence broker
+
+After Codex exits successfully, `devforge_direct_codex` performs one bounded persistence phase before any success receipt.
+
+The persistence broker is **not** a generic Git interface and is not model-facing. It accepts no caller Git argv, pathspec, commit message, remote URL, author identity, branch or executable.
+
+Required sequence:
 
 ```text
-direct:codebuddy
+Codex process success
+-> revalidate isolated workspace identity
+-> verify actual branch == canonical branch
+-> verify local HEAD == expected_remote_sha before provider commit
+-> re-read remote canonical branch == expected_remote_sha
+-> inventory eligible worktree/index delta
+-> construct one provider-owned commit
+-> ordinary fast-forward push to exact canonical branch
+-> independent remote readback
+-> persisted direct/codex receipt
 ```
 
-Rationale:
+If any precondition changes, fail closed before publication.
 
-- DevForge already defines the direct CodeBuddy Development Adapter;
-- current Windows Host Reality has a CodeBuddy installation and a current-user DevForge rule surface;
-- the CodeBuddy adapter is bound to the same canonical transport enforcement contract as Codex and therefore can preserve the exact existing PR #15 / branch rather than creating a replacement transport;
-- CodeBuddy is used only as a Task-scoped bootstrap Development Host for this self-host repair. The persistent project binding remains `direct/codex`.
+### D14 — Eligible change inventory
 
-Plan approval does not create this override.
+The provider derives the path inventory from the exact isolated checkout.
 
-After Plan R2 approval and Slice Set compilation, the only admitted bootstrap request is:
+Rules:
+
+- no caller-selected paths;
+- repository metadata outside the worktree is never eligible;
+- provider control/evidence artifacts are excluded from the implementation commit;
+- unmerged index state fails closed;
+- unsupported gitlink/submodule mutation fails closed in V1;
+- paths must canonicalize inside the execution checkout;
+- no symlink/path traversal may escape the checkout;
+- changed-path inventory and a digest are recorded in the bounded receipt;
+- if there are no eligible implementation changes, do not fabricate an empty implementation commit.
+
+Provider-owned runtime artifacts should be placed outside the commit candidate set where practical rather than relying only on ignore rules.
+
+### D15 — Fixed Git persistence primitives
+
+Persistence uses fixed provider-owned Git mechanics only.
+
+Implementation SHOULD add a narrow internal module such as `direct_codex_persistence.py` and reuse the existing fixed Git transport/user-context substrate rather than expose a new command surface.
+
+Allowed semantic operations are limited to:
 
 ```text
-#开发引导执行 PR-015-direct-codex-development-host-invocation-bridge-v1 direct:codebuddy
+status/inventory
+stage provider-derived eligible paths
+write tree / create commit
+update local execution ref
+ordinary push exact candidate -> exact canonical branch
+remote readback
 ```
 
-That command must freshly prove, before any implementation mutation:
+No shell wrapper, caller argv, hooks, interactive prompt, commit signing, force push or arbitrary Git config is permitted.
 
-1. Task remains at `implementation` and Plan R2 is the exact Approved Plan;
-2. the current Slice Set is exact and readable;
-3. `direct:codebuddy` is still a registered DevForge execution target;
-4. current Host Reality still exposes an available CodeBuddy Development Host;
-5. exact Requirement/Plan/current Slice pointers can be handed off;
-6. canonical transport remains repository `bewaterhere-coder/sentinelx-cloud-core`, PR #15 and branch `task/direct-codex-development-host-invocation-bridge-v1`;
-7. the target can write only the exact canonical task transport and cannot create a replacement branch/PR;
-8. no permission, write-scope, credential or project-binding expansion is required;
-9. durable bootstrap override read-back succeeds.
+Hooks/signing must be explicitly disabled for provider-created commits. Git credential material remains inside the existing fixed user-scoped Git boundary and is never returned or logged.
 
-Failure returns the exact bootstrap contract failure such as `BootstrapTargetUnavailable`, `BootstrapTargetUnregistered`, `BootstrapTransportConflict` or `BootstrapScopeExpansion`.
+### D16 — Deterministic commit construction
 
-There is no automatic fallback to Host Runtime, Harness, Codex-through-shell, Cursor, another direct adapter, generic Git or another PR.
+The provider creates exactly one commit for one successful Run/Attempt[/Slice] when eligible changes exist.
 
-The active bootstrap override may remain authoritative for S01-S03. S03 must nevertheless exercise the newly implemented direct-Codex bridge as the **product under test** so the repaired canonical provider path is proven before the override expires when all bound slices complete.
+Deterministic inputs include:
 
-### R2-F2 — Provider-wide firewall/effect composition
+- parent = admitted `expected_remote_sha`;
+- exact resulting tree;
+- fixed provider-owned author/committer identity;
+- exact Task/Run/Attempt/Slice provenance;
+- fixed provider-generated commit-message format;
+- provider-owned timestamp/provenance value that is persisted for the attempt and reused on same-attempt recovery.
 
-The new builtin provider is part of the effective model-facing `local_api` surface and therefore must be represented in PR-010 provider-wide repository-effect readiness.
+Caller/Codex free text does not control commit metadata.
 
-S01 must use the existing `operation_registry` builtin-provider effect protocol rather than create a second safety inventory.
-
-Required composition:
+A representative message shape is:
 
 ```text
-effective builtin provider map
-  ├─ devforge_runtime
-  └─ devforge_direct_codex
-        ↓
-same map supplied to local_api dispatch
-AND same map supplied to canonical_repository_mutation_firewall_feature/readiness
-        ↓
-make_local_api_effect_inventory / classifier
-        ↓
-provider.repository_effect(action)
-        ↓
-unknown or uncovered action => readiness false
+devforge(<task-id>/<slice-id>): persist direct-codex run <run-id>/<attempt-id>
 ```
 
-S01 must make the current builtin providers explicit participants in this protocol. In particular:
+Exact serialization is implementation-owned but must be stable and testable.
 
-- `devforge_runtime` must expose deterministic repository-effect metadata for every currently available action;
-- lifecycle-only scope actions classify as non-repository mutation;
-- `devforge_runtime.execute_scoped` classifies as process mutation with proven coverage only through its existing scoped-mutation containment;
-- `devforge_direct_codex.execute_task` classifies as process mutation and may be effective/ready only when its exact sandbox/canonical-checkout containment path is proven;
-- a missing/invalid `repository_effect` implementation remains fail-closed;
-- adding a future builtin process action without effect metadata must make provider-wide effective-surface readiness false;
-- the exact builtin provider map used for model-reachable `local_api` dispatch must also be the map consumed by canonical firewall feature/readiness computation.
+Same-attempt recovery must detect an already-created candidate commit and must not manufacture duplicate commits.
 
-This is a composition repair, not a weakening of PR-010 readiness.
+### D17 — CAS-style publication without force
 
-## 1. Architecture
-
-### D1 — Dedicated builtin provider
-
-Add a dedicated Agent-owned builtin `local_api` provider, provisionally named:
+Immediately before publication, re-read the canonical remote branch and require:
 
 ```text
-devforge_direct_codex
+remote_head == expected_remote_sha
+candidate_parent == expected_remote_sha
+actual_branch == canonical_branch
 ```
 
-Do not add a new top-level Hub/MCP tool. Reuse `sentinel_local_api` list/describe/call exactly as PR-007 established for `devforge_runtime`.
+Publication uses an ordinary fast-forward push only.
 
-External configured local-api name collision remains authoritative under existing local-api rules.
+Forbidden:
 
-### D2 — Closed action schema
+- `--force`;
+- `--force-with-lease`;
+- replacement branch/PR;
+- alternate remote;
+- tag transport;
+- automatic merge/rebase.
 
-V1 exposes one state-changing action equivalent to:
+If the remote moves, return `DirectCodexTransportDrift`. A local provider-created candidate may remain diagnostic evidence but is not a success receipt.
+
+After push, independently read the remote branch. Success requires:
+
+```text
+remote_head_readback == provider_candidate_sha
+```
+
+No automatic retry is permitted after an uncertain externally visible push. Readback decides whether the exact candidate landed.
+
+### D18 — Receipt extension
+
+The structured result/receipt adds bounded persistence evidence:
 
 ```yaml
-execute_task:
-  repository:
-    vcs:
-    authority:
-    path:
-  lineage:
-    project_id:
-    task_id:
-    run_id:
-    attempt_id:
-    slice_id:
-  development:
-    action: implementation | fixing
-    requirement_ref:
-    plan_ref:
-    findings_ref:
-  transport:
-    type: github-pr
-    pr_number:
-    branch:
-    expected_remote_sha:
-```
-
-All objects are closed-schema.
-
-No fields for executable path, argv, prompt, shell, cwd, workspace path, environment, model, reasoning effort, sandbox bypass, approval override, credentials or replacement transport.
-
-### D3 — Policy-owned direct-Codex readiness
-
-Extend Host policy with a narrow direct-development-host section or equivalent immutable parsed structure.
-
-Policy owns:
-
-- enabled/disabled;
-- DevForge workspace root/binding reference;
-- supported platform;
-- bounded timeout/result limits;
-- optional provider-owned executable discovery constraints.
-
-Caller data never owns those values.
-
-Capabilities/readiness advertise a feature such as:
-
-```text
-development_host.direct_codex_v1
-```
-
-only after live prerequisites are verified.
-
-### D4 — Private active-user process substrate
-
-Do not use `sentinel_exec`, generic `script_run`, `cmd /c <caller text>`, PowerShell, or a caller-selected executable.
-
-Implement a Codex-specific Windows runner. If low-level WTS/user-token code is factored from `user_git.py`, the extracted primitive remains private/internal and accepts a provider-built executable + argv only. It is never registered as an operation or local-api action.
-
-The runner obtains:
-
-- active console user token;
-- active-user environment block;
-- bounded inherited handles only;
-- captured stdout/stderr or provider-owned structured output files.
-
-It never serializes the environment or credential values into result/audit state.
-
-### D5 — Verified Codex executable chain
-
-On Windows, discovery resolves the active user's npm Codex installation and verifies package identity before execution.
-
-Prefer direct execution of:
-
-```text
-node.exe
-<verified @openai/codex>/bin/codex.js
-exec
-<provider-owned flags>
-```
-
-rather than invoking the `.cmd` shim through a shell.
-
-Verification includes package identity, required file existence/final paths and a supported non-interactive CLI contract. Package version remains evidence.
-
-### D6 — Independent direct-host workspace
-
-Derive workspace from the configured DevForge execution root and exact:
-
-```text
-repository identity
-+ task_id
-+ run_id
-+ attempt_id
-(+ slice_id)
-```
-
-The workspace is never caller selected.
-
-Do not use `git worktree add` against the canonical checkout because that mutates canonical `.git/worktrees` metadata. Use an independent execution checkout/copy whose creation does not modify canonical checkout.
-
-Direct-host workspace identity is evidence for the direct provider only. It must not be projected as PR-013 mutation-scope authority or PR-014 Host Runtime materialization authority.
-
-### D7 — Fixed transport bootstrap
-
-Before Codex invocation, use fixed Git mechanics under the active-user context to obtain the exact existing canonical PR branch.
-
-Required admission:
-
-1. normalize repository identity;
-2. resolve repository remote from trusted project/Host inventory;
-3. read remote canonical branch head;
-4. require `remote_head == expected_remote_sha`;
-5. create/fetch independent execution checkout;
-6. checkout exactly the canonical task branch;
-7. require local HEAD equals expected remote head;
-8. verify canonical source checkout was not mutated.
-
-No replacement branch, force push, remote URL override, hooks-based bootstrap or caller Git argv.
-
-Any shared Windows user-token helper remains internal and does not turn `user_git.py` into a general user process API.
-
-### D8 — Deterministic Codex handoff
-
-Generate the Codex input from canonical structured fields, not arbitrary caller prompt.
-
-The provider-generated instruction names:
-
-- exact Task ID;
-- exact Requirement/Plan/fix finding paths;
-- exact current Slice;
-- exact PR and branch;
-- one-execute/one-slice constraint;
-- forbidden replacement branch/PR;
-- required verification and receipt shape.
-
-Codex reads repository artifacts inside the exact workspace.
-
-### D9 — Non-interactive sandboxed execution
-
-Use the installed Codex non-interactive `exec` mode with provider-owned sandbox settings equivalent to workspace-write and no approval escalation.
-
-Provider MUST NOT use or expose dangerous bypass/unrestricted settings.
-
-At capability self-check time, run a harmless fixture proving:
-
-```text
-write exact fixture workspace -> succeeds
-write sibling protected/canonical-like root -> denied
-process exits -> no persistent child
-```
-
-No readiness advertisement without the physical negative proof.
-
-### D10 — Result contract
-
-Use Codex structured output support when compatible with the installed CLI, or normalize bounded final output into the same provider result.
-
-Required semantic result:
-
-```yaml
-execution:
-  provider: direct
-  adapter: codex
-  task_id:
-  run_id:
-  attempt_id:
-  slice_id:
-  exit_disposition:
-workspace:
-  isolated: true
-  canonical_checkout_mutated: false
+persistence:
+  mode: provider_owned_commit_on_publish
+  base_head:
+  eligible_change_count:
+  changed_paths_digest:
+  candidate_commit:
+  commit_provenance_digest:
+  published: true|false
 transport:
   canonical_pr:
   canonical_branch:
   actual_branch:
   expected_remote_sha:
-  local_head:
   remote_head_readback:
   consistent:
-verification:
-  summary:
-receipt:
-  valid:
 ```
 
-The bridge does not approve Acceptance or completion.
+A valid persisted success requires provider `direct`, adapter `codex`, exact identity echo, exact canonical transport, candidate commit creation, ordinary publish and remote readback consistency.
 
-### D11 — Post-run validation
+A no-change outcome and an unpersisted dirty-worktree outcome remain distinct from persisted implementation success.
 
-After Codex exits:
+## 3. Security and authority constraints
 
-1. inspect actual workspace branch/head;
-2. verify no replacement branch is being returned as canonical;
-3. query canonical remote branch;
-4. require direct-adapter transport consistency;
-5. return a receipt only after readback.
+Plan R3 preserves all R2 security boundaries.
 
-If Codex changed only local state and did not persist the canonical branch, result is incomplete/failed rather than a completion claim.
+The implementation MUST NOT:
 
-No uncertain run is automatically replayed.
+- enable generic `exec`;
+- expose generic Git or shell operations;
+- accept caller Git argv/pathspec/commit metadata;
+- use `operator_unrestricted`;
+- mutate the canonical checkout;
+- create replacement branch/PR;
+- force push;
+- widen filesystem or command allowlists;
+- copy/read/log credentials;
+- modify the production Hub;
+- reinterpret the project binding as `host-runtime`;
+- duplicate PR-013 `repository_transaction_v1` authority.
 
-### D12 — Existing security composition and builtin effect inventory
+The persistence broker is exact-task transport finalization for the direct/Codex adapter only.
 
-Existing PR-010 firewall semantics continue to govern SentinelX's registered mutation surfaces.
+## 4. Current implementation delta
 
-The effective builtin `local_api` provider map MUST be single-source for both dispatch and firewall effect projection. `handlers/__init__.py` must not construct a model-reachable builtin provider set that is absent from `canonical_repository_mutation_firewall_feature(..., builtin_local_api_providers=...)`.
+Plan Review should compile exactly one new current implementation slice if R3 is approved:
 
-Every builtin provider must expose deterministic `repository_effect(action)` semantics understood by `operation_registry._builtin_effect`. Unknown/missing metadata is intentionally fail-closed.
+### Proposed S04 — Provider-Owned Deterministic Persistence & Canonical Publish Closure
 
-The existing `devforge_runtime` provider and the new `devforge_direct_codex` provider must both participate. No new parallel operation inventory is introduced.
+Expected product surfaces:
 
-Because Codex is an external Development Host process, this Task additionally relies on exact workspace isolation and physical sandbox verification to prevent canonical checkout writes by the Codex child itself.
+- `src/sentinelx_core/direct_codex_persistence.py` or equivalent bounded internal module;
+- focused changes in `handlers/direct_codex.py`;
+- focused changes in `direct_codex_result.py`;
+- reuse/minimal extension of `direct_codex_transport.py` / `user_git.py` fixed primitives;
+- focused direct-Codex persistence tests.
 
-PR-011 scoped verification and PR-013/PR-014 Host Runtime capabilities are not duplicated.
+Authorized implementation delta:
 
-## 2. Implementation slices
+- provider-derived eligible-change inventory;
+- fixed deterministic commit construction;
+- exact-parent candidate creation;
+- ordinary fast-forward canonical publish;
+- independent remote readback;
+- persistence receipt fields and negatives;
+- exact-candidate real Windows direct/Codex persistence proof.
 
-Formal Slice Set is compiled only after Plan Review approval.
+Historical S01-S03 implementation should not be rewritten except where a minimal interface change is required to compose S04.
 
-### S01 — Provider contract, policy and readiness
+## 5. Verification strategy
 
-Objective: establish `devforge_direct_codex` as a bounded builtin provider without executing development mutations.
+### Focused deterministic tests
 
-Expected surfaces:
+Required cases:
 
-- new focused direct-Codex provider/runner module;
-- policy schema/config example;
-- local-api provider wiring;
-- capability/readiness projection;
-- tests.
+1. dirty eligible checkout -> one provider candidate commit with exact parent;
+2. caller has no way to choose Git argv/pathspec/message/remote/branch;
+3. provider control artifacts are not committed;
+4. unmerged index fails closed;
+5. unsupported gitlink/submodule mutation fails closed;
+6. hooks/signing cannot execute during provider commit;
+7. canonical checkout branch/head/index/worktree metadata remain unchanged;
+8. remote head drift before publish fails without push;
+9. ordinary push succeeds only to the exact canonical branch;
+10. remote readback mismatch fails receipt validation;
+11. same-attempt recovery does not create a duplicate candidate;
+12. no eligible changes does not manufacture an empty implementation commit;
+13. malformed persistence receipt fails;
+14. local dirty/uncommitted work cannot be success;
+15. existing S01-S03 direct-Codex, firewall, scoped-verification and user-scoped Git regressions remain green.
 
-Required verification:
+### Physical Windows proof
 
-- provider absent when disabled;
-- closed action schema;
-- no executable/argv/prompt/cwd/env fields;
-- active-user and Codex package identity discovery;
-- fixed Node + codex.js resolution;
-- generic `exec` remains disabled where policy disables it;
-- one exact builtin provider map drives both `local_api` dispatch and canonical firewall effect projection;
-- `devforge_runtime` actions expose deterministic effect metadata and preserve existing scoped-mutation semantics;
-- `devforge_direct_codex.execute_task` is process mutation and is not effective/ready until its required containment is proven;
-- unknown/missing builtin effect metadata makes provider-wide readiness fail closed;
-- regression fixture proves a future process-mutating builtin cannot be silently omitted from effective-surface inventory;
-- legacy `script_run`/devforge_runtime behavior otherwise remains unchanged.
+The exact candidate must run the real installed `@openai/codex` against a bounded fixture repository/branch and prove:
 
-### S02 — Workspace/transport bootstrap + bounded Codex execution
+```text
+real Codex modifies isolated checkout
+-> provider inventories exact change
+-> provider creates candidate commit
+-> provider ordinary-pushes to exact fixture canonical branch
+-> remote readback == candidate
+-> receipt provider=direct / adapter=codex / persisted=true
+-> canonical checkout unchanged
+```
 
-Objective: create the isolated direct-host execution workspace, preserve exact github-pr transport, and invoke Codex non-interactively.
+The physical proof must also run a remote-drift negative and prove no replacement transport/force path is used.
 
-Expected surfaces:
+### Canonical GitHub transport
 
-- direct-Codex workspace placement;
-- fixed user-scoped Git bootstrap;
-- deterministic handoff compiler;
-- user-scoped Codex process runner;
-- bounded process/result lifecycle;
-- security tests.
+Implementation execution itself remains on PR #15. Completion of S04 requires product-code side effects and its receipt on that exact branch.
 
-Required verification:
+## 6. Bootstrap execution boundary
 
-- no canonical checkout worktree metadata mutation;
-- exact remote head CAS-style admission before start;
-- exact task branch checkout;
-- physical workspace-write positive proof;
-- physical protected-sibling write denial;
-- no shell shim execution boundary;
-- no credential/environment leakage;
-- timeout/process-tree closure;
-- no provider fallback.
+The persistent project binding remains:
 
-### S03 — Direct adapter receipt + live self-host recovery proof
+```yaml
+provider: direct
+adapter: codex
+```
 
-Objective: prove the delivered bridge satisfies DevForge direct/Codex invocation for a real Task without changing the project binding.
+The previous CodeBuddy override is expired and bound to Plan R2. It cannot be reused.
 
-Implementation-side verification:
-
-- structured direct/Codex receipt validation;
-- actual/canonical PR and branch match;
-- remote readback;
-- exact Task/Run/Attempt/Slice echo;
-- malformed/transport-drift result negatives.
-
-Acceptance owns live Agent activation/restart and the final physical proof.
-
-The acceptance proof SHOULD use the completed bridge to run one bounded direct/Codex task/fixture and then demonstrate that PR-013 can pass the previously failing provider-admission boundary without changing its Task/Plan/Slice or project binding.
-
-## 3. Bootstrap execution boundary
-
-This Task is self-hosting: the persistent project binding requires `direct/codex`, while the missing bridge prevents the current ChatGPT/DevForge path from invoking Codex.
-
-The Plan freezes exactly one bootstrap target: `direct:codebuddy`.
-
-This is not a project rebinding. It is eligible only as a Task-scoped override governed by `system/task-scoped-bootstrap-execution-override-contract.md`.
-
-After Plan R2 is Approved and its Slice Set is compiled, bootstrap authority can be requested only through:
+Because the direct/Codex bridge cannot yet persist its own implementation work, an approved Plan R3 may require a **new explicit Task-scoped bootstrap override** bound to Plan R3 and its reviewed Slice Set:
 
 ```text
 #开发引导执行 PR-015-direct-codex-development-host-invocation-bridge-v1 direct:codebuddy
 ```
 
-The command must re-read current DevForge Runtime, Task, Approved Plan R2, Slice Set, PR #15 transport and current CodeBuddy Host availability before persisting an override.
+That command is not authorized by this Plan and must be invoked explicitly after Plan Review approval.
 
-Required target binding:
+No fallback target is allowed.
 
-```yaml
-target:
-  provider: direct
-  adapter: codebuddy
-scope:
-  stages: [implementation]
-  max_slice_completions_per_execute: 1
-  replacement_branch: forbidden
-  replacement_pr: forbidden
-  fallback: forbidden
-  requirement_change: forbidden
-  plan_change: forbidden
-  gate_change: forbidden
-  acceptance_authority: forbidden
-  permission_expansion: forbidden
-  write_scope_expansion: forbidden
-```
+## 7. Acceptance boundary after S04
 
-If `direct:codebuddy` is no longer registered/available or cannot preserve the exact PR #15 branch/write boundary, the bootstrap command fails closed. It must not substitute Host Runtime, Harness, Cursor, Codex shell execution, generic Git or another adapter.
+A fresh `#开发验收` must evaluate Requirement Revision 2 against the exact product candidate.
 
-The project registry remains `provider: direct / adapter: codex` byte-for-byte unchanged.
+Acceptance must include:
 
-During implementation, CodeBuddy is the bootstrap Development Host only. The product being implemented remains the bounded SentinelX bridge to the direct Codex Development Host.
+1. exact candidate tests/regressions;
+2. live Windows Agent activation when separately admitted;
+3. live `local_api.list/describe` exposure of `devforge_direct_codex`;
+4. real active-user Codex invocation;
+5. physical workspace containment negative proof;
+6. real provider-owned candidate commit and ordinary canonical publish;
+7. exact PR/branch/head remote readback;
+8. valid persisted direct/Codex receipt;
+9. canonical checkout `main + clean` readback;
+10. PR-013 direct/Codex provider-admission recovery proof without Task/Plan/Slice/project-binding change.
 
-S03 must perform exact-candidate direct-Codex bridge verification before all slices can be treated as complete; successful CodeBuddy implementation alone is not proof that the self-host objective was recovered.
+Acceptance R1 is historical evidence only and cannot approve R2.
 
-## 4. Acceptance boundary
+## 8. Risks and fail-closed handling
 
-`#开发验收 PR-015-direct-codex-development-host-invocation-bridge-v1` owns:
+### Repository-controlled Git behavior
 
-1. exact implementation candidate verification;
-2. live Windows Agent activation if separately admitted by current acceptance rules;
-3. `local_api.list/describe` readback of the direct-Codex provider;
-4. physical active-user Codex invocation;
-5. workspace isolation negative proof;
-6. credential non-disclosure checks;
-7. canonical checkout `main + clean` readback;
-8. exact PR/branch transport receipt;
-9. PR-013 provider-admission recovery proof.
+Risk: hooks/signing/config could execute unintended behavior during commit.
 
-Acceptance MUST NOT use a production Hub modification, generic exec, operator_unrestricted, allowlist widening or provider rebinding.
+Mitigation: fixed provider Git primitives, explicit hook/signing disablement, no shell, no caller config, focused adversarial tests.
 
-## 5. Plan invariants
+### Dirty provider artifacts
 
-1. For the delivered bridge, Codex remains the Development Host and SentinelX is the bounded invocation transport; the temporary implementation bootstrap may use only the exact Task-scoped `direct:codebuddy` override.
-2. Project binding remains `direct/codex`.
-3. Hub remains immutable.
-4. No generic run-as-user API.
-5. No arbitrary command/shell/argv/cwd/env/prompt surface.
-6. Canonical repository remains `main + clean`.
-7. Direct-host workspace semantics do not masquerade as PR-013/PR-014 Host Runtime authority.
-8. One `#开发执行` still completes at most one Slice.
-9. No Receipt, No Completion Claim.
+Risk: handoff/log/control files could leak into the implementation commit.
+
+Mitigation: keep provider artifacts outside candidate worktree where practical; derive and validate eligible path inventory; verify staged tree before commit.
+
+### Publish race
+
+Risk: remote branch moves between Codex completion and publication.
+
+Mitigation: exact remote read before commit/publish, exact parent, ordinary fast-forward push, independent readback, no retry after uncertainty.
+
+### Duplicate persistence on recovery
+
+Risk: interrupted same-attempt recovery creates multiple commits.
+
+Mitigation: stable provenance + persisted candidate identity; detect/reuse exact prior candidate instead of recommitting.
+
+### Scope expansion
+
+Risk: persistence broker becomes a generic Git executor.
+
+Mitigation: private fixed operations only, no model-facing Git fields, no generic command projection, provider identity remains direct/Codex.
+
+## 9. Plan Review questions
+
+Plan Review must specifically verify:
+
+- provider-owned persistence is consistent with Requirement R2 and does not redefine Codex as transport owner;
+- fixed Git operations do not create a generic execution surface;
+- commit candidate path inventory excludes provider artifacts and fail-closes unsafe Git states;
+- ordinary fast-forward publication is sufficient for the CAS requirement without force;
+- exact receipt semantics prove persisted transport state;
+- retained S01-S03 evidence is still valid and need not be replayed;
+- only the new S04 delta is implementation-authorized after approval;
+- a new R3-bound bootstrap override is required before S04 execution.
+
+Approval must compile a new current Slice Set for Plan R3. This Plan does not self-approve and does not authorize implementation.
