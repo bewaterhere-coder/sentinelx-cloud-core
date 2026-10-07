@@ -5,8 +5,11 @@
 ```yaml
 task_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
 plan_revision: 5
-plan_status: ready_for_review
+plan_status: completed
+review_state: approved
 implementation_authority: false
+execution_state: all_slices_completed
+acceptance_state: approved
 requirement_ref: docs/requirements/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1.md
 transport:
   type: github-pr
