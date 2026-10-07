@@ -377,7 +377,11 @@ def test_runtime_acl_helpers_use_configured_timeout(
         calls.append((tuple(args), timeout_seconds, operation))
 
     monkeypatch.setattr(windows_sandbox, "_run_icacls", record_icacls)
-    monkeypatch.setattr(windows_sandbox, "_dacl_entries", lambda _root: [])
+    reads = iter([
+        [(app_sid, 0x1200A9, 0)],
+        [],
+    ])
+    monkeypatch.setattr(windows_sandbox, "_dacl_entries", lambda _root: next(reads))
 
     _grant_runtime_read(root, app_sid, timeout_seconds=123)
     _remove_runtime_read(root, app_sid, timeout_seconds=234)
@@ -413,7 +417,7 @@ def test_runtime_acl_timeout_is_deterministic_sandbox_error(
     ):
         _grant_runtime_read(root, "S-1-15-2-515151", timeout_seconds=77)
 
-    assert calls == 2
+    assert calls == 1
 
 
 def test_runtime_acl_grant_failure_compensates_exact_attempted_root(
@@ -430,7 +434,11 @@ def test_runtime_acl_grant_failure_compensates_exact_attempted_root(
             raise HostMutationSandboxAclViolation("injected grant failure")
 
     monkeypatch.setattr(windows_sandbox, "_run_icacls", fail_grant_then_cleanup)
-    monkeypatch.setattr(windows_sandbox, "_dacl_entries", lambda _root: [])
+    reads = iter([
+        [(app_sid, 0x1200A9, 0)],
+        [],
+    ])
+    monkeypatch.setattr(windows_sandbox, "_dacl_entries", lambda _root: next(reads))
 
     with pytest.raises(
         HostMutationSandboxAclViolation,
@@ -457,6 +465,11 @@ def test_runtime_acl_grant_failure_with_ambiguous_compensation_is_residual_autho
         raise HostMutationSandboxAclViolation("injected ACL failure")
 
     monkeypatch.setattr(windows_sandbox, "_run_icacls", fail_grant_and_cleanup)
+    monkeypatch.setattr(
+        windows_sandbox,
+        "_dacl_entries",
+        lambda _root: [(app_sid, 0x1200A9, 0)],
+    )
 
     with pytest.raises(
         HostMutationSandboxResidualAuthority,
@@ -501,14 +514,109 @@ def test_runtime_acl_cleanup_timeout_is_residual_authority(
     def timeout(*_args, **kwargs):
         raise subprocess.TimeoutExpired(cmd="icacls", timeout=kwargs["timeout"])
 
+    app_sid = "S-1-15-2-717171"
     monkeypatch.setattr(windows_sandbox.subprocess, "run", timeout)
+    monkeypatch.setattr(
+        windows_sandbox,
+        "_dacl_entries",
+        lambda _root: [(app_sid, 0x1200A9, 0)],
+    )
 
     with pytest.raises(
         HostMutationSandboxResidualAuthority,
         match=r"cleanup could not prove AppContainer SID removal",
     ):
-        _remove_runtime_read(root, "S-1-15-2-717171", timeout_seconds=88)
+        _remove_runtime_read(root, app_sid, timeout_seconds=88)
 
+
+
+def test_runtime_acl_cleanup_already_absent_skips_acl_mutation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "runtime"
+    root.mkdir()
+    app_sid = "S-1-15-2-818181"
+    writes = 0
+
+    def unexpected_write(*_args, **_kwargs):
+        nonlocal writes
+        writes += 1
+        raise AssertionError("cleanup must not mutate ACL when exact SID is already absent")
+
+    monkeypatch.setattr(windows_sandbox, "_run_icacls", unexpected_write)
+    monkeypatch.setattr(windows_sandbox, "_dacl_entries", lambda _root: [])
+
+    _remove_runtime_read(root, app_sid, timeout_seconds=99)
+
+    assert writes == 0
+
+
+def test_runtime_acl_cleanup_present_sid_removes_then_proves_absence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "runtime"
+    root.mkdir()
+    app_sid = "S-1-15-2-828282"
+    calls: list[tuple[str, ...]] = []
+    reads = iter([
+        [(app_sid, 0x1200A9, 0)],
+        [],
+    ])
+
+    monkeypatch.setattr(windows_sandbox, "_dacl_entries", lambda _root: next(reads))
+    monkeypatch.setattr(
+        windows_sandbox,
+        "_run_icacls",
+        lambda args, **_kwargs: calls.append(tuple(args)),
+    )
+
+    _remove_runtime_read(root, app_sid, timeout_seconds=100)
+
+    assert calls == [(str(root), "/remove:g", f"*{app_sid}")]
+
+
+def test_runtime_acl_cleanup_preread_failure_is_residual_authority(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "runtime"
+    root.mkdir()
+    app_sid = "S-1-15-2-838383"
+
+    def unreadable(_root: Path):
+        raise HostMutationSandboxAclViolation("injected DACL read failure")
+
+    monkeypatch.setattr(windows_sandbox, "_dacl_entries", unreadable)
+
+    with pytest.raises(
+        HostMutationSandboxResidualAuthority,
+        match=r"could not read back AppContainer SID state",
+    ):
+        _remove_runtime_read(root, app_sid, timeout_seconds=101)
+
+
+def test_runtime_acl_cleanup_present_sid_remove_denied_is_residual_authority(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "runtime"
+    root.mkdir()
+    app_sid = "S-1-15-2-848484"
+
+    monkeypatch.setattr(
+        windows_sandbox,
+        "_dacl_entries",
+        lambda _root: [(app_sid, 0x1200A9, 0)],
+    )
+
+    def denied(*_args, **_kwargs):
+        raise HostMutationSandboxAclViolation("injected access denied")
+
+    monkeypatch.setattr(windows_sandbox, "_run_icacls", denied)
+
+    with pytest.raises(
+        HostMutationSandboxResidualAuthority,
+        match=r"cleanup could not prove AppContainer SID removal",
+    ):
+        _remove_runtime_read(root, app_sid, timeout_seconds=102)
 
 
 def test_runtime_acl_timeout_policy_contract_and_digest(tmp_path: Path) -> None:

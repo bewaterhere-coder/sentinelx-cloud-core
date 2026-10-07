@@ -819,13 +819,26 @@ def _remove_runtime_read(
     if not root.exists():
         return
     try:
+        entries = _dacl_entries(root)
+    except (RuntimeError, OSError, ValueError) as exc:
+        raise HostMutationSandboxResidualAuthority(
+            f"runtime ACL cleanup could not read back AppContainer SID state on {root}: {exc}"
+        ) from exc
+
+    if not any(sid == app_sid for sid, _mask, _flags in entries):
+        # Closure is already proven. Avoid a needless ACL mutation on protected
+        # runtime roots where the original grant may have failed before the SID
+        # was ever installed.
+        return
+
+    try:
         _run_icacls(
             [str(root), "/remove:g", f"*{app_sid}"],
             timeout_seconds=timeout_seconds,
             operation=f"runtime ACL cleanup for {root}",
         )
         entries = _dacl_entries(root)
-    except HostMutationSandboxAclViolation as exc:
+    except (RuntimeError, OSError, ValueError) as exc:
         raise HostMutationSandboxResidualAuthority(
             f"runtime ACL cleanup could not prove AppContainer SID removal on {root}: {exc}"
         ) from exc
