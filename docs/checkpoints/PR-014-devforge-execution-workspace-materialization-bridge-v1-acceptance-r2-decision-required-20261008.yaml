@@ -1,0 +1,133 @@
+schema_version: "1.1"
+kind: devforge_acceptance_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
+acceptance_revision: 2
+source_command: "#开发验收 PR-014-devforge-execution-workspace-materialization-bridge-v1"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  canonical_branch: main
+  revision: e0ea49441c410a7008fbcd61f1782d90f014a773
+  acceptance_contract: "1.5"
+
+lineage:
+  requirement_revision: 2
+  plan_revision: 6
+  plan_blob_sha: 4fc74fba9d787120798d5ed6a4f04b7da9cb6a5f
+  slice_set_ref: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-r6-slices.yaml
+  slice_set_blob_sha: f332c20ca398507a635f0c4abc6a1f43117c8dc6
+  acceptance_review_ref: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-acceptance-r2.md
+  acceptance_review_blob_sha: 1338662633f087218764d67fce0c2332f7f516e5
+
+transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 14
+  branch: task/devforge-execution-workspace-materialization-bridge-v1
+  candidate_runtime_commit: 45dc99d15a23c499b4c1500fab60ed5e76475aeb
+  candidate_runtime_version: 0.24.1.dev260+g45dc99d15
+  branch_head_at_decision: cd7012c98a2768b2bdc9195cf54c2721d00148f9
+  canonical_main: cd42e371f18056327c1d8b744f8956a76bc11541
+  transport_drift: false
+
+live_activation:
+  host_id: host_7f0e709ded71ab24
+  hostname: Cherie_li
+  exact_candidate_active: true
+  local_api_endpoint: devforge_runtime
+  contract_revision: 2
+  materialize_workspace_present: true
+
+physical_call:
+  action: devforge_runtime.materialize_workspace
+  request_shape:
+    caller_selected_workspace_path: false
+    caller_selected_source_path: false
+    repository_identity: bewaterhere-coder/sentinelx-cloud-core
+    expected_ref: refs/heads/task/devforge-execution-workspace-materialization-bridge-v1
+    expected_commit: 09026c1a90659f05d071a7f2d1588cf539f20304
+  result: failed_closed
+  error: internal_error
+  message: "DevForge execution placement overlaps a protected/canonical root"
+  workspace_success_receipt_emitted: false
+
+root_cause:
+  kind: material_architecture_conflict
+  requirement_binding:
+    locations_devforge_workspace_root: "D:\\coco"
+    derived_execution_root: "D:\\coco\\workspaces"
+  host_policy:
+    protected_roots:
+      - "D:\\coco"
+      - "C:\\Users\\liqiu"
+  invariant:
+    broad_protected_root_contains_execution_root: true
+  consequence: >-
+    Requirement R2 and the live Host protection topology cannot both be
+    satisfied without a material architecture/Requirement change or a security
+    authority change. Acceptance is not authorized to choose between them.
+
+secondary_finding:
+  code: MutationScopeDurableStateSchemaForwardCompatibilityMissing
+  evidence: >-
+    exact candidate capability self-check reports
+    HostMutationScopeCorrupt because MutationScopeRecord cannot accept the
+    additive durable field runtime_read_authority_roots written by a newer
+    runtime generation.
+  first_materialization_failure_cause: false
+  must_be_resolved_before_final_acceptance: true
+  durable_state_deletion_as_repair: forbidden
+
+acceptance:
+  result: DecisionRequired
+  disposition: decision_required
+  acceptance_decision_persisted: true
+  acceptance_approved: false
+  completion_verified: false
+  current_stage: acceptance
+  target_stage: acceptance
+  finding_classification: upstream_material_decision
+  material_decision:
+    topic: devforge_source_and_execution_root_topology
+    required: true
+    recommended_direction: >-
+      Separate canonical source-role binding from Host-owned execution placement
+      binding. Preserve D:\coco\repos as protected source-only canonical
+      repositories; place execution workspaces under a dedicated Host-owned root
+      outside D:\coco, without caller path authority or protected-root weakening.
+    forbidden_solution: >-
+      Do not narrow/remove D:\coco protection and do not carve an allowlist
+      exception inside the broad protected root.
+
+hosted_ci:
+  applicability: NotEvaluated
+  gating: false
+  invoked: false
+
+safety:
+  host_policy_mutated: false
+  protected_root_narrowed: false
+  allowlist_widened: false
+  product_code_mutated_by_acceptance: false
+  tests_mutated_by_acceptance: false
+  generic_git_shell_script_run_fallback_used: false
+  workflow_created_or_modified: false
+  ci_invoked: false
+  canonical_main_mutated: false
+  project_binding_mutated: false
+  pr013_s03_replayed: false
+
+resume:
+  product_replay_required: false
+  exact_candidate_reuse_allowed: true
+  next_required_boundary: requirement_plan_revision
+  canonical_recommended_command: >-
+    #开发 PR-014-devforge-execution-workspace-materialization-bridge-v1 修订当前方案：
+    将 canonical source role 与 execution workspace placement 拆分为两个 Host-owned binding；
+    canonical source 继续使用受保护的 D:\coco\repos\...；
+    execution workspace 改用位于 D:\coco 受保护根之外的独立 Host-owned root；
+    禁止通过移除/缩小 D:\coco protected_root、增加 carve-out/allowlist 例外或 caller-select path 解决；
+    同时增加 MutationScope durable state 对 additive schema 字段的 forward-compatible read/migration；
+    保留 S01/S02 已完成实现证据和 45dc99d 候选，不重放产品 mutation，修订后回到 Plan Review Gate。
+
+verified: true
