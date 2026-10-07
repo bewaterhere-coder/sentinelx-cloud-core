@@ -7,15 +7,18 @@ project_id: sentinelx-cloud-core
 task_id: PR-019-stable-baseline-stabilization-exit-gate-v1
 requirement_revision: 1
 development:
-  stage: plan_review
+  stage: implementation
   gates:
     requirement_ready: true
-    plan_approved: false
+    plan_approved: true
     acceptance_approved: false
     completion_verified: false
   plan_revision: 2
-  implementation_authorized: false
-  next_expected_actor: reviewer
+  implementation_authorized: true
+  next_expected_actor: implementer
+  current_slice: S01
+  current_slice_state: pending
+  completed_slices: []
 transport:
   type: github-pr
   pr_number: 19
@@ -23,10 +26,11 @@ transport:
   base_branch: main
 artifacts:
   plan: docs/plans/PR-019-stable-baseline-stabilization-exit-gate-v1-plan.md
-  latest_plan_review: docs/reviews/PR-019-stable-baseline-stabilization-exit-gate-v1-plan-review-r1.md
-  latest_plan_review_transition_receipt: docs/reviews/PR-019-stable-baseline-stabilization-exit-gate-v1-plan-review-r1-transition-receipt.yaml
+  latest_plan_review: docs/reviews/PR-019-stable-baseline-stabilization-exit-gate-v1-plan-review-r2.md
+  latest_plan_review_transition_receipt: docs/reviews/PR-019-stable-baseline-stabilization-exit-gate-v1-plan-review-r2-transition-receipt.yaml
   latest_plan_remediation: docs/checkpoints/PR-019-stable-baseline-stabilization-exit-gate-v1-plan-remediation-r2-20261007.yaml
   latest_plan_remediation_transition_receipt: docs/reviews/PR-019-stable-baseline-stabilization-exit-gate-v1-plan-remediation-r2-transition-receipt.yaml
+  execution_slice_set: docs/execution/PR-019-stable-baseline-stabilization-exit-gate-v1-slices.yaml
 related_tasks:
   evidence_predecessors:
     - PR-011-scoped-verification-toolchain-dependency-capsule-v1
