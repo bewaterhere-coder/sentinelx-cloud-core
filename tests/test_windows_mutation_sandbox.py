@@ -4,6 +4,7 @@ import shutil
 import subprocess
 import sys
 import time
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -20,6 +21,7 @@ from sentinelx_core.mutation_placement import (
     HostMutationScopeBindingMismatch,
     RepositoryIdentity,
     SemanticIdentity,
+    placement_policy_digest,
 )
 from sentinelx_core.mutation_sandbox import (
     HostMutationSandboxAclViolation,
@@ -27,7 +29,7 @@ from sentinelx_core.mutation_sandbox import (
     HostMutationSandboxResidualAuthority,
 )
 from sentinelx_core.mutation_scope import MutationScopeStore
-from sentinelx_core.policy import MutationExecutionPolicy
+from sentinelx_core.policy import MutationExecutionPolicy, Policy
 from sentinelx_core.request_context import MutationLineage, RequestContext
 from sentinelx_core.windows_mutation_sandbox import (
     WindowsMutationSandbox,
@@ -426,3 +428,43 @@ def test_runtime_acl_cleanup_timeout_is_residual_authority(
         match=r"cleanup could not prove AppContainer SID removal",
     ):
         _remove_runtime_read(root, "S-1-15-2-717171", timeout_seconds=88)
+
+
+
+def test_runtime_acl_timeout_policy_contract_and_digest(tmp_path: Path) -> None:
+    default = Policy.from_dict({"mutation_execution": {}})
+    assert default.mutation_execution.runtime_acl_timeout_seconds == 20
+
+    configured = Policy.from_dict(
+        {"mutation_execution": {"runtime_acl_timeout_seconds": 300}}
+    )
+    assert configured.mutation_execution.runtime_acl_timeout_seconds == 300
+
+    for value in ("300", 5.5, True, None):
+        with pytest.raises(
+            ValueError,
+            match="mutation_execution.runtime_acl_timeout_seconds must be an integer",
+        ):
+            Policy.from_dict(
+                {"mutation_execution": {"runtime_acl_timeout_seconds": value}}
+            )
+
+    for value in (4, 601):
+        with pytest.raises(
+            ValueError,
+            match="mutation_execution.runtime_acl_timeout_seconds must be between 5 and 600",
+        ):
+            Policy.from_dict(
+                {"mutation_execution": {"runtime_acl_timeout_seconds": value}}
+            )
+
+    base = MutationExecutionPolicy(
+        configured=True,
+        scoped_mutation_enabled=True,
+        workspace_root=tmp_path / "workspaces",
+    )
+    changed = replace(
+        base,
+        runtime_acl_timeout_seconds=base.runtime_acl_timeout_seconds + 1,
+    )
+    assert placement_policy_digest(changed) != placement_policy_digest(base)
