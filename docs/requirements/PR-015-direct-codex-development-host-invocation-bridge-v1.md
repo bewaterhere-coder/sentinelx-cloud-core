@@ -51,6 +51,8 @@ artifacts:
   latest_slice_completion_receipt_blob_sha: bb842ee9179d94a9661be67114f32a84950a93a6
   exact_product_candidate: 02eb3de2ec9c137b3285398e555f1e037b574965
   implementation_evidence_head: 783af5cacdaab9b325c48e2bbd4acded63109b02
+  execution_reconciliation_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-s04-execution-reconciliation-receipt.yaml
+  execution_reconciliation_receipt_blob_sha: bd1a9d9b9c12b8c001d60845ef831b2be8b50dd4
   prior_slice_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-s03-completion-20261007.yaml
   prior_slice_completion_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-s03-completion-receipt.yaml
   prior_acceptance: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r1.md
@@ -62,7 +64,7 @@ implementation_entry:
   intended_target: direct:codebuddy
   override_state: expired
   override_ref: docs/overrides/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-execution-override.yaml
-  override_blob_sha: 6e2ec2e8a9eb3682e187c8d03ec9ec1451c0b681
+  override_blob_sha: cc39aae1ec928c07dfac5b25e30185977a15a18a
   override_receipt_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-override-r6-20261007.yaml
   prior_override_ref: docs/overrides/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-execution-override.yaml
   effective_provider: null
