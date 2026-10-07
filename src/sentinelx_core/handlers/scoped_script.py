@@ -342,7 +342,7 @@ async def _run_scoped(
         raise HandlerError("HostMutationSandboxUnavailable", "scoped background execution is not enabled")
 
     args = payload.get("args") or []
-    env_extra = payload.get("env") or {}
+    env_extra = dict(payload.get("env") or {})
     if not isinstance(args, list) or not all(isinstance(value, str) for value in args):
         raise HandlerError("invalid_payload", "'args' must be a list of strings")
     if not isinstance(env_extra, dict) or not all(
@@ -357,6 +357,20 @@ async def _run_scoped(
         raise HandlerError("invalid_payload", f"timeout must be between {TIMEOUT_MIN} and {TIMEOUT_MAX} seconds")
 
     scope_id, generation, lineage, repository, semantic = _authority(payload)
+    paired_pr018 = env_extra.pop("PR018_S01_PAIRED_DIAGNOSTIC", None)
+    if paired_pr018 is not None:
+        if paired_pr018 != "1":
+            raise HandlerError("invalid_payload", "PR018_S01_PAIRED_DIAGNOSTIC must equal '1'")
+        if (
+            semantic.project_id != "sentinelx-cloud-core"
+            or semantic.task_id != "PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"
+            or semantic.slice_id != "S01"
+            or repository.path != "bewaterhere-coder/sentinelx-cloud-core"
+        ):
+            raise HandlerError(
+                "HostMutationSandboxUnavailable",
+                "PR-018 paired diagnostic is bound to exact PR-018/S01 lineage",
+            )
     mutation_policy = policy.mutation_execution
     if not mutation_policy.configured or not mutation_policy.scoped_mutation_enabled:
         raise HandlerError("HostMutationSandboxUnavailable", "scoped_mutation is not enabled by Host policy")
@@ -520,6 +534,19 @@ async def _run_scoped(
             raise RuntimeError("materialized runner argv differs from sealed process intent")
 
         child_environment = _scoped_environment(env_extra, activation.workspace)
+        paired_root = None
+        if paired_pr018 is not None:
+            if verification_materialized is not None:
+                raise HandlerError(
+                    "HostMutationSandboxUnavailable",
+                    "PR-018 paired diagnostic cannot compose verification authority",
+                )
+            paired_root = activation.workspace / ".pr018-s01-paired"
+            paired_root.mkdir(parents=True, exist_ok=True)
+            for marker_name in ("variant-a-done", "variant-b-ready"):
+                marker = paired_root / marker_name
+                if marker.exists():
+                    marker.unlink()
         if verification_materialized is not None:
             verification_environment = build_verification_environment(
                 child_environment,
@@ -556,6 +583,19 @@ async def _run_scoped(
             env=child_environment,
             verification=verification_materialized,
         )
+        paired_session_evidence = None
+        paired_containment = None
+        if paired_pr018 is not None:
+            assert paired_root is not None
+            paired_containment = {
+                "contained": process.contained,
+                "breakaway_allowed": process.breakaway_allowed,
+                "root_pid": process.pid,
+                "job_ref": process.job_ref,
+            }
+            paired_session_evidence = sandbox.enable_pr018_paired_session_read(
+                activation, process, paired_root
+            )
         if verification_materialized is not None:
             sandbox.enable_verification_descendants(
                 activation,
@@ -618,6 +658,11 @@ async def _run_scoped(
 
         terminal = sandbox.terminalize(scope_id, generation)
         terminalized = True
+        paired_cleanup_evidence = None
+        if paired_pr018 is not None:
+            paired_cleanup_evidence = sandbox.pr018_paired_session_absence(
+                activation.sandbox_identity
+            )
         audit.finish(
             start, status="succeeded" if returncode == 0 else "failed",
             closure=_finish_closure(terminal, process), returncode=returncode,
@@ -636,6 +681,19 @@ async def _run_scoped(
             "audit_operation_id": start.operation_id,
             "terminal_state": terminal.state,
         }
+        if paired_pr018 is not None:
+            response["output"] = (
+                output
+                + "\nSENTINELX_PR018_PAIRED_DIAGNOSTIC="
+                + json.dumps(
+                    {
+                        "session_read": paired_session_evidence,
+                        "containment": paired_containment,
+                        "cleanup": paired_cleanup_evidence,
+                    },
+                    sort_keys=True,
+                )
+            )
         if verification_materialized is not None:
             response["verification"] = verification_evidence(verification_materialized)
         else:
