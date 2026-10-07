@@ -7,19 +7,18 @@ project_id: sentinelx-cloud-core
 task_id: PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1
 requirement_revision: 1
 development:
-  stage: acceptance
+  stage: accepted
   gates:
     requirement_ready: true
     plan_approved: true
-    acceptance_approved: false
+    acceptance_approved: true
     completion_verified: false
   plan_revision: 2
-  implementation_authorized: true
-  next_expected_actor: cross_task_repairer
-  blocking_findings:
-    - Acceptance R2 re-evaluated AC18 / R10 as PASS: PR-017 canonical branch contains the approved PR-018 production subset and has a durable successful S03 combined-candidate replay receipt.
-    - Acceptance R2 is still Rejected on R9 / AC16 because PR-017 Acceptance R2 observed the same exact integrated-candidate agent version twice with scoped_verification_node_npm_v1 available=false / verified=false after its S03 completion receipt had recorded verified=true.
-    - Finding classification is inconsistent_evidence at the cross-Task regression boundary. Current required PR-011 verification readiness must be restored or re-proven on PR-017 before PR-018 may be accepted; no PR-018 acceptance -> fixing transition is authorized.
+  acceptance_revision: 3
+  implementation_authorized: false
+  next_expected_actor: integration
+  acceptance_disposition: approved_r3
+  blocking_findings: []
   current_slice: S03
   current_slice_state: completed
   completed_slices: [S01, S02, S03]
@@ -38,8 +37,10 @@ artifacts:
   execution_slice_set: docs/execution/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-slices.yaml
   latest_slice_checkpoint: docs/checkpoints/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-s03-completion-20261008.yaml
   latest_slice_completion_receipt: docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-s03-completion-receipt.yaml
-  latest_acceptance_attempt: docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-acceptance-r2.md
-  latest_acceptance_checkpoint: docs/checkpoints/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-acceptance-r2-inconsistent-evidence-pr017-node-npm-readiness-20261008.yaml
+  prior_acceptance_attempt: docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-acceptance-r2.md
+  prior_acceptance_checkpoint: docs/checkpoints/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-acceptance-r2-inconsistent-evidence-pr017-node-npm-readiness-20261008.yaml
+  latest_acceptance: docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-acceptance-r3.yaml
+  latest_acceptance_transition_receipt: docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-acceptance-r3-transition-receipt.yaml
 related_tasks:
   predecessor:
     - PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
