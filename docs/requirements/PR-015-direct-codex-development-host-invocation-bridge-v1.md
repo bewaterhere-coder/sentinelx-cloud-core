@@ -5,19 +5,19 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 2
 development:
-  stage: plan_review
+  stage: implementation
   implementation_execution_complete: false
   gates:
     requirement_ready: true
-    plan_approved: false
+    plan_approved: true
     acceptance_approved: false
     completion_verified: false
   plan_revision: 6
-  implementation_authorized: false
-  latest_plan_review: pending_round_6
+  implementation_authorized: true
+  latest_plan_review: approved_round_6
   latest_plan_remediation: r6_applied
-  review_disposition: pending
-  next_expected_actor: reviewer
+  review_disposition: approved
+  next_expected_actor: implementer
   acceptance_disposition: invalidated_by_requirement_revision_2
   blocking_findings: []
   authorization:
@@ -26,6 +26,8 @@ development:
 artifacts:
   plan: docs/plans/PR-015-direct-codex-development-host-invocation-bridge-v1-plan.md
   plan_blob_sha: 2bcea2a44f88e51c8b9378ba6297b61897e638da
+  latest_plan_review: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r6.md
+  latest_plan_review_blob_sha: 5e6ff106b7d5befcae4fccc77d83ddae3c674764
   prior_plan_review_r5: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r5.md
   prior_plan_review_r4: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r4.md
   prior_plan_review_r3: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r3.md
@@ -40,18 +42,19 @@ artifacts:
   historical_slice_impact_r3: docs/execution/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-r3-slice-impact.yaml
   historical_slice_impact_r4: docs/execution/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-r4-slice-impact.yaml
   prior_slice_impact: docs/execution/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-r5-slice-impact.yaml
-  proposed_slice_impact: docs/execution/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-r6-slice-impact.yaml
+  approved_slice_impact: docs/execution/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-r6-slice-impact.yaml
+  current_execution_slice_set: docs/execution/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-r6-slices.yaml
+  current_execution_slice_set_blob_sha: 192e5446036423297cbcece01a27492ae9aae390
   prior_slice_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-s03-completion-20261007.yaml
   prior_slice_completion_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-s03-completion-receipt.yaml
   prior_acceptance: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r1.md
   prior_acceptance_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r1-decision-required-20261007.yaml
   acceptance_invalidation: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r1-invalidation-r2.md
   planning_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-requirement-r2-plan-r3-ready-for-review-20261007.yaml
-  current_execution_slice_set: null
 implementation_entry:
   bootstrap_required: true
   intended_target: direct:codebuddy
-  override_state: not_issued_for_plan_r6
+  override_state: required_not_issued_for_plan_r6
   override_ref: null
   prior_override_ref: docs/overrides/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-execution-override.yaml
   effective_provider: null
@@ -71,7 +74,7 @@ requirement_readiness:
     project_binding: direct/codex
     live_host_codex_package_observed: "@openai/codex 0.154.0"
     live_host_codex_shim_observed: "active-user npm codex.cmd -> node + @openai/codex/bin/codex.js"
-    current_blocker: DirectCodexPersistenceClosurePendingPlanReviewR6
+    current_blocker: BootstrapOverrideRequiredForApprovedPlanR6
     pr013_relation: related_unblocker_not_same_task
 ---
 
