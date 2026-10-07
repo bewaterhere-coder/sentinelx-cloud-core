@@ -1,214 +1,206 @@
 schema_version: "1.1"
 kind: devforge_execution_slice_set
+
 identity:
   task_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
-  slice_set_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-r1
+  slice_set_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-r5
+
 plan:
   ref: docs/plans/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan.md
-  revision: 1
-  blob_sha: 3d5cb55362a4b97ee157caed6d3539df02acb0fc
+  revision: 5
+  blob_sha: "1542d734c3e0aed6aa6818947a75dc26814e8912"
   requirement_revision: 1
+
 review:
-  ref: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-review-r1.md
-  blob_sha: 11bb1278514467c68c0a5d245ab19de2b7d2e4cc
+  ref: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-review-r5.md
+  blob_sha: "b27af500085415f84856195fcdf87304b4bcefdd"
   decision: Approved
+
 repository_baseline:
-  main_sha: 018b78ca20984176d53fbe90039dc795a7f2742f
-  reviewed_task_head: 55f1a2a741442b34d3f8a45b1ecc322fb281fc38
+  main_sha: "018b78ca20984176d53fbe90039dc795a7f2742f"
+  reviewed_task_head: "28c4a3a619612cd2520fe51e988235c81b3de3fc"
+  slice_compilation_head_before_write: "bd602863239d5d1356b30757f052592c8cac37ce"
+
 runtime_provenance:
-  devforge_version: "2.88.0"
-  devforge_main_sha: 602afe2cf30feac3032a0095b55ac4cb1a7cdab6
+  devforge_main_sha: "050d9c9559a173a3e0b37fcd2a9db702b6b5a7e6"
+  review_contract_version: "1.3"
+  slicing_contract_version: "1.1"
+
+supersedes:
+  slice_set_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-r1
+  plan_revision: 1
+  blob_sha: "68deaf55c4dd0e2622106ec05d9a60b0732828f7"
+  executable: false
+  reason: current Approved Plan revision is 5; stale Plan revisions cannot execute
+
+historical_evidence:
+  semantics:
+    - S01 and S02 are verified historical Task evidence from Plan R1.
+    - They are not slices in the Plan R5 Slice Set and make no Plan R5 completion claim.
+    - Their verified external side effects MUST NOT be replayed.
+  completed:
+    - historical_slice_id: S01
+      plan_revision: 1
+      completion_receipt_ref: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s01-completion-receipt.yaml
+      completion_receipt_blob_sha: "c64ddc00bc33a532dfcfe000d388e3c7f0c46baa"
+      satisfies_r5_precondition: runtime ACL timeout/policy/digest/readback baseline
+    - historical_slice_id: S02
+      plan_revision: 1
+      completion_receipt_ref: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-repair-completion-receipt-r4.yaml
+      completion_receipt_blob_sha: "9836cee808d261ca256d01c9fe167a893798ad66"
+      satisfies_r5_precondition: partial-grant compensation and revoked-to-terminal recovery baseline
+
+integration_dependency:
+  task_id: PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1
+  verified_product_candidate: "73a52013055a8b3bb70b319a0ed7b7ba832ae0c9"
+  exact_live_source_ref: "86bc881265ee3fb2ab388170a16e627caf6d723e"
+  semantic_use: production_compatibility_dependency_only
+  pr018_task_state_mutation: forbidden
+  pr018_docs_import: forbidden
+  pr018_only_workflow_import: forbidden
+
+production_subset_manifest:
+  manifest_version: pr017-pr018-production-subset-v1
+  compare_and_swap_required: true
+  project:
+    - path: config.example.windows.yaml
+      current_blob: "4a2090833cb780c4c9ca85ad436d454ce617dbd9"
+      target_blob: "a76b1772361517838b40de019bee1e9aa9fb9c85"
+    - path: src/sentinelx_core/handlers/basic.py
+      current_blob: "ef48f514e549b8ac25e5ab4be104845828c78895"
+      target_blob: "5a99296d9c80b164d344abf519f5627eae5f52fe"
+    - path: src/sentinelx_core/handlers/mutation_scope.py
+      current_blob: "6c75e48fec5cd5b11bffc56e6ef84dec79b53392"
+      target_blob: "af310b650151de168a9ff437140fbe0e1187cf6d"
+    - path: src/sentinelx_core/mutation_placement.py
+      current_blob: "3aaa686c569dd07d8a2ecce0eb3aca5928758ddc"
+      target_blob: "6ee33bacee65dac566116a4252756e40e25c4662"
+    - path: src/sentinelx_core/mutation_readiness.py
+      current_blob: "f1bcbbc8b98a2ff97a776eacb45448516998e947"
+      target_blob: "aa318aec6e25b2b0ce3d13feb9c46c6680852144"
+    - path: src/sentinelx_core/mutation_scope.py
+      current_blob: "cb5f87642a65f84859a0f60a7b46b7ad2bc3fcec"
+      target_blob: "1a6dce6d066c07569ea5676cd9a411105171a9f6"
+    - path: src/sentinelx_core/policy.py
+      current_blob: "f6a664f87b20e7f426de3e2bd47096d4d9935d80"
+      target_blob: "82cc82615f090f19777161125c1e2aff14e63806"
+    - path: src/sentinelx_core/windows_mutation_sandbox.py
+      current_blob: "dab8a33dccf842fdbd18ae6e46c11cd4e7b4bcc9"
+      target_blob: "1e662eba2dbc61825bc874e102a735e7a9d9a179"
+      target_kind: derived_production_subset
+    - path: tests/test_mutation_scope_admission.py
+      current_blob: "a7d1ab1af121b8fe540841461d731a8691869d20"
+      target_blob: "4dd4db78a3c20487ae442ac312760dd6dbaa4b1e"
+    - path: tests/test_policy.py
+      current_blob: "99ab9e269f6554225dcc358ceac59ccb66f75873"
+      target_blob: "fd1d002d8426f58c71c0b5f66a343f00c786e943"
+    - path: tests/test_windows_mutation_sandbox.py
+      current_blob: "db8b0271d634322f6083fa34f9d9832960724c8e"
+      target_blob: "926900b91055707528a6cfdd5fb131d11abdfc89"
+      target_kind: derived_genericized_test
+
+preserved_files:
+  - path: src/sentinelx_core/handlers/scoped_script.py
+    required_blob: "4580475ba9bd8ba5301b579ee11a584abbd75d4b"
+    action: preserve_exactly
+    reason: PR-018 delta is S01 diagnostic-only and is outside PR-017 production integration authority
+
 implementation_entry_guard:
-  required_before_each_slice: true
+  required_before_slice: true
   rules:
-    - re-read current main, PR-017 head, Requirement R1, Plan R1, this Slice Set and current open overlapping PR state before mutation
-    - preserve PR #17 transport identity
-    - fail closed on material Requirement, Plan, transport, Host runtime or security-boundary drift
-    - preserve WindowsMutationSandbox, MutationScopeStore, MutationAuditJournal, AppContainer and Job authority model
-    - preserve two-phase revoked -> OS cleanup -> terminal lifecycle
-    - do not enable exec, operator_unrestricted, generic shell fallback or caller-selected runtime roots/timeouts
-    - no residual-authority closure without exact runtime-root SID readback
-    - one explicit #开发执行 invocation completes at most one Slice
-concurrent_task_reconciliation:
-  pr015:
-    reviewed_head: 4d6d8918c00d4fa5a6beaf8b770a56008051c911
-    overlaps:
-      - src/sentinelx_core/policy.py
-      - config.example.windows.yaml
-    rule: if PR-015 moves or merges before the relevant PR-017 mutation, rebase/reconcile and preserve Direct Codex policy semantics before continuing
-  pr016:
-    reviewed_head: f22ee1881526002547b59df2226fa57aa8f10af6
-    planned_overlap:
-      - src/sentinelx_core/windows_mutation_sandbox.py
-      - tests/test_windows_mutation_sandbox.py
-    current_product_overlap_at_review: false
-    rule: PR-017 and PR-016 product mutations on the sandbox boundary must be serialized; if PR-016 product code appears, stop for reconciliation before PR-017 mutation
-  pr013:
-    reviewed_head: 4a3f8e3504b65d1dc222ecb9421ffa16cd96c76d
-    current_primary_file_overlap: false
-  pr014:
-    reviewed_head: 0bd1062396b5471cb44d36dc20cc8f31c08bcf1b
-    current_primary_file_overlap: false
+    - re-read current PR #17 head, Requirement Revision 1, Approved Plan R5, this Slice Set and current Host capability before mutation
+    - all 11 current_blob values must still match before any product mutation
+    - preserved scoped_script.py blob must still equal 4580475ba9bd8ba5301b579ee11a584abbd75d4b before and after integration
+    - target derived blobs must resolve exactly to their frozen SHA identities
+    - preserve PR #17 canonical branch/PR transport identity
+    - preserve AppContainer, Job, MutationScopeStore, MutationAuditJournal and fail-closed cleanup semantics
+    - do not replay S01 or S02
+    - one explicit #开发执行 invocation completes at most S03
+    - fail closed on material Plan, Requirement, transport, Host runtime, security-boundary or CAS drift
+
 slices:
-  - slice_id: S01
-    objective: Add the provider-owned bounded runtime ACL timeout contract, policy identity participation, deterministic ACL timeout classification, exact-root cleanup readback, and focused tests.
-    depends_on: []
-    state: completed
-    scope:
-      refs:
-        - src/sentinelx_core/policy.py
-        - src/sentinelx_core/mutation_placement.py
-        - src/sentinelx_core/windows_mutation_sandbox.py
-        - config.example.windows.yaml
-        - tests/test_policy.py
-        - tests/test_windows_mutation_sandbox.py
-        - tests/test_mutation_scope_admission.py when existing digest coverage belongs there
-      authorized_changes:
-        - runtime_acl_timeout_seconds Host-owned bounded policy with default 20 seconds
-        - validated bounded range and deterministic configuration errors
-        - policy/placement digest participation
-        - explicit timeout argument for runtime-root icacls operations
-        - TimeoutExpired translation to stable sandbox-domain error
-        - runtime-root removal exact-SID readback before residual-authority closure
-        - focused deterministic tests using monkeypatch/fakes
-      forbidden:
-        - request-level timeout override
-        - caller-selected runtime roots
-        - widening protected/runtime roots
-        - execute_scoped protocol redesign
-        - scope lifecycle redesign
-        - operator_unrestricted or exec enablement
-        - unrelated PR-011 verification-toolchain semantic change
-    verification:
-      required:
-        - default timeout backward compatibility passes
-        - valid bounded timeout passes
-        - invalid low/high/non-integer timeout fails
-        - policy digest changes when timeout changes
-        - runtime grant receives configured timeout
-        - runtime cleanup receives configured timeout
-        - TimeoutExpired is not returned as generic internal_error in focused handler/sandbox coverage
-        - exact-root SID readback gates cleanup success
-        - existing Windows sandbox unit regressions pass
-    checkpoint:
-      required: true
-    run_refs:
-      - commit:dd41ded99569078ddfcb0bf8ca6588b20f77d994
-      - commit:809fb6b62c0318013f85b53b5486c15a4a3dcd42
-      - commit:347d74013d96e75f49e7615986f0470856ae636c
-      - commit:1165dede238b62e357d352928d67dfca52a3d7af
-      - https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37611894384/job/112760842691
-      - https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37611894324/job/112760843102
-      - https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37611894350/job/112760842652
-      - https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37611894311/job/112760842344
-    completion_receipt_ref: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s01-completion-receipt.yaml
-
-  - slice_id: S02
-    objective: Close partial runtime-root grant ambiguity and prove fail-closed revoked/retry terminalization recovery.
-    depends_on: [S01]
-    state: completed
-    scope:
-      refs:
-        - src/sentinelx_core/windows_mutation_sandbox.py
-        - src/sentinelx_core/handlers/mutation_scope.py
-        - tests/test_windows_mutation_sandbox.py
-        - tests/test_scoped_script_execution.py when end-to-end error projection coverage is required
-        - tests/test_devforge_runtime_local_api.py when bounded lifecycle composition coverage is required
-      authorized_changes:
-        - track/cleanup the exact currently-attempted runtime root even when grant does not return success
-        - compensating exact-SID removal after grant timeout/failure
-        - compensation readback proving exact SID absence
-        - residual-authority error when compensation/readback is ambiguous
-        - regression proof for revoked cleanup failure followed by successful terminalization retry
-        - wire bounded devforge_runtime.terminalize_scope to the canonical WindowsMutationSandbox cleanup path when durable runtime authority exists
-        - preserve store-only terminalization for scopes with no runtime authority
-      forbidden:
-        - treating grant exception as proof of no authority
-        - swallowing cleanup errors
-        - terminalizing while residual authority is unproven
-        - new lifecycle states
-        - second executor/scope store/AppContainer identity
-    verification:
-      required:
-        - simulated grant timeout invokes compensating removal on exact attempted root
-        - successful compensation proves exact SID absence
-        - failed/timeout compensation remains fail-closed
-        - terminal cleanup timeout leaves scope revoked
-        - retry cleanup can transition revoked -> terminal
-        - devforge_runtime.terminalize_scope reaches canonical OS cleanup for a revoked scope with durable runtime-read authority
-        - terminal closure reports no active Job/process/write authority
-        - exact SID is absent after successful terminalization
-        - existing audit/Job/no-breakaway regressions remain green
-    checkpoint:
-      required: true
-    run_refs:
-      - historical_invalidated_candidate:d083921b3f0146455bd4b0732d8e0ce219728344
-      - repair_candidate:4896a55cb951dec47422c738ccb1ba98762e13a9
-      - retry_surface_repair_candidate:a214921cd34fcab5874696f45281306622a73421
-      - cleanup_proof_ordering_repair_candidate:f7249aef0d25085eb98e741596b6f567ebd83966
-      - https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37617840813/job/112780419756
-      - https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37617840524/job/112780419428
-      - https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37617840354/job/112780419297
-      - https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37617840405/job/112780419294
-      - https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37617840365/job/112780419258
-      - https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37617840345/job/112780419255
-      - https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37617840334/job/112780419126
-      - https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37617840343/job/112780418938
-      - https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37617840373/job/112780418739
-      - https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37617840360/job/112780418673
-    completion_receipt_ref: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-repair-completion-receipt-r4.yaml
-
   - slice_id: S03
-    objective: Prove the exact candidate on real Windows with a large Unity runtime root and close affected security/regression evidence.
-    depends_on: [S02]
-    state: blocked
+    objective: Integrate the frozen PR-018 production compatibility subset into canonical PR-017 and prove combined-candidate R8.3 plus cleanup/security/regression closure on real Windows/Unity.
+    depends_on: []
+    state: pending
+
+    historical_preconditions:
+      - S01 Plan-R1 completion receipt is verified and replay is forbidden
+      - S02 Plan-R1 completion receipt is verified and replay is forbidden
+
     scope:
       refs:
+        - production_subset_manifest in this Slice Set
+        - src/sentinelx_core/handlers/scoped_script.py preserved blob guard
         - affected mutation sandbox/policy/scoped execution tests
         - current-Host live verification evidence
-        - documentation only if the new Host policy requires operator-facing guidance
+
       authorized_changes:
-        - focused regression/documentation closure
-        - exact-candidate Host activation only when separately admitted by the live runtime contract
-        - temporary operator configuration of runtime_acl_timeout_seconds within the approved bounded range
+        - project exactly the 11 target blobs in production_subset_manifest after all CAS guards pass
+        - preserve src/sentinelx_core/handlers/scoped_script.py exactly
+        - persist PR-017-owned S03 checkpoint/receipt and Task state after verified evidence
+        - temporary Host proof configuration runtime_session_object_read_enabled=true
+        - temporary bounded runtime_acl_timeout_seconds=300 when required for real Unity proof
+        - exact Unity 6000.6.4f1 runtime read root for the proof
+        - exact-candidate Host activation only when separately admitted by live runtime contract
+        - restore runtime_session_object_read_enabled=false after proof and verify healthy Host readback
+
       forbidden:
-        - permanent Unity product dependency
-        - Host policy widening beyond the explicit runtime roots
-        - unrestricted fallback
-        - treating physical proof failure as permission to broaden C:\Windows or C:\Program Files wholesale
+        - replaying PR-017 S01 or S02
+        - importing any PR-018 docs, checkpoints, receipts, task state or PR-018-only workflow
+        - importing PR-018 scoped_script.py
+        - importing enable_pr018_paired_session_read or pr018_paired_session_absence
+        - changing any target blob identity or inferring a different production subset
+        - widening Session-0 masks beyond 0x00020103 / 0x00020041
+        - operator_unrestricted or unrestricted/generic execution fallback
+        - Job breakaway
+        - widening runtime roots beyond explicit proof requirements
+        - declaring completion from PR-018 isolated proof
+        - mutating canonical main
+
     verification:
       required:
-        - focused and affected SentinelX test suites pass on exact candidate
-        - execute_scoped python3 marker passes and terminalizes
-        - execute_scoped powershell marker produces deterministic result and terminalizes when runtime is supported
-        - scoped Python launches Unity 6000.6.4f1 batch/version probe far enough to prove runtime initialization
-        - large runtime-root cleanup completes within configured bounded timeout
-        - scope reaches terminal
-        - exact test AppContainer SID is absent from Unity runtime root after terminalization
-        - host_mutation_sandbox_v1 readiness remains verified
-        - PR-011 Node/npm scoped verification remains verified
-    external_availability_rule: live Agent activation requires separately admitted authority; if unavailable, checkpoint Blocked without fallback
+        - exact 11-file target blob readback on canonical PR-017 branch after integration
+        - preserved scoped_script.py blob readback remains 4580475ba9bd8ba5301b579ee11a584abbd75d4b
+        - forbidden PR-018/S01 diagnostic symbols are absent from the integrated production path
+        - python -m pytest -q tests/test_policy.py
+        - python -m pytest -q tests/test_mutation_scope_admission.py
+        - python -m pytest -q tests/test_windows_mutation_sandbox.py
+        - python -m pytest -q tests/test_scoped_script_execution.py
+        - python -m pytest -q tests/test_verification_readiness.py
+        - python -m pytest -q tests/test_verification_scoped_execution.py
+        - affected Windows mutation/security regression set passes
+        - execute_scoped python3 marker succeeds and terminalizes
+        - exact Unity.exe -version returns raw child status other than 0xC0000142 and deterministic stdout 6000.6.4f1
+        - live scope reports AppContainer=true and process Job-contained
+        - effective Session-0 Window Station mask is exactly 0x00020103 and Desktop mask exactly 0x00020041 with no broader interactive authority
+        - exact Unity-scope AppContainer SID is absent from Unity runtime root after terminalization
+        - exact Unity-scope AppContainer SID is absent from bound Window Station after terminalization
+        - exact Unity-scope AppContainer SID is absent from bound Desktop after terminalization
+        - durable SessionObjectReadBinding is cleared only after exact dual Session-0 SID absence readback
+        - no active Job/process authority remains after terminalization
+        - host_mutation_sandbox_v1 remains available=true and verified=true
+        - PR-011 Node/npm scoped verification remains available=true and verified=true
+        - pre_execution_audit_lineage_v1 remains verified
+        - canonical_repository_mutation_firewall_v1 remains verified
+        - runtime_session_object_read_enabled is restored to false after proof
+
+    external_availability_rule: live Host activation requires separately admitted authority; if unavailable, checkpoint Blocked without fallback
+
     checkpoint:
       required: true
-    run_refs:
-      - host_candidate:f7249aef0d25085eb98e741596b6f567ebd83966
-      - retry_scope:mss_JB_VJlJg4Np6LdrxgKd_fCw9:revoked_to_terminal
-      - python_scope:mss_LYcEztB2Tgf2Uv8MjSFjVc2k:returncode_0:terminal
-      - powershell_scope:mss_Xm5WKsMrHRlmY37fCse78xeE:HostMutationSandboxAclViolation:terminal
-      - unity_scope:mss_NgKCbAFve96a2cp5xRbx3AEM:returncode_0_wrapper:terminal
-      - unity_scope:mss_By25SNCI-5slwpGCtb6TxkQH:returncode_0_wrapper:terminal
-      - unity_version_scope:mss_lrSnR5loSxD-rqRSt_Ca4NP0:returncode_0_wrapper:terminal
-      - unity_spawn_scope:mss_XVQaRAUDz6J0R9qd-zq8wvSs:returncode_0_wrapper:terminal
-      - unity_health_scope:mss_ZeDUEM6nvAOSIwGN1Z44iD_b:returncode_42:terminal
-      - unity_exit_classify_scope:mss_RzzUMrqRePo3BZHfc1m83rAw:returncode_82:terminal
-      - blocker:unity_windows_status_0xC0000142_dll_initialization_failed
+
+    run_refs: []
     completion_receipt_ref: null
+
 execution_state:
   current_slice: S03
-  current_slice_state: blocked
-  completed_slices: [S01, S02]
+  current_slice_state: pending
+  completed_slices: []
   pending_slices: [S03]
   all_slices_completed: false
+
 acceptance_boundary:
+  historical_completed_evidence: [S01, S02]
   all_current_plan_slices_must_be_completed: true
   acceptance_command: "#开发验收 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1"
