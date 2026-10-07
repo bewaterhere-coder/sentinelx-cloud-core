@@ -5,20 +5,16 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 1
 development:
-  stage: plan_review_rejected
+  stage: plan_review
   gates:
     requirement_ready: true
     plan_approved: false
     acceptance_approved: false
     completion_verified: false
-  plan_revision: 1
+  plan_revision: 2
   implementation_authorized: false
-  blocking_findings:
-    - DurableIdentityAdmissionNotAtomic
-    - DurableRuntimeAgentLifecycleOwnerUndefined
-    - DurableStatePlacementCrashConsistencyUndefined
-    - SelfHostBootstrapDependsOnMissingAsyncBoundary
-  next_expected_actor: planner
+  blocking_findings: []
+  next_expected_actor: reviewer
 transport:
   type: github-pr
   pr_number: 20
@@ -28,6 +24,8 @@ artifacts:
   plan: docs/plans/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan.md
   latest_plan_review: docs/reviews/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan-review-r1.md
   latest_plan_review_transition_receipt: docs/reviews/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan-review-r1-transition-receipt.yaml
+  latest_plan_remediation: docs/checkpoints/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan-remediation-r2-20261008.yaml
+  latest_plan_remediation_transition_receipt: docs/reviews/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan-remediation-r2-transition-receipt.yaml
 related_tasks:
   stabilization_gate: PR-019-stable-baseline-stabilization-exit-gate-v1
   observed_trigger: PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1
