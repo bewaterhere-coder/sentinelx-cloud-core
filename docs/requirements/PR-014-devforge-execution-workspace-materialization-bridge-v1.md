@@ -27,8 +27,10 @@ development:
   bootstrap_required_before_current_slice: true
   bootstrap_target: direct:codebuddy
   bootstrap_command: "#开发引导执行 PR-014-devforge-execution-workspace-materialization-bridge-v1 direct:codebuddy"
-  bootstrap_admission_status: not_attempted
-  bootstrap_override_state: absent
+  bootstrap_admission_status: admitted
+  bootstrap_override_state: active
+  active_bootstrap_override: docs/overrides/PR-014-devforge-execution-workspace-materialization-bridge-v1-bootstrap-execution-override.yaml
+  latest_bootstrap_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-bootstrap-execution-override-r1-receipt.yaml
   prior_bootstrap_receipt: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-harness-bootstrap-blocked-20261008.yaml
   superseded_slice_set_status: invalidated_by_plan_revision_5
   next_expected_actor: implementer
