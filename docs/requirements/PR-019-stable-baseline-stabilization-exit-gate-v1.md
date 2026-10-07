@@ -19,6 +19,8 @@ development:
   current_slice: S01
   current_slice_state: pending
   completed_slices: []
+  blocking_findings:
+    - S01 preflight is blocked because the explicitly bound direct/codex SentinelX Host is offline and no current Host capability projection exists; provider fallback is forbidden.
 transport:
   type: github-pr
   pr_number: 19
@@ -31,6 +33,7 @@ artifacts:
   latest_plan_remediation: docs/checkpoints/PR-019-stable-baseline-stabilization-exit-gate-v1-plan-remediation-r2-20261007.yaml
   latest_plan_remediation_transition_receipt: docs/reviews/PR-019-stable-baseline-stabilization-exit-gate-v1-plan-remediation-r2-transition-receipt.yaml
   execution_slice_set: docs/execution/PR-019-stable-baseline-stabilization-exit-gate-v1-slices.yaml
+  latest_execution_preflight: docs/reviews/PR-019-stable-baseline-stabilization-exit-gate-v1-s01-preflight-blocked-host-offline-20261008.yaml
 related_tasks:
   evidence_predecessors:
     - PR-011-scoped-verification-toolchain-dependency-capsule-v1
