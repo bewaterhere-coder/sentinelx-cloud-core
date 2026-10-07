@@ -20,7 +20,7 @@ development:
   current_slice_state: pending
   completed_slices: []
   blocking_findings:
-    - S01 run run-pr019-s01-20261008-001 / attempt-001 was interrupted at the Hub response boundary. Remote product publication is reconciled absent, but the local Direct Codex/provider terminal outcome and terminal authority closure are not yet proven; replay or a new Attempt is forbidden until reconciliation.
+    - S01 run run-pr019-s01-20261008-001 / attempt-001 remains in RecoveryOnly. Remote product publication is reconciled absent; local Direct Codex/provider terminal outcome and terminal authority closure are still unproven, so replay or attempt-002 is forbidden.
 transport:
   type: github-pr
   pr_number: 19
@@ -36,6 +36,7 @@ artifacts:
   latest_execution_preflight: docs/reviews/PR-019-stable-baseline-stabilization-exit-gate-v1-s01-preflight-passed-after-reconnect-20261008.yaml
   latest_execution_receipt: docs/reviews/PR-019-stable-baseline-stabilization-exit-gate-v1-s01-direct-codex-attempt1-interrupted-20261008.yaml
   latest_execution_reconciliation: docs/reviews/PR-019-stable-baseline-stabilization-exit-gate-v1-s01-attempt1-remote-reconciliation-20261008.yaml
+  latest_recovery_stabilization: docs/reviews/PR-019-stable-baseline-stabilization-exit-gate-v1-s01-attempt1-recovery-hold-20261008.yaml
 related_tasks:
   evidence_predecessors:
     - PR-011-scoped-verification-toolchain-dependency-capsule-v1
