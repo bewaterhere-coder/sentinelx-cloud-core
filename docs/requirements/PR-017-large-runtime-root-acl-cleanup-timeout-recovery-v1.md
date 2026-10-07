@@ -61,7 +61,7 @@ artifacts:
   latest_fixing_execution_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-fixing-r1-readiness-restored-20261008.yaml
   latest_fixing_execution_checkpoint_blob_sha: 3c0119777435813278f111839fcd9f4ff743d80e
   latest_fixing_transition_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-fixing-r1-to-acceptance-transition-receipt.yaml
-  latest_fixing_transition_receipt_blob_sha: 2768d31497656eb7af16624a78ad6433127d2a75
+  latest_fixing_transition_receipt_blob_sha: da74adac606ba764f8914a4cd8135af22ac0f0ea
 related_tasks:
   predecessor:
     - PR-012-execute-scoped-explicit-execution-profile-v1
