@@ -16,6 +16,14 @@ development:
   plan_revision: 2
   acceptance_revision: 3
   implementation_authorized: false
+  finalization:
+    ready_for_merge: true
+    canonical_state_verified: true
+    plan_execution_state_verified: true
+    evidence_verified: true
+    transport_preconditions_verified: true
+    integration_verified: false
+    merge_pending: true
   next_expected_actor: integration
   acceptance_disposition: approved_r3
   blocking_findings: []
@@ -26,8 +34,10 @@ transport:
   type: github-pr
   pr_number: 18
   branch: task/unity-6-6-appcontainer-dll-initialization-compatibility-v1
-  base_branch: task/large-runtime-root-acl-cleanup-timeout-recovery-v1
+  base_branch: main
+  original_stacked_base_branch: task/large-runtime-root-acl-cleanup-timeout-recovery-v1
   stacked_on_pr: 17
+  stacked_integration_normalized_for_completion: true
 artifacts:
   plan: docs/plans/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-plan.md
   latest_plan_review: docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-plan-review-r2.md
@@ -41,6 +51,7 @@ artifacts:
   prior_acceptance_checkpoint: docs/checkpoints/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-acceptance-r2-inconsistent-evidence-pr017-node-npm-readiness-20261008.yaml
   latest_acceptance: docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-acceptance-r3.yaml
   latest_acceptance_transition_receipt: docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-acceptance-r3-transition-receipt.yaml
+  completion_finalization: docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-completion-finalization-r1.yaml
 related_tasks:
   predecessor:
     - PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
