@@ -25,11 +25,12 @@ executor:
   adapter: github_repository_api
   execution_mode: direct_short
 runtime:
-  state: RUNNING
+  state: COMPLETED
   reason_code: null
   current_attempt: ATTEMPT-001
   devforge_version: "2.100.0"
   devforge_revision: 3d0880d271bd2e1e3955c81eb09344faf5cd6f69
+  finished_on: "2026-10-08"
 attempt:
   attempt_id: ATTEMPT-001
   codebuddy_invoked: false
@@ -56,4 +57,12 @@ verification:
     - Direct Codex and CodeBuddy direct projection ownership explicit
     - every DEPRECATE or HOLD item has a removal or reentry precondition
     - security-critical boundaries not weakened
+artifacts:
+  refs:
+    - docs/architecture/sentinelx-capability-disposition-matrix-v1.md
+    - docs/execution/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s03-attempt-001-receipt.yaml
+    - docs/execution/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s03-run-001-ledger.yaml
+verification_result:
+  state: passed
+  finalization_blob_sha: ac8022eaab43d7fd2d12b090977276acf23f61ff
 finalization_ref: docs/execution/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s03-run-001-finalization.yaml
