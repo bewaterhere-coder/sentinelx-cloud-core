@@ -1639,6 +1639,152 @@ class WindowsMutationSandbox:
             raise
         return managed
 
+    def enable_pr018_session_read_diagnostic(
+        self,
+        activation: ActivatedMutationSandbox,
+        process: ManagedMutationProcess,
+        *,
+        grant: bool,
+        timeout_seconds: float = 10.0,
+    ) -> dict[str, object]:
+        """PR-018/S01 bounded A/B seam; grant differs only by exact PR-011 masks."""
+        if (
+            self.semantic.project_id != "sentinelx-cloud-core"
+            or self.semantic.task_id
+            != "PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"
+            or self.semantic.slice_id != "S01"
+            or self.repository.path != "bewaterhere-coder/sentinelx-cloud-core"
+        ):
+            raise HostMutationSandboxBindingMismatch(
+                "PR-018 Session-0 diagnostic lineage mismatch"
+            )
+        if process._owner is not self or process.activation != activation:
+            raise HostMutationSandboxBindingMismatch(
+                "PR-018 diagnostic process/activation mismatch"
+            )
+        key = (activation.scope_id, activation.generation)
+        if key in self._verification_session_reads:
+            raise HostMutationSandboxBindingMismatch(
+                "Session-0 authority already exists for this scope generation"
+            )
+        handshake_root = (
+            activation.workspace
+            / ".sentinelx-verification"
+            / "runtime"
+            / "descendant-session"
+        )
+        request = handshake_root / "request"
+        root_ready = handshake_root / "root-ready"
+        authority_ready = handshake_root / "authority-ready"
+        if not request.exists():
+            raise HostMutationSandboxBindingMismatch(
+                "PR-018 diagnostic handshake request is absent"
+            )
+        deadline = time.monotonic() + max(0.1, float(timeout_seconds))
+        while not root_ready.exists():
+            if process.wait(0):
+                raise HostMutationSandboxUnavailable(
+                    "PR-018 diagnostic root exited before handshake"
+                )
+            if time.monotonic() >= deadline:
+                raise HostMutationSandboxUnavailable(
+                    "PR-018 diagnostic root did not reach handshake"
+                )
+            time.sleep(0.05)
+
+        window_station, desktop = _user32_window_objects()
+        before_window = {
+            sid: mask
+            for sid, mask, _flags in _window_object_dacl_entries(
+                window_station, "window station"
+            )
+        }
+        before_desktop = {
+            sid: mask
+            for sid, mask, _flags in _window_object_dacl_entries(desktop, "desktop")
+        }
+        if activation.sandbox_identity in before_window or activation.sandbox_identity in before_desktop:
+            raise HostMutationSandboxAclViolation(
+                "PR-018 diagnostic SID already present before discriminator gate"
+            )
+
+        if grant:
+            session_handles = _grant_verification_session_read(
+                activation.sandbox_identity
+            )
+            self._verification_session_reads[key] = session_handles
+
+        after_window = {
+            sid: mask
+            for sid, mask, _flags in _window_object_dacl_entries(
+                window_station, "window station"
+            )
+        }
+        after_desktop = {
+            sid: mask
+            for sid, mask, _flags in _window_object_dacl_entries(desktop, "desktop")
+        }
+        if grant:
+            if (
+                after_window.get(activation.sandbox_identity)
+                != WINDOW_STATION_VERIFICATION_READ
+                or after_desktop.get(activation.sandbox_identity)
+                != DESKTOP_VERIFICATION_READ
+            ):
+                raise HostMutationSandboxAclViolation(
+                    "PR-018 diagnostic exact Session-0 masks were not observed"
+                )
+        elif (
+            activation.sandbox_identity in after_window
+            or activation.sandbox_identity in after_desktop
+        ):
+            raise HostMutationSandboxAclViolation(
+                "PR-018 control unexpectedly acquired Session-0 authority"
+            )
+
+        authority_ready.write_text("ready", encoding="ascii")
+        return {
+            "sandbox_identity": activation.sandbox_identity,
+            "grant_applied": grant,
+            "window_station_mask": WINDOW_STATION_VERIFICATION_READ,
+            "desktop_mask": DESKTOP_VERIFICATION_READ,
+            "window_station_sid_present": activation.sandbox_identity in after_window,
+            "desktop_sid_present": activation.sandbox_identity in after_desktop,
+        }
+
+    def pr018_session_read_absence(self, app_sid: str) -> dict[str, object]:
+        """Read back exact SID absence after terminal cleanup without persisting handles."""
+        if (
+            self.semantic.task_id
+            != "PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"
+            or self.semantic.slice_id != "S01"
+        ):
+            raise HostMutationSandboxBindingMismatch(
+                "PR-018 Session-0 diagnostic lineage mismatch"
+            )
+        window_station, desktop = _user32_window_objects()
+        window_present = any(
+            sid == app_sid
+            for sid, _mask, _flags in _window_object_dacl_entries(
+                window_station, "window station"
+            )
+        )
+        desktop_present = any(
+            sid == app_sid
+            for sid, _mask, _flags in _window_object_dacl_entries(
+                desktop, "desktop"
+            )
+        )
+        if window_present or desktop_present:
+            raise HostMutationSandboxResidualAuthority(
+                "PR-018 diagnostic SID remains on Session-0 window objects"
+            )
+        return {
+            "sandbox_identity": app_sid,
+            "window_station_sid_absent": True,
+            "desktop_sid_absent": True,
+        }
+
     def enable_verification_descendants(
         self,
         activation: ActivatedMutationSandbox,
