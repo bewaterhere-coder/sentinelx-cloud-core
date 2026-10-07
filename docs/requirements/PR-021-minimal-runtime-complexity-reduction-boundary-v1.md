@@ -33,7 +33,8 @@ development:
     evidence_verified: true
     transport_preconditions_verified: true
     reconciliation_required_after_merge: true
-    finalization_receipt: docs/checkpoints/PR-021-minimal-runtime-complexity-reduction-boundary-v1-premerge-finalization-receipt.yaml
+    transport_base_revalidated_sha: f72ac8bfe643cd9fbdea231e4a69f9e88a0595e9
+    finalization_receipt: docs/checkpoints/PR-021-minimal-runtime-complexity-reduction-boundary-v1-premerge-finalization-r2-receipt.yaml
 transport:
   type: github-pr
   pr_number: 21
@@ -53,7 +54,7 @@ artifacts:
   pre_acceptance_evidence: docs/checkpoints/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s04-acceptance-evidence-20261008.yaml
   acceptance_review: docs/reviews/PR-021-minimal-runtime-complexity-reduction-boundary-v1-acceptance-r1.md
   acceptance_receipt: docs/reviews/PR-021-minimal-runtime-complexity-reduction-boundary-v1-acceptance-r1-receipt.yaml
-  premerge_finalization_receipt: docs/checkpoints/PR-021-minimal-runtime-complexity-reduction-boundary-v1-premerge-finalization-receipt.yaml
+  premerge_finalization_receipt: docs/checkpoints/PR-021-minimal-runtime-complexity-reduction-boundary-v1-premerge-finalization-r2-receipt.yaml
 related_tasks:
   workspace_materialization_bridge: PR-014-devforge-execution-workspace-materialization-bridge-v1
   direct_codex_bridge: PR-015-direct-codex-development-host-invocation-bridge-v1
