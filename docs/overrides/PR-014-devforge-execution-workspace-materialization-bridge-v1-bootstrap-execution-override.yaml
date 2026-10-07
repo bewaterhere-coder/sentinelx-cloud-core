@@ -1,6 +1,6 @@
 schema_version: "1.1"
 kind: devforge_task_scoped_bootstrap_execution_override
-state: active
+state: expired
 mode: implementation_bootstrap
 override_revision: 1
 
@@ -168,3 +168,16 @@ receipt:
   readback_required: true
   readback_verified: true
   observed_branch_head_after_override_create: ddd2ea94addc8a4bbf52815dc5f3e83ef4846782
+
+expiry_event:
+  trigger: plan_semantic_change
+  superseded_by_plan_revision: 6
+  superseded_plan_blob_sha: 4fc74fba9d787120798d5ed6a4f04b7da9cb6a5f
+  product_mutation_replay_authorized: false
+  consumed_slice_completions: 1
+  completed_product_candidate: 45dc99d15a23c499b4c1500fab60ed5e76475aeb
+  rationale: >-
+    Plan R6 changes verification/completion policy only. The R5 bootstrap override
+    may not authorize any new product mutation after Plan revision drift. The
+    already completed S02 candidate and its read-back evidence remain historical
+    implementation evidence for R6 reconciliation.
