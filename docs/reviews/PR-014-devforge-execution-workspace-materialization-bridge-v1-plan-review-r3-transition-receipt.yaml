@@ -1,0 +1,57 @@
+schema_version: "1.1"
+kind: devforge_artifact_state_transition_receipt
+task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
+from_stage: plan_review
+to_stage: plan_review_rejected
+transition_rule: rejected_plan_review_with_durable_findings
+source_command: "#开发评审 PR-014-devforge-execution-workspace-materialization-bridge-v1"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  canonical_branch: main
+  revision: 9551d38b1d70b5bfb3f692725e8f5c70b74693a6
+  review_contract_version: "1.3"
+
+evidence_refs:
+  - docs/requirements/PR-014-devforge-execution-workspace-materialization-bridge-v1.md@3cef067d8952faaa0086196078a21b3da4e94ec1
+  - docs/plans/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan.md@bf44533eec62652b4d252b629c9498df596f43cd
+  - docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r3.md@05046c0e4eddda02ddbad7574d64c68921bc99e4
+
+task_before_digest: 3cef067d8952faaa0086196078a21b3da4e94ec1
+task_after_digest: 645c22ebd37fa7fba36d924788c5ca7c5192454e
+semantic_after_state_digest: 645c22ebd37fa7fba36d924788c5ca7c5192454e
+semantic_after_digest_basis: canonical_task_blob_readback
+verified: true
+
+review:
+  decision: Rejected
+  finding_classification: plan_local
+  blocking_findings:
+    - BootstrapExecutionAuthorityUndefined
+
+state_after:
+  stage: plan_review_rejected
+  requirement_revision: 2
+  requirement_ready: true
+  plan_revision: 3
+  plan_approved: false
+  implementation_authorized: false
+  current_slice: null
+  completed_slices_preserved: [S01]
+  next_expected_actor: planner
+
+safety:
+  product_implementation_executed: false
+  slice_set_compiled: false
+  harness_invoked: false
+  canonical_main_mutated: false
+  host_mutation_performed: false
+  project_binding_mutated: false
+  permission_or_credential_expansion_used: false
+  provider_fallback_used: false
+  pr013_s03_replayed: false
+
+completion_guard:
+  review_artifact_readback_verified: true
+  task_transition_readback_verified: true
+  canonical_next_action: "#开发计划修复 PR-014-devforge-execution-workspace-materialization-bridge-v1"
