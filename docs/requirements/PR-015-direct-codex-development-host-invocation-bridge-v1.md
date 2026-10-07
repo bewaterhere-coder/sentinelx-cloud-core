@@ -17,9 +17,9 @@ development:
   latest_plan_review: approved_round_6
   latest_plan_remediation: r6_applied
   review_disposition: approved
-  next_expected_actor: operator
+  next_expected_actor: implementer
   acceptance_disposition: rejected_repair_local
-  execution_disposition: fixing_bootstrap_required
+  execution_disposition: fixing_bootstrap_admitted
   blocking_findings:
     - direct_codex_workspace_acl_handoff_incompatible_with_codex_sandbox
   repair_evidence:
@@ -82,15 +82,15 @@ artifacts:
 implementation_entry:
   bootstrap_required: true
   intended_target: direct:codebuddy
-  override_state: expired
+  override_state: active
   override_mode: fixing_recovery
-  override_revision: 3
+  override_revision: 4
   override_ref: docs/overrides/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-execution-override.yaml
-  override_blob_sha: 936f56ae64b248dc802053df1b2d091ca8cf64cb
-  override_receipt_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-fixing-recovery-r1-20261007.yaml
+  override_blob_sha: ec6a62d51a465cfd4ef276538f01889624f4cf4e
+  override_receipt_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-fixing-recovery-r2-20261007.yaml
   prior_override_ref: docs/overrides/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-execution-override.yaml
-  effective_provider: null
-  effective_adapter: null
+  effective_provider: direct
+  effective_adapter: codebuddy
   project_binding_fallback:
     provider: direct
     adapter: codex
@@ -114,9 +114,9 @@ requirement_readiness:
     implementation_execution_complete: true
     all_current_plan_slices_completed: true
     bootstrap_override_expired_by_slice_completion: true
-    fixing_bootstrap_override_active: false
-    fixing_bootstrap_override_expired_by_stage_exit: true
-    fixing_bootstrap_override_revision: 3
+    fixing_bootstrap_override_active: true
+    fixing_bootstrap_override_expired_by_stage_exit: false
+    fixing_bootstrap_override_revision: 4
     fixing_bootstrap_override_mode: fixing_recovery
     pr013_relation: related_unblocker_not_same_task
 ---
