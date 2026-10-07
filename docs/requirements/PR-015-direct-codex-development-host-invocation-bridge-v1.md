@@ -37,6 +37,8 @@ artifacts:
   prior_acceptance: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r1.md
   prior_acceptance_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r1-decision-required-20261007.yaml
   acceptance_invalidation: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r1-invalidation-r2.md
+  planning_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-requirement-r2-plan-r3-ready-for-review-20261007.yaml
+  current_execution_slice_set: null
 implementation_entry:
   bootstrap_required: true
   intended_target: direct:codebuddy
