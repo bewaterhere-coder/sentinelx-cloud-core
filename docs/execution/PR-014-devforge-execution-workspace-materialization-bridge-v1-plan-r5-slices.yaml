@@ -208,7 +208,9 @@ slices:
 
     checkpoint:
       required: true
-    run_refs: []
+      latest_blocked_ref: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-blocked-direct-invocation-projection-20261008.yaml
+    run_refs:
+      - docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-run-001.yaml
     completion_receipt_ref: null
 
 execution_state:
