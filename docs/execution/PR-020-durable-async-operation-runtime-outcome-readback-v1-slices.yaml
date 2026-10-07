@@ -94,7 +94,9 @@ slices:
         - retention clock is injectable in tests and caller cannot select retention
     checkpoint:
       required: true
-    run_refs: []
+    run_refs:
+      - docs/execution/PR-020-durable-async-operation-runtime-outcome-readback-v1-s01-run-001.yaml
+    latest_execution_checkpoint_ref: docs/checkpoints/PR-020-durable-async-operation-runtime-outcome-readback-v1-s01-blocked-20261008.yaml
     completion_receipt_ref: null
 
   - slice_id: S02
