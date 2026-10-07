@@ -166,4 +166,5 @@ admission:
 
 receipt:
   readback_required: true
-  readback_verified: false
+  readback_verified: true
+  observed_branch_head_after_override_create: ddd2ea94addc8a4bbf52815dc5f3e83ef4846782
