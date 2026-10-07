@@ -1,20 +1,23 @@
-# PR-014 — SentinelX DevForge Execution Workspace Materialization Bridge V1 — Plan R4
+# PR-014 — SentinelX DevForge Execution Workspace Materialization Bridge V1 — Plan R5
 
 ## Plan State
 
 ```yaml
 task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
-plan_revision: 4
+plan_revision: 5
 plan_status: ready_for_review
 implementation_authority: false
 requirement_ref: docs/requirements/PR-014-devforge-execution-workspace-materialization-bridge-v1.md
 requirement_revision: 2
-requirement_blob_sha: 58d7ea1388e843665e5dda34f3cc2f645f2240d3
+requirement_blob_sha: 5f3911e49e92722ffd2723aaa14e75e7bc00d9c0
 requirement_change_impact: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-requirement-r2-invalidation.md
-prior_plan_revision: 3
-prior_plan_blob_sha: bf44533eec62652b4d252b629c9498df596f43cd
-rejected_review_ref: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r3.md
-rejected_review_blob_sha: 05046c0e4eddda02ddbad7574d64c68921bc99e4
+prior_plan_revision: 4
+prior_plan_blob_sha: 2c930c0f9dc8c901691ebd8819f1f0bd19d6dc50
+superseded_plan_review_ref: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r4.md
+superseded_plan_review_blob_sha: 3de8413c84733f8c233762965e3500cc3c307608
+superseded_slice_set_ref: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-r4-slices.yaml
+superseded_slice_set_blob_sha: c8786d85e081986e3d3c4ed7ede2f290a8756f7e
+replan_trigger_ref: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-harness-bootstrap-blocked-20261008.yaml
 transport:
   type: github-pr
   pr_number: 14
@@ -22,9 +25,9 @@ transport:
   base_branch: main
 planning_baseline:
   sentinelx_main: 1028030b33f0ea792a884491a431fffe566f6aa5
-  task_head_before_plan_r4: d8aebe540f4cdbb81409bb45e6dd5878fa6379ee
-  devforge_main: 9551d38b1d70b5bfb3f692725e8f5c70b74693a6
-  devforge_release: v2.97.0
+  task_head_before_plan_r5: 8e30a2b3a3c35f9ad9ca90449b8e0dec6b39439a
+  devforge_main: 050d9c9559a173a3e0b37fcd2a9db702b6b5a7e6
+  devforge_release: v2.98.0
 project_binding:
   provider: direct
   adapter: codex
@@ -34,51 +37,70 @@ completed_evidence_preserved:
 implementation_authorized: false
 ```
 
-Plan R4 preserves the Requirement R2 / Plan R3 technical design and closes Plan Review R3 finding `BootstrapExecutionAuthorityUndefined`.
+Plan R5 is a user-directed implementation replan that preserves Requirement R2 and S01 completed evidence while replacing the blocked R4 execution-entry design.
 
-Plan R4 makes one authority correction: S02 execution is owned by an explicit task-scoped Harness bootstrap override. GitHub PR #14 remains only the locked canonical transport/persistence target.
+R4 proved that Harness bootstrap is not bootstrap-safe for this Task today: Harness itself requires `incremental_execution.slice_v1`, whose completion path participates in the cycle `PR-014 → PR-229 → PR-020 → PR-014`.
 
-No product implementation is authorized until this Plan is reviewed, an exact R4 Slice Set is compiled/read back, and the explicit Harness bootstrap admission succeeds.
+R5 removes all PR-229 and PR-020 prerequisites from PR-014. The S02 seed is implemented through DevForge's existing explicit## R5 Replan Delta — bootstrap-safe repository projection without Harness or workspace ingress
 
-## R4 Remediation Delta — explicit Harness bootstrap authority
+Plan R5 changes no Requirement R2 semantics, product scope, Host placement policy, canonical transport, S01 evidence, security boundary, PR-013 ownership split, or final materialize-workspace behavior.
 
-Plan R4 changes no Requirement R2 semantics, product scope, security boundary, transport identity, source-capsule design, materializer design, Development Host handoff semantics, or PR-013 ownership split.
+It replaces only the bootstrap execution entry.
 
-It closes only:
+### Dependency cycle being removed
 
 ~~~text
-BootstrapExecutionAuthorityUndefined
+R4:
+PR-014 S02
+→ Harness bootstrap
+→ incremental_execution.slice_v1
+→ PR-229
+→ durable async / PR-020 dependency
+→ PR-014 materialization dependency
+→ cycle
 ~~~
 
-The authoritative execution chain is frozen as:
+R5:
 
 ~~~text
 Requirement R2
-→ Approved Plan R4 exact revision/digest
-→ exact R4 Slice Set compiled/read back
+→ Approved Plan R5 exact revision/digest
+→ exact R5 Slice Set compiled/read back
 → Task stage = implementation
-→ explicit #开发引导执行 PR-014-devforge-execution-workspace-materialization-bridge-v1 harness
-→ bootstrap contract verifies self-host relation + registered/current Harness target
-→ Harness capability/readiness + exact sliced locked-transport contract verified
-→ active Task-scoped implementation_bootstrap override persisted/read back
+→ explicit #开发引导执行 PR-014-devforge-execution-workspace-materialization-bridge-v1 direct:codebuddy
+→ bootstrap contract verifies exact self-host relation + registered/current direct target
 → later explicit #开发执行
-→ at most S02
+→ exact S02 only
+→ direct Development Host reads canonical PR
+→ structured repository.write persists only exact S02 source/test files to PR #14 branch
+→ exact branch/commit readback + existing repository-hosted verification evidence
+→ S02 completion receipt
+→ implementation execution complete
+→ Acceptance owns exact-candidate Windows physical materialization verification
 ~~~
 
-Authority rules:
+### Authority rules
 
 - project binding remains `direct/codex`;
-- the Task-scoped override has higher resolution priority only while valid and active;
-- GitHub PR #14 / exact task branch are transport and persistence identity, not execution-provider authority;
-- `repository.write` may be used only as an implementation persistence mechanic inside the admitted Harness execution boundary;
-- orchestration MUST NOT directly implement S02 through repository API merely because repository writes are technically available;
-- Harness owns its internal Development Host/model/context/workspace mechanics under its own contract; Plan R4 does not select or persist those internals;
-- because slicing is active, the resolved Harness consumer must provide verified `incremental_execution.slice_v1` compatibility for exact S02;
-- Harness must preserve exact PR #14 / exact task branch locked transport and exact S02 write scope;
-- if Harness is unavailable, stale, unregistered, lacks required Slice capability, cannot preserve locked transport, or requires the missing PR-014 materialization capability as an ingress prerequisite, bootstrap admission fails closed before product mutation;
-- no fallback target is pre-authorized;
-- a different target requires a new explicit `#开发引导执行` and full bootstrap admission;
-- bootstrap command itself performs no Slice execution.
+- canonical Direct/Codex remains the blocked provider for the self-host relation because its normal Host-local implementation path requires `development.execution_workspace_materialize`;
+- the bootstrap target is `direct:codebuddy`, a different registered Development Adapter, selected only by the explicit Task-scoped bootstrap override;
+- target registration/availability is NOT assumed by this Plan and must be proven by the later bootstrap command;
+- the override is the execution authority; GitHub/repository transport is persistence only;
+- DevForge `repository.write` may be used only after the active override is re-read and only for exact S02 source/test paths on canonical PR #14 branch;
+- no local execution workspace is created for S02 seed implementation;
+- no Harness contract/invocation is used;
+- no `incremental_execution.slice_v1` consumer capability is required because the execution target is direct, not Harness;
+- no `development.execution_workspace_materialize` capability is required to implement the seed because the seed is persisted through canonical repository APIs, not a Host-local mutation workspace;
+- no PR-020 durable async operation is required: seed persistence consists of bounded repository writes with commit/branch readback and externally observable verification receipts;
+- no generic Git, shell, `script_run`, generic filesystem write, caller-selected Host path, Host-policy expansion, credential expansion, permission expansion or write-scope expansion is authorized;
+- bootstrap execution cannot modify `main`, create/replace branch or PR, modify workflow files, or migrate transport;
+- PR-013 S03 remains forbidden to replay.
+
+### R4 evidence treatment
+
+The R4 approved review, R4 Slice Set, and blocked Harness bootstrap receipt remain historical evidence.
+
+They MUST NOT authorize R5 execution because Plan revision drift invalidates the R4 Slice Set and the R4 bootstrap target assumption.
 
 ## 1. Planning objective
 
@@ -146,87 +168,170 @@ Plan R2 S02/S03 are not executable because they:
 
 Their historical artifacts remain audit evidence only.
 
-## 3. Self-host bootstrap implementation mode
+## 3. Bootstrap-safe S02 implementation mode
 
-### 3.1 Why canonical Direct/Codex cannot own S02 entry
+### 3.1 Verified self-host relation
 
-PR-014 creates the compliant execution-workspace materialization capability required by the current canonical Direct/Codex self-host path. Requiring Direct/Codex to obtain that missing capability before it can implement S02 reproduces the cycle.
+The canonical project binding remains:
 
-This establishes the bootstrap relation required by the Task-Scoped Bootstrap Execution Override Contract:
+~~~yaml
+provider: direct
+adapter: codex
+~~~
+
+The current canonical Direct/Codex self-host path requires the exact capability PR-014 creates:
 
 ~~~text
-canonical provider = direct/codex
-requires capability X = development.execution_workspace_materialize
+blocked provider = direct/codex
+missing capability X = development.execution_workspace_materialize
 this exact Task = PR-014
 delivers capability X
 ~~~
 
-Provider preference or convenience is not the reason for the override.
+This is a valid Task-Scoped Bootstrap Execution Override relation. Provider preference is not the reason for the override.
 
-### 3.2 Explicit S02 Harness bootstrap entry
+### 3.2 Explicit direct CodeBuddy bootstrap entry
 
-After Plan R4 is approved and the exact R4 Slice Set is compiled/read back, S02 has this mandatory precondition:
+After Plan R5 is approved and the exact R5 Slice Set is compiled/read back, S02 has this mandatory precondition:
 
 ~~~text
-#开发引导执行 PR-014-devforge-execution-workspace-materialization-bridge-v1 harness
+#开发引导执行 PR-014-devforge-execution-workspace-materialization-bridge-v1 direct:codebuddy
 ~~~
 
-Successful bootstrap admission must durably prove:
+Admission must durably prove:
 
-1. exact Task identity and stage `implementation`;
-2. Requirement Revision 2;
-3. exact Approved Plan R4 revision/digest;
-4. exact current R4 Slice Set and current Slice S02;
-5. unchanged project binding `direct/codex`;
-6. exact PR #14 + exact task branch transport lock;
-7. verified self-host relation above;
-8. Harness is a registered/current target;
-9. Harness is live/available;
-10. Harness consumer can carry `incremental_execution.slice_v1` for exact S02;
-11. required canonical transport/write-scope constraints are expressible;
-12. no replacement branch/PR, provider fallback, permission expansion, credential expansion, Host-policy mutation or write-scope expansion.
+1. exact Task identity;
+2. Task stage = `implementation`;
+3. Requirement Revision 2;
+4. exact Approved Plan R5 revision/digest;
+5. exact current R5 Slice Set and S02;
+6. unchanged project binding `direct/codex`;
+7. exact canonical PR #14 + exact task branch;
+8. self-host relation above;
+9. `direct:codebuddy` is a registered/current target;
+10. the target is currently available;
+11. current execution environment exposes only the repository read/write/observe surfaces required by the seed;
+12. no replacement branch/PR, fallback, permission expansion, credential expansion, Host-policy mutation or write-scope expansion.
 
 The bootstrap command creates authority only. It does not execute S02.
 
-### 3.3 Canonical transport is persistence, not authority
+If CodeBuddy is unavailable or cannot satisfy exact repository-projection constraints, bootstrap fails before product mutation. No fallback target is pre-authorized.
 
-S02 implementation must persist to:
+### 3.3 Repository-projection bootstrap boundary
 
-~~~text
-repository = bewaterhere-coder/sentinelx-cloud-core
-canonical PR = #14
-canonical branch = task/devforge-execution-workspace-materialization-bridge-v1
-replacement PR = forbidden
-replacement branch = forbidden
-fallback transport = forbidden
+S02 seed implementation intentionally does **not** require a Host-local execution workspace.
+
+Allowed execution mechanics:
+
+~~~yaml
+development_host: direct:codebuddy
+canonical_transport: github-pr
+repository: bewaterhere-coder/sentinelx-cloud-core
+canonical_pr: 14
+canonical_branch: task/devforge-execution-workspace-materialization-bridge-v1
+read_surface: repository.read
+write_surface: repository.write
+write_mode: exact_branch_structured_persistence
+expected_head_compare_and_set: required
+post_write_branch_readback: required
+workflow_observe: existing_repository_verification_only
+local_workspace_required: false
 ~~~
 
-Structured repository writes remain allowed only when requested/mediated by the admitted Harness execution contract and within exact S02 write scope.
+The direct Development Host may inspect canonical source through repository reads, reason about the exact S02 patch, and persist source/test changes through structured repository writes.
 
-Forbidden:
+Repository API availability is not provider authority. The active Task-scoped bootstrap override is authority.
 
-- orchestration directly writing S02 implementation and treating repository writes as Development Host execution;
-- using GitHub repository API availability as provider authority;
-- falling back to canonical Direct/Codex, CodeBuddy, Host Runtime or another provider after Harness failure;
-- generic `git clone`, `git worktree`, shell or filesystem bootstrap outside the admitted Harness boundary;
-- changing the project binding to Harness.
+### 3.4 Seed write scope
 
-### 3.4 Harness internal execution boundary
+The R5 Plan Review/Slice Set must freeze the exact S02 path allowlist. It may include only the minimal materialization implementation and focused tests required by D1–D10, expected primarily under:
 
-Harness owns its internal execution strategy after ingress. Plan R4 MUST NOT select or encode:
+~~~text
+src/sentinelx_core/devforge_workspace_source.py
+src/sentinelx_core/devforge_workspace_materializer.py
+src/sentinelx_core/devforge_workspace_materialization.py
+src/sentinelx_core/handlers/devforge_runtime.py
+src/sentinelx_core/handlers/__init__.py
+src/sentinelx_core/user_git.py
+src/sentinelx_core/windows_mutation_sandbox.py
+tests/test_devforge_workspace_*.py
+tests/test_devforge_runtime_local_api.py
+focused directly-related tests
+~~~
 
-- Development Host identity;
-- model/provider identity behind Harness;
-- reasoning effort;
-- context provider;
-- ModelRouter decision;
-- Harness workspace mechanism.
+Any additional production path requires explicit Slice-bound justification before mutation.
 
-Harness may use its own contract-compliant workspace isolation mechanics. It must not require DevForge orchestration to create a Host-local PR-014 execution workspace through the missing `materialize_workspace` capability before ingress.
+Always forbidden for bootstrap seed execution:
 
-If current Harness cannot satisfy that boundary, return a blocked bootstrap/execution result and perform zero product mutation.
+~~~text
+generic git
+git clone
+git worktree
+shell
+script_run
+generic host filesystem edit/write
+caller-selected local path
+workflow-file modification
+main-branch write
+replacement branch
+replacement PR
+Host policy/allowlist change
+credential mutation
+permission expansion
+write-scope expansion
+PR-013 S03 replay
+~~~
+
+### 3.5 Verification without PR-020
+
+The seed path contains no long-running Host execution whose lost transport response would require PR-020.
+
+Every material persistence step must be recoverable by canonical readback:
+
+~~~text
+expected PR-head SHA
+→ bounded repository write
+→ returned commit SHA
+→ re-read PR #14 head
+→ re-read changed file blobs
+~~~
+
+Existing repository-hosted CI/checks MAY be consumed as verification evidence only when they run against the exact resulting PR head. S02 bootstrap may not modify CI workflows or inject an ad-hoc generic shell job.
+
+Lost write/check response is reconciled by GitHub branch/check readback before retry. Blind replay is forbidden.
 
 ## 4. Technical design
+
+### D0 — Bootstrap seed versus runtime materialization boundary
+
+R5 separates **how the seed code is persisted** from **what the seed code is allowed to do at runtime**.
+
+Bootstrap seed persistence:
+
+~~~text
+direct:codebuddy
+→ repository.read
+→ structured repository.write to exact PR branch
+→ readback
+~~~
+
+Runtime `materialize_workspace` behavior after the candidate is activated:
+
+~~~text
+path-free local_api request
+→ Host-owned placement
+→ source evidence/capsule
+→ Host-owned mutation scope
+→ durable pre-execution audit START
+→ existing AppContainer/Job sandbox
+→ contained materializer
+→ exact Git readback
+→ temporary-authority closure
+→ Host-owned handoff access
+→ receipt
+~~~
+
+The bootstrap persistence route MUST NOT become a runtime workspace-materialization fallback.
 
 ### D1 — Host-derived canonical source role
 
@@ -352,7 +457,7 @@ The capsule is not a repository transaction ledger and grants no publication aut
 
 ### D5 — Trusted Git checkout materializer without generic clone
 
-Existing PR-013 evidence already showed ordinary `git clone` inside the AppContainer can fail with Windows DLL initialization. R3 does not retry that design.
+Existing PR-013 evidence already showed ordinary `git clone` inside the AppContainer can fail with Windows DLL initialization. R5 does not retry that design.
 
 Instead, use a provider-generated trusted materializer under the existing AppContainer/Job boundary.
 
@@ -414,7 +519,7 @@ Allowed operation class for the seed is provider-fixed. Caller operation-class s
 
 Current Windows sandbox cleanup intentionally removes AppContainer authority and leaves broker-only exact ACL. That is insufficient when the next consumer is a user-level Development Host.
 
-R3 adds one bounded **Host-owned handoff transition** after successful materialization.
+R5 preserves one bounded **Host-owned handoff transition** after successful materialization.
 
 Rules:
 
@@ -506,138 +611,132 @@ General repository transaction, repeated scoped operation closure and publicatio
 
 ## 5. Implementation slices to compile after approval
 
-The formal R4 Slice Set must preserve historical S01 completion and compile only remaining current-plan work.
+The formal R5 Slice Set must preserve historical S01 completion and compile exactly one remaining implementation Slice.
 
 ### S01 — Preserved historical completion
 
-State after R4 review should be represented as completed/reused evidence, not re-executed.
+State after R5 review is completed/reused evidence, never re-executed.
 
 Evidence:
 
-```text
+~~~text
 docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-s01-completion-20261005.yaml
-```
+~~~
 
-No new S01 Run is authorized.
+Before S02 mutation, current canonical main must be compared against relevant S01 placement/scope/sandbox seams. A material semantic conflict stops at a Decision Boundary; it does not authorize S01 replay.
 
-### S02 — Bootstrap-safe source capsule + materialize_workspace
+### S02 — Bootstrap-safe minimal materialize_workspace seed
 
 Objective:
 
-Implement the independent seed that turns the preserved S01 placement/scope/sandbox foundation into a path-free exact Git execution-workspace materialization action.
-
-Primary files:
-
-- `src/sentinelx_core/devforge_workspace_source.py` new;
-- `src/sentinelx_core/devforge_workspace_materializer.py` new;
-- `src/sentinelx_core/devforge_workspace_materialization.py`;
-- `src/sentinelx_core/handlers/devforge_runtime.py`;
-- `src/sentinelx_core/handlers/__init__.py`;
-- `src/sentinelx_core/user_git.py` only for bounded provider source/handoff helpers;
-- `src/sentinelx_core/windows_mutation_sandbox.py` or the DevForge subclass only for bounded Host-owned handoff ACL transition;
-- focused tests.
+Implement the smallest complete path-free `devforge_runtime.materialize_workspace` candidate that reuses S01 and satisfies the runtime safety design D1–D10, while implementation persistence itself uses no Host-local execution workspace.
 
 Execution mode:
 
-```yaml
+~~~yaml
 bootstrap_required_before_s02: true
-bootstrap_target: harness
-bootstrap_command: "#开发引导执行 PR-014-devforge-execution-workspace-materialization-bridge-v1 harness"
+bootstrap_target: direct:codebuddy
+bootstrap_command: "#开发引导执行 PR-014-devforge-execution-workspace-materialization-bridge-v1 direct:codebuddy"
 bootstrap_mode: implementation_bootstrap
 project_binding_remains: direct/codex
-required_harness_capability: incremental_execution.slice_v1
+harness_required: false
+incremental_execution_slice_consumer_required: false
+execution_workspace_materialize_required_for_seed_persistence: false
 canonical_transport: github-pr
 canonical_pr: 14
 task_branch: task/devforge-execution-workspace-materialization-bridge-v1
-repository_write_role: persistence_only_inside_admitted_harness_execution
-repository_write_scope: exact_S02_files_only
-harness_internal_host_selection: opaque
-harness_internal_workspace_strategy: opaque
-canonical_main_mutation: forbidden
-generic_shell_git_workspace_bootstrap: forbidden
+seed_persistence:
+  repository_read: allowed
+  repository_write: exact_S02_paths_only
+  expected_head_cas: required
+  readback: required
+  local_workspace: forbidden
+generic_git: forbidden
+shell: forbidden
+script_run: forbidden
+generic_host_filesystem_write: forbidden
+caller_host_path_authority: forbidden
 provider_fallback: forbidden
-```
+~~~
 
-S02 verification must prove at least:
+S02 implementation scope remains the D1–D10 materialization design, including:
 
-1. source role path is Host-derived, never caller-provided;
-2. wrong origin/branch/dirty source checkout fails closed;
-3. exact ref/commit mismatch fails closed;
-4. missing object uses only bounded provider Git acquisition or stable credential/transport failure;
-5. capsule excludes secrets and is digest-bound;
-6. traversal/reparse/ADS/special unsupported entries fail closed;
-7. local_api schema has no writable path/credential/SID/ACL/argv authority;
-8. scope + durable audit precede first workspace write;
-9. materializer runs AppContainer + no-breakaway Job;
-10. exact Git checkout readback matches repository/ref/commit;
-11. canonical source branch/worktree remain unchanged;
-12. temporary source/materializer/AppContainer grants are closed;
-13. Host-owned ACL handoff + user-scoped Git probe succeeds on Windows fixture;
-14. retry converges without rematerialization;
-15. legacy `scoped_script`, canonical firewall, S01 placement/scope/sandbox regressions pass;
-16. no PR-013 transaction/publication code is imported.
+- Host-derived canonical source role;
+- exact repository/ref/commit verification;
+- provider-private immutable source capsule;
+- trusted contained checkout materializer;
+- preserved S01 placement/scope/sandbox;
+- durable pre-execution audit ordering;
+- bounded Host-owned ACL/handoff transition;
+- closed path-free `materialize_workspace` local_api schema;
+- materialization receipt and same-Attempt no-replay;
+- explicit PR-013 non-dependency.
 
-S02 completion candidate must be durable on PR #14 and exact remote branch read back.
+S02 bootstrap verification must prove before Slice completion:
 
-### S03 — Windows physical self-host closure + exact-candidate activation
+1. active `direct:codebuddy` bootstrap override was durably read back before the first source mutation;
+2. every source mutation occurred only on canonical PR #14 task branch through structured repository persistence;
+3. no write targeted canonical `main`;
+4. exact before/after PR-head SHA and changed blobs were read back;
+5. changed paths remained inside the exact R5 S02 allowlist;
+6. no workflow file, Host policy, credential, permission or project binding changed;
+7. no generic Git/shell/`script_run`/generic Host filesystem path was used;
+8. no Harness invocation or Harness Slice capability was used;
+9. no PR-020 durable async runtime was required;
+10. no PR-013 S03 replay or unmerged PR-013 import occurred;
+11. focused code/schema/tests for D1–D10 are present and internally coherent;
+12. existing repository-hosted verification evidence for the exact PR head is read back when available/required by repository policy;
+13. deterministic static/import/schema failures block completion and are repaired only within the same exact Slice/write scope;
+14. completion receipt binds exact Task/Plan/Slice/PR branch/head/changed paths and verification evidence.
 
-Depends on S02.
+S02 completion is an implementation checkpoint, not physical Windows Acceptance.
 
-Objective:
+After S02 is the only remaining implementation Slice and is verified complete, implementation execution is complete. The Task may advance to Acceptance under the normal owning command.
 
-Prove the exact S02 candidate can physically provide the missing `development.execution_workspace_materialize` surface on the Windows Host and leave a workspace consumable by a user-level Development Host.
-
-Required flow:
-
-```text
-exact S02 candidate
-→ existing admitted candidate install/activation workflow
-→ installed Agent version/commit readback
-→ capabilities readback
-→ local_api.describe devforge_runtime
-→ materialize_workspace exact benign fixture
-→ exact path/source/scope/audit/containment receipt
-→ user-scoped Git handoff probe
-→ retry no-replay
-→ canonical source main+clean readback
-→ security regression
-```
-
-S03 must prove:
-
-- `materialize_workspace` is live and discoverable;
-- request remains path-free;
-- exact workspace is under Host DevForge execution root;
-- expected commit and clean Git state read back;
-- CodeBuddy-equivalent active interactive user Git access succeeds;
-- canonical checkout remains `main + clean`;
-- no generic Git/worktree/shell/file fallback was used;
-- no Host policy/allowlist/credential expansion occurred;
-- PR-013 S03 was not executed/replayed;
-- PR-013 current state is informational only, not a gate.
-
-If live activation requires a separately protected install/restart authority, use that existing workflow and persist its receipt. No activation receipt means no S03 completion claim.
+No S03 implementation Slice exists in R5.
 
 ## 6. Acceptance mapping
 
 Requirement R2 acceptance mapping:
 
-- AC1–AC3 → preserved S01 + S02 placement/schema negatives.
-- AC4–AC6 → S02 source broker/capsule.
-- AC7–AC9 → S02 audit/materializer/receipt.
-- AC10 → S02 handoff + S03 physical user-level readback.
-- AC11 → S02 unit/integration retry + S03 physical retry.
-- AC12 → S02/S03 PR-013-independent execution evidence.
-- AC13 → S02/S03 regression suite.
-- AC14 → S03 Windows physical E2E.
-- AC15 → code inventory proves no retained multi-operation/publication implementation.
-- AC16 → policy/transport/security readback.
+- AC1–AC3 → preserved S01 + S02 closed schema/placement-path negatives.
+- AC4–AC6 → S02 source role/source acquisition/capsule implementation evidence plus Acceptance live negatives.
+- AC7–AC9 → S02 audit/materializer/receipt implementation plus Acceptance runtime readback.
+- AC10 → Acceptance physical Host-owned handoff + registered Development Host usability probe.
+- AC11 → S02 deterministic no-replay implementation tests + Acceptance physical retry/readback.
+- AC12 → S02 bootstrap receipt must prove completion without PR-013/PR-229/PR-020 completion.
+- AC13 → S02 regression evidence + Acceptance exact-candidate regression checks.
+- AC14 → **Acceptance** performs Windows physical integration on the exact S02 candidate.
+- AC15 → code inventory in S02/Acceptance proves no PR-013 multi-operation/publication ownership was absorbed.
+- AC16 → S02 bootstrap receipt + Acceptance readback prove no Host policy/allowlist widening, no generic fallback and no independent Codex requirement.
 
-Acceptance cannot rely solely on unit tests for AC10/AC14.
+### Acceptance exact-candidate physical gate
+
+Acceptance MUST NOT infer AC8/AC10/AC14 from source or CI alone.
+
+It must use the existing separately authorized exact-candidate activation/verification workflow and persist/read back evidence equivalent to:
+
+~~~text
+exact S02 PR-head candidate
+→ activate/install exact candidate through existing protected workflow
+→ installed candidate commit/version readback
+→ capabilities/local_api.describe readback
+→ path-free materialize_workspace benign request
+→ Host-derived placement readback
+→ source capsule/scope/audit/AppContainer/Job evidence
+→ exact Git HEAD/branch/origin/clean readback
+→ temporary-authority closure
+→ user-level Development Host handoff probe
+→ same-identity retry no-replay
+→ canonical source main + clean
+→ security regressions
+~~~
+
+Acceptance verification MUST NOT use generic git/shell/`script_run` as a workspace-materialization fallback and MUST NOT replay PR-013 S03.
 
 ## 7. Security / authority invariants
 
-R3 must preserve:
+R5 preserves:
 
 1. caller_never_selects_execution_workspace_path
 2. caller_never_selects_source_checkout_path
@@ -645,7 +744,7 @@ R3 must preserve:
 4. caller_never_selects_sid_acl_or_write_roots
 5. exact_source_commit_is_immutable_authority
 6. canonical_source_worktree_remains_main_and_clean
-7. no_audit_start_no_workspace_write
+7. no_audit_start_no_runtime_workspace_write
 8. materializer_runs_inside_existing_appcontainer_job_boundary
 9. temporary_materializer_authority_is_closed_before_handoff
 10. handoff_access_is_host_owned_not_caller_owned
@@ -655,80 +754,99 @@ R3 must preserve:
 14. pr013_s03_replay_is_forbidden
 15. unmerged_pr013_code_import_is_forbidden
 16. canonical_main_is_not_implementation_workspace
-17. non_host_local_s02_bootstrap_is_predeclared_not_error_fallback
-18. no_receipt_no_completion_claim
+17. bootstrap_seed_persistence_requires_explicit_task_override
+18. repository_write_is_persistence_not_provider_authority
+19. bootstrap_seed_has_no_host_local_workspace
+20. harness_and_pr229_are_not_pr014_dependencies
+21. pr020_is_not_pr014_seed_dependency
+22. generic_git_shell_script_run_fallback_is_forbidden
+23. seed_write_scope_is_exact_and_cannot_expand
+24. no_receipt_no_completion_claim
 
 ## 8. Risks and mitigations
 
-### Risk A — Source capsule accidentally becomes a general source broker
+### Risk A — Repository projection is mistaken for execution authority
 
-Mitigation: private provider module, closed local_api schema, exact repo/ref/commit only, no caller paths/URLs/argv, no publication API.
+Mitigation: only explicit `#开发引导执行 ... direct:codebuddy` creates Task authority. Repository APIs are persistence mechanics after override readback.
 
-### Risk B — Git object reconstruction produces a worktree but invalid Git metadata
+### Risk B — Direct target secretly requires a local workspace
 
-Mitigation: exact Git readback after handoff is mandatory; materializer completion alone cannot produce success.
+Mitigation: bootstrap/execute preflight must prove the selected target can satisfy the R5 repository-projection tool surface without creating a Host-local workspace. Otherwise stop before mutation; no fallback.
 
-### Risk C — Canonical source object acquisition mutates working tree
+### Risk C — Structured writes drift across commits
 
-Mitigation: pre/post branch + status + HEAD readback; only bounded object/ref transport operations allowed; checkout/reset/merge/worktree operations forbidden.
+Mitigation: bind every mutation window to expected current PR-head/file blob identity, then re-read exact PR head and changed blobs. Drift forces re-read/recompile before another write.
 
-### Risk D — AppContainer cleanup leaves workspace inaccessible to CodeBuddy
+### Risk D — Seed write scope becomes a generic repository mutation channel
 
-Mitigation: explicit Host-owned ACL handoff transition plus user-scoped Git probe before `handoff_ready=true`.
+Mitigation: R5 Slice Set freezes exact source/test path allowlist; workflow/config/credential/security metadata paths are denied unless explicitly part of the reviewed S02 product change.
 
-### Risk E — ACL handoff becomes permission expansion
+### Risk E — Lack of local test execution hides syntax/integration failure
 
-Mitigation: derive only from Host execution-root inheritance/access; no caller principal/mask; no ancestor changes; exact DACL/final-path readback.
+Mitigation: require deterministic source/schema review and consume existing repository-hosted verification against exact PR head. Acceptance still performs exact-candidate physical proof; no source-only Acceptance claim.
 
-### Risk F — Current main has drifted since S01
+### Risk F — Product seed accidentally bypasses S01 sandbox
 
-Mitigation: before S02 mutation compare current canonical main on S01/handler/user_git/sandbox surfaces. Preserve S01 semantic results; stop on material conflict.
+Mitigation: D0 explicitly separates seed persistence from runtime behavior. Runtime action must route through preserved S01 placement/scope/sandbox/audit/firewall. Repository projection is never a runtime fallback.
 
-### Risk G — PR-013 lands during execution
+### Risk G — Canonical source object acquisition mutates source worktree
 
-Mitigation: impact reconciliation only; use merged canonical primitive if compatible, never import unmerged code or replay S03.
+Mitigation: D1–D4 preserve pre/post branch/status/HEAD readback and only fixed provider-owned Git operations inside product runtime; no bootstrap executor Git commands.
 
-### Risk H — Harness bootstrap target unavailable or incompatible
+### Risk H — AppContainer cleanup leaves workspace unusable
 
-Mitigation: availability/capability is not assumed by Plan prose. After Plan approval + exact Slice Set compilation, explicit `#开发引导执行 ... harness` must verify registered/current Harness, exact Slice support, locked transport compatibility and unchanged authority. Failure stops before product mutation with no fallback.
+Mitigation: D7 Host-owned handoff transition + Acceptance user-level Git probe.
 
-### Risk I — Repository write capability is mistaken for execution authority
+### Risk I — PR-013 lands during R5
 
-Mitigation: Plan R4 explicitly defines repository API/write as persistence mechanics only inside admitted Harness execution. Orchestration cannot implement S02 directly through repository writes.
+Mitigation: compare only canonical merged semantics. No unmerged import and no PR-013 S03 replay.
 
-### Risk J — Harness internally depends on the capability being created
+### Risk J — PR-229 or PR-020 changes independently
 
-Mitigation: bootstrap admission/execution must prove Harness can execute exact S02 without requiring PR-014 `materialize_workspace` as its ingress prerequisite. Otherwise fail closed; do not create a generic Host workspace.
+Mitigation: they are not admission dependencies for R5. Later canonical improvements may be reused only if they are already merged and do not alter Requirement R2 semantics.
 
 ## 9. Review questions
 
-Plan Review R4 must explicitly decide:
+Plan Review R5 must explicitly decide:
 
-1. Does the explicit `#开发引导执行 ... harness` precondition close `BootstrapExecutionAuthorityUndefined` without changing the project binding?
-2. Is the self-host relation exact: canonical Direct/Codex needs the materialization capability and PR-014 delivers that same capability?
-3. Is GitHub PR #14 correctly treated only as locked transport/persistence rather than execution-provider authority?
-4. Does Harness remain Host/model/context/workspace opaque while still requiring verified `incremental_execution.slice_v1` compatibility for S02?
-5. Does Harness failure stop before mutation with no fallback to direct/codex, CodeBuddy, Host Runtime or orchestration-side repository writes?
-6. Does R4 preserve S01 without replay while correctly invalidating old R2 S02/S03 authority?
-7. Is the narrow source capsule/materializer seed sufficiently bounded to avoid absorbing PR-013 general transaction/publication ownership?
-8. Does the Host-owned ACL handoff avoid both AppContainer-only dead-end access and caller-driven permission expansion?
-9. Is exact Git readback sufficient to prove the workspace is usable by a normal user-level Development Host?
-10. Are PR-013 state and code treated only as overlap evidence, never as completion gate or replay authority?
-11. Can S02/S03 complete Requirement R2 AC1–AC16 without any hidden dependency on the missing `materialize_workspace` capability at S02 ingress?
+1. Does `direct:codebuddy` under the existing Task-scoped bootstrap contract provide valid execution authority without changing project binding?
+2. Is the self-host relation still exact: canonical Direct/Codex needs `development.execution_workspace_materialize`, and PR-014 delivers it?
+3. Does direct-adapter execution avoid the Harness `incremental_execution.slice_v1` requirement without weakening DevForge one-execute/one-Slice semantics?
+4. Is structured repository persistence sufficient to implement the S02 seed without creating a Host-local execution workspace?
+5. Is repository.write clearly persistence only, with authority coming from the active bootstrap override?
+6. Are exact PR-head CAS, path allowlist and readback sufficient to prevent transport/write-scope drift?
+7. Does S02 avoid generic git/shell/`script_run`/filesystem bootstrap and all caller path authority?
+8. Can the D1–D10 product runtime still satisfy Requirement R2 without using the bootstrap persistence route as a runtime fallback?
+9. Is moving Windows physical proof from S03 implementation into Acceptance valid while still preventing source-only acceptance?
+10. Does the one-pending-Slice R5 model allow the bootstrap override to become unnecessary after S02 implementation completes?
+11. Are PR-013, PR-229 and PR-020 all non-gating for R5 S02 bootstrap completion?
+12. Does R5 preserve S01 evidence without replay and correctly invalidate the R4 Slice Set?
+13. Are current DevForge v2.98.0 bootstrap/slicing contracts sufficient without inventing a new bootstrap capability or Development Gate?
 
 ## 10. Post-plan state
 
 After this Plan is durably persisted/read back:
 
-```yaml
+~~~yaml
 stage: plan_review
 requirement_revision: 2
-plan_revision: 4
+plan_revision: 5
 plan_approved: false
 implementation_authorized: false
 current_slice: null
+current_slice_set: null
 completed_slices_preserved: [S01]
+superseded_slice_set: plan-r4
+bootstrap_override_state: absent
 next_expected_actor: reviewer
-```
+~~~
 
-No R4 execution Slice exists until Plan Review approves R4 and compiles the exact current Slice Set. After that, S02 still cannot execute until the explicit Harness bootstrap override is admitted and read back.
+No R5 execution Slice Set exists until Plan Review approves R5 and compiles/read-backs the exact current Slice Set.
+
+If R5 is approved, the canonical next execution-authority command is expected to be:
+
+~~~text
+#开发引导执行 PR-014-devforge-execution-workspace-materialization-bridge-v1 direct:codebuddy
+~~~
+
+That command still must prove the target is registered/current/available before any implementation mutation.
