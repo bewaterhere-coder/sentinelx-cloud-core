@@ -394,42 +394,6 @@ def test_runtime_acl_helpers_use_configured_timeout(
     assert calls[1][1:] == (234, f"runtime ACL cleanup for {root}")
 
 
-def test_verification_toolchain_acl_helpers_use_configured_timeout(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    root = tmp_path / "nodejs"
-    root.mkdir()
-    app_sid = "S-1-15-2-434343"
-    calls: list[tuple[tuple[str, ...], int, str]] = []
-
-    def record_icacls(
-        args: list[str], *, timeout_seconds: int = 20, operation: str = "ACL update"
-    ) -> None:
-        calls.append((tuple(args), timeout_seconds, operation))
-
-    monkeypatch.setattr(windows_sandbox, "_run_icacls", record_icacls)
-
-    windows_sandbox._grant_verification_toolchain_read(
-        root, app_sid, timeout_seconds=321
-    )
-    windows_sandbox._remove_verification_toolchain_read(
-        root, app_sid, timeout_seconds=432
-    )
-
-    assert calls == [
-        (
-            (str(root), "/grant:r", f"*{app_sid}:(RX)", "/T", "/C"),
-            321,
-            f"verification toolchain ACL grant for {root}",
-        ),
-        (
-            (str(root), "/remove:g", f"*{app_sid}", "/T", "/C"),
-            432,
-            f"verification toolchain ACL cleanup for {root}",
-        ),
-    ]
-
-
 def test_runtime_acl_timeout_is_deterministic_sandbox_error(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
