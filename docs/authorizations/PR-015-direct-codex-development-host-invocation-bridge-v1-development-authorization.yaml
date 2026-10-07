@@ -52,7 +52,7 @@ receipt:
   readback_required: true
   plan_binding_readback_required: true
   latest_acceptance_command: "#开发验收 PR-015-direct-codex-development-host-invocation-bridge-v1"
-  latest_acceptance_result: blocked_live_activation
+  latest_acceptance_result: rejected_repair_local
   latest_execution_command: "#开发执行 PR-015-direct-codex-development-host-invocation-bridge-v1"
   latest_execution_result: fixing_r1_completed_ready_for_acceptance
   latest_execution_checkpoint_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-attempt-r1-completed-20261007.yaml
@@ -68,12 +68,17 @@ receipt:
   latest_bootstrap_override_blob_sha: 936f56ae64b248dc802053df1b2d091ca8cf64cb
   latest_bootstrap_receipt_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-fixing-recovery-r1-20261007.yaml
   latest_bootstrap_receipt_blob_sha: fbd3be7c884d0b7f12e20fd87ad265ce36345d86
-  latest_acceptance_review_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r5.md
-  latest_acceptance_review_blob_sha: 988f2a1eb94ab8349576e3db3c88c4def93fb6c0
-  latest_acceptance_checkpoint_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r6-live-activation-blocked-20261007.yaml
-  latest_acceptance_checkpoint_blob_sha: e33b891612e24c3129aca1b44345a74c412431f8
-  latest_acceptance_transition_receipt_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r5-transition-receipt.yaml
-  latest_acceptance_transition_receipt_blob_sha: cb6470ae5593c4d8dbaaa762352184d3f680b9dd
+  latest_acceptance_review_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r7.md
+  latest_acceptance_review_blob_sha: f9259d43fa5529638a294bd2c57488cbe3f3eec1
+  latest_acceptance_checkpoint_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r7-rejected-codex-workspace-acl-handoff-20261007.yaml
+  latest_acceptance_checkpoint_blob_sha: b65d821e19245b95a4d37186044cb6f4c15ff982
+  latest_acceptance_transition_receipt_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r7-transition-receipt.yaml
+  latest_acceptance_transition_receipt_blob_sha: eb5e6c42ec3cc932d33ee32cd923cf168b95f8c3
+  latest_acceptance_finding_code: direct_codex_workspace_acl_handoff_incompatible_with_codex_sandbox
+  latest_acceptance_fixture_pr: 230
+  latest_acceptance_fixture_head: f19dbe1ef072596129884e05797936632f0fb850
+  latest_acceptance_live_agent_version: 0.24.1.dev518+gd441e95b6
+  latest_acceptance_readiness_verified: true
   suspension_readback_required: true
   latest_reactivation_source: "#开发"
   latest_reactivation_result: active_pending_plan_review

@@ -5,7 +5,7 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 2
 development:
-  stage: acceptance
+  stage: fixing
   implementation_execution_complete: true
   gates:
     requirement_ready: true
@@ -18,9 +18,10 @@ development:
   latest_plan_remediation: r6_applied
   review_disposition: approved
   next_expected_actor: operator
-  acceptance_disposition: blocked_live_activation
-  execution_disposition: fixing_r1_completed_ready_for_acceptance
-  blocking_findings: []
+  acceptance_disposition: rejected_repair_local
+  execution_disposition: fixing_bootstrap_required
+  blocking_findings:
+    - direct_codex_workspace_acl_handoff_incompatible_with_codex_sandbox
   repair_evidence:
     - fixing-r1-codebuddy repaired direct_codex_containment_proof_lifecycle_unreachable at d441e95b6eb65834f52ffdb42026e7328f5c9478.
     - GitHub CI run 37615911292 completed successfully.
@@ -60,12 +61,12 @@ artifacts:
   execution_reconciliation_receipt_blob_sha: bd1a9d9b9c12b8c001d60845ef831b2be8b50dd4
   implementation_to_acceptance_transition_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-implementation-to-acceptance-transition-receipt.yaml
   implementation_to_acceptance_transition_receipt_blob_sha: 31291ffb38ee22dbcfd4a5020198a1ceb6be940c
-  latest_acceptance_review: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r5.md
-  latest_acceptance_review_blob_sha: 988f2a1eb94ab8349576e3db3c88c4def93fb6c0
-  latest_acceptance_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r6-live-activation-blocked-20261007.yaml
-  latest_acceptance_checkpoint_blob_sha: e33b891612e24c3129aca1b44345a74c412431f8
-  latest_acceptance_transition_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r5-transition-receipt.yaml
-  latest_acceptance_transition_receipt_blob_sha: cb6470ae5593c4d8dbaaa762352184d3f680b9dd
+  latest_acceptance_review: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r7.md
+  latest_acceptance_review_blob_sha: f9259d43fa5529638a294bd2c57488cbe3f3eec1
+  latest_acceptance_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r7-rejected-codex-workspace-acl-handoff-20261007.yaml
+  latest_acceptance_checkpoint_blob_sha: b65d821e19245b95a4d37186044cb6f4c15ff982
+  latest_acceptance_transition_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r7-transition-receipt.yaml
+  latest_acceptance_transition_receipt_blob_sha: eb5e6c42ec3cc932d33ee32cd923cf168b95f8c3
   latest_fixing_execution_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-attempt-r1-completed-20261007.yaml
   latest_fixing_execution_checkpoint_blob_sha: 2b8677e87463a4320ab9a47039b834f5ac7159db
   latest_fixing_transition_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-r1-to-acceptance-transition-receipt.yaml
@@ -109,7 +110,7 @@ requirement_readiness:
     project_binding: direct/codex
     live_host_codex_package_observed: "@openai/codex 0.154.0"
     live_host_codex_shim_observed: "active-user npm codex.cmd -> node + @openai/codex/bin/codex.js"
-    current_blocker: null
+    current_blocker: direct_codex_workspace_acl_handoff_incompatible_with_codex_sandbox
     implementation_execution_complete: true
     all_current_plan_slices_completed: true
     bootstrap_override_expired_by_slice_completion: true

@@ -1,0 +1,115 @@
+schema_version: "1.0"
+kind: devforge_acceptance_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-015-direct-codex-development-host-invocation-bridge-v1
+acceptance_revision: 7
+source_command: "#开发验收 PR-015-direct-codex-development-host-invocation-bridge-v1"
+created_at: "2026-10-07"
+
+decision:
+  result: Rejected
+  finding_classification: repair_local
+  finding_code: direct_codex_workspace_acl_handoff_incompatible_with_codex_sandbox
+  acceptance_approved: false
+  completion_verified: false
+  from_stage: acceptance
+  target_stage: fixing
+
+lineage:
+  requirement_revision: 2
+  plan_revision: 6
+  plan_blob_sha: 2bcea2a44f88e51c8b9378ba6297b61897e638da
+  product_candidate_sha: d441e95b6eb65834f52ffdb42026e7328f5c9478
+  acceptance_review_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r7.md
+  acceptance_review_blob_sha: f9259d43fa5529638a294bd2c57488cbe3f3eec1
+
+live_runtime:
+  host_id: host_7f0e709ded71ab24
+  hostname: Cherie_li
+  agent_version: 0.24.1.dev518+gd441e95b6
+  provider: devforge_direct_codex
+  readiness:
+    available: true
+    verified: true
+  canonical_checkout:
+    path: D:\coco\repos\bewaterhere-coder\sentinelx-cloud-core
+    branch: main
+    head: 018b78ca2098
+    ahead: 0
+    behind: 0
+    dirty: false
+  project_binding:
+    provider: direct
+    adapter: codex
+    unchanged: true
+
+fixture:
+  repository: bewaterhere-coder/devforge-harness
+  pr_number: 230
+  draft: true
+  branch: fixture/pr015-ac12-direct-codex-live-20261007
+  seed_head: f19dbe1ef072596129884e05797936632f0fb850
+  remote_head_after_attempts: f19dbe1ef072596129884e05797936632f0fb850
+  verification_only: true
+  canonical_pr015_transport: false
+
+live_attempts:
+  - attempt_id: "1"
+    disposition: remote_read_failed
+    root_cause: acceptance_harness_repository_identity_input_error
+    product_failure: false
+    remote_mutation: false
+  - attempt_id: "2"
+    disposition: codex_invocation_failed
+    execution_context: wts_user_token
+    job_contained: true
+    process_tree_closed: true
+    workspace_isolated: true
+    canonical_checkout_mutated: false
+    remote_head_consistent: true
+    root_cause: unsupported_user_codex_model_gpt_6_1_sol
+    product_failure: false
+    remote_mutation: false
+  - attempt_id: "3"
+    disposition: codex_workspace_sandbox_setup_failed
+    model: gpt-5.6-sol
+    codex_session: 01a11649-1a98-7540-947e-333e4249017f
+    workspace: D:\SentinelX\devforge-workspaces\3ee95b7e76d50bbd\67438159c72bd2a5
+    sandbox_error: "write ACE failed on exact workspace: SetNamedSecurityInfoW failed: 5"
+    terminal_message: "setup refresh had errors"
+    changed_files: 0
+    remote_mutation: false
+    finding_classification: repair_local
+
+acceptance_matrix:
+  AC1: PASS
+  AC2: FAIL_REPAIR_LOCAL
+  AC3: FAIL_REPAIR_LOCAL
+  AC4: PASS
+  AC5: PARTIAL_REPAIR_LOCAL
+  AC6: PASS
+  AC7: PASS
+  AC8: FAIL_REPAIR_LOCAL
+  AC9: PASS
+  AC10: PASS
+  AC11: PASS
+  AC12: FAIL_REPAIR_LOCAL
+
+self_host_recovery:
+  current_project_provider: direct/codex
+  exact_broken_capability: direct_codex_real_codex_workspace_acl_handoff
+  same_task_repairs_capability: true
+  fixing_recovery_applicable: true
+  explicit_bootstrap_command_required: true
+  recommended_target: direct:codebuddy
+  prior_fixing_override_reusable: false
+
+safety:
+  pr015_product_mutated_by_acceptance: false
+  pr013_executed_by_acceptance: false
+  fixture_remote_mutated: false
+  canonical_checkout_mutated: false
+  permission_expansion_used: false
+  project_binding_mutated: false
+  host_policy_mutated: false
+  production_hub_mutated: false
