@@ -15,9 +15,11 @@ development:
   implementation_authorized: true
   blocking_findings: []
   next_expected_actor: implementer
-  current_slice: S01
+  current_slice: S02
   current_slice_state: pending
-  completed_slices: []
+  completed_slices: [S01]
+  latest_execution_run: docs/execution/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s01-run-001.yaml
+  latest_execution_checkpoint: docs/checkpoints/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s01-completion-20261008.yaml
 transport:
   type: github-pr
   pr_number: 21
@@ -28,6 +30,8 @@ artifacts:
   latest_plan_review: docs/reviews/PR-021-minimal-runtime-complexity-reduction-boundary-v1-plan-review-r1.md
   latest_plan_review_transition_receipt: docs/reviews/PR-021-minimal-runtime-complexity-reduction-boundary-v1-plan-review-r1-transition-receipt.yaml
   execution_slice_set: docs/execution/PR-021-minimal-runtime-complexity-reduction-boundary-v1-slices.yaml
+  latest_execution_run: docs/execution/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s01-run-001.yaml
+  latest_execution_checkpoint: docs/checkpoints/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s01-completion-20261008.yaml
   provisional_bootstrap: docs/checkpoints/minimal-runtime-complexity-reduction-boundary-v1-provisional-bootstrap.md
   target_architecture_decision: docs/architecture/sentinelx-minimal-runtime-boundary-v1.md
   target_disposition_matrix: docs/architecture/sentinelx-capability-disposition-matrix-v1.md
