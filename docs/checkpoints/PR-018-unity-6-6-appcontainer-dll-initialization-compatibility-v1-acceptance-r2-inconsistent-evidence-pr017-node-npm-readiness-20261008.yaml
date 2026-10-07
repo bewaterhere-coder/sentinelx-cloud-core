@@ -1,0 +1,92 @@
+schema_version: "1.0"
+kind: devforge_acceptance_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1
+acceptance_revision: 2
+source_command: "#开发验收 PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"
+
+runtime:
+  devforge_main_sha: "3d0880d271bd2e1e3955c81eb09344faf5cd6f69"
+  acceptance_contract_version: "1.5"
+  acceptance_contract_blob_sha: "1c5e96a20d665e68b1f68e18b7d294945e501ec2"
+
+transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 18
+  branch: task/unity-6-6-appcontainer-dll-initialization-compatibility-v1
+  evaluated_head_before_acceptance_artifacts: "ac1578f3d26178cca7c7020c8905f253a6b823dd"
+  verified_product_candidate: "73a52013055a8b3bb70b319a0ed7b7ba832ae0c9"
+  transport_drift: false
+
+cross_task_evidence:
+  pr017:
+    integrated_candidate: "f9e07da9cc37f6e882c3258280869b415cafcb5c"
+    s03_completion_receipt_blob: "aef10dfe56da8db7ae09aa4d47c29caa1e57b66f"
+    acceptance_r2_blob: "6cce15de869cc7ed77f42d37c8d10e13edf18e3e"
+    s03_completed: true
+    unity_raw_windows_status_hex: "0x00000000"
+    unity_version: "6000.6.4f1"
+    combined_pr018_replay_observed: true
+
+acceptance_matrix:
+  ac01: pass
+  ac02: pass
+  ac03: pass
+  ac04: pass
+  ac05: pass_positive_path
+  ac06: pass
+  ac07: pass
+  ac08: pass
+  ac09: pass
+  ac10: pass
+  ac11: pass
+  ac12: pass
+  ac13: pass
+  ac14: pass
+  ac15: pass
+  ac16: fail_inconsistent_current_readiness
+  ac17: pass
+  ac18: pass
+  ac19: pass
+
+resolved_prior_blocker:
+  code: AC18CombinedPR017S03ReplayMissing
+  status: resolved
+  evidence_ref: "aef10dfe56da8db7ae09aa4d47c29caa1e57b66f"
+
+blocking_finding:
+  code: AC16CurrentPR011ReadinessContradiction
+  classification: inconsistent_evidence
+  requirement_ref: R9
+  acceptance_criterion: 16
+  completion_time:
+    exact_agent_version: "0.24.1.dev473+gf9e07da9c"
+    scoped_verification_node_npm_v1_verified: true
+  later_acceptance_time:
+    exact_same_agent_version: "0.24.1.dev473+gf9e07da9c"
+    readback_count: 2
+    available: false
+    verified: false
+    reason: "Node/npm verification self-check failed (HandlerError)"
+  local_pr018_repair_authorized: false
+
+decision:
+  result: Rejected
+  finding_classification: inconsistent_evidence
+  gate_transition: not_applied
+  current_stage: acceptance
+  acceptance_approved: false
+  completion_verified: false
+
+safety:
+  pr018_product_code_mutated: false
+  pr018_tests_mutated: false
+  host_config_mutated: false
+  merge_performed: false
+  completion_claimed: false
+
+resume:
+  primary_next_action: "#开发执行 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1"
+  after_pr017_current_readiness_is_verified:
+    - "#开发验收 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1"
+    - "#开发验收 PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"
