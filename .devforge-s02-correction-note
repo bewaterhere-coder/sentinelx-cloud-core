@@ -1,1 +1,0 @@
-    def repository_effect(self, action: str) -> "OperationEffectResolution":
