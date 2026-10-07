@@ -49,7 +49,7 @@ development:
   bootstrap_override_state: expired_by_requirement_revision_3
   prior_bootstrap_override: docs/overrides/PR-014-devforge-execution-workspace-materialization-bridge-v1-bootstrap-execution-override.yaml
   latest_bootstrap_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-bootstrap-execution-override-r1-receipt.yaml
-  execution_disposition: replan_required_requirement_r3
+  execution_disposition: plan_review_r7_rejected
   execution_blocker: null
   execution_failure_state: null
   execution_failure_reason: null
@@ -59,7 +59,7 @@ development:
   latest_s02_reconciliation_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-r6-reconciliation-receipt.yaml
   prior_bootstrap_receipt: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-harness-bootstrap-blocked-20261008.yaml
   superseded_slice_set_status: invalidated_by_requirement_revision_3
-  planned_pending_delta_slice: S03
+  planned_pending_delta_slice: null
   next_expected_actor: planner
   canonical_next_action: "#开发计划修复 PR-014-devforge-execution-workspace-materialization-bridge-v1"
   authorization:
