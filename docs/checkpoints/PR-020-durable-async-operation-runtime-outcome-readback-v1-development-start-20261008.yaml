@@ -1,0 +1,109 @@
+schema_version: "1.0"
+kind: devforge_development_start_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-020-durable-async-operation-runtime-outcome-readback-v1
+source_command: "#开发 SentinelX Durable Async Operation Runtime & Outcome Readback V1"
+generated_on: "2026-10-08"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  branch: main
+  version: "2.95.0"
+  revision: 162337cc2fffa710d49a9cd38ab4cc8643f09ffb
+  workflow_id: project_development
+
+transport:
+  type: github-pr
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 20
+  branch: task/durable-async-operation-runtime-outcome-readback-v1
+  base_branch: main
+  base_sha_at_start: 1028030b33f0ea792a884491a431fffe566f6aa5
+  task_head_before_receipt: eaf590e8d11f0ef5b7d3caa96f58312ac95cfde1
+
+artifacts:
+  requirement:
+    ref: docs/requirements/PR-020-durable-async-operation-runtime-outcome-readback-v1.md
+    revision: 1
+    blob_sha: 5136e9a7d10517a7ed8b5ba6182d5cf568241cd2
+    read_back_verified: true
+  plan:
+    ref: docs/plans/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan.md
+    revision: 1
+    blob_sha: 4d5e7d0883f3fd597755eb40227233b7b0c91cf7
+    read_back_verified: true
+  provisional_bootstrap:
+    ref: docs/checkpoints/durable-async-operation-runtime-outcome-readback-v1-provisional-bootstrap.md
+    blob_sha: 09ad5c82ba7bb5a294c90b80adf118c9aa2d2222
+    read_back_verified: true
+
+requirement_refinement:
+  requirement_ready: true
+  ui_semantics: NotApplicable
+  visual_fidelity: NotApplicable
+  material_product_decision_pending: false
+
+planning:
+  plan_ready: true
+  plan_revision: 1
+  plan_approved: false
+  implementation_authorized: false
+  proposed_slice_count: 4
+
+repository_reality:
+  canonical_main_at_start: 1028030b33f0ea792a884491a431fffe566f6aa5
+  existing_async_primitives:
+    jobs_py: true
+    pending_results_py: true
+    client_background_dispatch: true
+    builtin_local_api_sync_only: true
+  concrete_trigger:
+    source_task: PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1
+    observed_behavior: direct_codex_execution_outlived_sync_local_api_window
+    containment_proof_reached_verified: true
+    durable_operation_handle_returned: false
+    terminal_receipt_returned: false
+    safe_blind_retry_proven: false
+  stabilization_relation:
+    task: PR-019-stable-baseline-stabilization-exit-gate-v1
+    classification: baseline_blocker
+    reason: required_receipt_readback_cannot_be_guaranteed_for_long_running_baseline_execution
+
+design_scope:
+  provider_neutral_runtime: true
+  direct_codex_only_solution_forbidden: true
+  generic_async_state_machine_per_provider_forbidden: true
+  production_hub_change_forbidden: true
+  project_binding_change_forbidden: true
+  provider_fallback_forbidden: true
+  authority_expansion_forbidden: true
+  existing_background_job_compatibility_required: true
+  pending_results_delivery_compatibility_required: true
+
+proposed_slices:
+  - S01-core-durable-operation-runtime
+  - S02-sentinel-operations-local-api-surface
+  - S03-multi-family-consumer-adoption
+  - S04-windows-e2e-restart-reconnect-proof
+
+postconditions:
+  task_id_frozen: true
+  transport_resolved_and_verified: true
+  requirement_durable_and_readback_verified: true
+  plan_durable_and_readback_verified: true
+  development_stage: plan_review
+  requirement_ready: true
+  plan_approved: false
+  implementation_authorized: false
+  next_expected_actor: reviewer
+  product_implementation_mutated: false
+
+completion_guard:
+  status: satisfied
+  canonical_next_action: "#开发评审 PR-020-durable-async-operation-runtime-outcome-readback-v1"
+
+notes:
+  - "#开发 completed Requirement refinement and Planning only."
+  - "No SentinelX product source, Host policy, installed Agent, production Hub, or canonical main was modified by this command."
+  - "The task is provider-neutral; Direct Codex is only the first observed consumer/trigger."
+  - "PR-019 retains stabilization-exit authority and consumes PR-020 evidence after implementation/acceptance."
