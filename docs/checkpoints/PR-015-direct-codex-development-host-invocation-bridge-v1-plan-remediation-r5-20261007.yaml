@@ -1,0 +1,97 @@
+schema_version: "1.0"
+kind: devforge_plan_remediation_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-015-direct-codex-development-host-invocation-bridge-v1
+source_command: "#开发计划修复 PR-015-direct-codex-development-host-invocation-bridge-v1"
+created_at: "2026-10-07"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  version: "2.81.0"
+  revision: 329438b69ab0946175b805788b0412384e343e0b
+
+transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 15
+  branch: task/direct-codex-development-host-invocation-bridge-v1
+  canonical_main: 018b78ca20984176d53fbe90039dc795a7f2742f
+  replacement_transport_created: false
+
+lineage:
+  requirement_revision: 2
+  prior_plan_revision: 4
+  revised_plan_revision: 5
+  prior_plan_blob_sha: cc351da6bd5746a171bdd14bdb34fa07e41c6336
+  revised_plan_blob_sha: c45a373e4f7a62ae11fceba89316dd8cf6353969
+  rejected_review_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r4.md
+  rejected_review_blob_sha: a2f5b5b03f87d7630e784f627137ecd9f5b82d7f
+  revised_slice_impact_ref: docs/execution/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-r5-slice-impact.yaml
+  revised_slice_impact_blob_sha: c64b88378cfdcc5f820e2621e83cc8b829984622
+
+findings_addressed:
+  - finding: CanonicalBlobMaterializationIncomplete
+    resolution: >-
+      Plan R5 replaces raw no-filter Windows worktree hashing with a
+      provider-owned temporary-index path that uses Git builtin path-aware
+      clean conversion only after external/custom clean filters are rejected.
+      It captures core.autocrlf/core.eol/core.safecrlf immediately after exact
+      checkout and before Codex, clamps system/global config and attribute
+      authority for local candidate construction, rejects non-empty
+      .git/info/attributes, preserves supported builtin text/eol/binary/ident
+      and working-tree-encoding semantics, and requires physical proof that
+      CRLF checkout expansion re-canonicalizes to the LF parent blob without
+      whole-file EOL churn.
+
+requirement:
+  semantic_change: false
+  revision_changed: false
+
+canonical_clean_boundary:
+  checkout_normalization_snapshot_before_codex: true
+  safe_config_keys:
+    - core.autocrlf
+    - core.eol
+    - core.safecrlf
+  system_global_local_candidate_config_clamped: true
+  global_system_attributes_disabled: true
+  git_info_attributes_absent_or_empty: true
+  custom_filter_rejected_before_execution: true
+  safe_builtin_clean_semantics_preserved: true
+  raw_no_filter_worktree_hash_general_policy: forbidden
+  windows_crlf_parent_blob_identity_proof_required: true
+  semantic_edit_without_eol_churn_proof_required: true
+  binary_identity_proof_required: true
+
+retained_r4_boundaries:
+  codex_owned_index_trusted: false
+  provider_temporary_index_required: true
+  recovery_journal_required: true
+  journal_outside_candidate_set: true
+  commit_sha_inputs_frozen_before_commit_creation: true
+  same_attempt_bit_identical_reconstruction_required: true
+  publish_intent_before_first_push: true
+  uncertain_push_readback_only: true
+  automatic_repush_after_uncertainty: false
+
+slice_authority:
+  formal_plan_r5_slice_set_compiled: false
+  compilation_allowed_only_after_plan_r5_approval: true
+  proposed_delta_slice: S04
+  historical_s01_s03_replay_required: false
+
+safety:
+  product_code_mutated: false
+  canonical_main_mutated: false
+  live_agent_mutated: false
+  project_binding_mutated: false
+  provider_binding: direct/codex
+  new_bootstrap_override_created: false
+  permission_or_credential_expansion_used: false
+  self_approval_performed: false
+
+postconditions:
+  revised_plan_durable: true
+  revised_plan_readback_verified: true
+  next_stage: plan_review
+  next_expected_actor: reviewer
+  canonical_next_action: "#开发评审 PR-015-direct-codex-development-host-invocation-bridge-v1"
