@@ -3,17 +3,17 @@ task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
 title: SentinelX DevForge Execution Workspace Materialization Bridge V1
 project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
-requirement_revision: 2
+requirement_revision: 3
 development:
-  stage: acceptance
+  stage: planning
   gates:
     requirement_ready: true
-    plan_approved: true
+    plan_approved: false
     acceptance_approved: false
     completion_verified: false
-  plan_revision: 6
-  latest_plan_review: approved_round_6
-  prior_plan_review: approved_round_5
+  plan_revision: 7
+  latest_plan_review: null
+  prior_plan_review: approved_round_6
   latest_plan_remediation: plan_r4_remediation_r1
   prior_plan_remediation: plan_r2_remediation_r1
   implementation_authorized: false
@@ -22,13 +22,14 @@ development:
   current_slice_state: null
   completed_slices: [S01, S02]
   pending_slices: []
-  implementation_execution_complete: true
-  formal_acceptance_performed: true
-  acceptance_disposition: decision_required
-  acceptance_blocker: DevforgePlacementProtectedRootArchitectureConflict
-  acceptance_blocker_detail: ExecutionRootIsInsideBroadProtectedRoot
-  material_architecture_decision_required: true
-  secondary_acceptance_finding: MutationScopeDurableStateSchemaForwardCompatibilityMissing
+  implementation_execution_complete: false
+  formal_acceptance_performed: false
+  acceptance_disposition: superseded_by_requirement_r3_replan
+  acceptance_blocker: null
+  acceptance_blocker_detail: null
+  material_architecture_decision_required: false
+  material_architecture_decision: accepted_dual_host_owned_source_and_execution_binding
+  secondary_acceptance_finding: planned_repair_in_requirement_r3
   exact_candidate_activation_required: false
   latest_acceptance_checkpoint: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-acceptance-r2-decision-required-20261008.yaml
   latest_acceptance_review: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-acceptance-r2.md
@@ -36,9 +37,9 @@ development:
   preserved_completed_candidate_slices: [S02]
   preserved_s02_product_candidate: 45dc99d15a23c499b4c1500fab60ed5e76475aeb
   s02_product_mutation_replay: forbidden
-  prior_plan_revision: 5
-  prior_slice_set_status: invalidated_by_plan_revision_6
-  requirement_change_impact: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-requirement-r2-invalidation.md
+  prior_plan_revision: 6
+  prior_slice_set_status: invalidated_by_requirement_revision_3
+  requirement_change_impact: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-requirement-r3-change-impact.md
   bootstrap_required_before_current_slice: false
   bootstrap_target: null
   bootstrap_command: null
@@ -46,7 +47,7 @@ development:
   bootstrap_override_state: expired_by_plan_revision_6
   prior_bootstrap_override: docs/overrides/PR-014-devforge-execution-workspace-materialization-bridge-v1-bootstrap-execution-override.yaml
   latest_bootstrap_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-bootstrap-execution-override-r1-receipt.yaml
-  execution_disposition: completed_reconciled_r6
+  execution_disposition: replan_required_requirement_r3
   execution_blocker: null
   execution_failure_state: null
   execution_failure_reason: null
@@ -56,8 +57,8 @@ development:
   latest_s02_reconciliation_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-r6-reconciliation-receipt.yaml
   prior_bootstrap_receipt: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-harness-bootstrap-blocked-20261008.yaml
   superseded_slice_set_status: invalidated_by_plan_revision_6
-  next_expected_actor: decision_owner
-  canonical_next_action: "#开发 PR-014-devforge-execution-workspace-materialization-bridge-v1 修订当前方案"
+  next_expected_actor: planner
+  canonical_next_action: "#开发 PR-014-devforge-execution-workspace-materialization-bridge-v1"
   authorization:
     mode: legacy_command_scoped
 artifacts:
@@ -130,19 +131,28 @@ PR-020 needs compliant execution workspace
 
 DevForge already defines deterministic Host workspace placement and the canonical capability `development.execution_workspace_materialize`. A caller supplies semantic execution identity; the Host owns concrete roots and must derive the execution workspace. A Placement Receipt is evidence only and does not itself grant filesystem authority.
 
-SentinelX already has provider-owned mutation placement, durable mutation scope, pre-execution audit lineage, Windows AppContainer/Job confinement, canonical-repository mutation firewall and the bounded `devforge_runtime` local API. However the current Host configuration exposes two different workspace placement realities:
+SentinelX already has provider-owned mutation placement, durable mutation scope, pre-execution audit lineage, Windows AppContainer/Job confinement, canonical-repository mutation firewall and the bounded `devforge_runtime` local API. Acceptance R2 proved that canonical-source protection and DevForge execution placement must be separate Host-owned bindings.
+
+Current canonical/source role:
 
 ```text
-DevForge Host binding:
-locations.devforge_workspace_root = D:\coco
-→ DevForge execution_root = D:\coco\workspaces
-
-SentinelX scoped-mutation placement:
-mutation_execution.workspace_root = D:\SentinelX\mutation-workspaces
-→ <workspace_root>/<repository-digest>/<semantic-digest>
+Host canonical repository inventory
+→ D:\coco\repos\<owner>\<repository>
+→ protected + source-only
 ```
 
-The provider therefore cannot yet prove that a DevForge Placement Receipt, a SentinelX mutation scope and the real materialized execution checkout all identify the same Host workspace. The existing `devforge_runtime` endpoint also lacks a bounded DevForge workspace-materialization operation that creates an exact repository checkout and returns the evidence required by `development.execution_workspace_materialize`.
+Required DevForge execution placement role:
+
+```text
+locations.devforge_execution_workspace_root
+→ preferred current Host value: D:\SentinelX\devforge-workspaces
+→ outside D:\coco protected_root
+→ exact workspace derived only from semantic execution identity
+```
+
+`mutation_execution.workspace_root` remains valid for legacy/non-DevForge scoped-mutation behavior but is not a DevForge execution-placement authority.
+
+The provider must prove that canonical source binding, execution placement binding, Placement Receipt, MutationScope and the materialized checkout remain mutually consistent without weakening the canonical/protected source root. The existing `devforge_runtime` endpoint also lacks a bounded DevForge workspace-materialization operation that creates an exact repository checkout and returns the evidence required by `development.execution_workspace_materialize`.
 
 A generic `git clone(dest=...)`, direct `git worktree add`, generic script/shell execution or a caller-supplied workspace path is not a conforming solution because those paths do not bind DevForge placement admission to provider-owned scope/audit/sandbox authority.
 
@@ -223,29 +233,52 @@ staging_path
 
 If a DevForge Placement Receipt is supplied, its concrete path is comparison evidence only. It never overrides Host derivation.
 
-### R2 — Host-owned DevForge placement derivation
+### R2 — Independent Host-owned source and execution placement bindings
 
-For this bridge, SentinelX must derive current placement from the effective Host DevForge workspace binding rather than from a second independent DevForge placement root.
+Canonical source role and execution placement role are distinct Host-owned authorities.
 
-For SentinelX V1 the binding is the effective policy location:
+Canonical source binding is resolved from the effective Host canonical-repository inventory / registered canonical repository role:
 
 ```text
-locations.devforge_workspace_root
+canonical_source = Host canonical repository inventory for admitted owner/repository
+expected current topology = D:\coco\repos\<owner>\<repository>
+```
+
+The canonical source remains inside the broad protected root, source-only, canonical branch + clean, and never becomes an execution workspace.
+
+DevForge execution placement is resolved independently from the dedicated effective policy location:
+
+```text
+locations.devforge_execution_workspace_root
+```
+
+For the current Windows Host, the preferred binding is:
+
+```text
+D:\SentinelX\devforge-workspaces
 ```
 
 The provider derives:
 
 ```text
-workspace_root = locations.devforge_workspace_root
-execution_root = <workspace_root>/workspaces
+execution_root = locations.devforge_execution_workspace_root
 exact_workspace = <execution_root>/<owner>/<repository>/<task-or-evolution-id>/<attempt-id>
 ```
 
-Owner, repository, scope and Attempt segments must be validated as single safe path segments. The exact workspace must be a strict descendant of the derived execution root.
+Owner, repository, scope and Attempt segments must be validated as single safe path segments. The exact workspace must be a strict descendant of the execution root.
 
-`mutation_execution.workspace_root` may remain valid for legacy/non-DevForge scoped-mutation behavior, but it must not silently become a second DevForge execution-placement truth.
+The execution root and exact workspace MUST be disjoint from every configured protected root and canonical repository root. In particular, the current broad `D:\coco` protection MUST NOT be removed, narrowed or bypassed.
 
-Missing/malformed Host binding returns a fail-closed provider-unavailable/configuration result before scope minting or filesystem creation.
+The following are forbidden resolutions:
+
+- removing or shrinking `D:\coco` from `protected_roots`;
+- carving an exception/allowlist inside `D:\coco`;
+- caller-selected source or execution paths;
+- silently falling back to `mutation_execution.workspace_root`;
+- silently continuing to use legacy `locations.devforge_workspace_root=D:\coco` as PR-014 execution placement truth;
+- creating a second caller-visible placement authority.
+
+Missing/malformed source binding, missing/malformed execution binding, protected-root overlap, canonical-root overlap or binding drift returns fail closed before scope minting or filesystem creation.
 
 ### R3 — DevForge/Provider placement equality
 
@@ -298,6 +331,20 @@ fixed allowed operation class(es)
 ```
 
 The caller must not select or widen operation classes.
+
+MutationScope durable-state reads MUST be forward-compatible with additive schema evolution without deleting or blindly discarding durable authority state.
+
+Required semantics:
+
+- parse current known fields through the current canonical record schema;
+- recognize and migrate known additive fields from newer compatible schema generations, including `runtime_read_authority_roots`;
+- preserve additive fields across read/write round-trips so a current runtime does not silently erase newer durable evidence;
+- treat absent additive fields using explicit backward-compatible defaults;
+- distinguish `schema_unsupported` from `state_corrupt`;
+- unknown additive fields that can affect mutation/read/permission authority MUST fail closed until explicitly understood/migrated;
+- terminal/historical records may be inspected and preserved without reactivating authority;
+- deleting the durable store or dropping fields is never a compatibility repair.
+
 
 The bridge must distinguish DevForge `workspace_purpose` from SentinelX operation-class purpose. Existing `purpose=scoped_script` semantics must not be overloaded to mean implementation/fixing/release/etc.
 
@@ -527,11 +574,11 @@ This SentinelX Task must consume those contracts. It does not authorize cross-re
 
 ## Acceptance criteria
 
-- **AC1:** With effective Host binding `workspace_root=<W>`, repository `<owner>/<repo>`, scope/task `<S>` and Attempt `<A>`, provider independently derives exactly `<W>/workspaces/<owner>/<repo>/<S>/<A>` and binds scope authority to that exact future workspace.
+- **AC1:** With Host canonical source binding `<C>` and independent Host execution binding `execution_root=<E>`, repository `<owner>/<repo>`, scope/task `<S>` and Attempt `<A>`, provider independently derives exactly `<E>/<owner>/<repo>/<S>/<A>`, proves `<E>`/workspace are outside all protected/canonical roots, and binds scope authority to that exact future workspace while `<C>` remains protected and source-only.
 - **AC2:** `local_api.describe devforge_runtime` exposes a bounded `materialize_workspace` action with no caller-controlled writable destination/root/SID/ACL/credential/Git-argv/operation-class fields.
 - **AC3:** Caller path injection, DevForge/provider placement mismatch, path escape, malformed identity and caller-selected source checkout all fail before material workspace creation.
 - **AC4:** Wrong repository/ref/commit, unavailable provider source credential, stale/expired/foreign scope, scope binding drift and source-capsule mismatch fail closed with no successful receipt and no generic fallback.
-- **AC5:** Provider derives and verifies the canonical source role from Host binding/repository identity; source worktree remains canonical branch + clean and is never used as the mutation workspace.
+- **AC5:** Provider derives and verifies the canonical source role from Host canonical-repository inventory independently of execution placement; source worktree remains under its protected canonical root, canonical branch + clean, and is never used as the mutation workspace.
 - **AC6:** Provider-owned exact-commit acquisition creates/read-backs immutable source evidence without exposing credentials or accepting caller remote/path authority.
 - **AC7:** Durable audit START precedes the first material workspace write; audit-start failure leaves no successful workspace materialization state.
 - **AC8:** A valid request causes the AppContainer/Job materializer to create the exact admitted Git repository checkout in the exact Host-derived execution workspace, and read-back proves repository identity + logical ref + exact commit + isolation.
@@ -543,13 +590,16 @@ This SentinelX Task must consume those contracts. It does not authorize cross-re
 - **AC14:** Windows physical integration proves placement → source acquisition/capsule → scope → audit START → AppContainer/Job materialization → exact Git HEAD readback → temporary-authority closure → Development Host handoff on a benign repository fixture.
 - **AC15:** General retained multi-operation `execute_scoped` transaction lifecycle, operation closure and publication are not required for PR-014 R2 completion and remain PR-013 ownership.
 - **AC16:** No independent Codex requirement, no new Development Gate, no production Hub modification, no Host policy/allowlist widening and no generic Git/shell/file fallback are introduced.
+- **AC17:** Existing MutationScope durable records containing compatible additive schema fields (including `runtime_read_authority_roots`) are read/migrated/preserved without deletion or authority widening; unsupported authority-bearing additive fields fail closed as schema incompatibility rather than being discarded or misclassified as corrupt state.
 
 ## Scope
 
 ### In scope
 
 - preserve/read-back completed PR-014 S01 placement/root/scope/sandbox evidence without replay;
-- Host-derived canonical source-role resolution from current DevForge workspace binding;
+- independent Host-owned canonical source-role resolution from canonical repository inventory;
+- dedicated Host-owned DevForge execution placement binding outside protected/canonical roots;
+- MutationScope additive durable-schema forward-compatible read/migration;
 - bounded provider exact-ref/exact-commit object acquisition;
 - provider-private immutable source capsule/manifest and digest evidence;
 - narrow trusted repository materializer under existing AppContainer/Job containment;
@@ -577,6 +627,24 @@ This SentinelX Task must consume those contracts. It does not authorize cross-re
 - new Development Gate or cross-repository DevForge mutation.
 
 ## Requirement challenge / disconfirmation
+
+### Revision 3 challenge result
+
+Acceptance R2 physically activated exact candidate `45dc99d15a23c499b4c1500fab60ed5e76475aeb` and proved two material facts:
+
+1. deriving execution placement under `D:\coco\workspaces` is structurally incompatible with the independent broad `D:\coco` protected-root invariant;
+2. the exact candidate cannot read a newer durable MutationScope record containing additive field `runtime_read_authority_roots`.
+
+The Human decision accepts the recommended architecture:
+
+```text
+protected canonical source binding
+  !=
+dedicated Host-owned execution placement binding
+```
+
+and explicitly preserves `D:\coco` protection. The alternative of protected-root narrowing/carve-out is rejected.
+
 
 ### Revision 2 challenge result
 
