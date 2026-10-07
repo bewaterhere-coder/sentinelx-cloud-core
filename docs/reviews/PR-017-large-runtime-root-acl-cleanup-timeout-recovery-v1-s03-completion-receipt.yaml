@@ -1,0 +1,115 @@
+schema_version: "1.0"
+kind: devforge_slice_completion_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
+slice_id: S03
+source_command: "#开发执行 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1"
+
+lineage:
+  requirement_revision: 1
+  plan_revision: 5
+  slice_set_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-r5
+  product_candidate_commit: "f9e07da9cc37f6e882c3258280869b415cafcb5c"
+  exact_host_source_ref: "f9e07da9cc37f6e882c3258280869b415cafcb5c"
+  exact_host_agent_version: "0.24.1.dev473+gf9e07da9c"
+  completion_checkpoint_ref: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-completion-20261008.yaml
+  completion_checkpoint_blob_sha: "68e213815b82f9cf99f8cc607034815ae7f29dc6"
+  live_run_id: run-pr017-r5-s03-live-20261008-002
+
+verification:
+  integration:
+    exact_11_target_blobs: true
+    scoped_script_preserved: true
+    pr018_diagnostic_seam_absent: true
+
+  scoped_python_marker:
+    passed: true
+    returncode: 0
+    marker: PR017_R5_S03_SCOPED_PYTHON_OK
+    scope_id: mss_Qzlj93b2ap2nP7DH_BjODKWu
+    terminal_state: terminal
+
+  unity:
+    exact_version: "6000.6.4f1"
+    raw_windows_status_hex: "0x00000000"
+    status_not_0xC0000142: true
+    deterministic_version_output: "6000.6.4f1"
+    enriched_scope_id: mss_rY2irx8ehs4_ByTObhhld_kI
+    terminal_state: terminal
+
+  live_containment:
+    appcontainer: true
+    process_in_job: true
+    session_id: 0
+    process_user_sid: "S-1-5-18"
+    exact_appcontainer_sid: "S-1-15-2-1748545536-2320205293-468113312-693327988-2305673959-4216215207-1957506377"
+
+  live_session_object_authority:
+    window_station_identity: "session:0/window-station:Service-0x0-3e7$"
+    desktop_identity: "session:0/window-station:Service-0x0-3e7$/desktop:Default"
+    window_station_mask_hex: "0x00020103"
+    desktop_mask_hex: "0x00020041"
+    noninheriting: true
+    broader_rights_observed: false
+
+  post_cleanup_readback:
+    exact_previous_sid_absent_from_window_station: true
+    exact_previous_sid_absent_from_desktop: true
+    exact_previous_sid_absent_from_unity_runtime_root: true
+    previous_sid_absent_from_all_three: true
+    durable_binding_clear_gate_satisfied: true
+
+  regressions:
+    current_candidate_all_triggered_workflows_green: true
+    pr010_s03_windows:
+      run_id: 37677712083
+      result: success
+      summary: "59 passed in 155.09s"
+    pr011_s02_windows:
+      run_id: 37677712219
+      result: success
+      summary: "83 passed, 1 warning in 134.98s"
+    pr011_s03_windows:
+      run_id: 37677712124
+      result: success
+      summary: "24 passed, 1 warning in 138.07s"
+    pr011_s04_windows:
+      run_id: 37677712088
+      result: success
+      summary: "54 passed, 1 warning in 164.47s"
+    exact_blob_dependency_windows:
+      run_id: 37662137958
+      result: success
+      summary: "88 passed in 275.69s"
+      exact_current_policy_blob_verified: true
+      exact_current_mutation_scope_admission_blob_verified: true
+
+  post_proof_self_check:
+    host_mutation_sandbox_v1_verified: true
+    scoped_verification_node_npm_v1_verified: true
+    pre_execution_audit_lineage_v1_verified: true
+    canonical_repository_mutation_firewall_v1_verified: true
+    job_no_breakaway: true
+    terminal_non_active: true
+    residual_authority_absent: true
+
+temporary_authority_cleanup:
+  runtime_session_object_read_enabled_restored_to_false: true
+  exact_candidate_agent_preserved: true
+  Host_restarted_and_verified: true
+
+diagnostic_exclusions:
+  powershell_appcontainer_initialization_attempt_used_as_completion_evidence: false
+  sys_path_import_diagnostic_used_as_completion_evidence: false
+  appcontainer_pytest_tmp_permission_diagnostics_used_as_product_failure: false
+  generic_exec_or_script_run_fallback_used: false
+
+completion_guard:
+  status: satisfied
+  s03_completed: true
+  all_plan_r5_slices_completed_after_state_write: true
+  acceptance_not_executed: true
+  acceptance_approved: false
+  task_completion_verified: false
+  no_receipt_no_completion_claim: satisfied
+  canonical_next_action: "#开发验收 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1"
