@@ -1,0 +1,81 @@
+schema_version: "1.1"
+kind: devforge_artifact_state_transition_receipt
+task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
+from_stage: plan_review
+to_stage: plan_review_rejected
+transition_rule: rejected_plan_review_with_durable_findings
+source_command: "#开发评审 PR-014-devforge-execution-workspace-materialization-bridge-v1"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  canonical_branch: main
+  version: "2.103.0"
+  revision: ebc25425160790950bd4d4500186652d3bf52416
+  review_contract_version: "1.3"
+  slicing_contract_version: "1.1"
+
+evidence_refs:
+  - docs/requirements/PR-014-devforge-execution-workspace-materialization-bridge-v1.md@4a6d5da185b32f1403ccddc7002727206166e6e3
+  - docs/plans/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan.md@cd5b3f379b03e778d7fe5368325855866f4fb9c2
+  - docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r7.md@503fe00378c2a1bed8e1ff5ea5520a8c53509893
+  - docs/architecture/sentinelx-minimal-runtime-boundary-v1.md@36e0290de039336a8e4ce8561c22c731f12e9602
+
+task_before_digest: 2de30e1386f9627e9615d1f30a5fd42d753f43df
+task_after_digest: 4a6d5da185b32f1403ccddc7002727206166e6e3
+semantic_after_state_digest: 4a6d5da185b32f1403ccddc7002727206166e6e3
+semantic_after_digest_basis: canonical_task_blob_readback
+verified: true
+
+review:
+  decision: Rejected
+  finding_classification: upstream_architecture_and_canonical_repository_reality
+  blocking_findings:
+    - PR021MinimalRuntimeDispositionNotConsumed
+    - CanonicalMainImplementationSurfaceMismatch
+  requirement_change_required: true
+  plan_only_remediation_sufficient: false
+
+repository_reality:
+  canonical_main: cd42e371f18056327c1d8b744f8956a76bc11541
+  reviewed_pr_head_before_review_persistence: 7c81f31fa2d6dc701d4cc006d0c0e910ae89db62
+  merge_base: e7064c9bf4fcd15bdb6f5a2678414210c01d1c00
+  branch_ahead_by: 94
+  branch_behind_by: 598
+  mergeable_at_review: false
+  planned_core_paths_present_on_canonical_main: false
+
+state_after:
+  stage: plan_review_rejected
+  requirement_revision: 3
+  requirement_ready: true
+  plan_revision: 7
+  plan_approved: false
+  implementation_authorized: false
+  acceptance_approved: false
+  completion_verified: false
+  execution_slice_set: null
+  current_slice: null
+  completed_slices_preserved: [S01, S02]
+  planned_pending_delta_slice: null
+  next_expected_actor: planner
+
+safety:
+  product_implementation_executed: false
+  slice_set_compiled: false
+  s03_executed: false
+  s01_or_s02_replayed: false
+  canonical_main_mutated: false
+  host_mutation_performed: false
+  host_policy_mutated: false
+  protected_root_narrowed: false
+  carve_out_or_allowlist_added: false
+  project_binding_mutated: false
+  development_host_invoked: false
+  ci_invoked: false
+  pr013_s03_replayed: false
+
+completion_guard:
+  review_artifact_readback_verified: true
+  task_transition_readback_verified: true
+  transition_receipt_readback_required: true
+  canonical_next_action: "#开发计划修复 PR-014-devforge-execution-workspace-materialization-bridge-v1"
