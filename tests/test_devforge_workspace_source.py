@@ -1,4 +1,3 @@
-"""PR-014 S02 — provider-owned source role, identity, and capsule (D1-D4)."""
 from __future__ import annotations
 
 import asyncio
@@ -154,7 +153,8 @@ def test_verify_source_identity_binds_remote_and_local(tmp_path, fake_remote) ->
 
     logical, object_format = asyncio.run(source.verify_source_identity(
         role, "refs/heads/main", head
-    ))
+    )
+    )
     assert logical == "main"
     assert object_format == "sha1"
 
@@ -164,6 +164,8 @@ def test_verify_source_identity_binds_remote_and_local(tmp_path, fake_remote) ->
 
 
 def test_capsule_is_durable_digest_sealed_and_reused(tmp_path, fake_remote) -> None:
+    import asyncio
+
     host_root = tmp_path / "host"
     state_root = tmp_path / "state"
     state_root.mkdir()

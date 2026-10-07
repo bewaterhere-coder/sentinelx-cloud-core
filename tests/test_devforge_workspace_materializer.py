@@ -131,9 +131,7 @@ def test_materializer_refuses_unsafe_entry_paths(tmp_path: Path) -> None:
             [{"path": bad_path, "mode": "100644", "sha": sha, "size": len(payload)}],
             [sha],
         )
-        capsule = _capsule(
-            tmp_path / bad_path.replace("/", "_").replace(":", "_"), manifest, {sha: payload}
-        )
+        capsule = _capsule(tmp_path / bad_path.replace("/", "_").replace(":", "_"), manifest, {sha: payload})
         workspace = tmp_path / "workspace"
         workspace.mkdir(exist_ok=True)
         with pytest.raises(materializer.MaterializerError):
