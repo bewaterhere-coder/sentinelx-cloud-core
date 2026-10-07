@@ -1,0 +1,45 @@
+schema_version: "1.0"
+kind: devforge_integration_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-021-minimal-runtime-complexity-reduction-boundary-v1
+source_command: "#开发完成 PR-021-minimal-runtime-complexity-reduction-boundary-v1"
+
+integration:
+  transport: github-pr
+  original_pr_number: 21
+  original_branch: task/minimal-runtime-complexity-reduction-boundary-v1
+  merged: true
+  merge_commit_sha: 14669e4069dcd9117e19590b434204408142bbb9
+  merged_commit_is_ancestor_of_current_main: true
+  current_main_readback_sha: 1ccb26bfe8c36d8e61873e2168d8c84e16f0c3df
+
+canonical_state_before_reconciliation:
+  task_ref: docs/requirements/PR-021-minimal-runtime-complexity-reduction-boundary-v1.md
+  task_blob_sha_on_main: ca4d85046a9d8929bf2cf8e8ee1edbb8bf33c630
+  task_stage: accepted
+  acceptance_approved: true
+  completion_verified: false
+  plan_ref: docs/plans/PR-021-minimal-runtime-complexity-reduction-boundary-v1-plan.md
+  plan_blob_sha_on_main: 4dbb8b04b043d7142fbfb6b9e0c147b80900a9b8
+  plan_status: accepted_finalization_ready
+
+reconciliation:
+  required: true
+  reason: repository_contained_workflow_state_must_be_persisted_after_verified_integration
+  implementation_replayed: false
+  product_source_mutation: false
+  same_task_identity: true
+  original_transport_preserved: true
+  reconciliation_branch: reconcile/pr-021-minimal-runtime-complexity-reduction-boundary-v1-completion
+  reconciliation_pr_number: 22
+
+verification:
+  original_pr_closed: true
+  original_pr_merged: true
+  merge_commit_read_back: true
+  merge_commit_present_in_main_history: true
+  canonical_task_present_on_main: true
+  canonical_plan_present_on_main: true
+  integration_verified: true
+
+verified: true
