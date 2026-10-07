@@ -25,13 +25,13 @@ development:
       candidate_sha: 4ffb2dc312fac8d1030eb521641f6c61c33f11f0
       run_id: run-pr019-s01-20261008-001
       publish_attempt_id: attempt-002
-      verification_state: verification_required
+      verification_state: blocked_dependency
       verification_missing:
         - focused pytest for tests/test_direct_codex_provider.py
         - focused pytest for tests/test_direct_codex_execution.py
         - focused pytest for tests/test_stable_baseline.py
   blocking_findings:
-    - S01 implementation candidate is published and remotely read back, but exact-candidate focused pytest evidence is not yet available; S01 completion and S02 progression remain blocked.
+    - S01 implementation candidate is published and remotely read back, but exact-candidate focused pytest is blocked by the currently installed Host runtime: devforge_runtime.execute_scoped and terminalize_scope both fail because WindowsMutationSandbox.terminalize is absent. The preserved verification scope remains active after service restart. PR-017 owns the terminalization/cleanup repair; PR-019 must not duplicate or activate that unmerged repair.
   recovery:
     run_id: run-pr019-s01-20261008-001
     interrupted_attempt_id: attempt-001
@@ -59,6 +59,7 @@ artifacts:
   latest_recovery_stabilization: docs/reviews/PR-019-stable-baseline-stabilization-exit-gate-v1-s01-attempt1-recovery-hold-20261008.yaml
   latest_recovery_terminalization: docs/checkpoints/pr019-s01-recovery-terminal-r3.yaml
   latest_execution_checkpoint: docs/checkpoints/PR-019-stable-baseline-stabilization-exit-gate-v1-s01-candidate-published-verification-pending-20261008.yaml
+  latest_dependency_blocker: docs/checkpoints/PR-019-stable-baseline-stabilization-exit-gate-v1-s01-blocked-pr017-terminalization-runtime-20261008.yaml
 related_tasks:
   evidence_predecessors:
     - PR-011-scoped-verification-toolchain-dependency-capsule-v1
