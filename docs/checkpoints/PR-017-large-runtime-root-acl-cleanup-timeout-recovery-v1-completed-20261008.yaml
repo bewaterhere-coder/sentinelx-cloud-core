@@ -1,0 +1,59 @@
+schema_version: "1.0"
+kind: devforge_completion_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
+source_command: "#开发完成 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1"
+created_at: "2026-10-08"
+
+lineage:
+  requirement_revision: 1
+  plan_revision: 5
+  acceptance_revision: 3
+  completion_revision: 1
+  acceptance_ref: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-acceptance-r3.yaml
+  finalization_ref: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-completion-finalization-r1.yaml
+  integration_receipt_ref: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-integration-receipt-r1.yaml
+  integration_receipt_blob_sha: ae7a93de6d4ea782f350f55d40779dc3f2084fd0
+  completion_review_ref: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-completion-r1.md
+  completion_transition_receipt_ref: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-completion-transition-receipt-r1.yaml
+  completion_transition_receipt_blob_sha: 153d03f20854bcdaf292a09552afb648e87d4074
+
+transport:
+  type: github-pr
+  pr_number: 17
+  branch: task/large-runtime-root-acl-cleanup-timeout-recovery-v1
+  finalized_head: 7e72b8b9e77423af515b7b3342a0665b44a1ed6e
+  base_before_merge: 1028030b33f0ea792a884491a431fffe566f6aa5
+  merge_commit: f72ac8bfe643cd9fbdea231e4a69f9e88a0595e9
+
+integration:
+  pr_merged: true
+  pr_state: closed
+  main_merge_readback_verified: true
+  exact_expected_head_cas_verified: true
+  integration_receipt_read_back_verified: true
+
+verification:
+  acceptance_r3_approved: true
+  exact_product_candidate: f9e07da9cc37f6e882c3258280869b415cafcb5c
+  exact_product_candidate_workflows_all_success: true
+  exact_product_candidate_workflow_count: 13
+  real_windows_unity_6000_6_4f1: success
+  current_node_npm_readiness: verified
+  no_product_code_change_after_verified_candidate_before_merge: true
+
+safety:
+  canonical_local_checkout_mutated: false
+  permission_or_allowlist_expansion_used: false
+  operator_unrestricted_used: false
+  unrestricted_fallback_used: false
+  implementation_replayed: false
+  replacement_development_pr_created: false
+
+postconditions:
+  stage: done
+  acceptance_approved: true
+  integration_verified: true
+  completion_verified: true
+  next_expected_actor: null
+  no_receipt_no_completion_claim: satisfied
