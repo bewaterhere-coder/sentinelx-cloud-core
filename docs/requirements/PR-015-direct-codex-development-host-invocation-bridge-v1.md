@@ -6,7 +6,7 @@ repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 2
 development:
   stage: implementation
-  implementation_execution_complete: false
+  implementation_execution_complete: true
   gates:
     requirement_ready: true
     plan_approved: true
@@ -17,8 +17,8 @@ development:
   latest_plan_review: approved_round_6
   latest_plan_remediation: r6_applied
   review_disposition: approved
-  next_expected_actor: implementer
-  acceptance_disposition: invalidated_by_requirement_revision_2
+  next_expected_actor: verifier
+  acceptance_disposition: pending_requirement_revision_2
   blocking_findings: []
   authorization:
     mode: durable
@@ -44,7 +44,13 @@ artifacts:
   prior_slice_impact: docs/execution/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-r5-slice-impact.yaml
   approved_slice_impact: docs/execution/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-r6-slice-impact.yaml
   current_execution_slice_set: docs/execution/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-r6-slices.yaml
-  current_execution_slice_set_blob_sha: 192e5446036423297cbcece01a27492ae9aae390
+  current_execution_slice_set_blob_sha: 8aeb1892a4b3a5d61ae8747b3067b87b4f97b23c
+  latest_slice_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-s04-completion-20261007.yaml
+  latest_slice_checkpoint_blob_sha: c1191c57146ea35efd821f1d2b234c506fa25fba
+  latest_slice_completion_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-s04-completion-receipt.yaml
+  latest_slice_completion_receipt_blob_sha: bb842ee9179d94a9661be67114f32a84950a93a6
+  exact_product_candidate: 02eb3de2ec9c137b3285398e555f1e037b574965
+  implementation_evidence_head: 783af5cacdaab9b325c48e2bbd4acded63109b02
   prior_slice_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-s03-completion-20261007.yaml
   prior_slice_completion_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-s03-completion-receipt.yaml
   prior_acceptance: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r1.md
@@ -54,14 +60,15 @@ artifacts:
 implementation_entry:
   bootstrap_required: true
   intended_target: direct:codebuddy
-  override_state: active
+  override_state: expired
   override_ref: docs/overrides/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-execution-override.yaml
-  override_blob_sha: 91b527f4c31d422e25ea7e00cc3d317e7a184fd4
+  override_blob_sha: 6e2ec2e8a9eb3682e187c8d03ec9ec1451c0b681
   override_receipt_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-override-r6-20261007.yaml
   prior_override_ref: docs/overrides/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-execution-override.yaml
-  effective_provider:
+  effective_provider: null
+  project_binding_fallback:
     provider: direct
-    adapter: codebuddy
+    adapter: codex
   explicit_command: "#开发引导执行 PR-015-direct-codex-development-host-invocation-bridge-v1 direct:codebuddy"
 transport:
   type: github-pr
@@ -79,8 +86,9 @@ requirement_readiness:
     live_host_codex_package_observed: "@openai/codex 0.154.0"
     live_host_codex_shim_observed: "active-user npm codex.cmd -> node + @openai/codex/bin/codex.js"
     current_blocker: null
-    bootstrap_override_bound_plan_revision: 6
-    bootstrap_override_bound_slice: S04
+    implementation_execution_complete: true
+    all_current_plan_slices_completed: true
+    bootstrap_override_expired_by_slice_completion: true
     pr013_relation: related_unblocker_not_same_task
 ---
 
