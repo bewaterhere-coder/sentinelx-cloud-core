@@ -39,7 +39,7 @@ No Requirement Revision 3 is introduced. S01-S03 remain retained verified prereq
 
 ## 1. Retained implementation baseline
 
-Plan R3 does **not** replay S01-S03. Their verified implementation remains the baseline:
+Plan R4 does **not** replay S01-S03. Their verified implementation remains the baseline:
 
 - bounded `devforge_direct_codex` builtin provider and closed model-facing schema;
 - direct/codex execution identity preserved;
@@ -56,7 +56,7 @@ Historical product candidate: `a84db15a8770599718a665fd9c201c7b82b3dd91`.
 
 Acceptance R1's real-host finding is retained as the disconfirming fixture: Codex edits and verifies successfully but does not commit, so persistence must be provider-owned.
 
-## 2. R3 architecture delta
+## 2. R4 architecture delta
 
 ### D13 — Provider-owned persistence broker
 
@@ -400,7 +400,7 @@ adapter: codex
 
 The previous CodeBuddy override is expired and bound to Plan R2. It cannot be reused.
 
-Because the direct/Codex bridge cannot yet persist its own implementation work, an approved Plan R4 may require a **new explicit Task-scoped bootstrap override** bound to Plan R3 and its reviewed Slice Set:
+Because the direct/Codex bridge cannot yet persist its own implementation work, an approved Plan R4 may require a **new explicit Task-scoped bootstrap override** bound to Plan R4 and its reviewed Slice Set:
 
 ```text
 #开发引导执行 PR-015-direct-codex-development-host-invocation-bridge-v1 direct:codebuddy
