@@ -1,6 +1,6 @@
 schema_version: "1.0"
 kind: devforge_task_scoped_bootstrap_execution_override
-state: active
+state: expired
 
 authority:
   command: "#开发引导执行"
@@ -95,3 +95,12 @@ receipt:
   created_at: "2026-10-06"
   readback_verified: true
   readback_ref: github_blob:f42072e49a4fa3a0df7f02af3348063da41d45e9
+
+resolution:
+  expired_by_condition: all_bound_plan_slices_completed
+  task_stage_after_acceptance_entry: acceptance
+  project_binding_restored_by_fallthrough: true
+  project_binding:
+    provider: direct
+    adapter: codex
+  acceptance_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r1.md
