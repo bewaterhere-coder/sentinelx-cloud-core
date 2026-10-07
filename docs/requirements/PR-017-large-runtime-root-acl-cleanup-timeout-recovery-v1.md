@@ -80,6 +80,10 @@ artifacts:
   integration_receipt_blob_sha: ae7a93de6d4ea782f350f55d40779dc3f2084fd0
   completion_review: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-completion-r1.md
   completion_review_blob_sha: 66863506fbbc0a8267ae8813f4d6eed990b9cee3
+  completion_transition_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-completion-transition-receipt-r1.yaml
+  completion_transition_receipt_blob_sha: 153d03f20854bcdaf292a09552afb648e87d4074
+  completion_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-completed-20261008.yaml
+  completion_checkpoint_blob_sha: 72c9aa311d6248400f4a5d8b374f93918fff69b6
 related_tasks:
   predecessor:
     - PR-012-execute-scoped-explicit-execution-profile-v1
