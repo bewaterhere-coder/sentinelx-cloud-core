@@ -5,8 +5,16 @@
 ~~~yaml
 task_id: PR-021-minimal-runtime-complexity-reduction-boundary-v1
 plan_revision: 1
-plan_status: ready_for_review
+plan_status: accepted_finalization_ready
 implementation_authority: false
+execution:
+  completed_slices: [S01, S02, S03, S04]
+  implementation_execution_complete: true
+  acceptance_approved: true
+  finalization_ready: true
+  integration_transport: github-pr
+  canonical_pr: 21
+  finalization_receipt: docs/checkpoints/PR-021-minimal-runtime-complexity-reduction-boundary-v1-premerge-finalization-receipt.yaml
 requirement_ref: docs/requirements/PR-021-minimal-runtime-complexity-reduction-boundary-v1.md
 requirement_revision: 1
 transport:
