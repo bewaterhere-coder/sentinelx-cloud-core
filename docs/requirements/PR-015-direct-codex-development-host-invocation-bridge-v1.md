@@ -20,9 +20,10 @@ development:
   next_expected_actor: operator
   acceptance_disposition: blocked_external_activation
   blocking_findings:
-    - Post-restart live activation remains blocked: SentinelX restarted and reconnected as session sess_7746c7cac634 but still reports 0.24.1.dev403+g9948eb4d4 and local_api exposes only devforge_runtime; the exact PR-015 candidate is not active.
-    - Available Acceptance surfaces do not provide verified authority to install the exact candidate into C:\\ProgramData\\SentinelX\\.venv; model-facing script_run lacks execution_profile and scoped devforge_runtime execution is workspace-bounded.
-    - AC12 remains blocked until live devforge_direct_codex completes a persisted direct/Codex run and PR-013 direct/Codex provider admission succeeds without Task/Plan/Slice/project-binding change.
+    - Exact PR-015 candidate is now active on the live Host as 0.24.1.dev499+g02eb3de2e in session sess_5306a4882c3f.
+    - Live Host config C:\\ProgramData\\SentinelX\\config.yaml has no direct_codex block; local_api.describe(devforge_direct_codex) fails closed with endpoint_not_available and requires explicit direct-codex Host policy opt-in.
+    - Requirement R3 requires explicit Host policy opt-in and Plan R6 requires live activation only when separately admitted; #开发验收 does not implicitly grant that Host-policy mutation.
+    - AC12 remains blocked until separately admitted Host opt-in exposes devforge_direct_codex, one live persisted direct/Codex run succeeds, and PR-013 direct/Codex provider admission succeeds without Task/Plan/Slice/project-binding change.
   authorization:
     mode: durable
     ref: docs/authorizations/PR-015-direct-codex-development-host-invocation-bridge-v1-development-authorization.yaml
@@ -58,8 +59,8 @@ artifacts:
   execution_reconciliation_receipt_blob_sha: bd1a9d9b9c12b8c001d60845ef831b2be8b50dd4
   implementation_to_acceptance_transition_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-implementation-to-acceptance-transition-receipt.yaml
   implementation_to_acceptance_transition_receipt_blob_sha: 31291ffb38ee22dbcfd4a5020198a1ceb6be940c
-  latest_acceptance_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r3-post-restart-activation-blocked-20261007.yaml
-  latest_acceptance_checkpoint_blob_sha: 52fbd4b0873ab4e7bb2d26b67760516f21aad876
+  latest_acceptance_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r4-host-opt-in-blocked-20261007.yaml
+  latest_acceptance_checkpoint_blob_sha: fb5faa527569a2c6271e2428cc93b20077968c93
   prior_slice_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-s03-completion-20261007.yaml
   prior_slice_completion_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-s03-completion-receipt.yaml
   prior_acceptance: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r1.md
