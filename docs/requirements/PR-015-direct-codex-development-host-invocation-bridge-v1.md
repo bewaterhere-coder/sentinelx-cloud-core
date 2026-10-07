@@ -57,6 +57,7 @@ implementation_entry:
   override_state: active
   override_ref: docs/overrides/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-execution-override.yaml
   override_blob_sha: 91b527f4c31d422e25ea7e00cc3d317e7a184fd4
+  override_receipt_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-override-r6-20261007.yaml
   prior_override_ref: docs/overrides/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-execution-override.yaml
   effective_provider:
     provider: direct
