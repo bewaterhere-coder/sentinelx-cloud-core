@@ -17,9 +17,9 @@ development:
   latest_plan_review: approved_round_6
   latest_plan_remediation: r6_applied
   review_disposition: approved
-  next_expected_actor: codebuddy
+  next_expected_actor: operator
   acceptance_disposition: rejected_repair_local
-  execution_disposition: fixing_external_handoff_ready
+  execution_disposition: fixing_live_verification_required
   blocking_findings:
     - direct_codex_workspace_acl_handoff_incompatible_with_codex_sandbox
   repair_evidence:
@@ -55,8 +55,8 @@ artifacts:
   latest_slice_checkpoint_blob_sha: c1191c57146ea35efd821f1d2b234c506fa25fba
   latest_slice_completion_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-s04-completion-receipt.yaml
   latest_slice_completion_receipt_blob_sha: bb842ee9179d94a9661be67114f32a84950a93a6
-  exact_product_candidate: d441e95b6eb65834f52ffdb42026e7328f5c9478
-  implementation_evidence_head: d441e95b6eb65834f52ffdb42026e7328f5c9478
+  exact_product_candidate: 7adfa7a74c437ccc29cdcd7078373c6e8d224904
+  implementation_evidence_head: 7adfa7a74c437ccc29cdcd7078373c6e8d224904
   execution_reconciliation_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-s04-execution-reconciliation-receipt.yaml
   execution_reconciliation_receipt_blob_sha: bd1a9d9b9c12b8c001d60845ef831b2be8b50dd4
   implementation_to_acceptance_transition_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-implementation-to-acceptance-transition-receipt.yaml
@@ -67,9 +67,9 @@ artifacts:
   latest_acceptance_checkpoint_blob_sha: b65d821e19245b95a4d37186044cb6f4c15ff982
   latest_acceptance_transition_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r7-transition-receipt.yaml
   latest_acceptance_transition_receipt_blob_sha: 9b3fe781802450bfdce2c810077d27572ce7b26d
-  latest_fixing_execution_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-attempt-r1-completed-20261007.yaml
+  latest_fixing_execution_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-attempt-r2-live-verification-required-20261007.yaml
   latest_fixing_handoff: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-attempt-r2-codebuddy-handoff-20261007.yaml
-  latest_fixing_execution_checkpoint_blob_sha: 2b8677e87463a4320ab9a47039b834f5ac7159db
+  latest_fixing_execution_checkpoint_blob_sha: 868ba5663884a692374e518c5a8d2e0528086f99
   latest_fixing_transition_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-r1-to-acceptance-transition-receipt.yaml
   latest_fixing_transition_receipt_blob_sha: e2152ad50e637858a42afdf54b31c8d5b19e5a3e
   latest_bootstrap_fixing_recovery_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-fixing-recovery-r1-20261007.yaml

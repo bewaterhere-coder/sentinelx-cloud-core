@@ -54,13 +54,13 @@ receipt:
   latest_acceptance_command: "#开发验收 PR-015-direct-codex-development-host-invocation-bridge-v1"
   latest_acceptance_result: rejected_repair_local
   latest_execution_command: "#开发执行 PR-015-direct-codex-development-host-invocation-bridge-v1"
-  latest_execution_result: fixing_r1_completed_ready_for_acceptance
-  latest_execution_checkpoint_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-attempt-r1-completed-20261007.yaml
-  latest_execution_checkpoint_blob_sha: 2b8677e87463a4320ab9a47039b834f5ac7159db
+  latest_execution_result: fixing_r2_live_verification_required
+  latest_execution_checkpoint_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-attempt-r2-live-verification-required-20261007.yaml
+  latest_execution_checkpoint_blob_sha: 868ba5663884a692374e518c5a8d2e0528086f99
   latest_fixing_transition_receipt_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-r1-to-acceptance-transition-receipt.yaml
   latest_fixing_transition_receipt_blob_sha: e2152ad50e637858a42afdf54b31c8d5b19e5a3e
-  latest_fixing_product_head: d441e95b6eb65834f52ffdb42026e7328f5c9478
-  latest_fixing_github_ci_run_id: 37615911292
+  latest_fixing_product_head: 7adfa7a74c437ccc29cdcd7078373c6e8d224904
+  latest_fixing_github_ci_run_id: 37635132767
   latest_fixing_github_ci_result: success
   latest_bootstrap_command: "#开发引导执行 PR-015-direct-codex-development-host-invocation-bridge-v1 direct:codebuddy"
   latest_bootstrap_result: fixing_recovery_expired_after_stage_exit
