@@ -5,16 +5,21 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 1
 development:
-  stage: plan_review
+  stage: implementation
   gates:
     requirement_ready: true
-    plan_approved: false
+    plan_approved: true
     acceptance_approved: false
     completion_verified: false
   plan_revision: 4
-  implementation_authorized: false
+  implementation_authorized: true
   blocking_findings: []
-  next_expected_actor: reviewer
+  next_expected_actor: implementer
+  current_slice: S01
+  current_slice_state: pending
+  completed_slices: []
+  bootstrap_required_before_current_slice: true
+  bootstrap_target: direct:codebuddy
 transport:
   type: github-pr
   pr_number: 20
@@ -22,10 +27,11 @@ transport:
   base_branch: main
 artifacts:
   plan: docs/plans/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan.md
-  latest_plan_review: "https://github.com/bewaterhere-coder/sentinelx-cloud-core/pull/20#issuecomment-6042688379"
-  latest_plan_review_transition_receipt: "https://github.com/bewaterhere-coder/sentinelx-cloud-core/pull/20#issuecomment-6042713967"
+  latest_plan_review: docs/reviews/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan-review-r4.md
+  latest_plan_review_transition_receipt: docs/reviews/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan-review-r4-transition-receipt.yaml
   latest_plan_remediation: docs/checkpoints/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan-remediation-r4-20261008.yaml
   latest_plan_remediation_transition_receipt: docs/reviews/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan-remediation-r4-transition-receipt.yaml
+  execution_slice_set: docs/execution/PR-020-durable-async-operation-runtime-outcome-readback-v1-slices.yaml
 related_tasks:
   stabilization_gate: PR-019-stable-baseline-stabilization-exit-gate-v1
   observed_trigger: PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1
