@@ -1,0 +1,80 @@
+schema_version: "1.0"
+kind: devforge_slice_repair_completion_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
+slice_id: S02
+source_command: "#开发执行 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1"
+result: CompletedAfterRepair
+repair_candidate: 4896a55cb951dec47422c738ccb1ba98762e13a9
+repository_reality:
+  canonical_main: 018b78ca20984176d53fbe90039dc795a7f2742f
+  transport_pr: 17
+  transport_branch: task/large-runtime-root-acl-cleanup-timeout-recovery-v1
+  repair_entry_head: f64627a0e38c299aee41f31152ade6411be0dd5c
+  pr015_current_head: 080d31229b614c8fc753117fa7152618e4ff1e50
+  pr016_current_head: f22ee1881526002547b59df2226fa57aa8f10af6
+  product_overlap_with_pr016: false
+repair:
+  trigger:
+    live_scope_id: mss_62URoGdXBbPJCnNK6Xdm_dye
+    observed_error: HostMutationSandboxResidualAuthority
+    invalid_observed_state: terminal
+    required_state: revoked
+  commits:
+    - 78612d64b745f53b42abf6ad8a234c447dc2fa08
+    - 4896a55cb951dec47422c738ccb1ba98762e13a9
+  changed_files:
+    - src/sentinelx_core/mutation_scope.py
+    - src/sentinelx_core/windows_mutation_sandbox.py
+    - src/sentinelx_core/handlers/scoped_script.py
+    - tests/test_windows_mutation_sandbox.py
+    - tests/test_scoped_script_execution.py
+  delivered:
+    - exact runtime-root read authority is durably reserved before ACL grant
+    - durable root authority is cleared only after exact cleanup/readback has proved closure
+    - terminalization treats durable runtime-root markers as residual authority
+    - cleanup retry consumes durable roots rather than relying solely on current in-memory grant lists
+    - legacy/pre-repair scopes retain current-policy cleanup fallback
+    - HostMutationSandboxResidualAuthority bypasses generic same-request terminalization and remains fail-closed
+    - handler-level regression proves activation residual-authority failure cannot publish terminal or FINISH
+    - low-level regression proves revoked state can later terminalize only after authoritative cleanup succeeds
+verification:
+  exact_candidate: 4896a55cb951dec47422c738ccb1ba98762e13a9
+  checks:
+    test: success
+    s03_windows_process_firewall: success
+    s05_windows_incident_security_regression: success
+    s04_windows_regression_coverage: success
+    s04_windows_capability_readiness: success
+    s01_windows_identity_compatibility: success
+    s03_offline_node_npm: success
+    native_cwd: success
+    s02_verification_materialization: success
+    s05_devforge_runtime_verification: success
+    s01_verification_contracts: success
+    s02_windows_effect_and_structured_mutation: success
+    macos_agent: success
+  focused_regression:
+    durable_runtime_authority_persistence: pass
+    false_terminal_handler_composition: pass
+    explicit_retry_required_after_residual_authority: pass
+    exact_cleanup_then_terminal: pass
+    audit_finish_not_fabricated_on_residual_authority: pass
+host_reality:
+  currently_deployed_agent: 0.24.1.dev518+gd441e95b6
+  current_host_candidate: d441e95b6eb65834f52ffdb42026e7328f5c9478
+  current_host_owner: concurrent_PR_015
+  repair_candidate_activated_live: false
+  prior_ambiguous_scope_sid_absence_verified: false
+slice_boundary:
+  s03_executed_after_repair: false
+  unity_probe_executed_after_repair: false
+postconditions:
+  s01_state: completed
+  s02_state: completed
+  s03_state: blocked
+  current_slice: S03
+  task_completion_verified: false
+  acceptance_approved: false
+completion_guard:
+  canonical_next_action: "activate/check PR-017 repair candidate and prior residual SID closure before rerunning #开发执行 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1"
