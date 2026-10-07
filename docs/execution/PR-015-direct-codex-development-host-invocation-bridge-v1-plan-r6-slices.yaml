@@ -78,7 +78,7 @@ slices:
       persisted direct/codex receipt.
     depends_on: []
     historical_prerequisite_evidence: [S01, S02, S03]
-    state: pending
+    state: completed
     scope:
       refs:
         - src/sentinelx_core/direct_codex_transport.py
@@ -148,10 +148,10 @@ slices:
 
 execution_state:
   current_slice: S04
-  current_slice_state: pending
-  completed_slices: []
-  pending_slices: [S04]
-  all_slices_completed: false
+  current_slice_state: completed
+  completed_slices: [S04]
+  pending_slices: []
+  all_slices_completed: true
 
 acceptance_boundary:
   all_current_plan_slices_must_be_completed: true
