@@ -1,9 +1,8 @@
 schema_version: "1.1"
 kind: devforge_task_scoped_bootstrap_execution_override
-state: expired
+state: active
 mode: fixing_recovery
-expired_reason: task_left_fixing_for_acceptance
-override_revision: 3
+override_revision: 4
 
 authority:
   command: "#开发引导执行"
@@ -16,20 +15,20 @@ bootstrap_relation:
   blocked_provider:
     provider: direct
     adapter: codex
-  missing_or_broken_capability: direct_codex_containment_proof_lifecycle
-  finding_code: direct_codex_containment_proof_lifecycle_unreachable
+  missing_or_broken_capability: direct_codex_workspace_acl_handoff
+  finding_code: direct_codex_workspace_acl_handoff_incompatible_with_codex_sandbox
   task_delivers_or_repairs_capability: true
   relation: >-
-    The persistent direct/codex provider cannot execute the fixing attempt
-    because its production containment-proof lifecycle cannot reach verified
-    readiness. Acceptance R5 classified that exact lifecycle defect as
-    repair_local, and the current Requirement R2 / Approved Plan R6 authorize
-    repair of that same capability without changing Task identity, project
-    binding, or transport.
+    The persistent direct/codex provider cannot execute the current fixing attempt
+    because the real active-user Codex workspace-write sandbox cannot establish
+    its required exact-workspace ACL on the provider-created isolated workspace.
+    Acceptance R7 classified that exact defect as repair_local. The same Task,
+    Requirement Revision 2 and Approved Plan R6 authorize repair of the bridge
+    without changing Task identity, project binding, Requirement semantics or
+    canonical transport.
   evidence_refs:
-    - docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r5.md
-    - docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r5-rejected-containment-lifecycle-20261007.yaml
-    - docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-execution-r1-provider-deadlock-20261007.yaml
+    - docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r7.md
+    - docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r7-rejected-codex-workspace-acl-handoff-20261007.yaml
     - docs/requirements/PR-015-direct-codex-development-host-invocation-bridge-v1.md
     - docs/plans/PR-015-direct-codex-development-host-invocation-bridge-v1-plan.md
 
@@ -37,8 +36,8 @@ target:
   provider: direct
   adapter: codebuddy
   registration_evidence:
-    devforge_runtime_version: "2.89.0"
-    devforge_runtime_revision: e09e69889d6cc3b5cdaa6a1fd5afb98286611c65
+    devforge_runtime_version: "2.91.0"
+    devforge_runtime_revision: 8604ec261bea79600a89261069f4cf7c5e2d5b4f
     adapter_ref: adapters/development/codebuddy.md
     adapter_blob_sha: d1e0547ef212a0e45da59b5129d61ee1804cf722
   host_availability_evidence:
@@ -58,7 +57,6 @@ target:
 binding:
   requirement_ref: docs/requirements/PR-015-direct-codex-development-host-invocation-bridge-v1.md
   requirement_revision: 2
-  requirement_blob_sha: 378bac0b901c7c7e34a17ce542b799a37184a567
   plan_ref: docs/plans/PR-015-direct-codex-development-host-invocation-bridge-v1-plan.md
   plan_revision: 6
   plan_digest: 2bcea2a44f88e51c8b9378ba6297b61897e638da
@@ -70,16 +68,16 @@ binding:
     repository: bewaterhere-coder/sentinelx-cloud-core
     pr: 15
     branch: task/direct-codex-development-host-invocation-bridge-v1
-    admitted_head: 4d6d8918c00d4fa5a6beaf8b770a56008051c911
+    admitted_head: 98de9df9cb822e666c5d9b291cb73ae1138771e4
   acceptance:
     required_for_mode: true
     decision: Rejected
-    findings_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r5.md
-    findings_digest: 988f2a1eb94ab8349576e3db3c88c4def93fb6c0
-    checkpoint_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r5-rejected-containment-lifecycle-20261007.yaml
-    checkpoint_digest: 0eabbbcd27bb4233bd1746acb0a0d6a76180d194
+    findings_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r7.md
+    findings_digest: f9259d43fa5529638a294bd2c57488cbe3f3eec1
+    checkpoint_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r7-rejected-codex-workspace-acl-handoff-20261007.yaml
+    checkpoint_digest: b65d821e19245b95a4d37186044cb6f4c15ff982
     classification: repair_local
-    finding_code: direct_codex_containment_proof_lifecycle_unreachable
+    finding_code: direct_codex_workspace_acl_handoff_incompatible_with_codex_sandbox
   project_binding:
     provider: direct
     adapter: codex
@@ -117,11 +115,12 @@ expiry:
   on_task_cancelled: true
   on_explicit_revoke: true
   prior_implementation_override_reused: false
+  prior_fixing_override_reused: false
 
 admission:
   devforge_runtime:
-    version: "2.89.0"
-    revision: e09e69889d6cc3b5cdaa6a1fd5afb98286611c65
+    version: "2.91.0"
+    revision: 8604ec261bea79600a89261069f4cf7c5e2d5b4f
     contract_revision: "1.1"
   task_stage: fixing
   plan_approved: true
@@ -136,20 +135,11 @@ admission:
   write_scope_preserved: true
   project_binding_preserved: true
   authority_widened: false
-  prior_override:
-    state: expired
-    revision: 2
-    mode: implementation_bootstrap
-    reused_as_authority: false
+  prior_implementation_override_reused: false
+  prior_fixing_override_reused: false
 
 receipt:
   created_at: "2026-10-07"
   readback_required: true
-  readback_verified: true
-  admission_readback_blob_sha: febaefbb0850ed90ad59ad1013abcbcb4417d3ee
-  admission_readback_commit: 52ca7f5fe3849693aefb748fc9661a0faba5ab32
-  checkpoint_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-fixing-recovery-r1-20261007.yaml
-  expiry_verified: true
-  expired_by_command: "#开发执行 PR-015-direct-codex-development-host-invocation-bridge-v1"
-  fixing_completion_head: d441e95b6eb65834f52ffdb42026e7328f5c9478
-  fixing_completion_checkpoint_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-attempt-r1-completed-20261007.yaml
+  readback_verified: false
+  checkpoint_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-fixing-recovery-r2-20261007.yaml
