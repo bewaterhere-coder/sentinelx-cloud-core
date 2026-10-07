@@ -32,6 +32,7 @@ artifacts:
   execution_slice_set: docs/execution/PR-021-minimal-runtime-complexity-reduction-boundary-v1-slices.yaml
   latest_execution_run: docs/execution/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s01-run-001.yaml
   latest_execution_checkpoint: docs/checkpoints/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s01-completion-20261008.yaml
+  latest_runtime_revalidation: docs/checkpoints/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s01-runtime-drift-revalidation-20261008.yaml
   provisional_bootstrap: docs/checkpoints/minimal-runtime-complexity-reduction-boundary-v1-provisional-bootstrap.md
   target_architecture_decision: docs/architecture/sentinelx-minimal-runtime-boundary-v1.md
   target_disposition_matrix: docs/architecture/sentinelx-capability-disposition-matrix-v1.md
