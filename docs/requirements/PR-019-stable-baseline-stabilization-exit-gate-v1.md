@@ -19,8 +19,15 @@ development:
   current_slice: S01
   current_slice_state: pending
   completed_slices: []
-  blocking_findings:
-    - S01 run run-pr019-s01-20261008-001 / attempt-001 remains in RecoveryOnly. Remote product publication is reconciled absent; local Direct Codex/provider terminal outcome and terminal authority closure are still unproven, so replay or attempt-002 is forbidden.
+  recovery:
+    run_id: run-pr019-s01-20261008-001
+    interrupted_attempt_id: attempt-001
+    remote_product_publish: reconciled_absent
+    terminalization_receipt: docs/checkpoints/pr019-s01-recovery-terminal-r3.yaml
+    terminal_authority_closure_verified: true
+    recovery_cycle_state: Completed
+    recovery_progress: Progressed
+    next_attempt_if_fresh_preflight_passes: attempt-002
 transport:
   type: github-pr
   pr_number: 19
@@ -37,6 +44,7 @@ artifacts:
   latest_execution_receipt: docs/reviews/PR-019-stable-baseline-stabilization-exit-gate-v1-s01-direct-codex-attempt1-interrupted-20261008.yaml
   latest_execution_reconciliation: docs/reviews/PR-019-stable-baseline-stabilization-exit-gate-v1-s01-attempt1-remote-reconciliation-20261008.yaml
   latest_recovery_stabilization: docs/reviews/PR-019-stable-baseline-stabilization-exit-gate-v1-s01-attempt1-recovery-hold-20261008.yaml
+  latest_recovery_terminalization: docs/checkpoints/pr019-s01-recovery-terminal-r3.yaml
 related_tasks:
   evidence_predecessors:
     - PR-011-scoped-verification-toolchain-dependency-capsule-v1
