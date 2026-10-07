@@ -3,23 +3,33 @@
 S06 owns endpoint identity, lifecycle composition, and policy admission only.
 The scoped execution adapter is an optional seam that S07 wires to the
 existing profiled script handler; S06 never introduces a second executor.
+PR-014 S02 adds the closed, path-free ``materialize_workspace`` action whose
+authority semantics live entirely inside
+``devforge_workspace_materialization``.
 """
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
+from pathlib import Path
 from typing import Any
 
 from sentinelx_core.executor import HandlerError
+from sentinelx_core.operation_registry import (
+    FirewallCoverage,
+    OperationEffectResolution,
+    RepositoryEffect,
+)
 from sentinelx_core.policy import Policy
 from sentinelx_core.request_context import RequestContext
 
 ENDPOINT_NAME = "devforge_runtime"
 CONTRACT_ID = "devforge_runtime"
-CONTRACT_REVISION = 1
+CONTRACT_REVISION = 2
 
 LifecycleService = Callable[[dict[str, Any]], Awaitable[dict[str, Any]]]
 ProfiledScriptHandler = Callable[[RequestContext, dict[str, Any]], Awaitable[dict[str, Any]]]
 ScopedExecuteAdapter = Callable[[RequestContext, dict[str, Any]], Awaitable[dict[str, Any]]]
+MaterializeAdapter = Callable[[RequestContext, dict[str, Any]], Awaitable[dict[str, Any]]]
 
 _EXECUTE_SCOPED_ALLOWED = frozenset(
     {
@@ -88,6 +98,42 @@ _SCOPE_REF_SCHEMA = {
         "generation": {"type": "integer", "minimum": 1},
     },
 }
+_SOURCE_BINDING_SCHEMA = {
+    "type": "object",
+    "required": ["expected_ref", "expected_commit"],
+    "additionalProperties": False,
+    "properties": {
+        "expected_ref": {
+            "type": "string",
+            "pattern": r"^refs/heads/[A-Za-z0-9][A-Za-z0-9._/-]*$",
+        },
+        "expected_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    },
+}
+# D8: closed, path-free request schema.  Every caller-selected host path,
+# remote URL, credential or authority field is refused by
+# additionalProperties: False and, for defense in depth, by the explicit
+# denylist checked in the adapter before anything else runs.
+_MATERIALIZE_FORBIDDEN_FIELDS = (
+    "dest",
+    "target_path",
+    "workspace_path",
+    "checkout_path",
+    "worktree_path",
+    "cache_path",
+    "staging_path",
+    "remote_url",
+    "credential",
+    "token",
+    "ssh_key",
+    "sid",
+    "acl",
+    "allowed_write_roots",
+    "protected_roots",
+    "operation_classes",
+    "executable",
+    "argv",
+)
 
 
 def _schema(required: list[str], properties: dict[str, Any]) -> dict[str, Any]:
@@ -146,6 +192,19 @@ _ACTION_SCHEMAS = {
             "cwd": {"type": "string"},
             "env": {"type": "object", "additionalProperties": {"type": "string"}},
             "timeout": {"type": "integer"},
+        },
+    ),
+    # PR-014 S02: path-free, source-bounded materialization request.  Only
+    # semantic repository/lineage/workspace-purpose/source-binding fields and
+    # an optional comparison-only placement expectation are admitted.
+    "materialize_workspace": _schema(
+        ["workspace_purpose", "repository", "lineage", "source_binding"],
+        {
+            "workspace_purpose": {"type": "string", "minLength": 1, "maxLength": 64},
+            "repository": _REPOSITORY_SCHEMA,
+            "lineage": _LINEAGE_SCHEMA,
+            "source_binding": _SOURCE_BINDING_SCHEMA,
+            "placement_expectation": {"type": "string", "maxLength": 260},
         },
     ),
 }
@@ -256,6 +315,115 @@ def make_devforge_execute_scoped_adapter(
     return execute_scoped
 
 
+_MATERIALIZE_ALLOWED = frozenset(
+    {"workspace_purpose", "repository", "lineage", "source_binding", "placement_expectation"}
+)
+_MATERIALIZE_REQUIRED = frozenset(
+    {"workspace_purpose", "repository", "lineage", "source_binding"}
+)
+
+
+def make_devforge_materialize_adapter(
+    materialization_runner: Callable[
+        [RequestContext, dict[str, Any]], Awaitable[dict[str, Any]]
+    ],
+) -> MaterializeAdapter:
+    """Admit one closed, path-free materialize_workspace request (D8)."""
+
+    async def materialize_workspace(
+        context: RequestContext,
+        params: dict[str, Any],
+    ) -> dict[str, Any]:
+        if not isinstance(context, RequestContext):
+            raise HandlerError(
+                "HostMutationAuditLineageInvalid",
+                "materialize_workspace requires transport RequestContext",
+            )
+        if not isinstance(params, dict):
+            raise HandlerError("invalid_payload", "materialize_workspace params must be an object")
+
+        for forbidden in _MATERIALIZE_FORBIDDEN_FIELDS:
+            if forbidden in params:
+                raise HandlerError(
+                    "invalid_payload",
+                    f"materialize_workspace never accepts caller authority field: {forbidden}",
+                )
+        extras = sorted(set(params) - _MATERIALIZE_ALLOWED)
+        if extras:
+            raise HandlerError("invalid_payload", f"unsupported materialize_workspace fields: {extras}")
+        missing = sorted(_MATERIALIZE_REQUIRED - set(params))
+        if missing:
+            raise HandlerError("invalid_payload", f"missing materialize_workspace fields: {missing}")
+
+        workspace_purpose = params["workspace_purpose"]
+        if (
+            not isinstance(workspace_purpose, str)
+            or not workspace_purpose.strip()
+            or len(workspace_purpose) > 64
+        ):
+            raise HandlerError("invalid_payload", "workspace_purpose must be a bounded string")
+        placement_expectation = params.get("placement_expectation")
+        if placement_expectation is not None and (
+            not isinstance(placement_expectation, str) or not placement_expectation.strip()
+        ):
+            raise HandlerError(
+                "invalid_payload", "placement_expectation must be a comparison-only string"
+            )
+
+        source_binding = _strict_mapping(
+            params,
+            "source_binding",
+            allowed=frozenset({"expected_ref", "expected_commit"}),
+            required=frozenset({"expected_ref", "expected_commit"}),
+        )
+        expected_ref = source_binding["expected_ref"]
+        expected_commit = source_binding["expected_commit"]
+        if not isinstance(expected_ref, str) or not expected_ref.startswith("refs/heads/"):
+            raise HandlerError("invalid_payload", "expected_ref must be refs/heads/<logical>")
+        logical = expected_ref[len("refs/heads/"):]
+        if (
+            not logical
+            or ".." in logical
+            or logical.startswith("/")
+            or logical.endswith("/")
+            or any(part in ("", ".", "..") for part in logical.split("/"))
+        ):
+            raise HandlerError(
+                "invalid_payload", "expected_ref logical branch is not a safe V1 branch"
+            )
+        if (
+            not isinstance(expected_commit, str)
+            or len(expected_commit) != 40
+            or any(char not in "0123456789abcdef" for char in expected_commit)
+        ):
+            raise HandlerError("invalid_payload", "expected_commit must be a full sha1")
+        repository = _strict_mapping(
+            params,
+            "repository",
+            allowed=frozenset({"vcs", "authority", "path"}),
+            required=frozenset({"vcs", "authority", "path"}),
+        )
+        lineage = _strict_mapping(
+            params,
+            "lineage",
+            allowed=frozenset({"project_id", "task_id", "run_id", "attempt_id", "slice_id"}),
+            required=frozenset({"project_id", "task_id", "run_id", "attempt_id"}),
+        )
+
+        return await materialization_runner(
+            context,
+            {
+                "workspace_purpose": workspace_purpose,
+                "repository": repository,
+                "lineage": lineage,
+                "source_binding": source_binding,
+                "placement_expectation": placement_expectation,
+            },
+        )
+
+    return materialize_workspace
+
+
 class DevforgeRuntimeProvider:
     """Policy-filtered builtin endpoint provider with no independent authority."""
 
@@ -267,10 +435,12 @@ class DevforgeRuntimeProvider:
         lifecycle_service: LifecycleService,
         *,
         execute_scoped_adapter: ScopedExecuteAdapter | None = None,
+        materialize_adapter: MaterializeAdapter | None = None,
     ) -> None:
         self._policy = policy
         self._lifecycle = lifecycle_service
         self._execute_scoped = execute_scoped_adapter
+        self._materialize = materialize_adapter
 
     @property
     def host_opted_in(self) -> bool:
@@ -285,7 +455,53 @@ class DevforgeRuntimeProvider:
             actions.extend(_LIFECYCLE_ACTIONS)
         if self._execute_scoped is not None and "script_run" not in self._policy.disabled_ops:
             actions.append("execute_scoped")
+        if self._materialize is not None and "mutation_scope" not in self._policy.disabled_ops:
+            actions.append("materialize_workspace")
         return tuple(actions)
+
+    def repository_effect(self, action: str) -> OperationEffectResolution:
+        """Deterministic repository-effect metadata for every effective action.
+
+        Lifecycle actions never touch a repository checkout, exactly like the
+        ``mutation_scope`` op.  ``execute_scoped`` reaches the physically
+        contained scoped-mutation path.  ``materialize_workspace`` spawns the
+        contained materializer through the same S01 scope/sandbox path; its
+        coverage stays fail-closed (UNKNOWN/UNPROVEN) unless the adapter is
+        active and the Host opted in, so the firewall never treats an
+        unavailable seed as proven.
+        """
+        if action in _LIFECYCLE_ACTIONS:
+            return OperationEffectResolution(
+                RepositoryEffect.NON_REPOSITORY_MUTATION,
+                FirewallCoverage.NOT_REQUIRED,
+            )
+        if action == "execute_scoped":
+            if not self.host_opted_in:
+                return OperationEffectResolution(
+                    RepositoryEffect.UNKNOWN,
+                    FirewallCoverage.UNPROVEN,
+                    reason="scoped_mutation_profile_unavailable",
+                )
+            return OperationEffectResolution(
+                RepositoryEffect.PROCESS_MUTATION,
+                FirewallCoverage.PROVEN,
+            )
+        if action == "materialize_workspace":
+            if not self.host_opted_in or self._materialize is None:
+                return OperationEffectResolution(
+                    RepositoryEffect.UNKNOWN,
+                    FirewallCoverage.UNPROVEN,
+                    reason="materialize_workspace_seed_unavailable",
+                )
+            return OperationEffectResolution(
+                RepositoryEffect.PROCESS_MUTATION,
+                FirewallCoverage.PROVEN,
+            )
+        return OperationEffectResolution(
+            RepositoryEffect.UNKNOWN,
+            FirewallCoverage.UNPROVEN,
+            reason="unknown_devforge_runtime_action",
+        )
 
     def list_entry(self) -> dict[str, Any]:
         return {
@@ -356,6 +572,19 @@ class DevforgeRuntimeProvider:
                 )
             return await self._execute_scoped(context, params)
 
+        if action == "materialize_workspace":
+            if "mutation_scope" in self._policy.disabled_ops:
+                raise HandlerError(
+                    "operation_disabled",
+                    "mutation_scope is disabled by Host policy",
+                )
+            if self._materialize is None:
+                raise HandlerError(
+                    "endpoint_not_available",
+                    "materialize_workspace adapter is not active on this Agent build",
+                )
+            return await self._materialize(context, params)
+
         raise HandlerError("unknown_action", f"unknown devforge_runtime action: {action}")
 
 
@@ -364,9 +593,98 @@ def make_devforge_runtime_provider(
     lifecycle_service: LifecycleService,
     *,
     execute_scoped_adapter: ScopedExecuteAdapter | None = None,
+    materialize_adapter: MaterializeAdapter | None = None,
 ) -> DevforgeRuntimeProvider:
     return DevforgeRuntimeProvider(
         policy,
         lifecycle_service,
         execute_scoped_adapter=execute_scoped_adapter,
+        materialize_adapter=materialize_adapter,
     )
+
+
+def make_devforge_workspace_materialization_runner(
+    policy: Policy,
+    *,
+    config_path: Path | None = None,
+    upload_base: Path | None = None,
+    mutation_state_root: Path | None = None,
+) -> MaterializeAdapter:
+    """Compose the one canonical S02 materialization orchestrator.
+
+    The runner owns only glue: state-root derivation matches the existing
+    scoped-mutation handlers, request/lineage identities are converted to the
+    provider-sealed MaterializationRequest, and every domain failure maps to
+    a stable HandlerError code.  All authority semantics stay inside
+    devforge_workspace_materialization.
+    """
+    from sentinelx_core.devforge_workspace_materialization import (
+        DevforgeMaterializationError,
+        MaterializationConflict,
+        MaterializationNotVerified,
+        MaterializationRequest,
+        run_devforge_workspace_materialization,
+    )
+    from sentinelx_core.devforge_workspace_source import DevforgeSourceError
+    from sentinelx_core.mutation_placement import RepositoryIdentity, SemanticIdentity
+
+    fallback_base = upload_base if upload_base is not None else Path.cwd()
+    state_root = (
+        mutation_state_root.resolve(strict=False)
+        if mutation_state_root is not None
+        else (
+            (config_path.parent if config_path is not None else fallback_base.parent) / "state"
+        ).resolve(strict=False)
+    )
+    mutation_policy = policy.mutation_execution
+
+    async def runner(
+        context: RequestContext,
+        payload: dict[str, Any],
+    ) -> dict[str, Any]:
+        repository = RepositoryIdentity(**payload["repository"])
+        lineage = payload["lineage"]
+        semantic = SemanticIdentity(
+            project_id=lineage["project_id"],
+            task_id=lineage["task_id"],
+            run_id=lineage["run_id"],
+            attempt_id=lineage["attempt_id"],
+            slice_id=lineage.get("slice_id"),
+        )
+        source_binding = payload["source_binding"]
+        request = MaterializationRequest(
+            repository=repository,
+            semantic=semantic,
+            expected_ref=source_binding["expected_ref"],
+            expected_commit=source_binding["expected_commit"],
+            request_id=context.request_id,
+            placement_expectation=payload.get("placement_expectation"),
+        )
+        try:
+            receipt = await run_devforge_workspace_materialization(
+                mutation_policy,
+                policy,
+                state_root,
+                request,
+            )
+        except MaterializationConflict as exc:
+            raise HandlerError(str(exc.code), str(exc)) from exc
+        except MaterializationNotVerified as exc:
+            raise HandlerError(str(exc.code), str(exc)) from exc
+        except DevforgeSourceError as exc:
+            raise HandlerError(str(exc.code), str(exc)) from exc
+        except DevforgeMaterializationError as exc:
+            raise HandlerError(str(exc.code), str(exc)) from exc
+        return {
+            "ok": True,
+            "state": receipt["state"],
+            "receipt_id": receipt["receipt_id"],
+            "workspace": receipt["workspace"],
+            "source": receipt["source"],
+            "materializer": receipt["materializer"],
+            "git_readback": receipt["git_readback"],
+            "handoff_probe": receipt["handoff_probe"],
+            "authority": receipt["authority"],
+        }
+
+    return runner

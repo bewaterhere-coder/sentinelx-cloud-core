@@ -24,7 +24,9 @@ from sentinelx_core.handlers.basic import (
 )
 from sentinelx_core.handlers.devforge_runtime import (
     make_devforge_execute_scoped_adapter,
+    make_devforge_materialize_adapter,
     make_devforge_runtime_provider,
+    make_devforge_workspace_materialization_runner,
 )
 from sentinelx_core.handlers.edit import (
     make_edit_handler,
@@ -120,6 +122,13 @@ def build_registry(
         policy,
         mutation_scope_service,
         execute_scoped_adapter=make_devforge_execute_scoped_adapter(profiled_script_run),
+        materialize_adapter=make_devforge_materialize_adapter(
+            make_devforge_workspace_materialization_runner(
+                policy,
+                config_path=config_path,
+                upload_base=upload_base,
+            )
+        ),
     )
 
     registry: dict[str, Handler] = {
@@ -153,7 +162,7 @@ def build_registry(
         "upload_file": make_upload_file_handler(policy, upload_base),
         "upload_init": make_upload_init_handler(upload_base, policy),
         "upload_chunk": make_upload_chunk_handler(upload_base),
-        "upload_complete": make_upload_complete_handler(upload_base),
+        "upload_complete": make_upload_complete_handler(policy, upload_base),
 
         # Cross-host file transfer (source side, INTERNAL — driven by the Hub's
         # sentinel_transfer_file coordinator, not a model-visible tool). The
@@ -232,7 +241,7 @@ def build_registry(
                     "requested": sorted(refused),
                     "reason": (
                         "these ops are how the hub learns what this host is and "
-                        "whether it is alive; an agent that cannot answer them "
+                        "whether it is alive; an agent that cannot answer a thing "
                         "still holds a slot and still looks connected"
                     ),
                 },
@@ -246,7 +255,7 @@ def build_registry(
             extra={
                 "removed": removed,
                 # A name this agent never had is almost always a typo, and a
-                # typo in a deny list reads as protection that is not there.
+                # typo in the deny list reads as protection that is not there.
                 "not_recognised": unknown,
             },
         )
