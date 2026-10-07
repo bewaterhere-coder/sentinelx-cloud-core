@@ -31,13 +31,11 @@ from urllib.parse import urlsplit
 from sentinelx_core.devforge_workspace_placement import _repository_segments
 from sentinelx_core.mutation_placement import RepositoryIdentity
 from sentinelx_core.policy import Policy
-
 SOURCE_ROLE_POLICY = "devforge-execution-workspace-source-v1"
 CAPSULE_MANIFEST_VERSION = 1
 SUPPORTED_OBJECT_FORMATS = ("sha1",)
 ALLOWED_TREE_MODES = frozenset({"100644", "100755"})
 ALLOWED_TREE_TYPES = frozenset({"blob"})
-
 MAX_CAPSULE_FILES = 20000
 MAX_CAPSULE_TOTAL_BYTES = 512 * 1024 * 1024
 MAX_CAPSULE_FILE_BYTES = 32 * 1024 * 1024

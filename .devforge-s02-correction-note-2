@@ -1,0 +1,1 @@
+        "upload_complete": make_upload_complete_handler(upload_base),

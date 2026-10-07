@@ -38,6 +38,7 @@ from pathlib import Path, PurePosixPath
 
 RESULT_NAME = "__devforge_materializer_result__.json"
 ALLOWED_MODES = frozenset({"100644", "100755"})
+GIT_TIMEOUT_GUARDS = {"receive.denyCurrentBranch": "updateInstead"}
 
 
 def _fail(result: dict, message: str) -> None:
