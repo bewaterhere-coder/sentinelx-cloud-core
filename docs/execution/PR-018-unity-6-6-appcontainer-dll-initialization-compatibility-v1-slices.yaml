@@ -171,7 +171,7 @@ slices:
   - slice_id: S03
     objective: Prove the exact PR-018 candidate on real Windows/Unity and close security/regression evidence without advancing PR-017.
     depends_on: [S02]
-    state: pending
+    state: completed
     scope:
       refs:
         - affected mutation sandbox/policy/scoped execution test suites
@@ -206,14 +206,20 @@ slices:
       - docs/checkpoints/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-s03-blocked-incomplete-host-candidate-activation-20261008.yaml@e5c9a7a5e7805258960df596889bc03c11ce2f92
       - host_activation:partial_candidate_projection:host_offline_after_restart
       - git_tree_reconciliation:old_493d30f638aad46b4a4502acbc4536608cd617d3:candidate_a6281aeca211722794e2644868f769612558c0bb
-    completion_receipt_ref: null
+      - exact_host_source_ref:86bc881265ee3fb2ab388170a16e627caf6d723e
+      - scoped_runtime_run:run-pr018-s03-20261008-001:attempt-001:python_marker_terminal
+      - scoped_runtime_run:run-pr018-s03-20261008-001:attempt-002:unity_0x00000000_6000.6.4f1_terminal
+      - scoped_runtime_run:run-pr018-s03-20261008-001:attempt-006:live_sid_masks_job_unity_terminal
+      - scoped_runtime_run:run-pr018-s03-20261008-001:attempt-007:post_cleanup_previous_sid_absent_all_three_terminal
+      - docs/checkpoints/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-s03-completion-20261008.yaml@9799b8d6045fd31c3a6ef677f5df3ed952f739a7
+    completion_receipt_ref: docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-s03-completion-receipt.yaml
 
 execution_state:
   current_slice: S03
-  current_slice_state: pending
-  completed_slices: [S01, S02]
-  pending_slices: [S03]
-  all_slices_completed: false
+  current_slice_state: completed
+  completed_slices: [S01, S02, S03]
+  pending_slices: []
+  all_slices_completed: true
 
 acceptance_boundary:
   all_current_plan_slices_must_be_completed: true
