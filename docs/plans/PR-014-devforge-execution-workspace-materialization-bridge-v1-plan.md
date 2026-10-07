@@ -1,33 +1,33 @@
-# PR-014 — SentinelX DevForge Execution Workspace Materialization Bridge V1 — Plan R6
+# PR-014 — SentinelX DevForge Execution Workspace Materialization Bridge V1 — Plan R7
 
 ## Plan State
 
 ```yaml
 task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
-plan_revision: 6
+plan_revision: 7
 plan_status: ready_for_review
 implementation_authority: false
 requirement_ref: docs/requirements/PR-014-devforge-execution-workspace-materialization-bridge-v1.md
-requirement_revision: 2
-requirement_blob_sha: 3ac88e2d15534682ebd2545d4d393a110a68a5a7
-requirement_change_impact: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-requirement-r2-invalidation.md
-prior_plan_revision: 5
-prior_plan_blob_sha: ff8581ec026a0d123ae89d9595271397429145c0
-superseded_plan_review_ref: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r5.md
-superseded_plan_review_blob_sha: 6054807e82aa523617c58bbae340c8bac05310c6
-superseded_slice_set_ref: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-r5-slices.yaml
-superseded_slice_set_blob_sha: 12e9b0c2001fa0806ef21b38f821213fd5116917
-replan_trigger_ref: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-completion-receipt.yaml
+requirement_revision: 3
+requirement_blob_sha: 3df1b5b9809fdd4ab0ac121aad7f0c004ad1a627
+requirement_change_impact: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-requirement-r3-change-impact.md
+prior_plan_revision: 6
+prior_plan_blob_sha: 4fc74fba9d787120798d5ed6a4f04b7da9cb6a5f
+superseded_plan_review_ref: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r6.md
+superseded_plan_review_blob_sha: c9798c848dc2769f0ccd9ae7c6fc5e8aeec9a026
+superseded_slice_set_ref: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-r6-slices.yaml
+superseded_slice_set_blob_sha: f332c20ca398507a635f0c4abc6a1f43117c8dc6
+replan_trigger_ref: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-acceptance-r2.md
 transport:
   type: github-pr
   pr_number: 14
   branch: task/devforge-execution-workspace-materialization-bridge-v1
   base_branch: main
 planning_baseline:
-  sentinelx_main: b0c5addad3aab0c63271dc241a6942b313d6b82d
-  task_head_before_plan_r6: f42e5d4d4b5c3fd8786446b42b5de4d42de8c600
-  devforge_main: 7b45640926dac9c559d558f8ddbbb137ba30b69b
-  devforge_release: v2.102.0
+  sentinelx_main: cd42e371f18056327c1d8b744f8956a76bc11541
+  task_head_before_plan_r7: bd49d5cad275f16f5abec8d3e026a616d30c1af3
+  devforge_main: e0ea49441c410a7008fbcd61f1782d90f014a773
+  devforge_release: v2.103.0
 project_binding:
   provider: direct
   adapter: codex
@@ -37,8 +37,85 @@ completed_evidence_preserved:
   - S02_product_candidate_45dc99d15a23c499b4c1500fab60ed5e76475aeb
   - S02_completion_checkpoint
   - S02_completion_receipt
+  - S02_r6_reconciliation_receipt
 implementation_authorized: false
 ```
+## R7 Architecture Repair — independent source/placement binding + durable scope schema compatibility
+
+Acceptance R2 physically activated exact candidate `45dc99d15a23c499b4c1500fab60ed5e76475aeb` and exposed two material issues:
+
+1. `D:\coco\workspaces` is structurally inside broad protected root `D:\coco`, so the previous placement topology must fail closed;
+2. existing durable MutationScope state may contain compatible additive fields written by newer runtimes (observed: `runtime_read_authority_roots`) that the R5/R6 candidate cannot deserialize.
+
+The Human decision accepts the Acceptance R2 recommendation.
+
+### R7 topology
+
+~~~text
+canonical source binding
+  Host canonical repository inventory
+  → D:\coco\repos\<owner>\<repository>
+  → protected + source-only
+
+execution placement binding
+  locations.devforge_execution_workspace_root
+  → preferred Host value D:\SentinelX\devforge-workspaces
+  → outside every protected/canonical root
+  → exact workspace derived from semantic identity only
+~~~
+
+These are two independent Host-owned bindings.
+
+The old `locations.devforge_workspace_root=D:\coco` value is not a PR-014 execution placement authority after R3/R7.
+
+### Protected-root invariant
+
+R7 MUST NOT solve placement by weakening protection.
+
+Forbidden:
+
+~~~text
+remove D:\coco from protected_roots
+narrow D:\coco protected_root
+carve out D:\coco\workspaces
+add a broad allowlist exception
+caller-select execution path
+fallback to mutation_execution.workspace_root
+materialize in canonical checkout
+~~~
+
+### MutationScope durable-state compatibility
+
+R7 repairs the reader/migration boundary rather than deleting state.
+
+Required:
+
+- known additive fields are parsed/migrated with explicit defaults;
+- `runtime_read_authority_roots` is understood and preserved;
+- additive fields survive read/write round-trip;
+- unknown authority-bearing fields fail as schema incompatibility, not silently ignored;
+- durable state deletion is forbidden as a repair;
+- existing nonterminal authority is never widened during migration.
+
+### Evidence preservation
+
+R7 does not invalidate the fact that S01/S02 implementation work occurred.
+
+Preserve:
+
+~~~text
+S01 historical completion evidence
+S02 product candidate 45dc99d15a23c499b4c1500fab60ed5e76475aeb
+S02 completion checkpoint/receipt
+S02 R6 reconciliation evidence
+147 passed / 1 skipped / 0 failed
+9/9 changed blobs byte-identical
+~~~
+
+But R7 introduces one **delta repair Slice** because the physical Acceptance findings require new code.
+
+No S01 or S02 product mutation may be replayed.
+
 
 ## R6 Verification Policy Repair — CI removed from this Task gate
 
@@ -404,30 +481,64 @@ path-free local_api request
 
 The bootstrap persistence route MUST NOT become a runtime workspace-materialization fallback.
 
-### D1 — Host-derived canonical source role
+### D1 — Independent Host-owned canonical source role
 
 PR-014 must not accept a caller source path.
 
-For repository `owner/repo`, derive the source role from current Host DevForge binding:
+For repository `owner/repo`, resolve the source checkout from the current Host canonical repository inventory / registered canonical repository binding, independently from DevForge execution placement.
 
-```text
-workspace_root = locations.devforge_workspace_root
-repository_root = <workspace_root>/repos
-canonical_source = <repository_root>/<owner>/<repo>
-```
+Current expected topology:
+
+~~~text
+canonical_source = D:\coco\repos\<owner>\<repo>
+~~~
 
 Admission verifies:
 
 - normalized repository identity;
-- expected repository path;
+- source checkout matches the Host canonical repository inventory;
 - source checkout exists;
 - source checkout origin normalizes to the admitted repository;
 - checked-out branch is canonical `main`;
 - working tree is clean;
+- source checkout remains inside its protected canonical root;
 - source checkout != execution workspace;
 - source checkout is never switched/reset/merged for materialization.
 
 Concrete source path remains Host evidence only.
+
+### D1A — Dedicated Host-owned execution placement
+
+Execution placement is resolved only from:
+
+~~~text
+locations.devforge_execution_workspace_root
+~~~
+
+Preferred current Windows Host value:
+
+~~~text
+D:\SentinelX\devforge-workspaces
+~~~
+
+Derivation:
+
+~~~text
+execution_root = locations.devforge_execution_workspace_root
+exact_workspace = <execution_root>/<owner>/<repository>/<task-or-evolution-id>/<attempt-id>
+~~~
+
+The provider must prove before scope minting:
+
+- execution root is absolute and Host-configured;
+- exact workspace is a strict descendant of execution root;
+- execution root/exact workspace do not overlap any `protected_roots`;
+- execution root/exact workspace do not overlap any canonical repository root;
+- no caller path participates in derivation;
+- legacy `locations.devforge_workspace_root` does not override this binding;
+- `mutation_execution.workspace_root` does not become a second DevForge placement truth.
+
+Placement receipt generation/binding digest must bind this dedicated execution-root authority.
 
 ### D2 — Exact source identity
 
@@ -586,6 +697,24 @@ No workspace directory/source write may occur before durable START.
 
 Allowed operation class for the seed is provider-fixed. Caller operation-class selection remains forbidden.
 
+### D6A — MutationScope durable schema compatibility
+
+The current `MutationScopeRecord.from_json` strict constructor path must be replaced with an explicit version-compatible projection/migration boundary.
+
+Required design:
+
+1. split persisted JSON into known canonical fields and additive fields;
+2. normalize current tuple/list fields exactly as today;
+3. migrate explicitly supported additive fields, including `runtime_read_authority_roots`;
+4. preserve supported additive fields in durable round-trip serialization;
+5. provide backward-compatible defaults when an additive field is absent;
+6. distinguish malformed data from unsupported schema;
+7. fail closed on unknown additive fields that may carry mutation/read/permission authority;
+8. allow safe inspection/terminalization of historical records without reactivating or widening authority;
+9. never delete/reinitialize the store solely because a newer additive field exists.
+
+Migration verification must include durable read → migration/normalization → durable write/readback without losing scope identity, digest-bound authority, lease/index binding or terminalization safety.
+
 ### D7 — Development Host handoff ACL transition
 
 Current Windows sandbox cleanup intentionally removes AppContainer authority and leaves broker-only exact ACL. That is insufficient when the next consumer is a user-level Development Host.
@@ -594,7 +723,7 @@ R5 preserves one bounded **Host-owned handoff transition** after successful mate
 
 Rules:
 
-- capture/derive expected DevForge workspace inheritance/access from Host-owned execution-root ancestry before temporary exact ACL is installed;
+- capture/derive expected DevForge workspace inheritance/access from the dedicated Host-owned execution-root ancestry before temporary exact ACL is installed;
 - after materializer process/Job closes, remove AppContainer/temporary grants;
 - restore/re-enable only the Host-derived normal DevForge workspace ACL/inheritance state;
 - no caller SID, user name, ACL string or permission mask input;
@@ -682,130 +811,131 @@ General repository transaction, repeated scoped operation closure and publicatio
 
 ## 5. Implementation slices to compile after approval
 
-The formal R5 Slice Set must preserve historical S01 completion and compile exactly one remaining implementation Slice.
+Plan R7 preserves completed historical work and adds exactly one delta repair Slice.
 
 ### S01 — Preserved historical completion
 
-State after R5 review is completed/reused evidence, never re-executed.
+State: completed/reused.
 
-Evidence:
+Evidence remains:
 
 ~~~text
 docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-s01-completion-20261005.yaml
 ~~~
 
-Before S02 mutation, current canonical main must be compared against relevant S01 placement/scope/sandbox seams. A material semantic conflict stops at a Decision Boundary; it does not authorize S01 replay.
+S01 is not replayed.
 
-### S02 — Bootstrap-safe minimal materialize_workspace seed
+### S02 — Preserved completed materialize_workspace seed
+
+State: completed/reused historical implementation evidence.
+
+Candidate:
+
+~~~text
+45dc99d15a23c499b4c1500fab60ed5e76475aeb
+~~~
+
+Preserved evidence:
+
+~~~text
+docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-completion-20261008.yaml
+docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-completion-receipt.yaml
+docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-r6-reconciliation-receipt.yaml
+~~~
+
+S02 product mutation is not replayed.
+
+### S03 — Dual-binding placement + MutationScope schema compatibility delta
 
 Objective:
 
-Implement the smallest complete path-free `devforge_runtime.materialize_workspace` candidate that reuses S01 and satisfies the runtime safety design D1–D10, while implementation persistence itself uses no Host-local execution workspace.
+Repair only the Acceptance R2 architecture findings while preserving all other S01/S02 semantics.
 
-Execution mode:
+Expected product scope:
 
-~~~yaml
-bootstrap_required_before_s02: true
-bootstrap_target: direct:codebuddy
-bootstrap_command: "#开发引导执行 PR-014-devforge-execution-workspace-materialization-bridge-v1 direct:codebuddy"
-bootstrap_mode: implementation_bootstrap
-project_binding_remains: direct/codex
-harness_required: false
-incremental_execution_slice_consumer_required: false
-execution_workspace_materialize_required_for_seed_persistence: false
-canonical_transport: github-pr
-canonical_pr: 14
-task_branch: task/devforge-execution-workspace-materialization-bridge-v1
-seed_persistence:
-  repository_read: allowed
-  repository_write: exact_S02_paths_only
-  expected_head_cas: required
-  readback: required
-  local_workspace: forbidden
-generic_git: forbidden
-shell: forbidden
-script_run: forbidden
-generic_host_filesystem_write: forbidden
-caller_host_path_authority: forbidden
-provider_fallback: forbidden
+~~~text
+src/sentinelx_core/devforge_workspace_placement.py
+src/sentinelx_core/devforge_workspace_source.py
+src/sentinelx_core/devforge_workspace_materialization.py
+src/sentinelx_core/mutation_scope.py
+src/sentinelx_core/handlers/devforge_runtime.py              # only if binding/receipt projection requires it
+
+tests/test_devforge_workspace_placement.py
+tests/test_devforge_workspace_source.py
+tests/test_devforge_workspace_materialization.py
+tests/test_mutation_scope_admission.py
+tests/test_mutation_scope_handler.py
+tests/test_mutation_scope_registry.py
+tests/test_devforge_runtime_local_api.py                     # only if projection changes
 ~~~
 
-S02 implementation scope remains the D1–D10 materialization design, including:
+S03 must implement and verify:
 
-- Host-derived canonical source role;
-- exact repository/ref/commit verification;
-- provider-private immutable source capsule;
-- trusted contained checkout materializer;
-- preserved S01 placement/scope/sandbox;
-- durable pre-execution audit ordering;
-- bounded Host-owned ACL/handoff transition;
-- closed path-free `materialize_workspace` local_api schema;
-- materialization receipt and same-Attempt no-replay;
-- explicit PR-013 non-dependency.
+1. source role resolution from Host canonical repository inventory, not execution placement root;
+2. execution root from `locations.devforge_execution_workspace_root`;
+3. preferred Windows Host topology `D:\SentinelX\devforge-workspaces`;
+4. strict protected/canonical-root separation with no carve-out;
+5. no caller path or legacy-root fallback;
+6. Placement Receipt/binding generation semantics over the new dedicated execution root;
+7. existing source main+clean/read-only role unchanged;
+8. MutationScope additive-field compatible read/migration;
+9. explicit support/preservation of `runtime_read_authority_roots`;
+10. unsupported authority-bearing additive fields fail closed as schema incompatibility;
+11. no durable state deletion;
+12. no authority widening during migration;
+13. existing S01/S02 firewall/audit/AppContainer/Job/no-replay behavior remains intact;
+14. deterministic focused regression evidence;
+15. no hosted CI requirement and no workflow creation/modification.
 
-S02 bootstrap verification must prove before Slice completion:
+Execution authority and exact write scope are compiled only after Plan Review.
 
-1. active `direct:codebuddy` bootstrap override was durably read back before the first source mutation;
-2. every source mutation occurred only on canonical PR #14 task branch through structured repository persistence;
-3. no write targeted canonical `main`;
-4. exact before/after PR-head SHA and changed blobs were read back;
-5. changed paths remained inside the exact R5 S02 allowlist;
-6. no workflow file, Host policy, credential, permission or project binding changed;
-7. no generic Git/shell/`script_run`/generic Host filesystem path was used;
-8. no Harness invocation or Harness Slice capability was used;
-9. no PR-020 durable async runtime was required;
-10. no PR-013 S03 replay or unmerged PR-013 import occurred;
-11. focused code/schema/tests for D1–D10 are present and internally coherent;
-12. the exact S02 deterministic suite evidence is bound to product candidate `45dc99d15a23c499b4c1500fab60ed5e76475aeb` and proves `147 passed / 1 skipped / 0 failed`;
-13. all 9 changed product/test blobs are read back byte-identical to the verified candidate;
-14. repository-hosted CI is NotEvaluated/NonGating and no workflow is created or modified for this Task;
-15. deterministic static/import/schema failures block completion and are repaired only within the same exact Slice/write scope;
-16. completion receipt binds exact Task/Plan/Slice/PR branch/head/changed paths and verification evidence.
-
-S02 completion is an implementation checkpoint, not physical Windows Acceptance.
-
-After S02 is the only remaining implementation Slice and is verified complete, implementation execution is complete. The Task may advance to Acceptance under the normal owning command.
-
-No S03 implementation Slice exists in R6.
+No additional product slice is planned after S03. Windows physical proof remains Acceptance-owned.
 
 ## 6. Acceptance mapping
 
-Requirement R2 acceptance mapping:
+Requirement R3 acceptance mapping:
 
-- AC1–AC3 → preserved S01 + S02 closed schema/placement-path negatives.
-- AC4–AC6 → S02 source role/source acquisition/capsule implementation evidence plus Acceptance live negatives.
-- AC7–AC9 → S02 audit/materializer/receipt implementation plus Acceptance runtime readback.
-- AC10 → Acceptance physical Host-owned handoff + registered Development Host usability probe.
-- AC11 → S02 deterministic no-replay implementation tests + Acceptance physical retry/readback.
-- AC12 → S02 bootstrap receipt must prove completion without PR-013/PR-229/PR-020 completion.
-- AC13 → S02 regression evidence + Acceptance exact-candidate regression checks.
-- AC14 → **Acceptance** performs Windows physical integration on the exact S02 candidate.
-- AC15 → code inventory in S02/Acceptance proves no PR-013 multi-operation/publication ownership was absorbed.
-- AC16 → S02 bootstrap receipt + Acceptance readback prove no Host policy/allowlist widening, no generic fallback and no independent Codex requirement.
+- AC1 → S03 dual-binding placement derivation + protected/canonical-root separation + live physical readback.
+- AC2–AC4 → preserved S02 closed schema/failure behavior plus S03 placement/schema regressions.
+- AC5 → S03 canonical source resolution from Host canonical repository inventory; source remains protected main+clean.
+- AC6 → preserved S02 source acquisition/capsule evidence.
+- AC7–AC12 → preserved S02 runtime design plus post-S03 physical Acceptance.
+- AC13 → S03 regressions must preserve firewall/scope/audit/AppContainer/Job invariants.
+- AC14 → Acceptance repeats the full Windows physical integration with the repaired candidate.
+- AC15–AC16 → ownership/no-bypass boundaries remain unchanged.
+- AC17 → S03 durable MutationScope forward-compatible migration tests + live existing-state readback.
 
 ### Acceptance exact-candidate physical gate
 
-Acceptance MUST NOT infer AC8/AC10/AC14 from source or deterministic-test evidence alone.
-
-It must use the existing separately authorized exact-candidate activation/verification workflow and persist/read back evidence equivalent to:
+After S03 completion, Acceptance must activate the exact repaired candidate and prove:
 
 ~~~text
-exact S02 PR-head candidate
-→ activate/install exact candidate through existing protected workflow
-→ installed candidate commit/version readback
-→ capabilities/local_api.describe readback
-→ path-free materialize_workspace benign request
-→ Host-derived placement readback
-→ source capsule/scope/audit/AppContainer/Job evidence
+canonical source binding
+  = protected D:\coco\repos\...
+
+execution placement binding
+  = dedicated Host-owned root outside D:\coco
+  = expected D:\SentinelX\devforge-workspaces
+
+→ path-free materialize_workspace
+→ exact Host-derived workspace under dedicated root
+→ MutationScope existing-state read/migration succeeds
+→ audit START before first workspace write
+→ AppContainer/Job materialization
 → exact Git HEAD/branch/origin/clean readback
 → temporary-authority closure
-→ user-level Development Host handoff probe
-→ same-identity retry no-replay
+→ Development Host handoff
+→ same-attempt no replay
 → canonical source main + clean
-→ security regressions
 ~~~
 
-Acceptance verification MUST NOT use generic git/shell/`script_run` as a workspace-materialization fallback and MUST NOT replay PR-013 S03.
+Acceptance must additionally prove:
+
+- `D:\coco` remains in protected roots unchanged;
+- no carve-out/allowlist exception exists;
+- caller cannot select either source or execution path;
+- existing newer MutationScope record is not deleted to obtain success;
+- hosted CI remains NotEvaluated/NonGating.
 
 ## 7. Security / authority invariants
 
@@ -838,63 +968,58 @@ R5 preserves:
 
 ## 8. Risks and mitigations
 
-### Risk A — Repository projection is mistaken for execution authority
+### Risk A — New execution root weakens protected-root policy
 
-Mitigation: only explicit `#开发引导执行 ... direct:codebuddy` creates Task authority. Repository APIs are persistence mechanics after override readback.
+Mitigation: the new root is outside protected/canonical roots. R7 explicitly forbids removing/narrowing `D:\coco` or adding carve-outs.
 
-### Risk B — Direct target secretly requires a local workspace
+### Risk B — Two Host bindings become two caller authorities
 
-Mitigation: bootstrap/execute preflight must prove the selected target can satisfy the R5 repository-projection tool surface without creating a Host-local workspace. Otherwise stop before mutation; no fallback.
+Mitigation: both bindings are Host-owned. Source comes from canonical repository inventory; execution root comes from dedicated policy location. Caller selects neither.
 
-### Risk C — Structured writes drift across commits
+### Risk C — Legacy root silently remains authoritative
 
-Mitigation: bind every mutation window to expected current PR-head/file blob identity, then re-read exact PR head and changed blobs. Drift forces re-read/recompile before another write.
+Mitigation: S03 must prove `locations.devforge_workspace_root` and `mutation_execution.workspace_root` cannot override PR-014 execution placement.
 
-### Risk D — Seed write scope becomes a generic repository mutation channel
+### Risk D — Forward compatibility silently drops authority fields
 
-Mitigation: R5 Slice Set freezes exact source/test path allowlist; workflow/config/credential/security metadata paths are denied unless explicitly part of the reviewed S02 product change.
+Mitigation: known additive authority fields are explicitly migrated/preserved; unknown authority-bearing fields fail closed as unsupported schema.
 
-### Risk E — Hosted CI is unavailable or intentionally not used
+### Risk E — Migration widens existing MutationScope authority
 
-Mitigation: hosted CI is explicitly NonGating for R6. Reuse the exact candidate deterministic suite (`147 passed / 1 skipped / 0 failed`) plus byte-identical changed-blob readback; Acceptance still performs the mandatory exact-candidate physical proof.
+Mitigation: migration cannot alter scope identity, lease/index binding, immutable authority digest semantics or operation classes; any widening is a blocker.
 
-### Risk F — Product seed accidentally bypasses S01 sandbox
+### Risk F — Durable state is deleted to escape schema incompatibility
 
-Mitigation: D0 explicitly separates seed persistence from runtime behavior. Runtime action must route through preserved S01 placement/scope/sandbox/audit/firewall. Repository projection is never a runtime fallback.
+Mitigation: state deletion/reinitialization is explicitly forbidden and Acceptance must prove existing durable state survives.
 
-### Risk G — Canonical source object acquisition mutates source worktree
+### Risk G — Historical S01/S02 work is replayed
 
-Mitigation: D1–D4 preserve pre/post branch/status/HEAD readback and only fixed provider-owned Git operations inside product runtime; no bootstrap executor Git commands.
+Mitigation: both remain preserved evidence. Only S03 may mutate product code after R7 approval.
 
-### Risk H — AppContainer cleanup leaves workspace unusable
+### Risk H — Physical proof is replaced by deterministic tests
 
-Mitigation: D7 Host-owned handoff transition + Acceptance user-level Git probe.
+Mitigation: Acceptance must repeat exact-candidate Windows materialization on the new topology and existing durable state.
 
-### Risk I — PR-013 lands during R6
+### Risk I — Hosted CI becomes a hidden dependency
 
-Mitigation: compare only canonical merged semantics. No unmerged import and no PR-013 S03 replay.
-
-### Risk J — PR-229 or PR-020 changes independently
-
-Mitigation: they are not admission dependencies for R5. Later canonical improvements may be reused only if they are already merged and do not alter Requirement R2 semantics.
+Mitigation: hosted CI remains NotEvaluated/NonGating and workflow creation/modification is forbidden.
 
 ## 9. Review questions
 
-Plan Review R6 must explicitly decide:
+Plan Review R7 must explicitly decide:
 
-1. Does `direct:codebuddy` under the existing Task-scoped bootstrap contract provide valid execution authority without changing project binding?
-2. Is the self-host relation still exact: canonical Direct/Codex needs `development.execution_workspace_materialize`, and PR-014 delivers it?
-3. Does direct-adapter execution avoid the Harness `incremental_execution.slice_v1` requirement without weakening DevForge one-execute/one-Slice semantics?
-4. Is structured repository persistence sufficient to implement the S02 seed without creating a Host-local execution workspace?
-5. Is repository.write clearly persistence only, with authority coming from the active bootstrap override?
-6. Are exact PR-head CAS, path allowlist and readback sufficient to prevent transport/write-scope drift?
-7. Does S02 avoid generic git/shell/`script_run`/filesystem bootstrap and all caller path authority?
-8. Can the D1–D10 product runtime still satisfy Requirement R2 without using the bootstrap persistence route as a runtime fallback?
-9. Is moving Windows physical proof from S03 implementation into Acceptance valid while still preventing source-only acceptance?
-10. Does R6 correctly reuse the completed S02 candidate without reintroducing a pending implementation Slice or requiring a new bootstrap?
-11. Are PR-013, PR-229 and PR-020 all non-gating for R6 S02 completion reconciliation?
-12. Does R6 preserve S01 and S02 completion evidence without replay and correctly invalidate the R5 Slice Set?
-13. Are current DevForge v2.102.0 review/slicing/reconciliation contracts sufficient without inventing a new bootstrap capability or Development Gate?
+1. Does Requirement R3 legitimately separate canonical source binding from execution placement binding without weakening source protection?
+2. Is `locations.devforge_execution_workspace_root` a single Host-owned execution placement truth for PR-014?
+3. Is preferred `D:\SentinelX\devforge-workspaces` outside all current protected/canonical roots?
+4. Are removal/narrowing of `D:\coco`, carve-outs and caller path authority explicitly forbidden?
+5. Can canonical source resolution use Host canonical repository inventory without depending on execution-root ancestry?
+6. Does S03 avoid silently falling back to legacy `devforge_workspace_root` or `mutation_execution.workspace_root`?
+7. Does the MutationScope migration design preserve known additive fields and fail closed on unsupported authority-bearing fields?
+8. Does migration preserve existing durable authority/index/digest semantics without deletion or widening?
+9. Are S01/S02 completion artifacts still valid historical evidence while S03 is the only new implementation delta?
+10. Is `45dc99d...` preserved as the pre-repair candidate without being presented as final R7 Acceptance candidate?
+11. Does Acceptance retain real Windows proof after S03 instead of relying on source/tests?
+12. Are PR-013/PR-020/PR-229 and hosted CI still non-gating?
 
 ## 10. Post-plan state
 
@@ -902,20 +1027,29 @@ After this Plan is durably persisted/read back:
 
 ~~~yaml
 stage: plan_review
-requirement_revision: 2
-plan_revision: 6
+requirement_revision: 3
+plan_revision: 7
 plan_approved: false
 implementation_authorized: false
 current_slice: null
 current_slice_set: null
-completed_slices_preserved: [S01]
-preserved_s02_completion_candidate: 45dc99d15a23c499b4c1500fab60ed5e76475aeb
-s02_reimplementation_forbidden: true
-superseded_slice_set: plan-r5
-bootstrap_override_state: expired_by_plan_revision_6
+completed_slices_preserved: [S01, S02]
+preserved_pre_repair_candidate: 45dc99d15a23c499b4c1500fab60ed5e76475aeb
+s01_s02_product_replay: forbidden
+planned_pending_delta_slice: S03
+superseded_slice_set: plan-r6
+bootstrap_override_state: absent
 next_expected_actor: reviewer
 ~~~
 
-No R6 execution Slice Set exists until Plan Review approves R6 and compiles/read-backs the exact current Slice Set.
+No R7 Slice Set exists until Plan Review approves R7.
 
-If R6 is approved, no new bootstrap or product implementation is expected. The reviewer must compile the R6 Slice Set by reusing S01 and the verified S02 completion evidence. A later canonical `#开发执行` may perform only the mechanical implementation-complete reconciliation needed to expose Acceptance; it must not replay S02 product mutation.
+If R7 is approved, the reviewer must compile:
+
+~~~text
+S01 completed/reused
+S02 completed/reused historical evidence
+S03 pending delta repair
+~~~
+
+Only S03 may perform new product mutation. Acceptance resumes only after S03 completes and the mechanical implementation→acceptance transition is re-established.
