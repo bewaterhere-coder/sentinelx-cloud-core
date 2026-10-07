@@ -1,0 +1,78 @@
+schema_version: "1.0"
+kind: devforge_execution_slice_impact
+project_id: sentinelx-cloud-core
+task_id: PR-015-direct-codex-development-host-invocation-bridge-v1
+source_command: "#开发计划修复 PR-015-direct-codex-development-host-invocation-bridge-v1"
+requirement_revision: 2
+plan_revision: 5
+plan:
+  ref: docs/plans/PR-015-direct-codex-development-host-invocation-bridge-v1-plan.md
+  blob_sha: c45a373e4f7a62ae11fceba89316dd8cf6353969
+prior_review:
+  ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r4.md
+  blob_sha: a2f5b5b03f87d7630e784f627137ecd9f5b82d7f
+  decision: Rejected
+  findings_addressed:
+    - CanonicalBlobMaterializationIncomplete
+
+retained_completed_evidence:
+  - slice_id: S01
+    disposition: retained_historical_prerequisite
+    replay_required: false
+  - slice_id: S02
+    disposition: retained_historical_prerequisite
+    replay_required: false
+  - slice_id: S03
+    disposition: retained_historical_prerequisite_with_material_finding
+    replay_required: false
+
+proposed_plan_r5_delta:
+  - slice_id: S04
+    title: Provider-Owned Deterministic Persistence & Canonical Publish Closure
+    state: proposed_pending_plan_review
+    depends_on_historical_evidence: [S01, S02, S03]
+    objective: >-
+      Persist real Codex changes through a provider-owned temporary index using
+      safe Git builtin canonical clean conversion, then create one deterministic
+      recovery-safe candidate commit, ordinary fast-forward publish it to the
+      exact canonical PR branch, and prove independent remote readback.
+    required_boundaries:
+      - codex_checkout_index_is_untrusted
+      - provider_temporary_index_seeded_from_expected_parent
+      - checkout_normalization_snapshot_captured_before_codex
+      - only_core_autocrlf_core_eol_core_safecrlf_replayed_for_local_clean
+      - system_global_attribute_and_config_authority_clamped
+      - git_info_attributes_absent_or_empty
+      - custom_filter_attribute_rejected_before_execution
+      - git_builtin_text_eol_binary_ident_and_supported_working_tree_encoding_only
+      - unchanged_windows_crlf_worktree_text_recanonicalizes_to_parent_blob
+      - semantic_edit_does_not_create_whole_file_eol_churn
+      - normalization_and_effective_attribute_digests_bound_to_recovery_state
+      - all_commit_sha_inputs_frozen_before_candidate_creation
+      - same_attempt_bit_identical_candidate_reconstruction
+      - publish_intent_persisted_before_first_push
+      - uncertain_push_readback_only_no_automatic_retry
+      - no_force_no_replacement_transport_no_canonical_checkout_mutation
+    forbidden:
+      - raw_no_filter_worktree_bytes_as_general_canonical_blob_policy
+      - external_or_custom_clean_process_filter
+      - generic_git_surface
+      - generic_shell_or_exec
+      - caller_git_argv_pathspec_commit_metadata
+      - trusting_codex_owned_index_as_candidate_authority
+      - replacement_branch_or_pr
+      - force_or_force_with_lease
+      - canonical_checkout_mutation
+      - permission_or_credential_expansion
+      - provider_rebinding
+      - hub_mutation
+
+formal_slice_set:
+  current_executable_slice_set: null
+  compile_only_after_plan_review_approval: true
+  review_must_bind_exact_plan_blob: c45a373e4f7a62ae11fceba89316dd8cf6353969
+
+workflow:
+  current_stage_target: plan_review
+  implementation_authorized: false
+  next_command: "#开发评审 PR-015-direct-codex-development-host-invocation-bridge-v1"
