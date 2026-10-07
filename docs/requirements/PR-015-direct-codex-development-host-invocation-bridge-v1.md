@@ -5,21 +5,21 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 2
 development:
-  stage: acceptance
+  stage: accepted
   implementation_execution_complete: true
   gates:
     requirement_ready: true
     plan_approved: true
-    acceptance_approved: false
+    acceptance_approved: true
     completion_verified: false
   plan_revision: 6
   implementation_authorized: true
   latest_plan_review: approved_round_6
   latest_plan_remediation: r6_applied
   review_disposition: approved
-  next_expected_actor: verifier
-  acceptance_disposition: approved_pending_transition
-  execution_disposition: fixing_r2_completed_ready_for_acceptance
+  next_expected_actor: integration
+  acceptance_disposition: approved
+  execution_disposition: acceptance_r8_approved_ready_for_finalization
   blocking_findings: []
   repair_evidence:
     - fixing-r1-codebuddy repaired direct_codex_containment_proof_lifecycle_unreachable at d441e95b6eb65834f52ffdb42026e7328f5c9478.
@@ -67,9 +67,9 @@ artifacts:
   latest_acceptance_review: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r8.md
   latest_acceptance_review_blob_sha: db65896807e2bf8f73201a632e8da79bf346c23d
   latest_acceptance_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r8-approved-20261007.yaml
-  latest_acceptance_checkpoint_blob_sha: 080d70401a44ebc5f8b49b0882393fa532eb456a
-  latest_acceptance_transition_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r7-transition-receipt.yaml
-  latest_acceptance_transition_receipt_blob_sha: 9b3fe781802450bfdce2c810077d27572ce7b26d
+  latest_acceptance_checkpoint_blob_sha: 5d92e0f4755e462ac585d9f5c4a2fdeb76b5e0d7
+  latest_acceptance_transition_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r8-transition-receipt.yaml
+  latest_acceptance_transition_receipt_blob_sha: f5ba54b5027392dee35a4b722f01e3298e0b334f
   latest_fixing_execution_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-attempt-r2-completed-20261007.yaml
   latest_fixing_handoff: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-attempt-r2-codebuddy-handoff-20261007.yaml
   latest_fixing_execution_checkpoint_blob_sha: 58353ed67f7a8b1299d08fb3d09884d19b1a846c

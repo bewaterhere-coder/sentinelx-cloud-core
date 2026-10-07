@@ -52,7 +52,7 @@ receipt:
   readback_required: true
   plan_binding_readback_required: true
   latest_acceptance_command: "#开发验收 PR-015-direct-codex-development-host-invocation-bridge-v1"
-  latest_acceptance_result: approved_pending_transition
+  latest_acceptance_result: approved
   latest_execution_command: "#开发执行 PR-015-direct-codex-development-host-invocation-bridge-v1"
   latest_execution_result: fixing_r2_completed_ready_for_acceptance
   latest_execution_checkpoint_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-attempt-r2-completed-20261007.yaml
@@ -76,9 +76,9 @@ receipt:
   latest_acceptance_review_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r8.md
   latest_acceptance_review_blob_sha: db65896807e2bf8f73201a632e8da79bf346c23d
   latest_acceptance_checkpoint_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r8-approved-20261007.yaml
-  latest_acceptance_checkpoint_blob_sha: 080d70401a44ebc5f8b49b0882393fa532eb456a
-  latest_acceptance_transition_receipt_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r7-transition-receipt.yaml
-  latest_acceptance_transition_receipt_blob_sha: 9b3fe781802450bfdce2c810077d27572ce7b26d
+  latest_acceptance_checkpoint_blob_sha: 5d92e0f4755e462ac585d9f5c4a2fdeb76b5e0d7
+  latest_acceptance_transition_receipt_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r8-transition-receipt.yaml
+  latest_acceptance_transition_receipt_blob_sha: f5ba54b5027392dee35a4b722f01e3298e0b334f
   latest_acceptance_finding_code: null
   latest_acceptance_fixture_pr: 230
   latest_acceptance_fixture_head: 900e29a349a8e65d54ab1cad45507c88641d59d3
