@@ -27,6 +27,12 @@ development:
   bootstrap_required_before_current_slice: true
   bootstrap_target: harness
   bootstrap_command: "#开发引导执行 PR-014-devforge-execution-workspace-materialization-bridge-v1 harness"
+  bootstrap_admission_status: blocked
+  bootstrap_admission_reason: BootstrapTargetUnavailable
+  bootstrap_admission_detail: HostCapabilityBlocked
+  bootstrap_required_consumer_capability: incremental_execution.slice_v1
+  bootstrap_override_state: absent
+  latest_bootstrap_receipt: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-harness-bootstrap-blocked-20261008.yaml
   next_expected_actor: implementer
   authorization:
     mode: legacy_command_scoped
