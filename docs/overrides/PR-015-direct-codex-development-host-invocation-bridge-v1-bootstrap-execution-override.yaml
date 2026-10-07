@@ -1,6 +1,6 @@
 schema_version: "1.0"
 kind: devforge_task_scoped_bootstrap_execution_override
-state: active
+state: expired
 override_revision: 2
 
 authority:
@@ -94,6 +94,14 @@ scope:
 
 expiry:
   on_all_bound_plan_slices_completed: true
+  triggered: true
+  triggered_by: all_bound_plan_slices_completed
+  completion_evidence:
+    slice_set_ref: docs/execution/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-r6-slices.yaml
+    slice_set_blob_sha: 8aeb1892a4b3a5d61ae8747b3067b87b4f97b23c
+    completion_checkpoint_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-s04-completion-20261007.yaml
+    completion_receipt_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-s04-completion-receipt.yaml
+    product_candidate_sha: 02eb3de2ec9c137b3285398e555f1e037b574965
   on_plan_semantic_change: true
   on_task_cancelled: true
   on_task_leaves_implementation: true
@@ -126,4 +134,7 @@ receipt:
   created_at: "2026-10-07"
   admission_readback_blob_sha: 3ea20f7b1a49f2a3caee90345fd79bf1e22af3b0
   readback_verified: true
+  expiry_reconciled_at: "2026-10-07"
+  expiry_reconciled_by: "#开发执行 PR-015-direct-codex-development-host-invocation-bridge-v1"
+  expiry_readback_required: true
   readback_ref: "github-pr:bewaterhere-coder/sentinelx-cloud-core#15:docs/overrides/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-execution-override.yaml@task/direct-codex-development-host-invocation-bridge-v1"
