@@ -52,9 +52,13 @@ receipt:
   readback_required: true
   plan_binding_readback_required: true
   latest_acceptance_command: "#开发验收 PR-015-direct-codex-development-host-invocation-bridge-v1"
-  latest_acceptance_result: blocked_external_activation
-  latest_acceptance_checkpoint_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r4-host-opt-in-blocked-20261007.yaml
-  latest_acceptance_checkpoint_blob_sha: fb5faa527569a2c6271e2428cc93b20077968c93
+  latest_acceptance_result: rejected_repair_local
+  latest_acceptance_review_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r5.md
+  latest_acceptance_review_blob_sha: 988f2a1eb94ab8349576e3db3c88c4def93fb6c0
+  latest_acceptance_checkpoint_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r5-rejected-containment-lifecycle-20261007.yaml
+  latest_acceptance_checkpoint_blob_sha: 0eabbbcd27bb4233bd1746acb0a0d6a76180d194
+  latest_acceptance_transition_receipt_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r5-transition-receipt.yaml
+  latest_acceptance_transition_receipt_blob_sha: cb6470ae5593c4d8dbaaa762352184d3f680b9dd
   suspension_readback_required: true
   latest_reactivation_source: "#开发"
   latest_reactivation_result: active_pending_plan_review

@@ -5,7 +5,7 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 2
 development:
-  stage: acceptance
+  stage: fixing
   implementation_execution_complete: true
   gates:
     requirement_ready: true
@@ -17,13 +17,13 @@ development:
   latest_plan_review: approved_round_6
   latest_plan_remediation: r6_applied
   review_disposition: approved
-  next_expected_actor: operator
-  acceptance_disposition: blocked_external_activation
+  next_expected_actor: implementer
+  acceptance_disposition: rejected_repair_local
   blocking_findings:
-    - Exact PR-015 candidate is now active on the live Host as 0.24.1.dev499+g02eb3de2e in session sess_5306a4882c3f.
-    - Live Host config C:\\ProgramData\\SentinelX\\config.yaml has no direct_codex block; local_api.describe(devforge_direct_codex) fails closed with endpoint_not_available and requires explicit direct-codex Host policy opt-in.
-    - Requirement R3 requires explicit Host policy opt-in and Plan R6 requires live activation only when separately admitted; #开发验收 does not implicitly grant that Host-policy mutation.
-    - AC12 remains blocked until separately admitted Host opt-in exposes devforge_direct_codex, one live persisted direct/Codex run succeeds, and PR-013 direct/Codex provider admission succeeds without Task/Plan/Slice/project-binding change.
+    - Acceptance R5 rejected the exact candidate with repair_local finding direct_codex_containment_proof_lifecycle_unreachable.
+    - Host opt-in and provider projection now succeed, but live readiness remains direct_codex_containment_unproven.
+    - The provider implements prove_containment, yet the production registry does not invoke it and execute_task refuses while _containment_proof is absent; the delivered lifecycle therefore cannot reach verified readiness.
+    - Repair must establish a provider-owned production containment-proof lifecycle under existing Requirement R3/R10 semantics, then rerun full live AC12 verification.
   authorization:
     mode: durable
     ref: docs/authorizations/PR-015-direct-codex-development-host-invocation-bridge-v1-development-authorization.yaml
@@ -59,8 +59,12 @@ artifacts:
   execution_reconciliation_receipt_blob_sha: bd1a9d9b9c12b8c001d60845ef831b2be8b50dd4
   implementation_to_acceptance_transition_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-implementation-to-acceptance-transition-receipt.yaml
   implementation_to_acceptance_transition_receipt_blob_sha: 31291ffb38ee22dbcfd4a5020198a1ceb6be940c
-  latest_acceptance_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r4-host-opt-in-blocked-20261007.yaml
-  latest_acceptance_checkpoint_blob_sha: fb5faa527569a2c6271e2428cc93b20077968c93
+  latest_acceptance_review: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r5.md
+  latest_acceptance_review_blob_sha: 988f2a1eb94ab8349576e3db3c88c4def93fb6c0
+  latest_acceptance_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r5-rejected-containment-lifecycle-20261007.yaml
+  latest_acceptance_checkpoint_blob_sha: 0eabbbcd27bb4233bd1746acb0a0d6a76180d194
+  latest_acceptance_transition_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r5-transition-receipt.yaml
+  latest_acceptance_transition_receipt_blob_sha: cb6470ae5593c4d8dbaaa762352184d3f680b9dd
   prior_slice_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-s03-completion-20261007.yaml
   prior_slice_completion_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-s03-completion-receipt.yaml
   prior_acceptance: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r1.md
