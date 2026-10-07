@@ -1,0 +1,96 @@
+schema_version: "1.1"
+kind: devforge_slice_execution_block_checkpoint
+
+project_id: sentinelx-cloud-core
+task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
+slice_id: S02
+run_id: RUN-PR014-S02-001
+attempt_id: ATTEMPT-001
+source_command: "#开发执行 PR-014-devforge-execution-workspace-materialization-bridge-v1"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  revision: 050d9c9559a173a3e0b37fcd2a9db702b6b5a7e6
+  release: v2.98.0
+
+lineage:
+  requirement_revision: 2
+  plan_revision: 5
+  plan_blob_sha: ff8581ec026a0d123ae89d9595271397429145c0
+  slice_set_blob_sha: 0ece35496e27dbf6ca900b8fa7d96b3b16129201
+  bootstrap_override_blob_sha: a016e7f108da7b639196d6668a7a2d0bdf450e42
+  bootstrap_receipt_blob_sha: 7907eaabc68d1fb026303cab8555c6a612fb604e
+
+execution:
+  disposition: BlockedByTool
+  preflight_disposition: PreflightBlocked
+  reason_code: RequiredExecutionCapabilityIncompatible
+  detail_reason_code: DirectDevelopmentHostInvocationProjectionUnavailable
+  slice_completed: false
+  slice_state_after: pending
+  product_mutation_started: false
+  repository_product_write_started: false
+  codebuddy_product_execution_started: false
+
+evidence:
+  bootstrap_override_active: true
+  bootstrap_override_readback_verified: true
+  target_provider: direct
+  target_adapter: codebuddy
+  target_registered: true
+  target_host_available: true
+  codebuddy_executable_present: true
+  codebuddy_cli_present: true
+  codebuddy_devforge_rule_present: true
+  codebuddy_devforge_rule_enabled: true
+  codebuddy_cli_has_structured_agent_prompt_projection: false
+  current_chatgpt_codebuddy_connector_present: false
+  sentinelx_codebuddy_structured_local_api_present: false
+  sentinelx_local_api_endpoints:
+    - devforge_direct_codex
+    - devforge_runtime
+  generic_sentinel_exec_for_codebuddy_forbidden_by_plan_r5: true
+  generic_sentinel_script_run_for_codebuddy_forbidden_by_plan_r5: true
+  orchestration_direct_repository_product_implementation_forbidden_by_plan_r5: true
+
+transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr: 14
+  branch: task/devforge-execution-workspace-materialization-bridge-v1
+  head_after_block_artifact: 83166f571ee8cf1b0dfd11667d527e5691915384
+  canonical_main: 1028030b33f0ea792a884491a431fffe566f6aa5
+  canonical_main_mutated: false
+
+override_after:
+  state: active
+  consumed_slice_completions: 0
+  expiry_triggered: false
+  rationale: target remains valid and available; only this orchestration runtime lacks a compliant direct invocation projection
+
+safety:
+  provider_fallback_used: false
+  direct_codex_used: false
+  harness_used: false
+  host_runtime_used: false
+  generic_git_used: false
+  generic_shell_or_exec_used: false
+  script_run_used: false
+  generic_host_filesystem_write_used: false
+  permission_expansion_used: false
+  credential_expansion_used: false
+  write_scope_expansion_used: false
+  canonical_main_mutated: false
+  pr013_s03_replayed: false
+
+recovery:
+  owner: external_direct_development_host
+  target: direct:codebuddy
+  action: "Open CodeBuddy and submit the same canonical DevForge command. CodeBuddy's alwaysApply DevForge rule will resolve the canonical Runtime, Task, exact PR #14 transport, Plan R5, R5 Slice Set and active bootstrap override."
+  command: "#开发执行 PR-014-devforge-execution-workspace-materialization-bridge-v1"
+  no_new_bootstrap_required: true
+  no_plan_change_required: true
+
+completion_guard:
+  status: satisfied_for_blocked_execution
+  no_slice_completion_claim: true
+  acceptance_eligible: false
