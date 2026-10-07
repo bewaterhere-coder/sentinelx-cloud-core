@@ -110,14 +110,18 @@ slices:
     scope:
       refs:
         - src/sentinelx_core/windows_mutation_sandbox.py
+        - src/sentinelx_core/handlers/mutation_scope.py
         - tests/test_windows_mutation_sandbox.py
         - tests/test_scoped_script_execution.py when end-to-end error projection coverage is required
+        - tests/test_devforge_runtime_local_api.py when bounded lifecycle composition coverage is required
       authorized_changes:
         - track/cleanup the exact currently-attempted runtime root even when grant does not return success
         - compensating exact-SID removal after grant timeout/failure
         - compensation readback proving exact SID absence
         - residual-authority error when compensation/readback is ambiguous
         - regression proof for revoked cleanup failure followed by successful terminalization retry
+        - wire bounded devforge_runtime.terminalize_scope to the canonical WindowsMutationSandbox cleanup path when durable runtime authority exists
+        - preserve store-only terminalization for scopes with no runtime authority
       forbidden:
         - treating grant exception as proof of no authority
         - swallowing cleanup errors
@@ -131,6 +135,7 @@ slices:
         - failed/timeout compensation remains fail-closed
         - terminal cleanup timeout leaves scope revoked
         - retry cleanup can transition revoked -> terminal
+        - devforge_runtime.terminalize_scope reaches canonical OS cleanup for a revoked scope with durable runtime-read authority
         - terminal closure reports no active Job/process/write authority
         - exact SID is absent after successful terminalization
         - existing audit/Job/no-breakaway regressions remain green

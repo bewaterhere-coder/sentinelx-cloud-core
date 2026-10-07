@@ -7,12 +7,14 @@ from pathlib import Path
 
 from sentinelx_core.executor import HandlerError
 from sentinelx_core.handlers import build_registry
+import sentinelx_core.handlers.mutation_scope as mutation_scope_handler
 from sentinelx_core.handlers.devforge_runtime import (
     make_devforge_execute_scoped_adapter,
     make_devforge_runtime_provider,
 )
 from sentinelx_core.handlers.local_api import make_local_api_handler
 from sentinelx_core.handlers.mutation_scope import make_mutation_scope_service
+from sentinelx_core.mutation_scope import MutationScopeStore
 from sentinelx_core.policy import (
     LocalApiAction,
     LocalApiEndpoint,
@@ -158,6 +160,153 @@ def test_builtin_lifecycle_reuses_canonical_service(tmp_path: Path) -> None:
         },
     )
     assert inspected["result"]["scope"]["scope_digest"] == scope["scope_digest"]
+
+
+def test_devforge_runtime_terminalize_routes_residual_authority_through_canonical_sandbox(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    policy = _policy(tmp_path)
+    handler = build_registry(policy=policy)["local_api"]
+    provisioned = _run(
+        handler,
+        _context(),
+        {
+            "operation": "call",
+            "endpoint": "devforge_runtime",
+            "action": "provision_scope",
+            "params": {
+                "purpose": "scoped_script",
+                "repository": _repository(),
+                "lineage": _lineage(),
+            },
+        },
+    )
+    scope = provisioned["result"]["scope"]
+    store = MutationScopeStore(tmp_path / "state")
+    sid = "S-1-15-2-424242"
+    runtime_root = tmp_path / "runtime-root"
+    runtime_root.mkdir()
+    store.reserve_sandbox_identity(scope["scope_id"], scope["generation"], sid)
+    store.reserve_runtime_read_authority(
+        scope["scope_id"],
+        scope["generation"],
+        sid,
+        str(runtime_root),
+    )
+    store.revoke_scope(scope["scope_id"], scope["generation"])
+
+    calls: list[tuple[str, int]] = []
+
+    def fake_build_mutation_sandbox(**kwargs):
+        class FakeSandbox:
+            def terminalize(self, scope_id: str, generation: int):
+                calls.append((scope_id, generation))
+                current = kwargs["scope_store"].read_scope(scope_id)
+                for root in current.runtime_read_authority_roots:
+                    kwargs["scope_store"].clear_runtime_read_authority(
+                        scope_id,
+                        generation,
+                        sid,
+                        root,
+                    )
+                kwargs["scope_store"].clear_sandbox_write_authority(
+                    scope_id,
+                    generation,
+                    sid,
+                )
+                return kwargs["scope_store"].terminalize_scope(
+                    scope_id,
+                    generation,
+                    kwargs["policy"],
+                    kwargs["repository"],
+                    kwargs["semantic"],
+                    provider_protected_roots=kwargs["provider_protected_roots"],
+                )
+
+        return FakeSandbox()
+
+    monkeypatch.setattr(
+        mutation_scope_handler,
+        "build_mutation_sandbox",
+        fake_build_mutation_sandbox,
+    )
+
+    terminalized = _run(
+        handler,
+        _context(),
+        {
+            "operation": "call",
+            "endpoint": "devforge_runtime",
+            "action": "terminalize_scope",
+            "params": {
+                "scope_ref": {
+                    "scope_id": scope["scope_id"],
+                    "generation": scope["generation"],
+                },
+                "repository": _repository(),
+                "lineage": _lineage(),
+            },
+        },
+    )
+
+    assert calls == [(scope["scope_id"], scope["generation"])]
+    assert terminalized["result"]["scope"]["state"] == "terminal"
+    durable = store.read_scope(scope["scope_id"])
+    assert durable.state == "terminal"
+    assert durable.runtime_read_authority_roots == ()
+    assert durable.sandbox_write_authority_present is False
+
+
+def test_devforge_runtime_terminalize_without_runtime_authority_keeps_store_fast_path(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    policy = _policy(tmp_path)
+    handler = build_registry(policy=policy)["local_api"]
+    provisioned = _run(
+        handler,
+        _context(),
+        {
+            "operation": "call",
+            "endpoint": "devforge_runtime",
+            "action": "provision_scope",
+            "params": {
+                "purpose": "scoped_script",
+                "repository": _repository(),
+                "lineage": _lineage(),
+            },
+        },
+    )
+    scope = provisioned["result"]["scope"]
+
+    def must_not_build(**_kwargs):
+        raise AssertionError("sandbox cleanup must not be built without runtime authority")
+
+    monkeypatch.setattr(
+        mutation_scope_handler,
+        "build_mutation_sandbox",
+        must_not_build,
+    )
+
+    terminalized = _run(
+        handler,
+        _context(),
+        {
+            "operation": "call",
+            "endpoint": "devforge_runtime",
+            "action": "terminalize_scope",
+            "params": {
+                "scope_ref": {
+                    "scope_id": scope["scope_id"],
+                    "generation": scope["generation"],
+                },
+                "repository": _repository(),
+                "lineage": _lineage(),
+            },
+        },
+    )
+    assert terminalized["result"]["scope"]["state"] == "terminal"
 
 
 def test_disabled_mutation_scope_hides_and_denies_lifecycle(tmp_path: Path) -> None:

@@ -22,6 +22,10 @@ from sentinelx_core.mutation_scope import (
     MutationScopeRecord,
     MutationScopeStore,
 )
+from sentinelx_core.mutation_sandbox import (
+    HostMutationSandboxError,
+    build_mutation_sandbox,
+)
 from sentinelx_core.policy import Policy
 from sentinelx_core.request_context import MutationLineage, RequestContext, context_aware
 
@@ -200,17 +204,46 @@ def make_mutation_scope_service(
                 elif action == "inspect":
                     record = store.read_bound_scope(scope_id, generation, repository, semantic)
                 else:
-                    record = store.terminalize_scope(
+                    current = store.read_bound_scope(
                         scope_id,
                         generation,
-                        mutation_policy,
                         repository,
                         semantic,
-                        provider_protected_roots=protected,
                     )
+                    has_runtime_authority = bool(
+                        current.active_job_ids
+                        or current.active_process_ids
+                        or current.sandbox_write_authority_present
+                        or current.runtime_read_authority_roots
+                    )
+                    if has_runtime_authority:
+                        # Reuse the one canonical Windows sandbox cleanup path.
+                        # Durable residual authority must never be cleared by a
+                        # store-only terminalization that cannot prove OS closure.
+                        sandbox = build_mutation_sandbox(
+                            policy=mutation_policy,
+                            scope_store=store,
+                            repository=repository,
+                            semantic=semantic,
+                            provider_protected_roots=protected,
+                        )
+                        record = sandbox.terminalize(scope_id, generation)
+                    else:
+                        record = store.terminalize_scope(
+                            scope_id,
+                            generation,
+                            mutation_policy,
+                            repository,
+                            semantic,
+                            provider_protected_roots=protected,
+                        )
         except HandlerError:
             raise
-        except (HostMutationScopeError, HostMutationScopeBindingMismatch) as exc:
+        except (
+            HostMutationScopeError,
+            HostMutationScopeBindingMismatch,
+            HostMutationSandboxError,
+        ) as exc:
             raise _store_error(exc) from exc
         except ValueError as exc:
             raise HandlerError("invalid_payload", str(exc)) from exc
