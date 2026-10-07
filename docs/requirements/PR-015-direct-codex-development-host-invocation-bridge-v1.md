@@ -5,7 +5,7 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 2
 development:
-  stage: fixing
+  stage: acceptance
   implementation_execution_complete: true
   gates:
     requirement_ready: true
@@ -17,15 +17,18 @@ development:
   latest_plan_review: approved_round_6
   latest_plan_remediation: r6_applied
   review_disposition: approved
-  next_expected_actor: operator
-  acceptance_disposition: rejected_repair_local
-  execution_disposition: fixing_live_verification_required
-  blocking_findings:
-    - direct_codex_workspace_acl_handoff_incompatible_with_codex_sandbox
+  next_expected_actor: verifier
+  acceptance_disposition: pending_reverification
+  execution_disposition: fixing_r2_completed_ready_for_acceptance
+  blocking_findings: []
   repair_evidence:
     - fixing-r1-codebuddy repaired direct_codex_containment_proof_lifecycle_unreachable at d441e95b6eb65834f52ffdb42026e7328f5c9478.
     - GitHub CI run 37615911292 completed successfully.
     - Acceptance must now independently rerun live direct/codex readiness and AC12; repair completion is not Acceptance approval.
+    - fixing-r2-codebuddy repaired direct_codex_workspace_acl_handoff_incompatible_with_codex_sandbox at 7adfa7a74c437ccc29cdcd7078373c6e8d224904.
+    - GitHub CI run 37635132767 completed successfully.
+    - Live Windows direct/Codex verification on 0.24.1.dev530+g7adfa7a74 reached readiness verified=true and persisted verification fixture commit 900e29a349a8e65d54ab1cad45507c88641d59d3.
+    - Acceptance remains unapproved and must independently evaluate the repaired candidate.
   authorization:
     mode: durable
     ref: docs/authorizations/PR-015-direct-codex-development-host-invocation-bridge-v1-development-authorization.yaml
@@ -67,13 +70,13 @@ artifacts:
   latest_acceptance_checkpoint_blob_sha: b65d821e19245b95a4d37186044cb6f4c15ff982
   latest_acceptance_transition_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r7-transition-receipt.yaml
   latest_acceptance_transition_receipt_blob_sha: 9b3fe781802450bfdce2c810077d27572ce7b26d
-  latest_fixing_execution_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-attempt-r2-live-verification-required-20261007.yaml
+  latest_fixing_execution_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-attempt-r2-completed-20261007.yaml
   latest_fixing_handoff: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-attempt-r2-codebuddy-handoff-20261007.yaml
-  latest_fixing_execution_checkpoint_blob_sha: 868ba5663884a692374e518c5a8d2e0528086f99
-  latest_fixing_transition_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-r1-to-acceptance-transition-receipt.yaml
-  latest_fixing_transition_receipt_blob_sha: e2152ad50e637858a42afdf54b31c8d5b19e5a3e
-  latest_bootstrap_fixing_recovery_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-fixing-recovery-r1-20261007.yaml
-  latest_bootstrap_fixing_recovery_checkpoint_blob_sha: fbd3be7c884d0b7f12e20fd87ad265ce36345d86
+  latest_fixing_execution_checkpoint_blob_sha: 58353ed67f7a8b1299d08fb3d09884d19b1a846c
+  latest_fixing_transition_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-r2-to-acceptance-transition-receipt.yaml
+  latest_fixing_transition_receipt_blob_sha: e54241b45789f0a1c065a988bac61d0e34248ff6
+  latest_bootstrap_fixing_recovery_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-fixing-recovery-r2-20261007.yaml
+  latest_bootstrap_fixing_recovery_checkpoint_blob_sha: 603e4491542caeb4ead394eb84349a72b31e4ef2
   prior_slice_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-s03-completion-20261007.yaml
   prior_slice_completion_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-s03-completion-receipt.yaml
   prior_acceptance: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r1.md
@@ -83,15 +86,15 @@ artifacts:
 implementation_entry:
   bootstrap_required: true
   intended_target: direct:codebuddy
-  override_state: active
+  override_state: expired
   override_mode: fixing_recovery
   override_revision: 4
   override_ref: docs/overrides/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-execution-override.yaml
-  override_blob_sha: ec6a62d51a465cfd4ef276538f01889624f4cf4e
+  override_blob_sha: 0acdb1ef685b136c1f20726f4307c4f8288b5d0f
   override_receipt_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-fixing-recovery-r2-20261007.yaml
   prior_override_ref: docs/overrides/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-execution-override.yaml
   effective_provider: direct
-  effective_adapter: codebuddy
+  effective_adapter: codex
   project_binding_fallback:
     provider: direct
     adapter: codex
@@ -111,12 +114,12 @@ requirement_readiness:
     project_binding: direct/codex
     live_host_codex_package_observed: "@openai/codex 0.154.0"
     live_host_codex_shim_observed: "active-user npm codex.cmd -> node + @openai/codex/bin/codex.js"
-    current_blocker: direct_codex_workspace_acl_handoff_incompatible_with_codex_sandbox
+    current_blocker: null
     implementation_execution_complete: true
     all_current_plan_slices_completed: true
     bootstrap_override_expired_by_slice_completion: true
-    fixing_bootstrap_override_active: true
-    fixing_bootstrap_override_expired_by_stage_exit: false
+    fixing_bootstrap_override_active: false
+    fixing_bootstrap_override_expired_by_stage_exit: true
     fixing_bootstrap_override_revision: 4
     fixing_bootstrap_override_mode: fixing_recovery
     pr013_relation: related_unblocker_not_same_task

@@ -54,20 +54,25 @@ receipt:
   latest_acceptance_command: "#开发验收 PR-015-direct-codex-development-host-invocation-bridge-v1"
   latest_acceptance_result: rejected_repair_local
   latest_execution_command: "#开发执行 PR-015-direct-codex-development-host-invocation-bridge-v1"
-  latest_execution_result: fixing_r2_live_verification_required
-  latest_execution_checkpoint_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-attempt-r2-live-verification-required-20261007.yaml
-  latest_execution_checkpoint_blob_sha: 868ba5663884a692374e518c5a8d2e0528086f99
-  latest_fixing_transition_receipt_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-r1-to-acceptance-transition-receipt.yaml
-  latest_fixing_transition_receipt_blob_sha: e2152ad50e637858a42afdf54b31c8d5b19e5a3e
+  latest_execution_result: fixing_r2_completed_ready_for_acceptance
+  latest_execution_checkpoint_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-attempt-r2-completed-20261007.yaml
+  latest_execution_checkpoint_blob_sha: 58353ed67f7a8b1299d08fb3d09884d19b1a846c
+  latest_fixing_transition_receipt_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-r2-to-acceptance-transition-receipt.yaml
+  latest_fixing_transition_receipt_blob_sha: e54241b45789f0a1c065a988bac61d0e34248ff6
   latest_fixing_product_head: 7adfa7a74c437ccc29cdcd7078373c6e8d224904
   latest_fixing_github_ci_run_id: 37635132767
   latest_fixing_github_ci_result: success
+  latest_fixing_live_agent_version: 0.24.1.dev530+g7adfa7a74
+  latest_fixing_live_readiness_verified: true
+  latest_fixing_fixture_pr: 230
+  latest_fixing_fixture_persisted_head: 900e29a349a8e65d54ab1cad45507c88641d59d3
+  latest_fixing_canonical_checkout_main_clean: true
   latest_bootstrap_command: "#开发引导执行 PR-015-direct-codex-development-host-invocation-bridge-v1 direct:codebuddy"
   latest_bootstrap_result: fixing_recovery_expired_after_stage_exit
   latest_bootstrap_override_ref: docs/overrides/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-execution-override.yaml
-  latest_bootstrap_override_blob_sha: 936f56ae64b248dc802053df1b2d091ca8cf64cb
-  latest_bootstrap_receipt_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-fixing-recovery-r1-20261007.yaml
-  latest_bootstrap_receipt_blob_sha: fbd3be7c884d0b7f12e20fd87ad265ce36345d86
+  latest_bootstrap_override_blob_sha: 0acdb1ef685b136c1f20726f4307c4f8288b5d0f
+  latest_bootstrap_receipt_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-fixing-recovery-r2-20261007.yaml
+  latest_bootstrap_receipt_blob_sha: 603e4491542caeb4ead394eb84349a72b31e4ef2
   latest_acceptance_review_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r7.md
   latest_acceptance_review_blob_sha: f9259d43fa5529638a294bd2c57488cbe3f3eec1
   latest_acceptance_checkpoint_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r7-rejected-codex-workspace-acl-handoff-20261007.yaml
