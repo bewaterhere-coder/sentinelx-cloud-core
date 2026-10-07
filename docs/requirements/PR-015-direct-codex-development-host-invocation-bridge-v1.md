@@ -17,8 +17,8 @@ development:
   latest_plan_review: approved_round_6
   latest_plan_remediation: r6_applied
   review_disposition: approved
-  next_expected_actor: verifier
-  acceptance_disposition: pending_reverification
+  next_expected_actor: operator
+  acceptance_disposition: blocked_live_activation
   execution_disposition: fixing_r1_completed_ready_for_acceptance
   blocking_findings: []
   repair_evidence:
@@ -62,8 +62,8 @@ artifacts:
   implementation_to_acceptance_transition_receipt_blob_sha: 31291ffb38ee22dbcfd4a5020198a1ceb6be940c
   latest_acceptance_review: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r5.md
   latest_acceptance_review_blob_sha: 988f2a1eb94ab8349576e3db3c88c4def93fb6c0
-  latest_acceptance_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r5-rejected-containment-lifecycle-20261007.yaml
-  latest_acceptance_checkpoint_blob_sha: 0eabbbcd27bb4233bd1746acb0a0d6a76180d194
+  latest_acceptance_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r6-live-activation-blocked-20261007.yaml
+  latest_acceptance_checkpoint_blob_sha: e33b891612e24c3129aca1b44345a74c412431f8
   latest_acceptance_transition_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r5-transition-receipt.yaml
   latest_acceptance_transition_receipt_blob_sha: cb6470ae5593c4d8dbaaa762352184d3f680b9dd
   latest_fixing_execution_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-attempt-r1-completed-20261007.yaml

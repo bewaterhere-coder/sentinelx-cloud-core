@@ -1,0 +1,136 @@
+schema_version: "1.0"
+kind: devforge_acceptance_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-015-direct-codex-development-host-invocation-bridge-v1
+acceptance_revision: 6
+source_command: "#开发验收 PR-015-direct-codex-development-host-invocation-bridge-v1"
+created_at: "2026-10-07"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  version: "2.90.0"
+  revision: 35b2d47bcafb71598eddff8b74fa35529c80919c
+  acceptance_contract: "1.5"
+
+transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 15
+  branch: task/direct-codex-development-host-invocation-bridge-v1
+  evaluated_head_before_checkpoint: 61ad2c3d41eef1e0a7a58c44f3b27b5f99f50727
+  canonical_main: 018b78ca20984176d53fbe90039dc795a7f2742f
+  transport_drift: false
+
+lineage:
+  requirement_revision: 2
+  plan_revision: 6
+  plan_blob_sha: 2bcea2a44f88e51c8b9378ba6297b61897e638da
+  repair_candidate_sha: d441e95b6eb65834f52ffdb42026e7328f5c9478
+  fixing_to_acceptance_receipt_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-r1-to-acceptance-transition-receipt.yaml
+  fixing_to_acceptance_receipt_blob_sha: e2152ad50e637858a42afdf54b31c8d5b19e5a3e
+  post_repair_product_code_drift: false
+
+implementation_and_repair_evidence:
+  github_ci_run_id: 37615911292
+  github_ci_conclusion: success
+  product_files_changed:
+    - src/sentinelx_core/handlers/direct_codex.py
+    - tests/test_direct_codex_execution.py
+    - tests/test_direct_codex_provider.py
+  repair_finding: direct_codex_containment_proof_lifecycle_unreachable
+  repair_semantics_verified: true
+
+live_host:
+  host_id: host_7f0e709ded71ab24
+  hostname: Cherie_li
+  session_id: sess_66c24b8ee8ce
+  running_agent_version: 0.24.1.dev426+gd083921b3
+  runtime_changed_from_prior_acceptance:
+    from_version: 0.24.1.dev499+g02eb3de2e
+    to_version: 0.24.1.dev426+gd083921b3
+  exact_repair_candidate_active: false
+  current_local_api_endpoints:
+    - devforge_runtime
+  devforge_direct_codex_exposed: false
+  direct_codex_host_policy_opt_in_present: true
+  direct_codex_workspace_root: D:\SentinelX\devforge-workspaces
+
+activation_admission:
+  existing_operator_playbook: update_sentinelx_code
+  exact_ref_install_required: d441e95b6eb65834f52ffdb42026e7328f5c9478
+  script_run_model_surface_supports_execution_profile: false
+  host_requires_explicit_execution_profile_for_mutating_script_run: true
+  devforge_runtime_scope_can_write_agent_venv: false
+  model_driven_candidate_install_admitted: false
+  reason: exact_candidate_activation_requires_local_operator_install
+
+acceptance_matrix:
+  AC1:
+    status: BLOCKED_LIVE_ACTIVATION
+    reason: exact repair candidate is not active in live SentinelX service
+  AC2:
+    status: PASS_RETAINED
+  AC3:
+    status: PASS_RETAINED
+  AC4:
+    status: PASS_RETAINED
+  AC5:
+    status: PASS_RETAINED
+  AC6:
+    status: PASS_RETAINED
+  AC7:
+    status: PASS_RETAINED
+  AC8:
+    status: PASS_RETAINED
+  AC9:
+    status: PASS_RETAINED
+  AC10:
+    status: PASS
+    evidence: repair candidate GitHub CI succeeded
+  AC11:
+    status: PASS
+    evidence: repair did not widen generic execution, Host policy, project binding, or Hub authority
+  AC12:
+    status: BLOCKED_LIVE_ACTIVATION
+    missing:
+      - exact repair candidate active in live SentinelX service
+      - live provider-owned containment proof through production execute_task lifecycle
+      - one real persisted direct/Codex end-to-end execution
+      - canonical main + clean readback
+      - PR-013 direct/Codex provider-admission recovery proof without identity/binding change
+
+acceptance:
+  disposition: blocked
+  finding_classification: external_blocker
+  blocker: exact_repair_candidate_not_active
+  acceptance_decision_persisted: false
+  acceptance_approved: false
+  completion_verified: false
+  gate_transition: none
+  current_stage: acceptance
+  next_expected_actor: operator
+
+safety:
+  product_code_mutated_by_acceptance: false
+  canonical_checkout_mutated_by_acceptance: false
+  canonical_main_mutated_by_acceptance: false
+  host_policy_mutated_by_acceptance: false
+  production_hub_mutated: false
+  permission_expansion_used: false
+  credential_mutation_used: false
+  production_release_performed: false
+
+resume:
+  replay_fixing: forbidden
+  exact_candidate_to_activate: d441e95b6eb65834f52ffdb42026e7328f5c9478
+  required_operator_step: >-
+    Install exact candidate d441e95b6eb65834f52ffdb42026e7328f5c9478
+    into C:\ProgramData\SentinelX\.venv using the existing Windows pip
+    install workflow, then restart SentinelX. Do not install moving main.
+  after_operator_install:
+    - verify live agent version embeds d441e95
+    - verify local_api.list/describe exposes devforge_direct_codex
+    - execute one real persisted direct/Codex live proof
+    - verify canonical sentinelx-cloud-core checkout remains main + clean
+    - verify PR-013 direct/Codex provider admission without changing Task identity or project binding
+    - finish Acceptance R6
+  canonical_resume_command: "#开发验收 PR-015-direct-codex-development-host-invocation-bridge-v1"
