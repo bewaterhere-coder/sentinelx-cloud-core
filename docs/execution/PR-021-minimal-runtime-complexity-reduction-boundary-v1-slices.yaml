@@ -114,9 +114,10 @@ slices:
         - security-critical boundaries are not weakened
     checkpoint:
       required: true
-    state: pending
-    run_refs: []
-    completion_receipt_ref: null
+    state: completed
+    run_refs:
+      - docs/execution/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s03-run-001.yaml
+    completion_receipt_ref: docs/checkpoints/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s03-completion-20261008.yaml
 
   - slice_id: S04
     objective: Freeze one primary minimalization successor order and verify PR-021 acceptance evidence.
@@ -141,7 +142,7 @@ slices:
     completion_receipt_ref: null
 
 current:
-  slice_id: S03
+  slice_id: S04
   state: pending
 
 approval:
