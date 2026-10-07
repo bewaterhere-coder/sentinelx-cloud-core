@@ -20,7 +20,10 @@ development:
   blocking_findings:
     - S02 repair is complete on exact candidate 4896a55cb951dec47422c738ccb1ba98762e13a9, but S03 cannot start until that exact candidate (or an explicitly reconciled descendant) is activated on the Windows Host.
     - The Host currently runs concurrent PR-015 candidate d441e95b6eb65834f52ffdb42026e7328f5c9478, so live evidence from that Agent cannot be claimed for PR-017 S03.
-    - The prior failed PowerShell scope mss_62URoGdXBbPJCnNK6Xdm_dye reported residual-authority ambiguity under the pre-repair candidate; exact SID absence must be independently read back/cleaned before creating new live PowerShell/Unity scopes.
+    - The prior failed PowerShell scope mss_62URoGdXBbPJCnNK6Xdm_dye is still projected only as historical terminal; the bounded inspect_scope projection does not expose sandbox_identity/runtime-root SID state, so exact SID absence remains unproven.
+    - Direct read of C:\ProgramData\SentinelX\state\mutation-scopes\authority.json is denied by file_ops and PR-017 forbids widening file_ops as a workaround.
+    - The current model-facing sentinel_script_run still rejects execution with execution_profile_required, so it cannot be used to install the PR-017 exact candidate or run an out-of-band icacls proof.
+    - No new PowerShell/Unity scoped mutation is permitted until candidate activation and old-SID closure are both proven.
   current_slice: S03
   current_slice_state: blocked
   authorization:
@@ -38,7 +41,7 @@ artifacts:
   latest_plan_review: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-review-r1.md
   latest_plan_review_transition_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-review-r1-transition-receipt.yaml
   execution_slice_set: docs/execution/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-slices.yaml
-  latest_slice_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-repair-completion-20261007.yaml
+  latest_slice_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-resume-blocked-host-candidate-and-sid-readback-20261007.yaml
   latest_slice_completion_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-repair-completion-receipt-r2.yaml
   latest_slice_invalidation: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-live-invalidation-r1.md
 related_tasks:
