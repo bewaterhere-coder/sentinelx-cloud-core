@@ -14,12 +14,15 @@ development:
   plan_revision: 1
   implementation_authorized: true
   blocking_findings: []
-  next_expected_actor: implementer
+  next_expected_actor: reviewer
   current_slice: S04
-  current_slice_state: pending
-  completed_slices: [S01, S02, S03]
-  latest_execution_run: docs/execution/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s03-run-001.yaml
-  latest_execution_checkpoint: docs/checkpoints/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s03-completion-20261008.yaml
+  current_slice_state: completed
+  completed_slices: [S01, S02, S03, S04]
+  implementation_execution_complete: true
+  formal_acceptance_performed: false
+  canonical_next_action: "#开发验收 PR-021-minimal-runtime-complexity-reduction-boundary-v1"
+  latest_execution_run: docs/execution/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s04-run-001.yaml
+  latest_execution_checkpoint: docs/checkpoints/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s04-completion-20261008.yaml
 transport:
   type: github-pr
   pr_number: 21
@@ -36,6 +39,7 @@ artifacts:
   provisional_bootstrap: docs/checkpoints/minimal-runtime-complexity-reduction-boundary-v1-provisional-bootstrap.md
   architecture_decision: docs/architecture/sentinelx-minimal-runtime-boundary-v1.md
   disposition_matrix: docs/architecture/sentinelx-capability-disposition-matrix-v1.md
+  pre_acceptance_evidence: docs/checkpoints/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s04-acceptance-evidence-20261008.yaml
 related_tasks:
   workspace_materialization_bridge: PR-014-devforge-execution-workspace-materialization-bridge-v1
   direct_codex_bridge: PR-015-direct-codex-development-host-invocation-bridge-v1
