@@ -5,7 +5,11 @@
 ~~~yaml
 task_id: PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1
 plan_revision: 2
-plan_status: ready_for_review
+plan_status: completed
+review_status: approved
+execution_state: all_slices_completed
+acceptance_status: approved
+finalization_status: ready_for_merge
 implementation_authority: false
 requirement_ref: docs/requirements/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1.md
 requirement_revision: 1
@@ -15,8 +19,10 @@ transport:
   type: github-pr
   pr_number: 18
   branch: task/unity-6-6-appcontainer-dll-initialization-compatibility-v1
-  base: task/large-runtime-root-acl-cleanup-timeout-recovery-v1
+  base: main
+  original_stacked_base: task/large-runtime-root-acl-cleanup-timeout-recovery-v1
   stacked_on_pr: 17
+  stacked_integration_normalized_for_completion: true
 ~~~
 
 ## R2 Remediation Delta
