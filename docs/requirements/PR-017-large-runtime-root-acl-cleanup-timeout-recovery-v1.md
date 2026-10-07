@@ -8,7 +8,7 @@ task_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
 title: SentinelX Large Runtime Root ACL Cleanup Timeout & Recovery V1
 requirement_revision: 1
 development:
-  stage: implementation
+  stage: acceptance
   gates:
     requirement_ready: true
     plan_approved: true
@@ -16,18 +16,13 @@ development:
     completion_verified: false
   plan_revision: 5
   implementation_authorized: true
-  next_expected_actor: implementer
-  blocking_findings:
-    - S03 production-subset integration remains complete and verified at f9e07da9cc37f6e882c3258280869b415cafcb5c; all 11 target blobs match and scoped_script.py remains unchanged.
-    - All automatically triggered CI / Windows / macOS verification workflows for the integrated candidate are green, including pr010-s03 Windows regression with 59 passed.
-    - The only current blocker is ExactCandidateHostRuntimeActivationCapabilityMissing: installed Host runtime 0.24.1.dev530+g7adfa7a74 lacks the MutationScopeRecord fields required by the integrated candidate, while the formal Host update playbook is main-only and no exact-PR-candidate activation action is exposed.
-    - Generic script_run fallback, substituting main for the PR candidate, or submitting a second direct-Codex attempt are not authorized.
-    - S03 remains pending; no completion receipt exists and no completion claim is authorized.
+  next_expected_actor: reviewer
+  blocking_findings: []
   current_slice: S03
-  current_slice_state: pending
+  current_slice_state: completed
   authorization:
     mode: legacy_command_scoped
-  completed_slices: []
+  completed_slices: [S03]
   historical_completed_evidence:
     - S01
     - S02
@@ -40,26 +35,18 @@ artifacts:
   plan: docs/plans/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan.md
   latest_plan_review: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-review-r5.md
   latest_plan_review_transition_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-review-r5-transition-receipt.yaml
-  latest_plan_revision_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-revision-r2-pr018-integration-20261008.yaml
-  latest_plan_revision_transition_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-revision-r2-transition-receipt.yaml
-  latest_plan_remediation_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-remediation-r3-20261008.yaml
-  latest_plan_remediation_transition_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-remediation-r3-transition-receipt.yaml
-  latest_plan_remediation_checkpoint_r4: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-remediation-r4-20261008.yaml
-  latest_plan_remediation_transition_receipt_r4: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-remediation-r4-transition-receipt.yaml
-  latest_plan_remediation_checkpoint_r5: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-remediation-r5-20261008.yaml
-  latest_plan_remediation_transition_receipt_r5: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-remediation-r5-transition-receipt.yaml
+  latest_plan_remediation_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-remediation-r5-20261008.yaml
+  latest_plan_remediation_transition_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-remediation-r5-transition-receipt.yaml
   execution_slice_set: docs/execution/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-slices.yaml
   execution_slice_set_plan_revision: 5
-  execution_slice_set_blob_sha: 79a02704a67689950f89729a91dafa6168f05398
-  latest_slice_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-blocked-exact-candidate-host-activation-unavailable-20261008.yaml
-  latest_slice_checkpoint_blob_sha: 7fdefb012c9f88c98468bc4dec9cba2b08ca89c8
-  latest_integrated_candidate: f9e07da9cc37f6e882c3258280869b415cafcb5c
-  execution_slice_set: docs/execution/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-slices.yaml
-  latest_slice_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-blocked-unity-dll-initialization-20261007.yaml
-  latest_slice_completion_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-repair-completion-receipt-r4.yaml
-  latest_slice_invalidation: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-live-invalidation-r3.md
-  latest_s03_blocker_review: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-unity-appcontainer-compatibility-blocker-r1.md
-  latest_acceptance_attempt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-acceptance-r1-blocked-incomplete-slices-20261008.yaml
+  execution_slice_set_blob_sha: "493f54282df837f3923aa0c986b01b46329ca2ec"
+  latest_slice_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-completion-20261008.yaml
+  latest_slice_checkpoint_blob_sha: "68e213815b82f9cf99f8cc607034815ae7f29dc6"
+  latest_slice_completion_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-completion-receipt.yaml
+  latest_slice_completion_receipt_blob_sha: "aef10dfe56da8db7ae09aa4d47c29caa1e57b66f"
+  latest_integrated_candidate: "f9e07da9cc37f6e882c3258280869b415cafcb5c"
+  prior_s03_blocker_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-blocked-exact-candidate-host-activation-unavailable-20261008.yaml
+  prior_acceptance_attempt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-acceptance-r1-blocked-incomplete-slices-20261008.yaml
 related_tasks:
   predecessor:
     - PR-012-execute-scoped-explicit-execution-profile-v1
