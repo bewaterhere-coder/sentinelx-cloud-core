@@ -16,7 +16,10 @@ development:
   plan_revision: 2
   implementation_authorized: true
   next_expected_actor: implementer
-  blocking_findings: []
+  blocking_findings:
+    - S01 is blocked by current live Host runtime schema incompatibility: installed 0.24.1.dev530+g7adfa7a74 cannot read persisted MutationScopeRecord.runtime_read_authority_roots, so host_mutation_sandbox_v1 and pre_execution_audit_lineage_v1 are unavailable.
+    - Direct/Codex run run-pr018-s01-20261007-001 attempt-001 timed out at the Hub response boundary with no canonical PR #18 publish observed; same-attempt replay is forbidden while external state is unconfirmed.
+    - No S01 A/B discriminator evidence exists from this run; S02 remains forbidden.
   current_slice: S01
   current_slice_state: pending
   completed_slices: []
@@ -33,6 +36,7 @@ artifacts:
   latest_plan_remediation: docs/checkpoints/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-plan-remediation-r2-20261007.yaml
   latest_plan_remediation_transition_receipt: docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-plan-remediation-r2-transition-receipt.yaml
   execution_slice_set: docs/execution/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-slices.yaml
+  latest_slice_checkpoint: docs/checkpoints/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-s01-blocked-host-runtime-schema-and-direct-codex-timeout-20261007.yaml
 related_tasks:
   predecessor:
     - PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
