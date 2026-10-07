@@ -1,0 +1,203 @@
+schema_version: "1.1"
+kind: devforge_execution_slice_set
+identity:
+  task_id: PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1
+  slice_set_id: PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-plan-r2
+plan:
+  ref: docs/plans/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-plan.md
+  revision: 2
+  blob_sha: 1d171bce2815a5dba428746ad65f5cab408794a0
+  requirement_revision: 1
+review:
+  ref: docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-plan-review-r2.md
+  blob_sha: d1a981ef3e7197ba7d6301eae296be6f2f15408a
+  decision: Approved
+repository_baseline:
+  main_sha: 018b78ca20984176d53fbe90039dc795a7f2742f
+  reviewed_task_head: af4bc1be32a979500d56005b5fe9b42fb46ad32e
+  stacked_base_pr: 17
+  stacked_base_head: 3858c7d0e46295d5e0dc184bb21e76da7c963346
+runtime_provenance:
+  devforge_version: "2.93.0"
+  devforge_main_sha: fb0d02d646d6312d938fdfb3fbe03c64319fb122
+
+implementation_entry_guard:
+  required_before_each_slice: true
+  rules:
+    - re-read current PR-018 head, exact Plan R2, this Slice Set, PR-017 stacked base and current overlapping PR state before mutation
+    - preserve PR #18 transport identity and branch
+    - fail closed on Requirement, Plan, transport, Host runtime or security-boundary drift
+    - preserve AppContainer, no-breakaway Job, MutationScopeStore two-phase revoked-to-terminal lifecycle and audit ordering
+    - no broader window-object rights than Requirement R4
+    - no interactive session fallback, generic shell fallback, operator_unrestricted, AppContainer escape or Job breakaway
+    - raw process-local HANDLE values are forbidden as durable session-object identity
+    - no terminal success while durable session-object cleanup responsibility remains
+    - one explicit #开发执行 invocation completes at most one Slice
+
+concurrent_task_reconciliation:
+  pr015:
+    reviewed_head: 0500e457495a148573fcc2e184d6c7dca8058201
+    overlaps:
+      - src/sentinelx_core/policy.py
+      - config.example.windows.yaml
+    movement_since_prior_review:
+      product_overlap_changed: false
+      note: latest two commits only changed PR-015 Task/authorization/checkpoint artifacts
+    rule: re-read current PR-015 before S02 policy/config mutation and reconcile any product-semantic overlap without broadening PR-018
+  pr016:
+    reviewed_head: c26de0e9fb0d908e9dc6bd16403b07965547f099
+    current_product_overlap: false
+    rule: if sandbox/session-object product overlap appears, stop and reconcile before mutation
+  pr017:
+    reviewed_head: 3858c7d0e46295d5e0dc184bb21e76da7c963346
+    role: stacked_base
+    rule: material base drift blocks the next PR-018 Slice until reconciliation
+
+slices:
+  - slice_id: S01
+    objective: Prove or falsify the PR-011 Session-0 USER32 hypothesis against real Unity 6000.6.4f1 without changing production generic admission.
+    depends_on: []
+    state: pending
+    scope:
+      refs:
+        - src/sentinelx_core/windows_mutation_sandbox.py as read-only product reference
+        - tests/test_windows_mutation_sandbox.py or bounded diagnostic fixture
+        - current-Host Unity 6000.6.4f1 evidence
+        - docs/checkpoints/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-s01-*.yaml
+      authorized_changes:
+        - bounded diagnostic/test fixture only when needed
+        - Variant A/B evidence collection using identical AppContainer/Job/runtime inputs
+        - Variant B use of existing PR-011 exact read-only masks only
+        - diagnostic checkpoint persistence
+      forbidden:
+        - production generic session-object admission change
+        - new filesystem Registry COM or capability permission
+        - AppContainer or Job weakening
+        - PR-017 mutation or replay
+    verification:
+      required:
+        - Variant A raw Unity child status reproduces 0xC0000142 or records exact current failure
+        - Variant B differs only by existing PR-011 Session-0 read masks
+        - raw Unity child Windows result is captured
+        - exact AppContainer SID and exact masks are captured
+        - Job remains no-breakaway contained
+        - exact diagnostic SID is absent from both desktop and window station before Slice completion
+        - runtime-root cleanup and scope terminal closure are proven
+      decision:
+        positive: hypothesis_confirmed
+        negative_or_ambiguous: hypothesis_rejected
+        negative_effect: stop current Plan; S02 and S03 remain ineligible; new Plan revision required
+    checkpoint:
+      required: true
+    run_refs: []
+    completion_receipt_ref: null
+
+  - slice_id: S02
+    objective: Add Host-owned default-off generic Session-0 compatibility with durable pre-grant authority binding and restart-safe fail-closed cleanup.
+    depends_on: [S01]
+    eligibility:
+      s01_outcome_required: hypothesis_confirmed
+    state: pending
+    scope:
+      refs:
+        - src/sentinelx_core/policy.py
+        - src/sentinelx_core/mutation_placement.py
+        - src/sentinelx_core/mutation_scope.py
+        - src/sentinelx_core/windows_mutation_sandbox.py
+        - config.example.windows.yaml
+        - tests/test_policy.py
+        - tests/test_mutation_scope_admission.py
+        - tests/test_windows_mutation_sandbox.py
+        - tests/test_scoped_script_execution.py
+        - tests/test_verification_windows_materialization.py
+        - tests/test_verification_scoped_execution.py
+      authorized_changes:
+        - runtime_session_object_read_enabled Host-owned boolean policy default false
+        - policy/placement digest participation
+        - shared exact-SID window-object DACL primitive as needed
+        - restart-reacquirable provider-owned session-object identity observation/validation
+        - durable cleanup-required session-object binding in existing MutationScopeStore
+        - persisted/read-back binding before first generic shared-DACL grant
+        - exact R4 grant/readback on bound window station and desktop
+        - partial-grant compensation while preserving durable cleanup responsibility until dual absence readback
+        - runtime closure and terminalization integration for durable session-object authority
+        - restart/empty-in-memory-map reacquisition cleanup path
+        - bounded audit/readiness projection without unrelated shared DACL disclosure
+        - focused security and regression tests
+      forbidden:
+        - second authority ledger or lifecycle state machine
+        - raw HANDLE as durable identity
+        - caller-selected SID Session object mask or enablement
+        - authority above Requirement R4
+        - verification trusted-root handshake semantic change
+        - interactive desktop/screen/clipboard/global-atom/create-window/write authority
+        - PR-017 Task or transport mutation
+    verification:
+      required:
+        - default false and valid Host-only parsing
+        - caller override rejected or structurally unavailable
+        - policy digest changes with compatibility setting
+        - disabled generic path grants nothing
+        - pre-grant durable cleanup binding is persisted and read back
+        - exact PR-011 masks only and forbidden bits absent
+        - first-object and second-object failure paths remain fail-closed
+        - durable marker cannot clear before dual exact SID-absence readback
+        - terminalization treats marker as residual authority
+        - restart with empty process-local session map can reacquire exact durable identities and clean
+        - identity mismatch after restart remains revoked
+        - retry reaches terminal only after exact cleanup and marker-clear readback
+        - PR-011 verification handshake semantics remain green
+        - Job/no-breakaway and audit regressions remain green
+    checkpoint:
+      required: true
+    run_refs: []
+    completion_receipt_ref: null
+
+  - slice_id: S03
+    objective: Prove the exact PR-018 candidate on real Windows/Unity and close security/regression evidence without advancing PR-017.
+    depends_on: [S02]
+    state: pending
+    scope:
+      refs:
+        - affected mutation sandbox/policy/scoped execution test suites
+        - current-Host Unity 6000.6.4f1 verification evidence
+        - docs/checkpoints/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-s03-*.yaml
+      authorized_changes:
+        - focused regression/documentation closure only
+        - temporary separately-admitted Host configuration for exact proof
+      forbidden:
+        - PR-017 Task state branch checkpoint receipt or Slice mutation
+        - PR-017 S03 replay
+        - permanent Unity product dependency
+        - unrestricted or interactive-session fallback
+        - permission expansion beyond approved policy/masks
+    verification:
+      required:
+        - scoped Python marker succeeds and terminalizes
+        - classified raw Unity child result is not 0xC0000142
+        - deterministic Unity -version or equivalent bounded initialization probe succeeds
+        - no active Job/process authority remains
+        - exact runtime-root AppContainer SID is absent
+        - exact bound window-station AppContainer SID is absent
+        - exact bound desktop AppContainer SID is absent
+        - durable session-object cleanup binding is cleared/read back
+        - forbidden interactive/session rights remain absent
+        - no escape and no Job breakaway
+        - affected PR-011 PR-012 PR-017 sandbox regressions remain green on PR-018 candidate
+    external_availability_rule: real Host proof requires separately admitted live execution authority; unavailable Host evidence checkpoints Blocked without fallback
+    checkpoint:
+      required: true
+    run_refs: []
+    completion_receipt_ref: null
+
+execution_state:
+  current_slice: S01
+  current_slice_state: pending
+  completed_slices: []
+  pending_slices: [S01, S02, S03]
+  all_slices_completed: false
+
+acceptance_boundary:
+  all_current_plan_slices_must_be_completed: true
+  acceptance_command: "#开发验收 PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"
+  cross_task_note: PR-017 replay and acceptance remain independently owned after PR-018 finalization/integration
