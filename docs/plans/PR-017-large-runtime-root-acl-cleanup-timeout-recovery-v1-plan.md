@@ -4,7 +4,7 @@
 
 ```yaml
 task_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
-plan_revision: 3
+plan_revision: 4
 plan_status: ready_for_review
 implementation_authority: false
 requirement_ref: docs/requirements/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1.md
@@ -349,7 +349,7 @@ Use monkeypatch/fakes for deterministic timeout tests; do not make ordinary unit
 
 S01 and S02 are historical completed slices under Plan R1 and MUST NOT be replayed.
 
-After Plan R2 approval, S03 execution first materializes the frozen PR-018 payload onto the canonical PR-017 branch, verifies the resulting tree, and then performs the real Host replay.
+After Plan R4 approval, S03 execution first materializes the frozen PR-018 production-subset payload onto the canonical PR-017 branch, verifies the resulting tree, and then performs the real Host replay.
 
 Recommended Host config remains bounded and provider-owned:
 
@@ -422,7 +422,7 @@ Then run the repository's affected Windows mutation/security regression set.
 
 Plan R3 authorizes no new local design beyond the frozen production-subset manifest. The only product/config/test files eligible for S03 integration are the 11 CAS-bound paths listed in the Revision 3 decision above; `src/sentinelx_core/handlers/scoped_script.py` is explicitly preserved and is not an integration target.
 
-PR-017 Requirement/Plan/Slice/checkpoint/receipt artifacts may change only to record Plan R2 lineage and S03 evidence.
+PR-017 Requirement/Plan/Slice/checkpoint/receipt artifacts may change only to record Plan R4 lineage and S03 evidence.
 
 Explicitly excluded:
 
@@ -448,9 +448,9 @@ S03 — frozen PR-018 production-subset integration on canonical PR-017 branch
       + affected regression closure
 ```
 
-No new S04 is introduced. One explicit `#开发执行 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1` after Plan R2 approval may complete at most the revised S03.
+No new S04 is introduced. One explicit `#开发执行 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1` after Plan R4 approval may complete at most the revised S03.
 
-No product mutation is authorized until Plan Review approves Plan R2 and recompiles the canonical Execution Slice Set.
+No product mutation is authorized until Plan Review approves Plan R4 and recompiles the canonical Execution Slice Set.
 
 ## Risks
 
@@ -495,4 +495,4 @@ Mitigation: PR-018 proof is only dependency evidence. PR-017 must create its own
 5. Does the revised S03 prove both R8.3 and the original PR-017 runtime-root cleanup/terminal invariants?
 6. Is temporary `runtime_session_object_read_enabled=true` acceptable only for S03 proof with mandatory default-off restoration?
 7. Are PR-011/PR-012 regression and no-breakaway/canonical-firewall checks sufficient after combined-candidate activation?
-8. Does Plan R2 avoid treating PR-018 isolated evidence as PR-017 S03 completion evidence?
+8. Does Plan R4 avoid treating PR-018 isolated evidence as PR-017 S03 completion evidence?
