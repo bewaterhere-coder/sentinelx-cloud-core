@@ -8,7 +8,7 @@ task_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
 title: SentinelX Large Runtime Root ACL Cleanup Timeout & Recovery V1
 requirement_revision: 1
 development:
-  stage: acceptance
+  stage: fixing
   gates:
     requirement_ready: true
     plan_approved: true
@@ -16,8 +16,11 @@ development:
     completion_verified: false
   plan_revision: 5
   implementation_authorized: true
-  next_expected_actor: reviewer
-  blocking_findings: []
+  next_expected_actor: implementer
+  blocking_findings:
+    - Acceptance R2 rejected CurrentNodeNpmVerificationReadinessContradictsCompletionReceipt: the exact candidate completed S03 with scoped_verification_node_npm_v1 verified=true, but Acceptance observed the same exact agent version twice with available=false / verified=false while the profile config remained intact and the SentinelX service remained running.
+    - This is classified as inconsistent_evidence. Current PR-011 Node/npm scoped verification must be restored or re-proven without weakening AppContainer, network denial, protected-root denial, terminalization, or transient-authority cleanup semantics.
+    - S03 completion evidence, Unity 6000.6.4f1 proof, runtime-root cleanup, Session-0 SID cleanup, and all green automatic regressions remain preserved unless the fixing change materially invalidates them.
   current_slice: S03
   current_slice_state: completed
   authorization:
@@ -47,6 +50,10 @@ artifacts:
   latest_integrated_candidate: "f9e07da9cc37f6e882c3258280869b415cafcb5c"
   prior_s03_blocker_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-blocked-exact-candidate-host-activation-unavailable-20261008.yaml
   prior_acceptance_attempt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-acceptance-r1-blocked-incomplete-slices-20261008.yaml
+  latest_acceptance: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-acceptance-r2.yaml
+  latest_acceptance_blob_sha: 6cce15de869cc7ed77f42d37c8d10e13edf18e3e
+  latest_acceptance_transition_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-acceptance-r2-transition-receipt.yaml
+  latest_acceptance_transition_receipt_blob_sha: fdae4397b2594d3db3353fc6e4013beeb7632b0d
 related_tasks:
   predecessor:
     - PR-012-execute-scoped-explicit-execution-profile-v1
