@@ -8,23 +8,19 @@ task_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
 title: SentinelX Large Runtime Root ACL Cleanup Timeout & Recovery V1
 requirement_revision: 1
 development:
-  stage: implementation
+  stage: plan_review
   gates:
     requirement_ready: true
-    plan_approved: true
+    plan_approved: false
     acceptance_approved: false
     completion_verified: false
-  plan_revision: 1
-  implementation_authorized: true
-  next_expected_actor: implementer
+  plan_revision: 2
+  implementation_authorized: false
+  next_expected_actor: reviewer
   blocking_findings:
-    - S02 cleanup/recovery is fully evidenced on exact candidate f7249aef0d25085eb98e741596b6f567ebd83966, including live retry of preserved scope mss_JB_VJlJg4Np6LdrxgKd_fCw9 from revoked to terminal.
-    - S03 Python proof passed with returncode 0 and terminal closure.
-    - S03 PowerShell proof is deterministically fail-closed on the configured system runtime root: ACL grant is denied by Windows and the scope still terminalizes with no residual authority.
-    - Unity 6000.6.4f1 large-runtime scopes repeatedly reached terminal under runtime_acl_timeout_seconds=300, proving the original 20-second ACL cleanup blocker is repaired.
-    - Unity process compatibility remains blocked: a classified scoped probe on the exact candidate maps the Unity child early exit to Windows status 0xC0000142 (DLL initialization failed).
-    - Requirement R8.3 therefore remains unsatisfied. General Windows application compatibility under AppContainer is explicitly a PR-017 Non-Goal, so fixing Unity DLL initialization inside PR-017 would be an unauthorized scope expansion.
-    - Host configuration has been restored to the original four runtime_read_roots; the temporary exact-file audit read permission used for bounded evidence readback has been removed.
+    - S01 and S02 remain canonically completed and are preserved without replay under Plan Revision 2.
+    - The prior S03 Unity 0xC0000142 blocker now has separately verified upstream resolution in PR-018 product candidate 73a52013055a8b3bb70b319a0ed7b7ba832ae0c9, but that candidate has not yet been integrated into the PR-017 canonical branch.
+    - Plan Revision 2 freezes exact 12-blob integration plus PR-017-owned S03/R8.3 replay. The existing Plan-R1 Slice Set remains historical and no product mutation is authorized until Plan R2 is reviewed and the S03 slice is recompiled.
   current_slice: S03
   current_slice_state: blocked
   authorization:
@@ -41,6 +37,8 @@ artifacts:
   plan: docs/plans/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan.md
   latest_plan_review: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-review-r1.md
   latest_plan_review_transition_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-review-r1-transition-receipt.yaml
+  latest_plan_revision_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-revision-r2-pr018-integration-20261008.yaml
+  latest_plan_revision_transition_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-revision-r2-transition-receipt.yaml
   execution_slice_set: docs/execution/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-slices.yaml
   latest_slice_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-blocked-unity-dll-initialization-20261007.yaml
   latest_slice_completion_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-repair-completion-receipt-r4.yaml
@@ -51,6 +49,8 @@ related_tasks:
   predecessor:
     - PR-012-execute-scoped-explicit-execution-profile-v1
     - PR-011-scoped-verification-toolchain-dependency-capsule-v1
+  integration_dependency:
+    - PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1@73a52013055a8b3bb70b319a0ed7b7ba832ae0c9
   downstream_consumer:
     - DemonTD/CLIENT-CODE-ARCHITECTURE-BASELINE-V1/C01
 ```
