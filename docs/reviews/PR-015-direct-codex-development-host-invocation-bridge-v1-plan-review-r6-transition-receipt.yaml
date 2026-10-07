@@ -1,0 +1,101 @@
+schema_version: 1
+kind: devforge_artifact_state_transition_receipt
+task_id: PR-015-direct-codex-development-host-invocation-bridge-v1
+from_stage: plan_review
+to_stage: implementation
+transition_rule: approved_plan_review_with_exact_slice_set
+source_command: "#开发评审 PR-015-direct-codex-development-host-invocation-bridge-v1"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  canonical_branch: main
+  version: "2.82.0"
+  revision: e16948004601829813f19dbef4cf3cc018606ff9
+  review_contract_version: "1.3"
+  slicing_contract_version: "1.1"
+  bootstrap_override_contract_version: "1.0"
+
+evidence_refs:
+  - docs/requirements/PR-015-direct-codex-development-host-invocation-bridge-v1.md@0c3a00074d24e440cc347d69730770b74c660637
+  - docs/plans/PR-015-direct-codex-development-host-invocation-bridge-v1-plan.md@2bcea2a44f88e51c8b9378ba6297b61897e638da
+  - docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r6.md@5e6ff106b7d5befcae4fccc77d83ddae3c674764
+  - docs/execution/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-r6-slices.yaml@192e5446036423297cbcece01a27492ae9aae390
+  - docs/authorizations/PR-015-direct-codex-development-host-invocation-bridge-v1-development-authorization.yaml@9ec512f6403f938c11461c1774281497eb637e71
+
+task_before_digest: da925b61d2badd548d4310d96666dd55f9480067
+task_after_digest: 0c3a00074d24e440cc347d69730770b74c660637
+semantic_after_state_digest: 0c3a00074d24e440cc347d69730770b74c660637
+semantic_after_digest_basis: canonical_task_blob_readback
+verified: true
+
+review:
+  requirement_revision: 2
+  plan_revision: 6
+  plan_blob_sha: 2bcea2a44f88e51c8b9378ba6297b61897e638da
+  review_blob_sha: 5e6ff106b7d5befcae4fccc77d83ddae3c674764
+  decision: Approved
+  plan_approved: true
+
+slice_authority:
+  current_slice_set_ref: docs/execution/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-r6-slices.yaml
+  current_slice_set_blob_sha: 192e5446036423297cbcece01a27492ae9aae390
+  current_slices: [S04]
+  current_slice: S04
+  current_slice_state: pending
+  historical_s01_s03_replay_authorized: false
+  exact_plan_binding_verified: true
+
+authorization:
+  ref: docs/authorizations/PR-015-direct-codex-development-host-invocation-bridge-v1-development-authorization.yaml
+  blob_sha: 9ec512f6403f938c11461c1774281497eb637e71
+  lifecycle: active
+  lifecycle_revision: 5
+  requirement_revision: 2
+  plan_revision: 6
+  plan_binding_exact: true
+  slice_set_binding_exact: true
+  authority_expanded: false
+
+bootstrap:
+  required_before_s04_execution: true
+  active_override_created_by_review: false
+  prior_plan_r2_override_reuse: forbidden
+  intended_target:
+    provider: direct
+    adapter: codebuddy
+  canonical_next_action: "#开发引导执行 PR-015-direct-codex-development-host-invocation-bridge-v1 direct:codebuddy"
+  project_binding_changed: false
+  fallback: forbidden
+
+state_after:
+  stage: implementation
+  requirement_ready: true
+  plan_approved: true
+  implementation_authorized: true
+  acceptance_approved: false
+  completion_verified: false
+  next_expected_actor: implementer
+
+transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 15
+  branch: task/direct-codex-development-host-invocation-bridge-v1
+  canonical_main: 018b78ca20984176d53fbe90039dc795a7f2742f
+  transport_drift: false
+
+safety:
+  product_implementation_mutated: false
+  canonical_main_mutated: false
+  live_agent_mutated: false
+  production_hub_mutated: false
+  project_binding_mutated: false
+  permission_or_credential_expansion_used: false
+  bootstrap_override_created: false
+
+completion_guard:
+  approved_review_read_back_verified: true
+  exact_slice_set_read_back_verified: true
+  authorization_binding_read_back_verified: true
+  task_transition_read_back_verified: true
+  implementation_ready: true
+  ordinary_execution_blocked_until_bootstrap_override: true
