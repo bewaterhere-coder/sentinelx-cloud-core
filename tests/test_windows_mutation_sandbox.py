@@ -9,6 +9,7 @@ from pathlib import Path
 
 import pytest
 
+import sentinelx_core.windows_mutation_sandbox as windows_sandbox
 from sentinelx_core.mutation_audit import (
     MutationAuditBinding,
     MutationAuditJournal,
@@ -23,6 +24,7 @@ from sentinelx_core.mutation_placement import (
 from sentinelx_core.mutation_sandbox import (
     HostMutationSandboxAclViolation,
     HostMutationSandboxPathViolation,
+    HostMutationSandboxResidualAuthority,
 )
 from sentinelx_core.mutation_scope import MutationScopeStore
 from sentinelx_core.policy import MutationExecutionPolicy
@@ -32,7 +34,9 @@ from sentinelx_core.windows_mutation_sandbox import (
     _dacl_entries,
     _delete_appcontainer_profile,
     _ensure_appcontainer_profile,
+    _grant_runtime_read,
     _profile_name,
+    _remove_runtime_read,
     _set_exact_acl,
     final_executable_path,
     requested_mutation_identity,
@@ -340,3 +344,66 @@ def test_terminal_cleanup_failure_stays_revoked_until_real_cleanup(tmp_path: Pat
     assert terminal.active_job_ids == ()
     assert terminal.active_process_ids == ()
     assert terminal.sandbox_write_authority_present is False
+
+
+
+def test_runtime_acl_helpers_use_configured_timeout(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "runtime"
+    root.mkdir()
+    app_sid = "S-1-15-2-424242"
+    calls: list[tuple[tuple[str, ...], int, str]] = []
+
+    def record_icacls(
+        args: list[str], *, timeout_seconds: int = 20, operation: str = "ACL update"
+    ) -> None:
+        calls.append((tuple(args), timeout_seconds, operation))
+
+    monkeypatch.setattr(windows_sandbox, "_run_icacls", record_icacls)
+    monkeypatch.setattr(windows_sandbox, "_dacl_entries", lambda _root: [])
+
+    _grant_runtime_read(root, app_sid, timeout_seconds=123)
+    _remove_runtime_read(root, app_sid, timeout_seconds=234)
+
+    assert calls[0][1:] == (123, f"runtime ACL grant for {root}")
+    assert calls[1][1:] == (234, f"runtime ACL cleanup for {root}")
+
+
+def test_runtime_acl_timeout_is_deterministic_sandbox_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "runtime"
+    root.mkdir()
+
+    def timeout(*_args, **kwargs):
+        raise subprocess.TimeoutExpired(cmd="icacls", timeout=kwargs["timeout"])
+
+    monkeypatch.setattr(windows_sandbox.subprocess, "run", timeout)
+
+    with pytest.raises(
+        HostMutationSandboxAclViolation,
+        match=r"runtime ACL grant .* timed out after 77s",
+    ):
+        _grant_runtime_read(root, "S-1-15-2-515151", timeout_seconds=77)
+
+
+def test_runtime_acl_cleanup_requires_exact_root_sid_absence_readback(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "runtime"
+    root.mkdir()
+    app_sid = "S-1-15-2-616161"
+
+    monkeypatch.setattr(windows_sandbox, "_run_icacls", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(
+        windows_sandbox,
+        "_dacl_entries",
+        lambda _root: [(app_sid, 0x1200A9, 0)],
+    )
+
+    with pytest.raises(
+        HostMutationSandboxResidualAuthority,
+        match="read-back still contains AppContainer SID",
+    ):
+        _remove_runtime_read(root, app_sid, timeout_seconds=45)

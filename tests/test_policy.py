@@ -307,3 +307,36 @@ def test_preferred_profile_invalid_degrades_to_none() -> None:
         {"agent": {"preferred_profile": "tiny"}, "allowed_commands": ["ls"]}
     )
     assert p.preferred_profile is None
+
+
+
+def test_mutation_runtime_acl_timeout_defaults_and_accepts_bounded_value() -> None:
+    default = Policy.from_dict({"mutation_execution": {}})
+    assert default.mutation_execution.runtime_acl_timeout_seconds == 20
+
+    configured = Policy.from_dict(
+        {"mutation_execution": {"runtime_acl_timeout_seconds": 300}}
+    )
+    assert configured.mutation_execution.runtime_acl_timeout_seconds == 300
+
+
+@pytest.mark.parametrize("value", [True, False, "300", 5.5, None])
+def test_mutation_runtime_acl_timeout_requires_integer(value) -> None:
+    with pytest.raises(
+        ValueError,
+        match="mutation_execution.runtime_acl_timeout_seconds must be an integer",
+    ):
+        Policy.from_dict(
+            {"mutation_execution": {"runtime_acl_timeout_seconds": value}}
+        )
+
+
+@pytest.mark.parametrize("value", [4, 601])
+def test_mutation_runtime_acl_timeout_enforces_bounds(value: int) -> None:
+    with pytest.raises(
+        ValueError,
+        match="mutation_execution.runtime_acl_timeout_seconds must be between 5 and 600",
+    ):
+        Policy.from_dict(
+            {"mutation_execution": {"runtime_acl_timeout_seconds": value}}
+        )

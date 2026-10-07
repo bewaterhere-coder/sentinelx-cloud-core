@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -8,6 +9,7 @@ from sentinelx_core.mutation_placement import (
     HostMutationScopeBindingMismatch,
     RepositoryIdentity,
     SemanticIdentity,
+    placement_policy_digest,
 )
 from sentinelx_core.mutation_scope import (
     SCOPED_SCRIPT_OPERATION_CLASS,
@@ -161,3 +163,13 @@ def test_terminal_bound_read_is_pure_and_non_reactivating(tmp_path: Path) -> Non
     second = store.read_bound_scope(record.scope_id, record.generation, repository, semantic)
     assert first.state == "terminal"
     assert second == first
+
+
+
+def test_runtime_acl_timeout_participates_in_policy_digest(tmp_path: Path) -> None:
+    _store, policy, _repository, _semantic, _state_root = _authority(tmp_path)
+    changed = replace(
+        policy,
+        runtime_acl_timeout_seconds=policy.runtime_acl_timeout_seconds + 1,
+    )
+    assert placement_policy_digest(changed) != placement_policy_digest(policy)

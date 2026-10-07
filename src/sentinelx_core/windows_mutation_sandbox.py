@@ -754,28 +754,61 @@ def _assert_no_foreign_appcontainer_sid(path: Path, expected_sid: str | None = N
             )
 
 
-def _run_icacls(args: list[str]) -> None:
-    completed = subprocess.run(
-        ["icacls", *args],
-        capture_output=True,
-        creationflags=0x08000000,
-        timeout=20,
-        check=False,
-    )
+def _run_icacls(
+    args: list[str],
+    *,
+    timeout_seconds: int = 20,
+    operation: str = "ACL update",
+) -> None:
+    try:
+        completed = subprocess.run(
+            ["icacls", *args],
+            capture_output=True,
+            creationflags=0x08000000,
+            timeout=timeout_seconds,
+            check=False,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise HostMutationSandboxAclViolation(
+            f"{operation} timed out after {timeout_seconds}s"
+        ) from exc
     if completed.returncode != 0:
         detail = (completed.stderr or completed.stdout).decode(errors="replace").strip()
-        raise HostMutationSandboxAclViolation(f"icacls failed: {detail}")
+        raise HostMutationSandboxAclViolation(f"{operation} failed: {detail}")
 
 
-def _grant_runtime_read(root: Path, app_sid: str) -> None:
+def _grant_runtime_read(
+    root: Path,
+    app_sid: str,
+    *,
+    timeout_seconds: int,
+) -> None:
     _assert_no_reparse(root, root)
     _assert_final_path(root)
-    _run_icacls([str(root), "/grant:r", f"*{app_sid}:(OI)(CI)(RX)"])
+    _run_icacls(
+        [str(root), "/grant:r", f"*{app_sid}:(OI)(CI)(RX)"],
+        timeout_seconds=timeout_seconds,
+        operation=f"runtime ACL grant for {root}",
+    )
 
 
-def _remove_runtime_read(root: Path, app_sid: str) -> None:
-    if root.exists():
-        _run_icacls([str(root), "/remove:g", f"*{app_sid}"])
+def _remove_runtime_read(
+    root: Path,
+    app_sid: str,
+    *,
+    timeout_seconds: int,
+) -> None:
+    if not root.exists():
+        return
+    _run_icacls(
+        [str(root), "/remove:g", f"*{app_sid}"],
+        timeout_seconds=timeout_seconds,
+        operation=f"runtime ACL cleanup for {root}",
+    )
+    if any(sid == app_sid for sid, _mask, _flags in _dacl_entries(root)):
+        raise HostMutationSandboxResidualAuthority(
+            f"runtime ACL cleanup read-back still contains AppContainer SID on {root}"
+        )
 
 
 def _verification_toolchain_traverse_ancestors(root: Path) -> tuple[Path, ...]:
@@ -1300,7 +1333,11 @@ class WindowsMutationSandbox:
                     raise HostMutationSandboxPathViolation(
                         f"runtime_read_root is unavailable: {runtime_root}"
                     )
-                _grant_runtime_read(runtime_root, app_sid)
+                _grant_runtime_read(
+                    runtime_root,
+                    app_sid,
+                    timeout_seconds=self.policy.runtime_acl_timeout_seconds,
+                )
                 granted_runtime.append(runtime_root)
             _assert_no_reparse(_normal_path(self.policy.workspace_root), workspace)
             _assert_final_path(workspace)
@@ -1314,7 +1351,11 @@ class WindowsMutationSandbox:
                 cleanup_errors.append(f"workspace traverse grant: {cleanup_error}")
             for runtime_root in reversed(granted_runtime):
                 try:
-                    _remove_runtime_read(runtime_root, app_sid)
+                    _remove_runtime_read(
+                        runtime_root,
+                        app_sid,
+                        timeout_seconds=self.policy.runtime_acl_timeout_seconds,
+                    )
                 except (RuntimeError, OSError, ValueError) as cleanup_error:
                     cleanup_errors.append(f"runtime read grant: {cleanup_error}")
             try:
@@ -1652,7 +1693,11 @@ class WindowsMutationSandbox:
             if verification_root is not None:
                 _remove_verification_toolchain_read(verification_root, app_sid)
             for root in self.policy.runtime_read_roots:
-                _remove_runtime_read(_normal_path(root), app_sid)
+                _remove_runtime_read(
+                    _normal_path(root),
+                    app_sid,
+                    timeout_seconds=self.policy.runtime_acl_timeout_seconds,
+                )
             workspace_traverse = self._workspace_traverse_reads.pop(
                 (record.scope_id, record.generation), ()
             )
