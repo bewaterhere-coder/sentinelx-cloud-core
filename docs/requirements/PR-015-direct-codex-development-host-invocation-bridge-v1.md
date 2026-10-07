@@ -5,30 +5,36 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 2
 development:
-  stage: accepted
+  stage: done
   implementation_execution_complete: true
   gates:
     requirement_ready: true
     plan_approved: true
     acceptance_approved: true
-    completion_verified: false
+    completion_verified: true
   plan_revision: 6
-  implementation_authorized: true
+  acceptance_revision: 8
+  completion_revision: 1
+  implementation_authorized: false
   latest_plan_review: approved_round_6
   latest_plan_remediation: r6_applied
   review_disposition: approved
-  next_expected_actor: integration
+  next_expected_actor: none
   acceptance_disposition: approved
-  execution_disposition: acceptance_r8_approved_ready_for_finalization
+  execution_disposition: completed
   finalization:
-    ready_for_merge: true
+    ready_for_merge: false
     canonical_state_verified: true
     plan_execution_state_verified: true
     evidence_verified: true
     transport_preconditions_verified: true
     readback_verified: true
-    merge_pending: true
-    completion_verified: false
+    merge_pending: false
+    completion_verified: true
+    integration_verified: true
+    integration_ref: c55c43a183de35e1f12dbe1d7f54c165f4eb2363
+    integration_receipt_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-integration-receipt-r1.yaml
+    integration_receipt_blob_sha: 4d014305b871f98f60634feafbc384cdf6c274d1
     ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-completion-finalization-r1.yaml
     blob_sha: 72910acd93611f9c750ac1e28871588964ce7b5a
   blocking_findings: []
@@ -94,6 +100,14 @@ artifacts:
   prior_acceptance_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r1-decision-required-20261007.yaml
   acceptance_invalidation: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r1-invalidation-r2.md
   planning_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-requirement-r2-plan-r3-ready-for-review-20261007.yaml
+  completion_finalization: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-completion-finalization-r1.yaml
+  completion_finalization_blob_sha: 72910acd93611f9c750ac1e28871588964ce7b5a
+  integration_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-integration-receipt-r1.yaml
+  integration_receipt_blob_sha: 4d014305b871f98f60634feafbc384cdf6c274d1
+  completion_review: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-completion-r1.md
+  completion_review_blob_sha: c8a9f1bf38ca51f3e75a936fd59ddc2c20b77567
+  completion_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-completed-20261007.yaml
+  completion_checkpoint_blob_sha: e0ca32733c68ab9dd3a5569b1679257a54c6fb1d
 implementation_entry:
   bootstrap_required: true
   intended_target: direct:codebuddy

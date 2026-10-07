@@ -39,8 +39,11 @@ bindings:
     pr_number: 15
     branch: task/direct-codex-development-host-invocation-bridge-v1
 lifecycle:
-  state: active
-  revision: 5
+  state: exhausted
+  revision: 6
+  exhausted_by: "#开发完成 PR-015-direct-codex-development-host-invocation-bridge-v1"
+  exhaustion_reason: task_done
+  completion_revision: 1
   reactivated_by: "#开发 PR-015-direct-codex-development-host-invocation-bridge-v1 修订当前方案：采用 provider-owned deterministic commit-on-publish"
   reactivation_reason: human_material_decision_resolved
   requirement_revision_bound: 2
@@ -54,9 +57,17 @@ receipt:
   latest_acceptance_command: "#开发验收 PR-015-direct-codex-development-host-invocation-bridge-v1"
   latest_acceptance_result: approved
   latest_finalization_command: "#开发完成 PR-015-direct-codex-development-host-invocation-bridge-v1"
-  latest_finalization_result: ready_for_merge
+  latest_finalization_result: completed
   latest_finalization_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-completion-finalization-r1.yaml
   latest_finalization_blob_sha: 72910acd93611f9c750ac1e28871588964ce7b5a
+  latest_integration_receipt_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-integration-receipt-r1.yaml
+  latest_integration_receipt_blob_sha: 4d014305b871f98f60634feafbc384cdf6c274d1
+  latest_integration_commit: c55c43a183de35e1f12dbe1d7f54c165f4eb2363
+  latest_completion_review_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-completion-r1.md
+  latest_completion_review_blob_sha: c8a9f1bf38ca51f3e75a936fd59ddc2c20b77567
+  latest_completion_checkpoint_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-completed-20261007.yaml
+  latest_completion_checkpoint_blob_sha: e0ca32733c68ab9dd3a5569b1679257a54c6fb1d
+  latest_completion_result: completed
   latest_execution_command: "#开发执行 PR-015-direct-codex-development-host-invocation-bridge-v1"
   latest_execution_result: fixing_r2_completed_ready_for_acceptance
   latest_execution_checkpoint_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-attempt-r2-completed-20261007.yaml
