@@ -18,16 +18,16 @@ development:
   implementation_authorized: true
   next_expected_actor: implementer
   blocking_findings:
-    - Live S03 proof on exact repair candidate 4896a55cb951dec47422c738ccb1ba98762e13a9 invalidated S02 repair completion authority: residual runtime-read authority is now durably preserved as revoked, but devforge_runtime.terminalize_scope cannot perform OS cleanup because the generic mutation_scope lifecycle service calls MutationScopeStore.terminalize_scope without a runtime_cleanup callback.
-    - The real scope mss_JB_VJlJg4Np6LdrxgKd_fCw9 is correctly revoked after scoped execution cleanup could not close within the request, proving false-terminal repair works.
-    - An explicit bounded terminalize retry on that same scope returned HostMutationResidualAuthorityDetected instead of performing WindowsMutationSandbox cleanup, violating R5's reachable revoked -> cleanup retry -> terminal requirement.
-    - No new PowerShell/Unity live scope is permitted until the explicit retry surface is wired to the canonical WindowsMutationSandbox cleanup path.
-  current_slice: S02
-  current_slice_state: repair_required
+    - S02 retry-surface repair is complete on exact candidate a214921cd34fcab5874696f45281306622a73421, but S03 cannot resume until that exact candidate is activated on the Windows Host.
+    - The Host currently runs prior PR-017 candidate 4896a55cb951dec47422c738ccb1ba98762e13a9; live retry evidence from that Agent cannot prove the new devforge_runtime terminalize wiring.
+    - Preserve real revoked scope mss_JB_VJlJg4Np6LdrxgKd_fCw9 for the next physical retry; do not replace it with a fresh scope before repaired-candidate retry evidence.
+  current_slice: S03
+  current_slice_state: blocked
   authorization:
     mode: legacy_command_scoped
   completed_slices:
     - S01
+    - S02
 transport:
   type: github-pr
   pr_number: 17
@@ -38,8 +38,8 @@ artifacts:
   latest_plan_review: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-review-r1.md
   latest_plan_review_transition_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-review-r1-transition-receipt.yaml
   execution_slice_set: docs/execution/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-slices.yaml
-  latest_slice_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-live-invalidates-s02-retry-surface-20261007.yaml
-  latest_slice_completion_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-repair-completion-receipt-r2.yaml
+  latest_slice_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-retry-surface-repair-completion-20261007.yaml
+  latest_slice_completion_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-repair-completion-receipt-r3.yaml
   latest_slice_invalidation: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-live-invalidation-r2.md
 related_tasks:
   predecessor:
