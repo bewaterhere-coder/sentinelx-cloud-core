@@ -1145,7 +1145,12 @@ def _remove_verification_session_read(
     _remove_session_object_read(handles, app_sid)
 
 
-def _grant_verification_toolchain_read(root: Path, app_sid: str) -> None:
+def _grant_verification_toolchain_read(
+    root: Path,
+    app_sid: str,
+    *,
+    timeout_seconds: int,
+) -> None:
     """Grant RX only on the sealed provider-owned toolchain tree.
 
     Provider toolchains may live beneath protected system parents such as
@@ -1157,20 +1162,37 @@ def _grant_verification_toolchain_read(root: Path, app_sid: str) -> None:
     _assert_no_reparse(root, root)
     _assert_final_path(root)
     try:
-        _run_icacls([str(root), "/grant:r", f"*{app_sid}:(RX)", "/T", "/C"])
+        _run_icacls(
+            [str(root), "/grant:r", f"*{app_sid}:(RX)", "/T", "/C"],
+            timeout_seconds=timeout_seconds,
+            operation=f"verification toolchain ACL grant for {root}",
+        )
     except Exception:
         if root.exists():
             try:
-                _run_icacls([str(root), "/remove:g", f"*{app_sid}", "/T", "/C"])
+                _run_icacls(
+                    [str(root), "/remove:g", f"*{app_sid}", "/T", "/C"],
+                    timeout_seconds=timeout_seconds,
+                    operation=f"verification toolchain ACL cleanup for {root}",
+                )
             except Exception:
                 pass
         raise
 
 
-def _remove_verification_toolchain_read(root: Path, app_sid: str) -> None:
+def _remove_verification_toolchain_read(
+    root: Path,
+    app_sid: str,
+    *,
+    timeout_seconds: int,
+) -> None:
     """Revoke transient RX from the provider-owned toolchain tree."""
     if root.exists():
-        _run_icacls([str(root), "/remove:g", f"*{app_sid}", "/T", "/C"])
+        _run_icacls(
+            [str(root), "/remove:g", f"*{app_sid}", "/T", "/C"],
+            timeout_seconds=timeout_seconds,
+            operation=f"verification toolchain ACL cleanup for {root}",
+        )
 
 
 def _merge_file_access(path: Path, app_sid: str, *, mode: int, mask: int) -> None:
@@ -1659,14 +1681,22 @@ class WindowsMutationSandbox:
         toolchain_root = _normal_path(plan.profile.toolchain_root)
         try:
             materialized = materialize_verification_runtime(plan, activation.workspace)
-            _grant_verification_toolchain_read(toolchain_root, activation.sandbox_identity)
+            _grant_verification_toolchain_read(
+                toolchain_root,
+                activation.sandbox_identity,
+                timeout_seconds=self.policy.runtime_acl_timeout_seconds,
+            )
             self._verification_toolchain_reads[key] = toolchain_root
             revalidate_verification_before_spawn(materialized)
             return materialized
         except Exception:
             cleanup_errors: list[str] = []
             try:
-                _remove_verification_toolchain_read(toolchain_root, activation.sandbox_identity)
+                _remove_verification_toolchain_read(
+                    toolchain_root,
+                    activation.sandbox_identity,
+                    timeout_seconds=self.policy.runtime_acl_timeout_seconds,
+                )
             except (RuntimeError, OSError, ValueError) as cleanup_error:
                 cleanup_errors.append(f"verification toolchain read: {cleanup_error}")
                 # Keep the tracked root so terminalize() can retry revocation and
@@ -1929,7 +1959,11 @@ class WindowsMutationSandbox:
                 _remove_verification_session_read(session_handles, app_sid)
             verification_root = self._verification_toolchain_reads.pop(key, None)
             if verification_root is not None:
-                _remove_verification_toolchain_read(verification_root, app_sid)
+                _remove_verification_toolchain_read(
+                    verification_root,
+                    app_sid,
+                    timeout_seconds=self.policy.runtime_acl_timeout_seconds,
+                )
             durable_runtime_roots = tuple(record.runtime_read_authority_roots)
             runtime_roots = (
                 tuple(Path(value) for value in durable_runtime_roots)
