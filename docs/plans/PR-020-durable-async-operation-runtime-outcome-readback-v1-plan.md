@@ -1,16 +1,16 @@
-# PR-020 SentinelX Durable Async Operation Runtime & Outcome Readback V1 — Plan R2
+# PR-020 SentinelX Durable Async Operation Runtime & Outcome Readback V1 — Plan R3
 
 ## Status
 
 ~~~yaml
 task_id: PR-020-durable-async-operation-runtime-outcome-readback-v1
-plan_revision: 2
+plan_revision: 3
 plan_status: ready_for_review
 implementation_authority: false
 requirement_ref: docs/requirements/PR-020-durable-async-operation-runtime-outcome-readback-v1.md
 requirement_revision: 1
-prior_plan_revision: 1
-rejected_review_ref: docs/reviews/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan-review-r1.md
+prior_plan_revision: 2
+rejected_review_ref: docs/reviews/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan-review-r2.md
 transport:
   type: github-pr
   pr_number: 20
@@ -20,10 +20,155 @@ repository_baseline:
   main_sha: 1028030b33f0ea792a884491a431fffe566f6aa5
 runtime:
   devforge_version: 2.95.0
-  devforge_revision: a693dde368c5c3b43ea577581190cac16c5b81ff
+  devforge_revision: c44591899fb7c3312ca7a30cc816ca878e12b462
 ~~~
 
-## R2 Remediation Delta
+## R3 Remediation Delta
+
+Plan R3 preserves Requirement Revision 1 and every accepted R2 correction. It repairs only Plan Review R2 finding `TerminalRetentionIdentityClaimLifecycleUndefined`.
+
+### R2/F1 resolved — terminal retention, tombstones and post-retention admission are coherent
+
+R3 defines one bounded terminal-retention protocol across claim, record and receipt.
+
+V1 Host-owned constants are fixed in code and are not caller-selectable:
+
+~~~yaml
+terminal_full_evidence_retention: 7d
+terminal_tombstone_retention_total: 30d
+caller_override: forbidden
+~~~
+
+The total tombstone horizon is measured from the terminal timestamp. Future Host policy configurability is outside V1; changing these constants requires a product/runtime revision rather than request data.
+
+Lifecycle:
+
+~~~text
+nonterminal / OUTCOME_UNKNOWN / quarantined
+→ never terminal-GC eligible
+
+terminal, age < 7d
+→ claim + record + receipt retained
+→ normal status/receipt read-back
+
+terminal, 7d <= age < 30d
+→ atomically persist compact terminal tombstone first
+→ tombstone becomes authoritative for duplicate admission/read-back
+→ old claim + record + receipt become cleanup artifacts
+→ cleanup may delete them only after tombstone durability is verified
+→ duplicate start is replay-forbidden
+→ status reports terminal state + evidence_expired=true
+→ receipt returns receipt_expired
+
+terminal, age >= 30d
+→ tombstone may be removed only under the post-retention provider contract
+→ any subsequent new material admission still performs provider semantic-freshness validation before creating a new claim
+~~~
+
+A tombstone contains only bounded non-secret evidence:
+
+~~~yaml
+schema_version: "1.0"
+kind: durable_operation_terminal_tombstone
+operation_id:
+provider:
+action:
+identity_digest:
+request_digest:
+terminal_state:
+terminal_at:
+provider_evidence_digest:
+evidence_expired_at:
+tombstone_expires_at:
+~~~
+
+It does not contain raw output, credentials, executable paths, workspace paths or arbitrary request payload.
+
+The tombstone transition is the GC commit point:
+
+1. validate that the operation is terminal and GC-eligible;
+2. write + flush + atomically replace the tombstone;
+3. read back and verify tombstone binding/digest;
+4. from that moment, tombstone is authoritative even if old full artifacts still exist;
+5. delete receipt, record and claim as idempotent cleanup;
+6. crash/failure during deletion leaves safe redundant artifacts and retries cleanup later;
+7. never classify a valid tombstone as claim-only crash evidence.
+
+This ordering prevents receipt/record deletion from creating a false `admission_record_not_committed` recovery case.
+
+### Post-retention semantic-freshness contract
+
+Because bounded local retention cannot by itself remember every semantic identity forever, **every material/side-effecting descriptor must validate semantic freshness before every first claim creation**, not only after GC.
+
+Descriptor contract is extended with:
+
+~~~yaml
+post_retention_admission:
+  mode: replay_safe | semantic_freshness_required | deny
+semantic_freshness_resolver: <provider-owned, when required>
+~~~
+
+Rules:
+
+- `read` or explicitly replay-safe actions may use `replay_safe`;
+- material filesystem/repository/service/process actions default to `semantic_freshness_required`;
+- missing/unavailable/indeterminate freshness evidence fails closed as `SemanticFreshnessUnproven`;
+- `deny` means no new material admission after local evidence expiry;
+- caller cannot select or weaken this policy;
+- freshness validation is read-only and cannot execute the material callback;
+- GC never invokes a provider callback.
+
+For DevForge-bound operations, semantic freshness includes the exact Task/Run/Attempt/Slice identity **and** exact canonical transport state used by that provider. A stale lineage must not become fresh merely because the local tombstone expired.
+
+For current Direct Codex, the provider-owned freshness resolver must at minimum reuse the fixed canonical transport preflight/read-back:
+
+~~~text
+exact repository
++ exact PR/branch
++ expected_remote_sha still equals current admitted remote head
++ provider-owned lineage/transport invariants still pass
+~~~
+
+A completed old attempt whose publication advanced the branch therefore fails freshness when replayed with its old expected head. If freshness of the exact DevForge lineage cannot be proven from provider-owned authoritative evidence, the resolver returns `SemanticFreshnessUnproven`; it does not admit execution.
+
+No generic runtime code interprets DevForge lineage. The Direct Codex/Host Runtime descriptors own their own freshness checks.
+
+### GC eligibility and safety
+
+Terminal GC eligibility requires all of:
+
+~~~text
+terminal state
++ valid durable terminal binding
++ no pending reconciliation
++ not OUTCOME_UNKNOWN
++ not quarantined/tampered
++ no active provider task
++ retention deadline reached
+~~~
+
+GC never deletes the only no-replay evidence before a valid tombstone is durable.
+
+GC failures are fail-safe:
+
+- tombstone write/read-back failure → keep full evidence;
+- partial cleanup failure → tombstone remains authoritative and cleanup retries later;
+- tombstone delete failure at final expiry → keep tombstone;
+- retention clock ambiguity → keep evidence;
+- caller-requested cleanup → unsupported.
+
+### R2 findings remain closed
+
+The following accepted R2 corrections are unchanged:
+
+~~~yaml
+DurableIdentityAdmissionNotAtomic: closed
+DurableRuntimeAgentLifecycleOwnerUndefined: closed
+DurableStatePlacementCrashConsistencyUndefined: closed
+SelfHostBootstrapDependsOnMissingAsyncBoundary: closed
+~~~
+
+## Preserved R2 Remediation Delta
 
 Plan R2 preserves Requirement Revision 1 and repairs only the four Plan Review R1 findings.
 
@@ -80,8 +225,9 @@ Crash handling:
 - claim exists and ADMITTED record exists: recover from record;
 - claim exists but record is absent: callback could not have legally started; startup materializes a fail-closed INTERRUPTED admission record with reason admission_record_not_committed and does not replay;
 - record exists without matching valid claim: treat as malformed/tampered state and BLOCKED;
-- terminal claim/record remains reserved for the same semantic identity;
-- retry requiring new material execution must use a new owning upstream semantic attempt, not delete/reuse the old claim.
+- terminal claim/record remains authoritative only during the full-evidence retention phase; after that, a verified bounded tombstone becomes the duplicate/no-replay authority;
+- tombstone expiry never makes a material request automatically fresh: provider semantic-freshness validation is mandatory before a new claim;
+- retry requiring new material execution must use a new owning upstream semantic attempt or other provider-proven fresh semantic identity; local GC alone never authorizes replay.
 
 Required concurrency proof launches multiple simultaneous same-identity starts and proves exactly one provider callback.
 
@@ -154,6 +300,7 @@ durable-operations/
   claims/<identity_digest>.json
   records/<operation_id>.json
   receipts/<operation_id>.json
+  tombstones/<identity_digest>.json
   quarantine/
 ~~~
 
@@ -336,6 +483,9 @@ execution_callback: provider_owned
 result_sanitizer: provider_owned
 reconciler: optional
 retention_class: host_policy_owned
+post_retention_admission:
+  mode: replay_safe | semantic_freshness_required | deny
+semantic_freshness_resolver: provider_owned_when_required
 ~~~
 
 No caller may register descriptors.
@@ -362,7 +512,11 @@ schema_version:
 
 The claim does not carry executable, credentials, workspace path or arbitrary request body.
 
-Same identity + same request returns the existing operation. Same identity + changed request conflicts before any callback.
+During full-evidence retention, same identity + same request returns the existing operation and same identity + changed request conflicts before any callback.
+
+During the tombstone phase, any matching identity is replay-forbidden and resolves to the tombstone status; it is never interpreted as a fresh admission.
+
+When no local claim/record/receipt/tombstone remains after bounded retention, material descriptors still run their provider-owned semantic-freshness resolver before exclusive claim creation. Unproven freshness fails closed.
 
 ### D4 — Agent-private durable store
 
@@ -524,12 +678,17 @@ A terminal durable receipt is canonical and exists before its delivery event cop
 
 ### D13 — Restart reconciliation
 
-Startup recovery scans claims, records and receipts before material admission.
+Startup recovery scans tombstones, claims, records and receipts before material admission. A valid tombstone takes precedence for duplicate/no-replay semantics once the full-evidence retention phase has ended.
 
 Resolution order:
 
 ~~~text
-claim exists + record absent
+valid tombstone exists
+→ project terminal state with evidence_expired=true
+→ no provider replay
+→ stale leftover claim/record/receipt are cleanup-only
+
+claim exists + record absent + no tombstone
 → INTERRUPTED admission_record_not_committed
 → no provider replay
 
@@ -558,11 +717,13 @@ V1 does not claim universal exactly-once execution.
 
 It guarantees:
 
-- one atomic claim per semantic identity;
+- one atomic claim per semantic identity during active/full-evidence lifetime;
 - no provider callback before durable admission;
-- duplicate same request reuses claim;
+- duplicate same request reuses claim while full evidence is retained;
 - different request conflicts;
-- no blind same-identity replay;
+- tombstone-phase duplicates are replay-forbidden;
+- after bounded tombstone expiry, material admission requires provider-proven semantic freshness before a new claim;
+- no blind same-identity replay caused only by local retention expiry;
 - terminal receipt before success;
 - read-back-first reconciliation.
 
@@ -586,6 +747,37 @@ No raw credential/full environment/hidden reasoning.
 PR-020 repairs the concrete long-operation receipt/read-back blocker exposed during PR-019 stabilization.
 
 PR-019 remains the only owner of Stable Baseline exit.
+
+### D17 — Bounded terminal retention and tombstone lifecycle
+
+V1 full terminal evidence is retained for 7 days and compact tombstone evidence until 30 days from terminal_at. Both are Agent-owned fixed bounds.
+
+State truth by phase:
+
+~~~text
+ACTIVE / unresolved
+→ claim + record (+ receipt when applicable)
+→ no terminal GC
+
+TERMINAL_FULL
+→ claim + record + receipt
+→ status/receipt fully readable
+
+TERMINAL_TOMBSTONE
+→ tombstone authoritative
+→ full artifacts cleanup-only
+→ status returns terminal state + evidence_expired=true
+→ receipt returns receipt_expired
+→ duplicate start forbidden
+
+NO_LOCAL_EVIDENCE
+→ provider semantic-freshness check before any material claim
+→ freshness unproven = no admission
+~~~
+
+Tombstone creation is atomic and read-back verified before full artifacts are deleted. Final tombstone deletion never authorizes execution by itself.
+
+Retention/GC code is core runtime infrastructure; provider-specific freshness logic remains in descriptors/adapters.
 
 ## Implementation slices
 
@@ -623,7 +815,15 @@ Required verification:
 10. upload_base is never used as operation truth;
 11. one Executor owns exactly one runtime/store;
 12. startup reconciliation runs once before material admission;
-13. no module-global mutable runtime singleton.
+13. no module-global mutable runtime singleton;
+14. terminal full evidence is GC-eligible only after the fixed 7-day window;
+15. nonterminal, OUTCOME_UNKNOWN and quarantined evidence is never terminal-GC eligible;
+16. tombstone is durable/read-back verified before claim/record/receipt cleanup;
+17. tombstone-phase duplicate start executes zero provider callbacks;
+18. tombstone/full-artifact coexistence after partial GC is deterministic and no-replay;
+19. tombstone expiry alone cannot admit a material request;
+20. semantic freshness unproven executes zero provider callbacks;
+21. retention deadlines use an injectable clock in tests and are not caller-controlled.
 
 ### S02 — sentinel_operations local_api surface
 
@@ -720,10 +920,22 @@ Required fixtures:
 - configure a broader file_ops ancestor;
 - prove durable state path remains inaccessible to generic file mutation/read APIs.
 
-#### E7 — security regressions
+#### E7 — retention / GC
+- terminal full evidence survives before 7d;
+- at 7d, tombstone is committed before cleanup;
+- partial cleanup restart preserves tombstone authority;
+- status reports terminal evidence expired instead of INTERRUPTED;
+- receipt returns receipt_expired;
+- duplicate during tombstone window executes zero callbacks;
+- after tombstone expiry, material request requires provider semantic freshness;
+- stale Direct Codex expected remote head fails freshness;
+- OUTCOME_UNKNOWN and quarantined evidence are not GC eligible;
+- caller cannot select retention or force cleanup.
+
+#### E8 — security regressions
 Re-run canonical repository firewall, Direct Codex containment/ACL, mutation sandbox/audit, scoped execution profile, local_api schema and Git regression suites.
 
-#### E8 — PR-013 relation
+#### E9 — PR-013 relation
 Do not blindly replay the earlier uncertain PR-013 S03 attempt. PR-020 does not complete PR-013.
 
 ## Implementation bootstrap entry
@@ -819,7 +1031,12 @@ tests/test_fsmutate.py
 - reconciler unavailable → OUTCOME_UNKNOWN;
 - provider capability/permission failure → preserve provider failure;
 - transport drift → fail closed;
-- state-root overlap with generic user-writable surface → implementation test failure / no acceptance.
+- state-root overlap with generic user-writable surface → implementation test failure / no acceptance;
+- terminal tombstone write/read-back failure → keep full evidence, no destructive GC;
+- partial full-artifact cleanup failure after tombstone → keep tombstone authoritative and retry cleanup later;
+- tombstone expiry + semantic freshness unproven → no new material admission;
+- stale DevForge lineage/transport freshness → fail closed;
+- caller retention/GC override request → unsupported.
 
 ## Explicit non-authority
 
@@ -839,7 +1056,7 @@ Plan approval will not authorize:
 - direct/codex S01 execution without durable async capability;
 - automatic invocation of #开发引导执行.
 
-## Plan-review questions for R2
+## Plan-review questions for R3
 
 Reviewer should verify:
 
@@ -852,7 +1069,13 @@ Reviewer should verify:
 7. Direct Codex and Host Runtime remain consumers, not runtime definitions;
 8. reconciliation never invokes the material callback;
 9. direct:codebuddy bootstrap is admitted before S01 mutation and leaves project binding unchanged;
-10. canonical direct/codex is not used as a timeout gamble before the feature exists.
+10. canonical direct/codex is not used as a timeout gamble before the feature exists;
+11. terminal claim/record/receipt and tombstone now have one bounded coherent GC lifecycle;
+12. tombstone creation is the durable phase switch before destructive cleanup;
+13. retention cleanup cannot be mistaken for claim-only crash recovery;
+14. tombstone expiry does not silently make an old material request replayable;
+15. provider semantic freshness is mandatory for material admission after local evidence expiry and fails closed when unproven;
+16. stale Direct Codex lineage/transport cannot pass merely because local retention expired.
 
 ## Post-plan state
 
