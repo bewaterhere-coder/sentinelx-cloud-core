@@ -7,7 +7,7 @@ project_id: sentinelx-cloud-core
 task_id: PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1
 requirement_revision: 1
 development:
-  stage: implementation
+  stage: acceptance
   gates:
     requirement_ready: true
     plan_approved: true
@@ -15,8 +15,10 @@ development:
     completion_verified: false
   plan_revision: 2
   implementation_authorized: true
-  next_expected_actor: acceptance_reviewer
-  blocking_findings: []
+  next_expected_actor: cross_task_integrator
+  blocking_findings:
+    - Acceptance R1 rejected on AC18 / R10 only: PR-018 local implementation and exact Host proof satisfy AC1-AC17 and AC19, but PR-017 canonical branch has not integrated the verified PR-018 candidate and PR-017 S03 has not been replayed successfully against the combined candidate.
+    - Finding classification is external_blocker, not repair_local. PR-018 must remain at the acceptance boundary; no acceptance -> fixing transition is authorized.
   current_slice: S03
   current_slice_state: completed
   completed_slices: [S01, S02, S03]
@@ -35,6 +37,8 @@ artifacts:
   execution_slice_set: docs/execution/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-slices.yaml
   latest_slice_checkpoint: docs/checkpoints/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-s03-completion-20261008.yaml
   latest_slice_completion_receipt: docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-s03-completion-receipt.yaml
+  latest_acceptance_attempt: docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-acceptance-r1.md
+  latest_acceptance_checkpoint: docs/checkpoints/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-acceptance-r1-external-blocker-pr017-s03-replay-20261008.yaml
 related_tasks:
   predecessor:
     - PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
