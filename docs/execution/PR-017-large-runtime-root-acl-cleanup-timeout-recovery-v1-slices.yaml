@@ -122,7 +122,7 @@ slices:
   - slice_id: S03
     objective: Integrate the frozen PR-018 production compatibility subset into canonical PR-017 and prove combined-candidate R8.3 plus cleanup/security/regression closure on real Windows/Unity.
     depends_on: []
-    state: pending
+    state: completed
 
     historical_preconditions:
       - S01 Plan-R1 completion receipt is verified and replay is forbidden
@@ -200,17 +200,16 @@ slices:
       rollback_authorized: false
 
     runtime_progress:
-      status: blocked
-      blocker_code: ExactCandidateHostRuntimeActivationCapabilityMissing
-      host_agent_version: 0.24.1.dev530+g7adfa7a74
-      host_mutation_sandbox_verified: false
-      direct_codex_attempt:
-        run_id: run-pr017-r5-s03-20261008-001
-        attempt_id: attempt-001
-        outcome: unresolved_after_60s_hub_timeout
-        expected_remote_sha: f9e07da9cc37f6e882c3258280869b415cafcb5c
-        retry_before_outcome_resolution: forbidden
-      blocked_checkpoint_ref: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-blocked-exact-candidate-host-activation-unavailable-20261008.yaml
+      status: completed
+      exact_host_agent_version: 0.24.1.dev473+gf9e07da9c
+      exact_host_source_ref: f9e07da9cc37f6e882c3258280869b415cafcb5c
+      host_mutation_sandbox_verified: true
+      scoped_verification_node_npm_verified: true
+      pre_execution_audit_lineage_verified: true
+      canonical_repository_mutation_firewall_verified: true
+      runtime_session_object_read_enabled_restored_to_false: true
+      live_run_id: run-pr017-r5-s03-live-20261008-002
+      completion_checkpoint_ref: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-completion-20261008.yaml
 
     run_refs:
       - integration_commit:f9e07da9cc37f6e882c3258280869b415cafcb5c
@@ -219,15 +218,20 @@ slices:
       - macos:37677712178:success
       - direct_codex:run-pr017-r5-s03-20261008-001:attempt-001:no_publish_observed_no_retry
       - all_automatic_workflows:green
-      - docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-blocked-exact-candidate-host-activation-unavailable-20261008.yaml@7fdefb012c9f88c98468bc4dec9cba2b08ca89c8
-    completion_receipt_ref: null
+      - live_python_marker:run-pr017-r5-s03-live-20261008-002:attempt-001
+      - live_unity_raw:run-pr017-r5-s03-live-20261008-002:attempt-003
+      - live_security:run-pr017-r5-s03-live-20261008-002:attempt-005
+      - live_post_cleanup:run-pr017-r5-s03-live-20261008-002:attempt-006
+      - docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-completion-20261008.yaml@68e213815b82f9cf99f8cc607034815ae7f29dc6
+      - docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-completion-receipt.yaml@aef10dfe56da8db7ae09aa4d47c29caa1e57b66f
+    completion_receipt_ref: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-completion-receipt.yaml
 
 execution_state:
   current_slice: S03
-  current_slice_state: pending
-  completed_slices: []
-  pending_slices: [S03]
-  all_slices_completed: false
+  current_slice_state: completed
+  completed_slices: [S03]
+  pending_slices: []
+  all_slices_completed: true
 
 acceptance_boundary:
   historical_completed_evidence: [S01, S02]
