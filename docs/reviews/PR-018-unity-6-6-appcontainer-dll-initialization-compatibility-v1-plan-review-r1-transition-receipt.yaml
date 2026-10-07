@@ -1,0 +1,55 @@
+schema_version: "1.1"
+kind: devforge_artifact_state_transition_receipt
+task_id: PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1
+from_stage: plan_review
+to_stage: plan_review_rejected
+transition_rule: plan_review_changes_requested
+source_command: "#开发评审 PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"
+evidence_refs:
+  - docs/requirements/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1.md@414efb5c28993226895a0eacef1ddf71b0722b1e
+  - docs/plans/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-plan.md@12e8c73c3b232bfa4b7b74cf86facff68eabadac
+  - docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-plan-review-r1.md@f8f1b59709c32965ece81cef236e323129aa1240
+task_before_digest: 414efb5c28993226895a0eacef1ddf71b0722b1e
+task_after_digest: 987f66eb182e9a526c50be9680c0a8665bbbde19
+semantic_after_state_digest: sha256-unavailable
+verified: true
+runtime:
+  repository: bewaterhere-coder/DevForge
+  version: "2.93.0"
+  revision: 041f390592a78c13f5eabdc542735dc72485e0ef
+  workflow: project_development
+transition:
+  from_stage: plan_review
+  to_stage: plan_review_rejected
+  decision: changes_requested
+  next_expected_actor: planner
+lineage:
+  requirement_revision: 1
+  task_ref: docs/requirements/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1.md
+  task_blob_sha_before: 414efb5c28993226895a0eacef1ddf71b0722b1e
+  task_blob_sha_after: 987f66eb182e9a526c50be9680c0a8665bbbde19
+  plan_ref: docs/plans/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-plan.md
+  plan_revision: 1
+  plan_blob_sha: 12e8c73c3b232bfa4b7b74cf86facff68eabadac
+  review_ref: docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-plan-review-r1.md
+  review_blob_sha: f8f1b59709c32965ece81cef236e323129aa1240
+repository_reality:
+  canonical_main: 018b78ca20984176d53fbe90039dc795a7f2742f
+  reviewed_task_head: 36d61bc07682a6cda9f72b0bc3c8548759d97903
+  transport_pr: 18
+  transport_branch: task/unity-6-6-appcontainer-dll-initialization-compatibility-v1
+  stacked_base_pr: 17
+  stacked_base_head: 3858c7d0e46295d5e0dc184bb21e76da7c963346
+postconditions:
+  requirement_ready: true
+  plan_approved: false
+  implementation_authorized: false
+  acceptance_approved: false
+  completion_verified: false
+  task_stage_read_back: plan_review_rejected
+  next_expected_actor_read_back: planner
+  current_slice_read_back: null
+  product_implementation_executed: false
+completion_guard:
+  status: satisfied_after_receipt_readback
+  canonical_next_action: "#开发计划修复 PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"
