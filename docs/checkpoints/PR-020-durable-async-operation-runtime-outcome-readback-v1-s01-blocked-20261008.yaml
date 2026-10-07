@@ -1,0 +1,100 @@
+schema_version: "1.1"
+kind: devforge_slice_execution_block_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-020-durable-async-operation-runtime-outcome-readback-v1
+slice_id: S01
+run_id: RUN-PR020-S01-001
+attempt_id: ATTEMPT-001
+source_command: "#开发执行 PR-020-durable-async-operation-runtime-outcome-readback-v1"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  version: "2.95.0"
+  revision: 99d7becdf15ca7631867ea2a39dd213750600ef6
+  workflow: project_development
+
+lineage:
+  requirement_revision: 1
+  plan_revision: 4
+  plan_blob_sha: 304cbf2ab58b4fa3835c35b343bd1214565c2920
+  slice_set_blob_sha: 106eedfa8a6f1047e486c4b57369d1e279915cff
+  bootstrap_override_digest: 3cd9ee272c25db4b3e662c92772b68196f3617594cb3e257f71570933d8db5bd
+
+transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 20
+  branch: task/durable-async-operation-runtime-outcome-readback-v1
+  canonical_main: 1028030b33f0ea792a884491a431fffe566f6aa5
+
+execution:
+  disposition: BlockedByContext
+  run_state: BLOCKED
+  reason_code: WorkspaceMaterializationProviderUnavailable
+  product_mutation_started: false
+  provider_process_started: false
+  codebuddy_invoked: false
+  slice_completed: false
+  slice_state_after: pending
+
+evidence:
+  live_agent_version: 0.24.1.dev530+g7adfa7a74
+  host_mutation_sandbox_v1: verified
+  pre_execution_audit_lineage_v1: verified
+  local_api_devforge_runtime_present: true
+  local_api_devforge_runtime_actions:
+    - provision_scope
+    - revalidate_scope
+    - inspect_scope
+    - terminalize_scope
+    - execute_scoped
+  local_api_materialize_workspace_present: false
+  exact_pr020_execution_workspace_preexisting: false
+  current_provider_placement_contract_matches_devforge_materialization_contract: false
+  generic_workspace_materialization_bypass_forbidden: true
+
+dependency_cycle:
+  detected: true
+  chain:
+    - "PR-020 S01 requires a compliant Host-local execution workspace before CodeBuddy mutation."
+    - "PR-014 S02 is the canonical owner of bounded materialize_workspace projection."
+    - "PR-014 S02 is explicitly gated on PR-013 canonical transaction/materializer completion."
+    - "PR-013 is not merged, accepted or completion-verified; its current S03 remains pending."
+  safety_consequence: "Neither PR-013 replay nor generic workspace creation is authorized by this execution."
+
+upstream_state:
+  pr014:
+    pr: 14
+    stage: implementation
+    current_slice: S02
+    current_slice_state: pending
+    s01_completed: true
+    head: 0bd1062396b5471cb44d36dc20cc8f31c08bcf1b
+  pr013:
+    pr: 13
+    stage: implementation
+    current_slice: S03
+    current_slice_state: pending
+    completed_slices: [S01, S02]
+    merged: false
+    acceptance_approved: false
+    completion_verified: false
+    head: 4a3f8e3504b65d1dc222ecb9421ffa16cd96c76d
+
+safety:
+  canonical_checkout_mutated: false
+  task_branch_product_code_mutated: false
+  execution_workspace_created: false
+  host_policy_mutated: false
+  permission_expansion_used: false
+  credential_mutation_used: false
+  provider_fallback_used: false
+  direct_codex_used: false
+  pr013_s03_replayed: false
+  generic_git_workspace_bypass_used: false
+  source_checkout_mutated: false
+
+completion_guard:
+  status: satisfied_for_blocked_execution
+  no_slice_completion_claim: true
+  bootstrap_override_remains_active: true
+  canonical_recommended_root_fix: "Revise PR-014 so a bootstrap-safe minimal materialize_workspace seed can be completed without waiting on PR-013 S03, while preserving all sandbox/audit/path-free authority constraints."
