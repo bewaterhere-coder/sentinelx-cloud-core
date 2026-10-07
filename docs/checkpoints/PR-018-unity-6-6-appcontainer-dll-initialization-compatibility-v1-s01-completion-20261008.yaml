@@ -1,0 +1,95 @@
+schema_version: "1.0"
+kind: devforge_slice_completion_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1
+slice_id: S01
+source_command: "#开发执行 PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"
+
+lineage:
+  requirement_revision: 1
+  plan_revision: 2
+  product_candidate_commit: "e771b91f6cb4b424e30a8755d18e06e15c93b418"
+  run_id: run-pr018-s01-20261008-004
+  attempt_id: attempt-001
+
+host_activation:
+  host_label: windows
+  agent_version: 0.24.1.dev530+g7adfa7a74
+  exact_candidate_files:
+    - path: src/sentinelx_core/handlers/scoped_script.py
+      blob_sha: 1b8c05b14658f3ffb71e08fbd23851391132b5cf
+      installed_backup: "C:\\ProgramData\\SentinelX\\.venv\\Lib\\site-packages\\sentinelx_core\\handlers\\scoped_script.py.bak.20261008-012121-652289"
+    - path: src/sentinelx_core/windows_mutation_sandbox.py
+      blob_sha: 689d0dac620f485ace716cb611a32c9cb115b244
+      installed_backup: "C:\\ProgramData\\SentinelX\\.venv\\Lib\\site-packages\\sentinelx_core\\windows_mutation_sandbox.py.bak.20261008-012130-931596"
+  marker_readback:
+    PR018_S01_PAIRED_DIAGNOSTIC: present
+    enable_pr018_paired_session_read: present
+  post_restart:
+    host_mutation_sandbox_v1_verified: true
+    pre_execution_audit_lineage_v1_verified: true
+
+paired_diagnostic:
+  scope_id: mss_HkXqzF5y3nXCql_0IxrSKEC7
+  generation: 1
+  audit_operation_id: mao_6pZsZJ9O0z8S83isDIBz3BrM
+  exact_unity: "C:\\Program Files\\Unity\\Hub\\Editor\\6000.6.4f1\\Editor\\Unity.exe"
+  exact_command: "Unity.exe -version"
+  invariant_inputs:
+    same_root_appcontainer: true
+    same_job: true
+    same_runtime_roots: true
+    only_variant_b_delta: existing_PR011_Session0_read_masks
+  variant_a:
+    returncode: 3221225794
+    windows_status_hex: "0xC0000142"
+    classification: STATUS_DLL_INIT_FAILED
+    elapsed_seconds: 0.011
+  variant_b:
+    returncode: 0
+    windows_status_hex: "0x00000000"
+    stdout: "6000.6.4f1"
+    elapsed_seconds: 0.121
+  session_object_authority:
+    sandbox_identity: "S-1-15-2-1677212789-3958182553-508294591-1429452106-3975594978-1857565269-1401634909"
+    window_station_mask_decimal: 131331
+    window_station_mask_hex: "0x00020103"
+    desktop_mask_decimal: 131137
+    desktop_mask_hex: "0x00020041"
+    window_station_sid_present_before_b: false
+    desktop_sid_present_before_b: false
+    window_station_sid_present_during_b: true
+    desktop_sid_present_during_b: true
+  containment:
+    contained: true
+    breakaway_allowed: false
+    job_ref: sxjob_87d9cd725c3b43e7b01a704558aee302
+    root_pid: 54408
+  cleanup:
+    window_station_sid_absent: true
+    desktop_sid_absent: true
+    scope_state: terminal
+    terminalized_at: "2026-10-07T17:25:26.512586Z"
+    host_mutation_sandbox_residual_authority_absent: true
+
+decision:
+  outcome: hypothesis_confirmed
+  conclusion: exact PR-011 Session-0 read masks remove the Unity 6000.6.4f1 STATUS_DLL_INIT_FAILED discriminator failure
+  s01_completion_eligible: true
+  s02_eligible: true
+  s02_executed_by_this_command: false
+
+safety:
+  generic_production_session_object_admission_changed_by_s01: false
+  appcontainer_weakened: false
+  job_breakaway_used: false
+  unrestricted_execution_used: false
+  interactive_desktop_fallback_used: false
+  permission_above_requirement_r4_used: false
+
+completion:
+  s01_completed: true
+  completion_receipt_required: true
+  one_execute_one_slice_preserved: true
+  next_slice: S02
+  acceptance_not_executed_by_this_command: true
