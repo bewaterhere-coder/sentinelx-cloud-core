@@ -68,7 +68,7 @@ transport:
   type: github-pr
   pr_number: 14
   branch: task/devforge-execution-workspace-materialization-bridge-v1
-  branch_head: cbe055ed2dca2c481073b7458d6ef05d7a7b37fa
+  branch_head_before_receipt: cbe055ed2dca2c481073b7458d6ef05d7a7b37fa
   pr_state: open
   pr_draft: true
   pr_title: "[STABILIZATION 3/3 · REPLAN] SentinelX DevForge Execution Workspace Materialization Bridge V1"
