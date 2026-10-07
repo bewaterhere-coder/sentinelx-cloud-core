@@ -54,10 +54,13 @@ artifacts:
 implementation_entry:
   bootstrap_required: true
   intended_target: direct:codebuddy
-  override_state: required_not_issued_for_plan_r6
-  override_ref: null
+  override_state: active
+  override_ref: docs/overrides/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-execution-override.yaml
+  override_blob_sha: 91b527f4c31d422e25ea7e00cc3d317e7a184fd4
   prior_override_ref: docs/overrides/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-execution-override.yaml
-  effective_provider: null
+  effective_provider:
+    provider: direct
+    adapter: codebuddy
   explicit_command: "#开发引导执行 PR-015-direct-codex-development-host-invocation-bridge-v1 direct:codebuddy"
 transport:
   type: github-pr
@@ -74,7 +77,9 @@ requirement_readiness:
     project_binding: direct/codex
     live_host_codex_package_observed: "@openai/codex 0.154.0"
     live_host_codex_shim_observed: "active-user npm codex.cmd -> node + @openai/codex/bin/codex.js"
-    current_blocker: BootstrapOverrideRequiredForApprovedPlanR6
+    current_blocker: null
+    bootstrap_override_bound_plan_revision: 6
+    bootstrap_override_bound_slice: S04
     pr013_relation: related_unblocker_not_same_task
 ---
 
