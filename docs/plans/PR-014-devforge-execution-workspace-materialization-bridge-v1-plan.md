@@ -315,7 +315,7 @@ Repository API availability is not provider authority. The active Task-scoped bo
 
 ### 3.4 Seed write scope
 
-The R5 Plan Review/Slice Set must freeze the exact S02 path allowlist. It may include only the minimal materialization implementation and focused tests required by D1–D10, expected primarily under:
+The R6 Plan Review/Slice Set must preserve the exact S02 path allowlist. It may include only the minimal materialization implementation and focused tests required by D1–D10, expected primarily under:
 
 ~~~text
 src/sentinelx_core/devforge_workspace_source.py
@@ -766,7 +766,7 @@ S02 completion is an implementation checkpoint, not physical Windows Acceptance.
 
 After S02 is the only remaining implementation Slice and is verified complete, implementation execution is complete. The Task may advance to Acceptance under the normal owning command.
 
-No S03 implementation Slice exists in R5.
+No S03 implementation Slice exists in R6.
 
 ## 6. Acceptance mapping
 
@@ -870,7 +870,7 @@ Mitigation: D1–D4 preserve pre/post branch/status/HEAD readback and only fixed
 
 Mitigation: D7 Host-owned handoff transition + Acceptance user-level Git probe.
 
-### Risk I — PR-013 lands during R5
+### Risk I — PR-013 lands during R6
 
 Mitigation: compare only canonical merged semantics. No unmerged import and no PR-013 S03 replay.
 
@@ -880,7 +880,7 @@ Mitigation: they are not admission dependencies for R5. Later canonical improvem
 
 ## 9. Review questions
 
-Plan Review R5 must explicitly decide:
+Plan Review R6 must explicitly decide:
 
 1. Does `direct:codebuddy` under the existing Task-scoped bootstrap contract provide valid execution authority without changing project binding?
 2. Is the self-host relation still exact: canonical Direct/Codex needs `development.execution_workspace_materialize`, and PR-014 delivers it?
@@ -891,10 +891,10 @@ Plan Review R5 must explicitly decide:
 7. Does S02 avoid generic git/shell/`script_run`/filesystem bootstrap and all caller path authority?
 8. Can the D1–D10 product runtime still satisfy Requirement R2 without using the bootstrap persistence route as a runtime fallback?
 9. Is moving Windows physical proof from S03 implementation into Acceptance valid while still preventing source-only acceptance?
-10. Does the one-pending-Slice R5 model allow the bootstrap override to become unnecessary after S02 implementation completes?
-11. Are PR-013, PR-229 and PR-020 all non-gating for R5 S02 bootstrap completion?
-12. Does R5 preserve S01 evidence without replay and correctly invalidate the R4 Slice Set?
-13. Are current DevForge v2.98.0 bootstrap/slicing contracts sufficient without inventing a new bootstrap capability or Development Gate?
+10. Does R6 correctly reuse the completed S02 candidate without reintroducing a pending implementation Slice or requiring a new bootstrap?
+11. Are PR-013, PR-229 and PR-020 all non-gating for R6 S02 completion reconciliation?
+12. Does R6 preserve S01 and S02 completion evidence without replay and correctly invalidate the R5 Slice Set?
+13. Are current DevForge v2.102.0 review/slicing/reconciliation contracts sufficient without inventing a new bootstrap capability or Development Gate?
 
 ## 10. Post-plan state
 
