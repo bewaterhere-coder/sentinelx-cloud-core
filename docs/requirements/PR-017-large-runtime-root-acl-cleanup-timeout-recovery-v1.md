@@ -8,7 +8,7 @@ task_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
 title: SentinelX Large Runtime Root ACL Cleanup Timeout & Recovery V1
 requirement_revision: 1
 development:
-  stage: plan_review
+  stage: plan_review_rejected
   gates:
     requirement_ready: true
     plan_approved: false
@@ -16,11 +16,11 @@ development:
     completion_verified: false
   plan_revision: 2
   implementation_authorized: false
-  next_expected_actor: reviewer
+  next_expected_actor: planner
   blocking_findings:
-    - S01 and S02 remain canonically completed and are preserved without replay under Plan Revision 2.
-    - The prior S03 Unity 0xC0000142 blocker now has separately verified upstream resolution in PR-018 product candidate 73a52013055a8b3bb70b319a0ed7b7ba832ae0c9, but that candidate has not yet been integrated into the PR-017 canonical branch.
-    - Plan Revision 2 freezes exact 12-blob integration plus PR-017-owned S03/R8.3 replay. The existing Plan-R1 Slice Set remains historical and no product mutation is authorized until Plan R2 is reviewed and the S03 slice is recompiled.
+    - Plan Review R2 rejected the exact-12-blob integration payload because src/sentinelx_core/handlers/scoped_script.py carries only PR-018/S01 paired-diagnostic behavior and is not required by PR-017 S03.
+    - Plan Review R2 also rejected exact projection of src/sentinelx_core/windows_mutation_sandbox.py because that blob mixes required production Session-0 lifecycle code with PR-018/S01-only diagnostic methods. Plan remediation must freeze a deterministic production-subset integration source rather than importing the diagnostic seam.
+    - Requirement Revision 1 remains unchanged. S01 and S02 remain canonically completed and must not be replayed. The existing Plan-R1 Slice Set remains historical until a corrected Plan revision is approved.
   current_slice: S03
   current_slice_state: blocked
   authorization:
@@ -35,8 +35,8 @@ transport:
   base_branch: main
 artifacts:
   plan: docs/plans/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan.md
-  latest_plan_review: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-review-r1.md
-  latest_plan_review_transition_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-review-r1-transition-receipt.yaml
+  latest_plan_review: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-review-r2.md
+  latest_plan_review_transition_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-review-r2-transition-receipt.yaml
   latest_plan_revision_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-revision-r2-pr018-integration-20261008.yaml
   latest_plan_revision_transition_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-revision-r2-transition-receipt.yaml
   execution_slice_set: docs/execution/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-slices.yaml
