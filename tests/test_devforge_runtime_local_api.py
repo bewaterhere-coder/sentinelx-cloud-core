@@ -9,6 +9,7 @@ from sentinelx_core.executor import HandlerError
 from sentinelx_core.handlers import build_registry
 from sentinelx_core.handlers.devforge_runtime import (
     make_devforge_execute_scoped_adapter,
+    make_devforge_materialize_adapter,
     make_devforge_runtime_provider,
 )
 from sentinelx_core.handlers.local_api import make_local_api_handler
@@ -88,7 +89,7 @@ def test_eligible_host_lists_bounded_builtin(tmp_path: Path) -> None:
         item for item in listed["endpoints"] if item["name"] == "devforge_runtime"
     )
     assert entry["provider_kind"] == "builtin"
-    assert entry["contract_revision"] == 1
+    assert entry["contract_revision"] == 2
 
     described = _run(
         registry["local_api"],
@@ -101,6 +102,7 @@ def test_eligible_host_lists_bounded_builtin(tmp_path: Path) -> None:
         "inspect_scope",
         "terminalize_scope",
         "execute_scoped",
+        "materialize_workspace",
     }
     execute = described["actions"]["execute_scoped"]
     assert "execution_profile" in execute["params"]
@@ -109,6 +111,16 @@ def test_eligible_host_lists_bounded_builtin(tmp_path: Path) -> None:
         "type": "string",
         "const": "scoped_mutation",
     }
+    materialize = described["actions"]["materialize_workspace"]
+    assert set(materialize["params"]) == {
+        "workspace_purpose",
+        "repository",
+        "lineage",
+        "source_binding",
+    }
+    schema = materialize["params_schema"]
+    assert schema["additionalProperties"] is False
+    assert "placement_expectation" in schema["properties"]
 
 
 def test_builtin_lifecycle_reuses_canonical_service(tmp_path: Path) -> None:
@@ -508,3 +520,233 @@ def test_execute_scoped_adapter_rejects_caller_authority_overrides() -> None:
         raise AssertionError("nested caller authority field was accepted")
 
     assert called is False
+
+
+# ---------------------------------------------------------------------------
+# PR-014 S02 — path-free materialize_workspace admission (D8)
+# ---------------------------------------------------------------------------
+
+
+def _materialize_params() -> dict[str, object]:
+    return {
+        "workspace_purpose": "slice-seed",
+        "repository": _repository(),
+        "lineage": {**_lineage(), "run_id": "s02", "slice_id": "S02"},
+        "source_binding": {
+            "expected_ref": "refs/heads/task/devforge-execution-workspace-materialization-bridge-v1",
+            "expected_commit": "a" * 40,
+        },
+    }
+
+
+def _materialize_adapter():
+    captured: dict[str, object] = {}
+
+    async def fake_runner(context, payload):
+        captured["context"] = context
+        captured["payload"] = payload
+        return {"ok": True, "state": "handoff_ready"}
+
+    return make_devforge_materialize_adapter(fake_runner), captured
+
+
+def test_materialize_adapter_accepts_closed_schema_and_maps_lineage() -> None:
+    adapter, captured = _materialize_adapter()
+    context = _context()
+    result = _run(adapter, context, _materialize_params())
+
+    assert captured["context"] is context
+    payload = captured["payload"]
+    assert payload["workspace_purpose"] == "slice-seed"
+    assert payload["source_binding"]["expected_commit"] == "a" * 40
+    assert payload["placement_expectation"] is None
+    assert result == {"ok": True, "state": "handoff_ready"}
+
+
+def test_materialize_adapter_rejects_every_caller_authority_field() -> None:
+    adapter, _captured = _materialize_adapter()
+    context = _context()
+    forbidden = (
+        "dest",
+        "target_path",
+        "workspace_path",
+        "checkout_path",
+        "worktree_path",
+        "cache_path",
+        "staging_path",
+        "remote_url",
+        "credential",
+        "token",
+        "ssh_key",
+        "sid",
+        "acl",
+        "allowed_write_roots",
+        "protected_roots",
+        "operation_classes",
+        "executable",
+        "argv",
+    )
+    for field in forbidden:
+        params = dict(_materialize_params())
+        params[field] = "caller-controlled"
+        try:
+            _run(adapter, context, params)
+        except HandlerError as exc:
+            assert exc.code == "invalid_payload"
+        else:
+            raise AssertionError(f"caller authority field {field!r} was accepted")
+
+
+def test_materialize_adapter_rejects_unknown_missing_and_unsafe_bindings() -> None:
+    adapter, captured = _materialize_adapter()
+    context = _context()
+
+    params = dict(_materialize_params())
+    params["destination"] = "D:/tmp/ws"
+    try:
+        _run(adapter, context, params)
+    except HandlerError as exc:
+        assert exc.code == "invalid_payload"
+    else:
+        raise AssertionError("unknown field was accepted")
+
+    missing = dict(_materialize_params())
+    del missing["source_binding"]
+    try:
+        _run(adapter, context, missing)
+    except HandlerError as exc:
+        assert exc.code == "invalid_payload"
+    else:
+        raise AssertionError("missing source_binding was accepted")
+
+    bad_ref = dict(_materialize_params())
+    bad_ref["source_binding"] = {"expected_ref": "main", "expected_commit": "a" * 40}
+    try:
+        _run(adapter, context, bad_ref)
+    except HandlerError as exc:
+        assert exc.code == "invalid_payload"
+    else:
+        raise AssertionError("non refs/heads expected_ref was accepted")
+
+    short_sha = dict(_materialize_params())
+    short_sha["source_binding"] = {
+        "expected_ref": "refs/heads/main",
+        "expected_commit": "abc123",
+    }
+    try:
+        _run(adapter, context, short_sha)
+    except HandlerError as exc:
+        assert exc.code == "invalid_payload"
+    else:
+        raise AssertionError("abbreviated commit was accepted")
+
+    traversal = dict(_materialize_params())
+    traversal["source_binding"] = {
+        "expected_ref": "refs/heads/../../main",
+        "expected_commit": "a" * 40,
+    }
+    try:
+        _run(adapter, context, traversal)
+    except HandlerError as exc:
+        assert exc.code == "invalid_payload"
+    else:
+        raise AssertionError("traversal logical branch was accepted")
+
+    assert captured == {}
+
+
+def test_materialize_effect_metadata_is_fail_closed_without_active_seed(
+    tmp_path: Path,
+) -> None:
+    policy = _policy(tmp_path)
+    provider = make_devforge_runtime_provider(
+        policy,
+        make_mutation_scope_service(policy, policy.upload_base),
+    )
+    resolution = provider.repository_effect("materialize_workspace")
+    assert resolution.effect.value == "unknown"
+    assert resolution.coverage.value == "unproven"
+    assert resolution.reason == "materialize_workspace_seed_unavailable"
+    assert "materialize_workspace" not in provider.available_actions()
+
+
+def test_materialize_effect_metadata_is_proven_only_with_active_seed(
+    tmp_path: Path,
+) -> None:
+    policy = _policy(tmp_path)
+    state = tmp_path / "state"
+    state.mkdir()
+
+    async def fake_runner(_context, _payload):
+        return {"ok": True}
+
+    provider = make_devforge_runtime_provider(
+        policy,
+        make_mutation_scope_service(policy, policy.upload_base, mutation_state_root=state),
+        materialize_adapter=make_devforge_materialize_adapter(fake_runner),
+    )
+    resolution = provider.repository_effect("materialize_workspace")
+    assert resolution.effect.value == "process_mutation"
+    assert resolution.coverage.value == "proven"
+    assert "materialize_workspace" in provider.available_actions()
+
+
+def test_disabled_mutation_scope_hides_and_denies_materialize(tmp_path: Path) -> None:
+    policy = _policy(tmp_path, frozenset({"mutation_scope"}))
+    state = tmp_path / "state"
+    state.mkdir()
+
+    async def fake_runner(_context, _payload):
+        return {"ok": True}
+
+    provider = make_devforge_runtime_provider(
+        policy,
+        make_mutation_scope_service(policy, policy.upload_base, mutation_state_root=state),
+        materialize_adapter=make_devforge_materialize_adapter(fake_runner),
+    )
+    handler = make_local_api_handler(policy, builtin_providers={provider.name: provider})
+    described = _run(handler, {"operation": "describe", "endpoint": "devforge_runtime"})
+    assert described.get("error") == "endpoint_not_available"
+
+    denied = _run(
+        handler,
+        _context(),
+        {
+            "operation": "call",
+            "endpoint": "devforge_runtime",
+            "action": "materialize_workspace",
+            "params": _materialize_params(),
+        },
+    )
+    assert denied["error"] == "operation_disabled"
+
+
+def test_materialize_local_api_routes_to_active_adapter(tmp_path: Path) -> None:
+    policy = _policy(tmp_path)
+    state = tmp_path / "state"
+    state.mkdir()
+    seen: dict[str, object] = {}
+
+    async def fake_runner(context, payload):
+        seen["context"] = context
+        seen["payload"] = payload
+        return {"ok": True, "state": "handoff_ready"}
+
+    provider = make_devforge_runtime_provider(
+        policy,
+        make_mutation_scope_service(policy, policy.upload_base, mutation_state_root=state),
+        materialize_adapter=make_devforge_materialize_adapter(fake_runner),
+    )
+    handler = make_local_api_handler(policy, builtin_providers={provider.name: provider})
+    result = _run(
+        handler,
+        _context(),
+        {
+            "operation": "call",
+            "endpoint": "devforge_runtime",
+            "action": "materialize_workspace",
+            "params": _materialize_params(),
+        },
+    )
+    assert result["result"]["ok"] is True
+    assert seen["payload"]["lineage"]["slice_id"] == "S02"
