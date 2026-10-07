@@ -17,9 +17,9 @@ development:
   implementation_authorized: true
   next_expected_actor: implementer
   blocking_findings:
-    - S01 Variant A is now physically confirmed on the live Windows AppContainer path: Unity 6000.6.4f1 -version exits with raw 0xC0000142 and the mutation scope terminalizes.
-    - Variant B has not run. Temporary verification-store roots under D:\\coco violate the canonical verification-profile root isolation rule because D:\\coco is a protected root; the SentinelX service is currently offline after restart with that invalid temporary profile configuration.
-    - Restore C:\\ProgramData\\SentinelX\\config.yaml.bak.20261008-001925-344277, restart SentinelX, and re-verify host_mutation_sandbox_v1 before resuming Variant B. S02 remains forbidden.
+    - S01 Variant A remains physically confirmed: Unity 6000.6.4f1 -version exits with raw 0xC0000142 and its mutation scope terminalizes.
+    - PR #18 now contains a bounded S01-only paired diagnostic seam that reuses the exact PR-011 Session-0 read masks and projects exact mask/cleanup evidence, but the installed Host runtime does not yet contain that candidate.
+    - Direct/Codex run run-pr018-s01-20261008-003 attempt-001 timed out at the Hub response boundary; no canonical publish or Host runtime activation was observed. Same-attempt replay is forbidden. Variant B has not run and S02 remains forbidden.
   current_slice: S01
   current_slice_state: pending
   completed_slices: []
@@ -36,7 +36,7 @@ artifacts:
   latest_plan_remediation: docs/checkpoints/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-plan-remediation-r2-20261007.yaml
   latest_plan_remediation_transition_receipt: docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-plan-remediation-r2-transition-receipt.yaml
   execution_slice_set: docs/execution/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-slices.yaml
-  latest_slice_checkpoint: docs/checkpoints/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-s01-blocked-host-still-offline-20261008.yaml
+  latest_slice_checkpoint: docs/checkpoints/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-s01-blocked-candidate-not-activated-direct-timeout-20261008.yaml
 related_tasks:
   predecessor:
     - PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
