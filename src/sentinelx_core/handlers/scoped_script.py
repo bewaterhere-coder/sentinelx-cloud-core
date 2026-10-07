@@ -342,7 +342,7 @@ async def _run_scoped(
         raise HandlerError("HostMutationSandboxUnavailable", "scoped background execution is not enabled")
 
     args = payload.get("args") or []
-    env_extra = dict(payload.get("env") or {})
+    env_extra = payload.get("env") or {}
     if not isinstance(args, list) or not all(isinstance(value, str) for value in args):
         raise HandlerError("invalid_payload", "'args' must be a list of strings")
     if not isinstance(env_extra, dict) or not all(
@@ -357,24 +357,6 @@ async def _run_scoped(
         raise HandlerError("invalid_payload", f"timeout must be between {TIMEOUT_MIN} and {TIMEOUT_MAX} seconds")
 
     scope_id, generation, lineage, repository, semantic = _authority(payload)
-    diagnostic_session_mode = env_extra.pop("PR018_S01_SESSION_DIAGNOSTIC", None)
-    if diagnostic_session_mode is not None:
-        if diagnostic_session_mode not in {"control", "grant"}:
-            raise HandlerError(
-                "invalid_payload",
-                "PR018_S01_SESSION_DIAGNOSTIC must be 'control' or 'grant'",
-            )
-        if (
-            semantic.project_id != "sentinelx-cloud-core"
-            or semantic.task_id
-            != "PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"
-            or semantic.slice_id != "S01"
-            or repository.path != "bewaterhere-coder/sentinelx-cloud-core"
-        ):
-            raise HandlerError(
-                "HostMutationSandboxUnavailable",
-                "PR-018 Session-0 diagnostic is bound to exact PR-018/S01 lineage",
-            )
     mutation_policy = policy.mutation_execution
     if not mutation_policy.configured or not mutation_policy.scoped_mutation_enabled:
         raise HandlerError("HostMutationSandboxUnavailable", "scoped_mutation is not enabled by Host policy")
@@ -538,31 +520,6 @@ async def _run_scoped(
             raise RuntimeError("materialized runner argv differs from sealed process intent")
 
         child_environment = _scoped_environment(env_extra, activation.workspace)
-        if diagnostic_session_mode is not None:
-            if verification_materialized is not None:
-                raise HandlerError(
-                    "HostMutationSandboxUnavailable",
-                    "PR-018 Session-0 diagnostic cannot compose verification authority",
-                )
-            diagnostic_runtime = (
-                activation.workspace / ".sentinelx-verification" / "runtime"
-            )
-            diagnostic_handshake = diagnostic_runtime / "descendant-session"
-            diagnostic_handshake.mkdir(parents=True, exist_ok=True)
-            for marker_name in ("root-ready", "authority-ready"):
-                marker = diagnostic_handshake / marker_name
-                if marker.exists():
-                    marker.unlink()
-            (diagnostic_handshake / "request").write_text(
-                "required", encoding="ascii"
-            )
-            (diagnostic_runtime / "environment.json").write_text(
-                json.dumps(child_environment, sort_keys=True),
-                encoding="utf-8",
-            )
-            (diagnostic_runtime / "cwd.txt").write_text(
-                str(run_cwd), encoding="utf-8"
-            )
         if verification_materialized is not None:
             verification_environment = build_verification_environment(
                 child_environment,
@@ -599,20 +556,6 @@ async def _run_scoped(
             env=child_environment,
             verification=verification_materialized,
         )
-        diagnostic_session_evidence = None
-        diagnostic_containment = None
-        if diagnostic_session_mode is not None:
-            diagnostic_containment = {
-                "contained": process.contained,
-                "breakaway_allowed": process.breakaway_allowed,
-            }
-            diagnostic_session_evidence = (
-                sandbox.enable_pr018_session_read_diagnostic(
-                    activation,
-                    process,
-                    grant=(diagnostic_session_mode == "grant"),
-                )
-            )
         if verification_materialized is not None:
             sandbox.enable_verification_descendants(
                 activation,
@@ -675,11 +618,6 @@ async def _run_scoped(
 
         terminal = sandbox.terminalize(scope_id, generation)
         terminalized = True
-        diagnostic_cleanup_evidence = None
-        if diagnostic_session_mode is not None:
-            diagnostic_cleanup_evidence = sandbox.pr018_session_read_absence(
-                activation.sandbox_identity
-            )
         audit.finish(
             start, status="succeeded" if returncode == 0 else "failed",
             closure=_finish_closure(terminal, process), returncode=returncode,
@@ -698,18 +636,6 @@ async def _run_scoped(
             "audit_operation_id": start.operation_id,
             "terminal_state": terminal.state,
         }
-        if diagnostic_session_mode is not None:
-            output_diagnostic = {
-                "mode": diagnostic_session_mode,
-                "session_read": diagnostic_session_evidence,
-                "containment": diagnostic_containment,
-                "cleanup": diagnostic_cleanup_evidence,
-            }
-            response["output"] = (
-                output
-                + "\nSENTINELX_PR018_SESSION_DIAGNOSTIC="
-                + json.dumps(output_diagnostic, sort_keys=True)
-            )
         if verification_materialized is not None:
             response["verification"] = verification_evidence(verification_materialized)
         else:
