@@ -1,0 +1,97 @@
+schema_version: "1.0"
+kind: devforge_development_authorization
+authorization_id: AUTH-PR-015-DIRECT-CODEX-BRIDGE-V1
+subject:
+  repository:
+    vcs: git
+    authority: github.com
+    path: bewaterhere-coder/sentinelx-cloud-core
+  task_id: PR-015-direct-codex-development-host-invocation-bridge-v1
+authority:
+  source_command: "#开发"
+  granted_by: human
+scope:
+  workflow: project_development
+  requirement_ref: docs/requirements/PR-015-direct-codex-development-host-invocation-bridge-v1.md
+  requirement_revision: 2
+  allowed_actions:
+    - orchestration
+    - implementation
+    - verification
+  forbidden_actions:
+    - new_task_creation_outside_subject
+    - material_requirement_decision
+    - destructive_operation
+    - transport_migration
+    - permission_expansion
+    - credential_mutation
+    - production_release
+    - devforge_runtime_mutation
+bindings:
+  plan_ref: docs/plans/PR-015-direct-codex-development-host-invocation-bridge-v1-plan.md
+  plan_revision: 6
+  plan_blob_sha: 2bcea2a44f88e51c8b9378ba6297b61897e638da
+  slice_set_ref: docs/execution/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-r6-slices.yaml
+  slice_set_blob_sha: 192e5446036423297cbcece01a27492ae9aae390
+  transport_ref:
+    type: github-pr
+    repository: bewaterhere-coder/sentinelx-cloud-core
+    pr_number: 15
+    branch: task/direct-codex-development-host-invocation-bridge-v1
+lifecycle:
+  state: active
+  revision: 5
+  reactivated_by: "#开发 PR-015-direct-codex-development-host-invocation-bridge-v1 修订当前方案：采用 provider-owned deterministic commit-on-publish"
+  reactivation_reason: human_material_decision_resolved
+  requirement_revision_bound: 2
+  plan_binding_pending_review: false
+  plan_binding_narrowed_by: "#开发评审 PR-015-direct-codex-development-host-invocation-bridge-v1"
+  plan_binding_review_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r6.md
+receipt:
+  source_command: "#开发 SentinelX Direct Codex Development Host Invocation Bridge V1"
+  readback_required: true
+  plan_binding_readback_required: true
+  latest_acceptance_command: "#开发验收 PR-015-direct-codex-development-host-invocation-bridge-v1"
+  latest_acceptance_result: approved
+  latest_finalization_command: "#开发完成 PR-015-direct-codex-development-host-invocation-bridge-v1"
+  latest_finalization_result: ready_for_merge
+  latest_finalization_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-completion-finalization-r1.yaml
+  latest_finalization_blob_sha: 72910acd93611f9c750ac1e28871588964ce7b5a
+  latest_execution_command: "#开发执行 PR-015-direct-codex-development-host-invocation-bridge-v1"
+  latest_execution_result: fixing_r2_completed_ready_for_acceptance
+  latest_execution_checkpoint_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-attempt-r2-completed-20261007.yaml
+  latest_execution_checkpoint_blob_sha: 58353ed67f7a8b1299d08fb3d09884d19b1a846c
+  latest_fixing_transition_receipt_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-r2-to-acceptance-transition-receipt.yaml
+  latest_fixing_transition_receipt_blob_sha: 72851949e0c23cfb85cb6acb0f43bb97b091ea60
+  latest_fixing_product_head: 7adfa7a74c437ccc29cdcd7078373c6e8d224904
+  latest_fixing_github_ci_run_id: 37635132767
+  latest_fixing_github_ci_result: success
+  latest_fixing_live_agent_version: 0.24.1.dev530+g7adfa7a74
+  latest_fixing_live_readiness_verified: true
+  latest_fixing_fixture_pr: 230
+  latest_fixing_fixture_persisted_head: 900e29a349a8e65d54ab1cad45507c88641d59d3
+  latest_fixing_canonical_checkout_main_clean: true
+  latest_bootstrap_command: "#开发引导执行 PR-015-direct-codex-development-host-invocation-bridge-v1 direct:codebuddy"
+  latest_bootstrap_result: fixing_recovery_expired_after_stage_exit
+  latest_bootstrap_override_ref: docs/overrides/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-execution-override.yaml
+  latest_bootstrap_override_blob_sha: 0acdb1ef685b136c1f20726f4307c4f8288b5d0f
+  latest_bootstrap_receipt_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-fixing-recovery-r2-20261007.yaml
+  latest_bootstrap_receipt_blob_sha: 603e4491542caeb4ead394eb84349a72b31e4ef2
+  latest_acceptance_review_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r8.md
+  latest_acceptance_review_blob_sha: db65896807e2bf8f73201a632e8da79bf346c23d
+  latest_acceptance_checkpoint_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r8-approved-20261007.yaml
+  latest_acceptance_checkpoint_blob_sha: 5d92e0f4755e462ac585d9f5c4a2fdeb76b5e0d7
+  latest_acceptance_transition_receipt_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r8-transition-receipt.yaml
+  latest_acceptance_transition_receipt_blob_sha: 454b79f9abec0a91411e07de00545bc83a7bcbde
+  latest_acceptance_finding_code: null
+  latest_acceptance_fixture_pr: 230
+  latest_acceptance_fixture_head: 900e29a349a8e65d54ab1cad45507c88641d59d3
+  latest_acceptance_live_agent_version: 0.24.1.dev530+g7adfa7a74
+  latest_acceptance_readiness_verified: true
+  suspension_readback_required: true
+  latest_reactivation_source: "#开发"
+  latest_reactivation_result: active_pending_plan_review
+  reactivation_readback_required: true
+  latest_narrowing_command: "#开发评审 PR-015-direct-codex-development-host-invocation-bridge-v1"
+  latest_narrowing_result: active_bound_to_approved_plan_r6
+  slice_set_binding_readback_required: true

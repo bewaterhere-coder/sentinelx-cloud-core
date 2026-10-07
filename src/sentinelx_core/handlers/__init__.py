@@ -26,6 +26,7 @@ from sentinelx_core.handlers.devforge_runtime import (
     make_devforge_execute_scoped_adapter,
     make_devforge_runtime_provider,
 )
+from sentinelx_core.handlers.direct_codex import make_devforge_direct_codex_provider
 from sentinelx_core.handlers.edit import (
     make_edit_handler,
     make_edit_upload_complete_handler,
@@ -121,6 +122,16 @@ def build_registry(
         mutation_scope_service,
         execute_scoped_adapter=make_devforge_execute_scoped_adapter(profiled_script_run),
     )
+    devforge_direct_codex = make_devforge_direct_codex_provider(policy)
+
+    # ONE exact builtin provider map. It feeds local_api dispatch and the
+    # canonical repository firewall effect/readiness projection from the same
+    # object, so a builtin that is reachable through sentinel_local_api can
+    # never be absent from the provider-wide effective-surface inventory.
+    builtin_providers: dict[str, Any] = {
+        devforge_runtime.name: devforge_runtime,
+        devforge_direct_codex.name: devforge_direct_codex,
+    }
 
     registry: dict[str, Handler] = {
         # Read-only / introspection
@@ -195,7 +206,12 @@ def build_registry(
     # project_snapshot (issue #32) -- so a new op is now advertised the
     # moment it is registered here, and nothing else needs touching.
     def _canonical_firewall_feature() -> dict[str, Any]:
-        return canonical_repository_mutation_firewall_feature(registry, policy)
+        return canonical_repository_mutation_firewall_feature(
+            registry, policy, builtin_local_api_providers=builtin_providers
+        )
+
+    def _direct_codex_feature() -> dict[str, Any]:
+        return devforge_direct_codex.readiness()
 
     registry["capabilities"] = make_capabilities_handler(
         policy,
@@ -203,17 +219,20 @@ def build_registry(
         ops_supported=lambda: registry.keys(),
         upload_base=upload_base,
         canonical_firewall_feature=_canonical_firewall_feature,
+        direct_codex_feature=_direct_codex_feature,
     )
 
     # Reuse the existing local_api envelope for configured external endpoints
     # and for a policy-admitted builtin provider. External name collisions keep
     # the configured endpoint authoritative.
-    if policy.local_apis or devforge_runtime.available_actions():
+    if policy.local_apis or any(
+        provider.available_actions() for provider in builtin_providers.values()
+    ):
         from sentinelx_core.handlers.local_api import make_local_api_handler
 
         registry["local_api"] = make_local_api_handler(
             policy,
-            builtin_providers={devforge_runtime.name: devforge_runtime},
+            builtin_providers=builtin_providers,
         )
 
     # Switched-off ops are removed here, at the end, so this is the last word

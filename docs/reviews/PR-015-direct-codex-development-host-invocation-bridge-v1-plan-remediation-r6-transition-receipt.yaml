@@ -1,0 +1,96 @@
+schema_version: 1
+kind: devforge_artifact_state_transition_receipt
+task_id: PR-015-direct-codex-development-host-invocation-bridge-v1
+from_stage: plan_review_rejected
+to_stage: plan_review
+transition_rule: revised_plan_verified_and_read_back
+source_command: "#开发计划修复 PR-015-direct-codex-development-host-invocation-bridge-v1"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  canonical_branch: main
+  version: "2.82.0"
+  revision: 748004cc3ec3932e5c4106e0d62ff06b19c5f883
+  review_contract_version: "1.3"
+
+evidence_refs:
+  - docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r5.md@3afc30bb85f25004c204cae275f85b4362f11e61
+  - docs/plans/PR-015-direct-codex-development-host-invocation-bridge-v1-plan.md@2bcea2a44f88e51c8b9378ba6297b61897e638da
+  - docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-remediation-r6-20261007.yaml@a30d64c22f311c6dc67d9c967129a1eaf51119ba
+  - docs/execution/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-r6-slice-impact.yaml@5d4520edb5aceb9178e0551419fa60f9001b98cf
+
+task_before_digest: 47643d6ba2feadb5fdf240c26e320643a26c5adf
+task_after_digest: da925b61d2badd548d4310d96666dd55f9480067
+semantic_after_state_digest: da925b61d2badd548d4310d96666dd55f9480067
+semantic_after_digest_basis: canonical_task_blob_readback
+verified: true
+
+plan_remediation:
+  prior_plan_revision: 5
+  prior_plan_blob_sha: c45a373e4f7a62ae11fceba89316dd8cf6353969
+  revised_plan_revision: 6
+  revised_plan_blob_sha: 2bcea2a44f88e51c8b9378ba6297b61897e638da
+  rejected_review_blob_sha: 3afc30bb85f25004c204cae275f85b4362f11e61
+  requirement_revision: 2
+  requirement_semantics_changed: false
+  addressed_findings:
+    - CheckoutCanonicalizationAuthorityIncomplete
+
+shared_checkout_persistence_boundary:
+  object_acquisition_without_worktree: true
+  snapshot_before_checkout: true
+  expected_tree_attributes_inspected_before_checkout: true
+  custom_filter_rejected_for_all_tracked_paths_before_checkout: true
+  system_global_attribute_authority_neutralized: true
+  git_info_attributes_absent_or_empty: true
+  provider_clamped_checkout: true
+  checkout_and_persistence_same_snapshot: true
+  versioned_gitattributes_mutation_in_v1: forbidden
+  snapshot_drift: fail_closed
+
+retained_persistence_boundary:
+  codex_owned_index_trusted: false
+  provider_temporary_candidate_index_required: true
+  recovery_journal_required: true
+  commit_sha_inputs_frozen_before_candidate_creation: true
+  same_attempt_bit_identical_reconstruction_required: true
+  publish_intent_before_first_push: true
+  uncertain_push_readback_only: true
+  automatic_repush_after_uncertainty: false
+
+state_after:
+  stage: plan_review
+  requirement_ready: true
+  requirement_revision: 2
+  plan_revision: 6
+  plan_approved: false
+  implementation_authorized: false
+  acceptance_approved: false
+  completion_verified: false
+  next_expected_actor: reviewer
+
+slice_authority:
+  formal_plan_r6_slice_set_compiled: false
+  compilation_allowed_only_after_plan_r6_approval: true
+  proposed_delta_slice: S04
+
+bootstrap:
+  prior_override_state: expired
+  r6_override_created: false
+  explicit_new_override_required_after_plan_approval: true
+
+safety:
+  canonical_main_mutated: false
+  product_implementation_mutated: false
+  live_agent_mutated: false
+  host_policy_mutated: false
+  production_hub_mutated: false
+  provider_binding_mutated: false
+  permission_or_credential_expansion_used: false
+  self_approval_performed: false
+
+completion_guard:
+  revised_plan_read_back_verified: true
+  task_transition_read_back_verified: true
+  transition_receipt_required: true
+  canonical_next_action: "#开发评审 PR-015-direct-codex-development-host-invocation-bridge-v1"

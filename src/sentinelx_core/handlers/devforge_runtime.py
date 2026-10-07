@@ -10,6 +10,11 @@ from collections.abc import Awaitable, Callable
 from typing import Any
 
 from sentinelx_core.executor import HandlerError
+from sentinelx_core.operation_registry import (
+    FirewallCoverage,
+    OperationEffectResolution,
+    RepositoryEffect,
+)
 from sentinelx_core.policy import Policy
 from sentinelx_core.request_context import RequestContext
 
@@ -372,6 +377,38 @@ class DevforgeRuntimeProvider:
         if self._execute_scoped is not None and "script_run" not in self._policy.disabled_ops:
             actions.append("execute_scoped")
         return tuple(actions)
+
+    def repository_effect(self, action: str) -> OperationEffectResolution:
+        """Deterministic repository-effect metadata for every effective action.
+
+        Lifecycle actions persist provider-owned scope authority under the
+        SentinelX state root: they never execute user code and never
+        materialize or mutate a repository checkout, so they are classified as
+        non-repository mutation exactly like the ``mutation_scope`` op. Only
+        ``execute_scoped`` reaches the physically contained scoped-mutation
+        path, and only while that path is policy-enabled.
+        """
+        if action in _LIFECYCLE_ACTIONS:
+            return OperationEffectResolution(
+                RepositoryEffect.NON_REPOSITORY_MUTATION,
+                FirewallCoverage.NOT_REQUIRED,
+            )
+        if action == "execute_scoped":
+            if not self.host_opted_in:
+                return OperationEffectResolution(
+                    RepositoryEffect.UNKNOWN,
+                    FirewallCoverage.UNPROVEN,
+                    reason="scoped_mutation_profile_unavailable",
+                )
+            return OperationEffectResolution(
+                RepositoryEffect.PROCESS_MUTATION,
+                FirewallCoverage.PROVEN,
+            )
+        return OperationEffectResolution(
+            RepositoryEffect.UNKNOWN,
+            FirewallCoverage.UNPROVEN,
+            reason="unknown_devforge_runtime_action",
+        )
 
     def list_entry(self) -> dict[str, Any]:
         return {

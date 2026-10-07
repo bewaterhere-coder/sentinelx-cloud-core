@@ -360,3 +360,24 @@ upload_base: 'C:\Users\Public\sentinelx-uploads'
 #   #     authority: github.com
 #   #     path: bewaterhere-coder/sentinelx-cloud-core
 #   #   canonical_branch: main
+#
+# # ── direct Codex development host (PR-015) ──────────────────────────────
+# # Bounded Agent-owned builtin local_api provider `devforge_direct_codex`.
+# # Host-owned values only: a caller never supplies executable, argv, shell,
+# # cwd, environment, prompt, model, credential or replacement transport.
+# # An absent or disabled block means the provider is not admitted on this host
+# # at all -- it never falls back to generic exec or script_run.
+# direct_codex:
+#   enabled: false
+#   # DevForge execution root reference used to derive the isolated direct-host
+#   # workspace. Must not overlap canonical checkouts or protected roots.
+#   workspace_root: null  # e.g. 'D:\SentinelX\devforge-workspaces'
+#   supported_platform: windows
+#   timeout_seconds: 1800
+#   max_result_bytes: 65536
+#   # Optional provider-owned executable discovery constraints. Package identity
+#   # is verified by the provider; these values are never caller data.
+#   # S02 executes the fixed chain node.exe <verified package>/bin/codex.js
+#   # as the active user, never a .cmd shim through a shell.
+#   codex_package: '@openai/codex'
+#   node_executable: null  # e.g. 'C:\Program Files\nodejs\node.exe'

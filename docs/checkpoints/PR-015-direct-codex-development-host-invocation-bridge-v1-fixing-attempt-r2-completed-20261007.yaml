@@ -1,0 +1,145 @@
+schema_version: "1.0"
+kind: devforge_fixing_attempt_completion_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-015-direct-codex-development-host-invocation-bridge-v1
+source_command: "#开发执行 PR-015-direct-codex-development-host-invocation-bridge-v1"
+created_at: "2026-10-07"
+
+attempt:
+  attempt_id: fixing-r2-codebuddy
+  prior_handoff_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-attempt-r2-codebuddy-handoff-20261007.yaml
+  prior_live_verification_gate_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-attempt-r2-live-verification-required-20261007.yaml
+  state: completed
+  stage_before: fixing
+  stage_after: acceptance
+  max_fixing_attempts_consumed: 1
+
+repair:
+  finding_code: direct_codex_workspace_acl_handoff_incompatible_with_codex_sandbox
+  classification: repair_local
+  product_commit: 7adfa7a74c437ccc29cdcd7078373c6e8d224904
+  product_files:
+    - src/sentinelx_core/direct_codex_acl.py
+    - src/sentinelx_core/direct_codex_discovery.py
+    - src/sentinelx_core/handlers/direct_codex.py
+    - src/sentinelx_core/windows_integrity.py
+    - tests/test_direct_codex_acl.py
+    - tests/test_direct_codex_execution.py
+  changed_file_count: 6
+  transport:
+    repository: bewaterhere-coder/sentinelx-cloud-core
+    pr_number: 15
+    branch: task/direct-codex-development-host-invocation-bridge-v1
+    replacement_branch_created: false
+    replacement_pr_created: false
+    force_push_used: false
+  semantics:
+    exact_workspace_acl_handoff_only: true
+    active_console_user_owner_and_grant: true
+    parent_workspace_root_not_granted: true
+    protected_sibling_not_granted: true
+    unrelated_paths_not_granted: true
+    reparse_points_not_followed: true
+    low_integrity_label_preserved: true
+    real_codex_workspace_write_probe_required_for_verified_readiness: true
+    proof_failure_before_transport_or_codex_mutation: true
+    execute_task_handoff_revoked_in_finally: true
+    project_binding_mutated: false
+    host_policy_mutated: false
+    hub_mutated: false
+    generic_exec_enabled: false
+    generic_run_as_user_surface_added: false
+
+verification:
+  github_ci:
+    workflow: ci
+    run_id: 37635132767
+    status: completed
+    conclusion: success
+  related_regression_workflows:
+    macos-agent: success
+    pr010-s01-verification: success
+    pr010-s02-verification: success
+    pr010-s03-verification: success
+    pr010-s04-verification: success
+    pr010-s05-verification: success
+    pr011-s01-verification: success
+    pr011-s02-verification: success
+    pr011-s03-verification: success
+    pr011-s03-native-cwd-diagnostic: success
+    pr011-s04-verification: success
+    pr011-s05-verification: success
+  codebuddy:
+    model: glm-5.3-flash
+    focused_commands_observed_exit_zero: true
+    commit_push_observed_exit_zero: true
+  real_windows:
+    host_id: host_7f0e709ded71ab24
+    agent_version: 0.24.1.dev530+g7adfa7a74
+    exact_candidate_active: true
+    codex_model: gpt-5.6-sol
+    provider: devforge_direct_codex
+    readiness:
+      available: true
+      verified: true
+      reason: null
+    real_workspace_write:
+      session_id: 01a116c9-032d-7dc0-b350-0a78a52aa1a2
+      workspace: D:\SentinelX\devforge-workspaces\3ee95b7e76d50bbd\7c14a593fe953c8d
+      command_execution_succeeded: true
+      file_edit_succeeded: true
+      target_file: fixtures/pr015-ac12/probe.txt
+      expected_change: "before -> after-direct-codex-live"
+      set_named_security_info_error_5_observed: false
+    fixture_transport:
+      repository: bewaterhere-coder/devforge-harness
+      pr_number: 230
+      draft: true
+      branch: fixture/pr015-ac12-direct-codex-live-20261007
+      seed_head: f19dbe1ef072596129884e05797936632f0fb850
+      persisted_head: 900e29a349a8e65d54ab1cad45507c88641d59d3
+      provider_commit_parent_matches_seed: true
+      provider_commit_author: SentinelX Direct Codex
+      provider_commit_message_contains:
+        task_id: PR-015-direct-codex-development-host-invocation-bridge-v1
+        run_id: fixing-r2-live-verification
+        attempt_id: "1"
+        slice_id: AC12
+      changed_files:
+        - fixtures/pr015-ac12/probe.txt
+      remote_readback_content: after-direct-codex-live
+      replacement_transport_created: false
+    protected_sibling:
+      refusal_required_by_verified_proof: true
+      readiness_verified_implies_refusal: true
+    canonical_checkout:
+      path: D:\coco\repos\bewaterhere-coder\sentinelx-cloud-core
+      branch: main
+      head: 018b78ca2098
+      ahead: 0
+      behind: 0
+      dirty: false
+    project_binding:
+      provider: direct
+      adapter: codex
+      mutated: false
+
+bootstrap_override:
+  ref: docs/overrides/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-execution-override.yaml
+  revision: 4
+  prior_state: active
+  final_state: expired
+  mode: fixing_recovery
+  expiry_reason: task_left_fixing_for_acceptance
+  project_binding_after_expiry:
+    provider: direct
+    adapter: codex
+
+disposition:
+  fixing_result: repaired
+  transition_authorized: true
+  next_stage: acceptance
+  next_expected_actor: verifier
+  acceptance_approved: false
+  completion_verified: false
+  canonical_next_command: "#开发验收 PR-015-direct-codex-development-host-invocation-bridge-v1"

@@ -129,6 +129,7 @@ def make_capabilities_handler(
     ops_supported: Callable[[], Iterable[str]] | None = None,
     upload_base: Path | None = None,
     canonical_firewall_feature: Callable[[], dict[str, Any]] | None = None,
+    direct_codex_feature: Callable[[], dict[str, Any]] | None = None,
 ):
     """Build the `capabilities` handler.
 
@@ -206,6 +207,18 @@ def make_capabilities_handler(
                 "uncovered_classes": ["readiness_composer_unavailable"],
             }
         )
+        direct_codex = (
+            direct_codex_feature()
+            if direct_codex_feature is not None
+            else {
+                "available": False,
+                "verified": False,
+                "contract_id": "devforge_direct_codex",
+                "contract_revision": 1,
+                "reason": "direct_codex_provider_unavailable",
+                "uncovered_classes": ["direct_codex_provider_unavailable"],
+            }
+        )
         result = {
             "agent": "sentinelx-cloud-core",
             "version": AGENT_VERSION,
@@ -265,6 +278,11 @@ def make_capabilities_handler(
                     "bound_to": "host_mutation_sandbox_v1",
                 },
                 "canonical_repository_mutation_firewall_v1": firewall_feature,
+                # PR-015/S01: bounded direct-Codex development-host contract.
+                # advertised only through provider-owned readiness; it stays
+                # false until policy admission and physical containment are
+                # proven, and it never widens exec/script_run.
+                "development_host.direct_codex_v1": direct_codex,
             },
             # Whether chained exec commands are checked segment by segment.
             # Part of the same question -- what is this host actually willing to

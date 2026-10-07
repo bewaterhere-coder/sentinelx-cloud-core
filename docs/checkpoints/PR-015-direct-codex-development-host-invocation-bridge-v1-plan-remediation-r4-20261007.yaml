@@ -1,0 +1,72 @@
+schema_version: "1.0"
+kind: devforge_plan_remediation_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-015-direct-codex-development-host-invocation-bridge-v1
+source_command: "#开发计划修复 PR-015-direct-codex-development-host-invocation-bridge-v1"
+created_at: "2026-10-07"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  version: "2.81.0"
+  revision: fb05202b03fb5e3d0147b9b30f43b49c2404b072
+
+transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 15
+  branch: task/direct-codex-development-host-invocation-bridge-v1
+  canonical_main: 018b78ca20984176d53fbe90039dc795a7f2742f
+  replacement_transport_created: false
+
+lineage:
+  requirement_revision: 2
+  prior_plan_revision: 3
+  revised_plan_revision: 4
+  prior_plan_blob_sha: 6552329d7fc07526569956db8ebee477fcd08af3
+  revised_plan_blob_sha: cc351da6bd5746a171bdd14bdb34fa07e41c6336
+  rejected_review_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r3.md
+  rejected_review_blob_sha: 740ee841cdfa078f08e82ee6220134bba28788f4
+  revised_slice_impact_ref: docs/execution/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-r4-slice-impact.yaml
+  revised_slice_impact_blob_sha: 555b85e7fe89d028397d6637607adedc3926486c
+
+findings_addressed:
+  - finding: CandidateTreeTrustBoundaryIncomplete
+    resolution: >-
+      Candidate construction no longer trusts the Codex-owned checkout index.
+      Plan R4 requires a provider-owned temporary index seeded from the exact
+      expected parent, no-filter blob plumbing, provider-only eligible path
+      application, final tree verification, and disabled external
+      filter/hook/signing/fsmonitor/editor/pager/prompt execution surfaces.
+  - finding: DeterministicCommitRecoveryIdentityIncomplete
+    resolution: >-
+      Plan R4 requires a durable provider recovery journal outside the
+      candidate set, freezes every commit-SHA input before candidate creation,
+      records tree_ready/candidate_ready/publish_intent boundaries, requires
+      bit-identical same-attempt reconstruction, and forbids automatic re-push
+      after uncertain publication until remote readback resolves state.
+
+requirement:
+  semantic_change: false
+  revision_changed: false
+
+slice_authority:
+  formal_plan_r4_slice_set_compiled: false
+  compilation_allowed_only_after_plan_r4_approval: true
+  proposed_delta_slice: S04
+  historical_s01_s03_replay_required: false
+
+safety:
+  product_code_mutated: false
+  canonical_main_mutated: false
+  live_agent_mutated: false
+  project_binding_mutated: false
+  provider_binding: direct/codex
+  new_bootstrap_override_created: false
+  permission_or_credential_expansion_used: false
+  self_approval_performed: false
+
+postconditions:
+  revised_plan_durable: true
+  revised_plan_readback_verified: true
+  next_stage: plan_review
+  next_expected_actor: reviewer
+  canonical_next_action: "#开发评审 PR-015-direct-codex-development-host-invocation-bridge-v1"

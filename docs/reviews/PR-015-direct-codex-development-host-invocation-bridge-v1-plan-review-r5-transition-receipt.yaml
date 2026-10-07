@@ -1,0 +1,83 @@
+schema_version: 1
+kind: devforge_artifact_state_transition_receipt
+task_id: PR-015-direct-codex-development-host-invocation-bridge-v1
+from_stage: plan_review
+to_stage: plan_review_rejected
+transition_rule: rejected_plan_review_with_durable_findings
+source_command: "#开发评审 PR-015-direct-codex-development-host-invocation-bridge-v1"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  canonical_branch: main
+  version: "2.82.0"
+  revision: 748004cc3ec3932e5c4106e0d62ff06b19c5f883
+  review_contract_version: "1.3"
+
+evidence_refs:
+  - docs/requirements/PR-015-direct-codex-development-host-invocation-bridge-v1.md@c21ee726db19afa51b27003a381f739c81ddcfc3
+  - docs/plans/PR-015-direct-codex-development-host-invocation-bridge-v1-plan.md@c45a373e4f7a62ae11fceba89316dd8cf6353969
+  - docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r5.md@3afc30bb85f25004c204cae275f85b4362f11e61
+
+task_before_digest: c21ee726db19afa51b27003a381f739c81ddcfc3
+task_after_digest: 47643d6ba2feadb5fdf240c26e320643a26c5adf
+semantic_after_state_digest: 47643d6ba2feadb5fdf240c26e320643a26c5adf
+semantic_after_digest_basis: canonical_task_blob_readback
+verified: true
+
+review:
+  requirement_revision: 2
+  plan_revision: 5
+  plan_blob_sha: c45a373e4f7a62ae11fceba89316dd8cf6353969
+  review_blob_sha: 3afc30bb85f25004c204cae275f85b4362f11e61
+  decision: Rejected
+  finding_classification: plan_local
+  findings:
+    - CheckoutCanonicalizationAuthorityIncomplete
+  requirement_semantics_changed: false
+
+checkout_authority_finding:
+  current_checkout_path: active_user_fixed_git_checkout_without_r5_attribute_filter_clamp
+  custom_filter_may_execute_before_persistence_precheck: true
+  candidate_clean_uses_different_attribute_authority_than_checkout: possible
+  required_fix:
+    - freeze_safe_normalization_snapshot_before_checkout
+    - inspect_reject_custom_filter_assignments_before_checkout
+    - disable_or_prove_empty_system_global_attributes_before_checkout
+    - require_git_info_attributes_absent_or_empty_before_checkout
+    - checkout_under_same_provider_clamp_reused_by_persistence
+    - fail_closed_on_snapshot_or_attribute_drift
+
+slice_authority:
+  formal_plan_r5_slice_set_compiled: false
+  proposed_s04_remains_non_executable: true
+
+authorization:
+  durable_authorization_state: active
+  plan_binding: null
+  implementation_authorized: false
+  bootstrap_override_for_plan_r5: not_issued
+
+state_after:
+  stage: plan_review_rejected
+  requirement_ready: true
+  requirement_revision: 2
+  plan_revision: 5
+  plan_approved: false
+  implementation_authorized: false
+  acceptance_approved: false
+  completion_verified: false
+  next_expected_actor: planner
+
+safety:
+  canonical_main_mutated: false
+  product_implementation_mutated: false
+  live_agent_mutated: false
+  production_hub_mutated: false
+  project_binding_mutated: false
+  permission_or_credential_expansion_used: false
+  self_approval_performed: false
+
+completion_guard:
+  rejected_review_read_back_verified: true
+  task_transition_read_back_verified: true
+  canonical_next_action: "#开发计划修复 PR-015-direct-codex-development-host-invocation-bridge-v1"
