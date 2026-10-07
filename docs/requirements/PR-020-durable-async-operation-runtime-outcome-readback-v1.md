@@ -20,6 +20,11 @@ development:
   completed_slices: []
   bootstrap_required_before_current_slice: true
   bootstrap_target: direct:codebuddy
+  bootstrap_execution_override_ref: docs/checkpoints/PR-020-durable-async-operation-runtime-outcome-readback-v1-bootstrap-execution-override.yaml
+  bootstrap_execution_override_receipt_ref: docs/checkpoints/PR-020-durable-async-operation-runtime-outcome-readback-v1-bootstrap-execution-override-receipt.yaml
+  bootstrap_execution_override_state: active
+  bootstrap_execution_override_mode: implementation_bootstrap
+  bootstrap_execution_override_digest: 3cd9ee272c25db4b3e662c92772b68196f3617594cb3e257f71570933d8db5bd
 transport:
   type: github-pr
   pr_number: 20
