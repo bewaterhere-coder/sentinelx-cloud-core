@@ -1,0 +1,134 @@
+schema_version: "1.0"
+kind: devforge_development_start_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-021-minimal-runtime-complexity-reduction-boundary-v1
+source_command: "#开发 SentinelX Minimal Runtime & Complexity Reduction Boundary V1"
+generated_on: "2026-10-08"
+
+runtime:
+  coco:
+    repository: bewaterhere-coder/Coco-AI-OS
+    branch: main
+    version: "5.4.5"
+    revision: d30fc206ad0ceda34689507f5b8f06438233e4ed
+  devforge:
+    repository: bewaterhere-coder/DevForge
+    branch: main
+    version: "2.99.0"
+    revision: 395949ff447df412c0db9c5e4e5ae6fb043bb6f2
+    workflow_id: project_development
+    workflow_version: "2.1"
+
+transport:
+  type: github-pr
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 21
+  branch: task/minimal-runtime-complexity-reduction-boundary-v1
+  base_branch: main
+  base_sha_at_start: 1028030b33f0ea792a884491a431fffe566f6aa5
+  task_head_before_receipt: 642d7889d4d618c5dab97b9f2f0ce15a898da1dd
+
+artifacts:
+  requirement:
+    ref: docs/requirements/PR-021-minimal-runtime-complexity-reduction-boundary-v1.md
+    revision: 1
+    blob_sha: 54f449ac234b7e37b40a261198c199277f02edb7
+    read_back_verified: true
+  plan:
+    ref: docs/plans/PR-021-minimal-runtime-complexity-reduction-boundary-v1-plan.md
+    revision: 1
+    blob_sha: fcb9d8ef2f802ab5c90c575110e732ee690328d2
+    read_back_verified: true
+  provisional_bootstrap:
+    ref: docs/checkpoints/minimal-runtime-complexity-reduction-boundary-v1-provisional-bootstrap.md
+    blob_sha: 6ad06f2f98c7b4aed77c331e671af206f9c18a46
+    read_back_verified: true
+  target_architecture_decision:
+    ref: docs/architecture/sentinelx-minimal-runtime-boundary-v1.md
+    state: planned_not_created
+  target_disposition_matrix:
+    ref: docs/architecture/sentinelx-capability-disposition-matrix-v1.md
+    state: planned_not_created
+
+requirement_refinement:
+  requirement_ready: true
+  refinement_depth: deep
+  ui_semantics: NotApplicable
+  visual_fidelity: NotApplicable
+  material_product_decision_pending: false
+  product_decision:
+    sentinelx_role: secure_short_duration_local_capability_bridge
+    long_development_execution: guided_cli_outside_hub_lifecycle
+
+planning:
+  plan_ready: true
+  plan_revision: 1
+  plan_approved: false
+  implementation_authorized: false
+  proposed_slice_count: 4
+  implementation_kind: documentation_only
+
+repository_reality:
+  canonical_main_at_start: 1028030b33f0ea792a884491a431fffe566f6aa5
+  canonical_main_after_artifact_creation: 1028030b33f0ea792a884491a431fffe566f6aa5
+  direct_codex_provider_on_main: true
+  direct_codex_real_probe_timeout_seconds: 300
+  generic_background_job_timeout_seconds: 3600
+  pending_results_persists_answer_not_running_job: true
+  synchronous_local_api_timeout_model_present: true
+  host_mutation_scope_present: true
+  fail_closed_mutation_audit_present: true
+  windows_appcontainer_acl_job_sandbox_present: true
+  canonical_repository_firewall_present: true
+  operation_effect_registry_present: true
+  active_prs_requiring_disposition:
+    - 14
+    - 19
+    - 20
+
+architecture_boundary:
+  hub_long_task_timeout_extension: forbidden_as_primary_solution
+  long_agent_lifecycle_in_hub: out_of_scope
+  guided_cli_required_for:
+    - codebuddy
+    - codex
+    - large_build
+    - long_test
+    - large_refactor
+    - duration_uncertain_development_work
+  short_direct_execution_preserved: true
+  security_complexity_preserved: true
+  orchestration_complexity_reduction_required: true
+
+first_phase_non_authority:
+  product_source_deletion: forbidden
+  product_behavior_change: forbidden
+  provider_disablement: forbidden
+  project_binding_change: forbidden
+  production_hub_change: forbidden
+  devforge_runtime_mutation: forbidden
+  active_pr_auto_close_or_merge: forbidden
+  codebuddy_or_codex_hub_execution: forbidden
+
+postconditions:
+  task_id_frozen: true
+  transport_resolved_and_verified: true
+  requirement_durable_and_readback_verified: true
+  plan_durable_and_readback_verified: true
+  development_stage: plan_review
+  requirement_ready: true
+  plan_approved: false
+  implementation_authorized: false
+  next_expected_actor: reviewer
+  product_implementation_mutated: false
+
+completion_guard:
+  status: satisfied
+  canonical_next_action: "#开发评审 PR-021-minimal-runtime-complexity-reduction-boundary-v1"
+
+notes:
+  - "#开发 completed Requirement refinement and Planning only."
+  - "No SentinelX product source, installed Agent, production Hub, project binding, or canonical main was modified."
+  - "PR-020 is treated as the strongest counterproposal and must pass this new architecture boundary before further implementation."
+  - "PR-014, PR-020 and the DevForge incremental_execution.slice_v1 relation are explicit inventory targets."
+  - "Security boundaries are presumed KEEP until evidence proves a simplification preserves equivalent protection."
