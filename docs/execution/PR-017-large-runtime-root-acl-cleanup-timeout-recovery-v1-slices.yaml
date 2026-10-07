@@ -201,7 +201,7 @@ slices:
 
     runtime_progress:
       status: blocked
-      blocker_code: HostRuntimeActivationUnavailableAndDirectCodexOutcomeUnresolved
+      blocker_code: ExactCandidateHostRuntimeActivationCapabilityMissing
       host_agent_version: 0.24.1.dev530+g7adfa7a74
       host_mutation_sandbox_verified: false
       direct_codex_attempt:
@@ -210,15 +210,16 @@ slices:
         outcome: unresolved_after_60s_hub_timeout
         expected_remote_sha: f9e07da9cc37f6e882c3258280869b415cafcb5c
         retry_before_outcome_resolution: forbidden
-      blocked_checkpoint_ref: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-blocked-host-runtime-schema-direct-codex-outcome-20261008.yaml
+      blocked_checkpoint_ref: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-blocked-exact-candidate-host-activation-unavailable-20261008.yaml
 
     run_refs:
       - integration_commit:f9e07da9cc37f6e882c3258280869b415cafcb5c
       - windows_regression:37677712083:59_passed
       - ci:37677712121:success
       - macos:37677712178:success
-      - direct_codex:run-pr017-r5-s03-20261008-001:attempt-001:outcome_unresolved
-      - docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-blocked-host-runtime-schema-direct-codex-outcome-20261008.yaml@b959ae24ffc22b3f3e50e21d944b4e62780fe3fd
+      - direct_codex:run-pr017-r5-s03-20261008-001:attempt-001:no_publish_observed_no_retry
+      - all_automatic_workflows:green
+      - docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-blocked-exact-candidate-host-activation-unavailable-20261008.yaml@7fdefb012c9f88c98468bc4dec9cba2b08ca89c8
     completion_receipt_ref: null
 
 execution_state:
