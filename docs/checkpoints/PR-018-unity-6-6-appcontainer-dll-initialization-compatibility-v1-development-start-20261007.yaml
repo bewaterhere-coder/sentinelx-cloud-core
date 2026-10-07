@@ -1,0 +1,71 @@
+schema_version: "1.0"
+kind: devforge_development_start_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1
+source_command: "#开发 SentinelX Unity 6.6 AppContainer DLL Initialization Compatibility V1"
+generated_on: "2026-10-07"
+runtime:
+  repository: bewaterhere-coder/DevForge
+  branch: main
+  version: v2.93.0
+  revision: 041f390592a78c13f5eabdc542735dc72485e0ef
+  workflow_id: project_development
+transport:
+  type: github-pr
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 18
+  branch: task/unity-6-6-appcontainer-dll-initialization-compatibility-v1
+  base_branch: task/large-runtime-root-acl-cleanup-timeout-recovery-v1
+  base_pr: 17
+  base_sha_at_start: 3858c7d0e46295d5e0dc184bb21e76da7c963346
+artifacts:
+  requirement:
+    ref: docs/requirements/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1.md
+    revision: 1
+    blob_sha: 414efb5c28993226895a0eacef1ddf71b0722b1e
+    read_back_verified: false
+  plan:
+    ref: docs/plans/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-plan.md
+    revision: 1
+    blob_sha: 12e8c73c3b232bfa4b7b74cf86facff68eabadac
+    read_back_verified: false
+requirement_refinement:
+  requirement_ready: true
+  diagnostic_hypothesis_frozen: true
+  implementation_fix_not_yet_frozen: true
+planning:
+  plan_ready: true
+  plan_approved: false
+  implementation_authorized: false
+repository_reality:
+  canonical_main: 018b78ca20984176d53fbe90039dc795a7f2742f
+  stacked_pr017_head: 3858c7d0e46295d5e0dc184bb21e76da7c963346
+  pr017_live_product_candidate: f7249aef0d25085eb98e741596b6f567ebd83966
+  observed_unity_failure:
+    version: 6000.6.4f1
+    process_created: true
+    windows_status: "0xC0000142"
+    classification: STATUS_DLL_INIT_FAILED
+  existing_pr011_discriminator:
+    classification: service_session_window_object_read_authority_missing
+    generic_scoped_session_read_present: false
+    verification_session_read_present: true
+stacking:
+  integration_order:
+    - PR-018 into PR-017 branch
+    - rerun PR-017 S03
+    - accept PR-017
+    - PR-017 into main
+postconditions:
+  task_id_frozen: true
+  transport_resolved_and_verified: true
+  development_stage: plan_review
+  requirement_ready: true
+  plan_approved: false
+  product_implementation_mutated: false
+completion_guard:
+  status: pending_artifact_readback
+  canonical_next_action: "#开发评审 PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"
+notes:
+  - No SentinelX product source or Host policy was modified.
+  - S01 is evidence-first; a negative A/B discriminator requires Plan Revision rather than privilege expansion.
