@@ -30,6 +30,12 @@ development:
   next_expected_actor: null
   acceptance_disposition: approved_r3
   execution_disposition: completion_r1_verified
+  post_merge_reconciliation:
+    state: verified
+    cause: workflow_state_mismatch
+    conflicting_merge: 14669e4069dcd9117e19590b434204408142bbb9
+    source_snapshot: eef06259406cd4f83625ac26403d57f993f495c9
+    implementation_replayed: false
   blocking_findings: []
   repair_evidence:
     - Fixing R1 preserved exact product candidate f9e07da9cc37f6e882c3258280869b415cafcb5c and did not replay S03 or Unity.
@@ -84,6 +90,11 @@ artifacts:
   completion_transition_receipt_blob_sha: 153d03f20854bcdaf292a09552afb648e87d4074
   completion_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-completed-20261008.yaml
   completion_checkpoint_blob_sha: 72c9aa311d6248400f4a5d8b374f93918fff69b6
+  post_merge_reconciliation: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-post-merge-reconciliation-r1.yaml
+  post_merge_reconciliation_blob_sha: 77f582ae85b525ddb818e7827d94b4d2465fa71e
+  workspace_gc_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-workspace-gc-blocked-20261008.yaml
+  workspace_gc_checkpoint_blob_sha: ac9eac0d8e5d28ecde988612e93fafefeed22e21
+  workspace_gc_disposition: blocked_by_tool_fail_closed
 related_tasks:
   predecessor:
     - PR-012-execute-scoped-explicit-execution-profile-v1
