@@ -1,0 +1,107 @@
+schema_version: "1.1"
+kind: devforge_artifact_state_transition_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
+source_command: "#开发执行 PR-014-devforge-execution-workspace-materialization-bridge-v1"
+
+transition:
+  from_stage: implementation
+  to_stage: acceptance
+  transition_rule: all_current_plan_slices_verified_complete
+  owning_command: "#开发执行"
+  decision: applied
+  next_expected_actor: verifier
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  revision: e0ea49441c410a7008fbcd61f1782d90f014a773
+  transition_contract: system/artifact-state-transition-resolver-contract.md
+  completion_guard: system/development-command-completion-guard-contract.md
+
+lineage:
+  requirement:
+    ref: docs/requirements/PR-014-devforge-execution-workspace-materialization-bridge-v1.md
+    revision: 2
+  plan:
+    ref: docs/plans/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan.md
+    revision: 6
+    blob_sha: 4fc74fba9d787120798d5ed6a4f04b7da9cb6a5f
+  plan_review:
+    ref: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r6.md
+    blob_sha: c9798c848dc2769f0ccd9ae7c6fc5e8aeec9a026
+  slice_set:
+    ref: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-r6-slices.yaml
+    blob_sha: f332c20ca398507a635f0c4abc6a1f43117c8dc6
+    all_required_slices_completed: true
+
+slice_evidence:
+  S01:
+    state: completed
+    completion_receipt_ref: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-s01-completion-20261005.yaml
+    completion_receipt_blob_sha: b96ceba27a6eef196d1ac59ca04ca45d5159915a
+  S02:
+    state: completed
+    completion_mode: reconciled_historical_execution_evidence
+    product_candidate: 45dc99d15a23c499b4c1500fab60ed5e76475aeb
+    reconciliation_receipt_ref: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-r6-reconciliation-receipt.yaml
+    reconciliation_receipt_blob_sha: 21f6072b43bd9c33213d4579b6030f064b11b3cf
+    deterministic_suite: "147 passed / 1 skipped / 0 failed"
+    changed_blob_readback: "9/9 byte-identical"
+    replay: forbidden
+
+verification_policy:
+  repository_hosted_ci:
+    applicability: NotEvaluated
+    gating: false
+    required_for_transition: false
+  workflow_creation_or_modification_for_task: forbidden
+
+transport:
+  type: github-pr
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 14
+  branch: task/devforge-execution-workspace-materialization-bridge-v1
+  branch_head_before_transition_receipt: 00a65c3568cd9e44b50eb77e209494fc127f3120
+  canonical_main: cd42e371f18056327c1d8b744f8956a76bc11541
+  transport_migration: none
+
+task_compare_and_set:
+  before_blob_sha: debf10a88f8c108256064fe3716ddb3d9a46afae
+  after_blob_sha: b663cd0f5189dca946381cde5587e8fcf75d952d
+  read_back_verified: true
+
+state_after:
+  stage: acceptance
+  requirement_ready: true
+  plan_approved: true
+  acceptance_approved: false
+  completion_verified: false
+  implementation_execution_complete: true
+  implementation_authorized: false
+  current_slice: null
+  completed_slices: [S01, S02]
+  pending_slices: []
+  next_expected_actor: verifier
+  canonical_next_action: "#开发验收 PR-014-devforge-execution-workspace-materialization-bridge-v1"
+
+acceptance_boundary:
+  acceptance_decision_created: false
+  acceptance_findings_created: false
+  exact_candidate_physical_windows_verification_required: true
+  physical_gate_not_executed_by_this_command: true
+  ac8_ac10_ac14_still_require_live_runtime_evidence: true
+
+safety:
+  product_source_mutated: false
+  tests_mutated: false
+  workflow_created_or_modified: false
+  ci_invoked: false
+  new_slice_executed: false
+  slice_replayed: false
+  codebuddy_invoked: false
+  host_mutation_performed: false
+  project_binding_mutated: false
+  canonical_main_mutated: false
+  pr013_s03_replayed: false
+
+verified: true
