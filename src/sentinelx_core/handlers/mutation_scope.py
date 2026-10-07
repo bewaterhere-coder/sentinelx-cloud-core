@@ -215,6 +215,7 @@ def make_mutation_scope_service(
                         or current.active_process_ids
                         or current.sandbox_write_authority_present
                         or current.runtime_read_authority_roots
+                        or current.session_object_read_binding is not None
                     )
                     if has_runtime_authority:
                         # Reuse the one canonical Windows sandbox cleanup path.
