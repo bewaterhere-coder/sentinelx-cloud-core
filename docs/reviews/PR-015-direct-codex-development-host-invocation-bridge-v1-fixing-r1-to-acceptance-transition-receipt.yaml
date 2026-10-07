@@ -45,4 +45,9 @@ authority:
 
 readback:
   required: true
-  verified: false
+  verified: true
+  verification_commit: 5711ee174fe9805034d6b31df81b50a4aedc8aa5
+  task_stage_readback: acceptance
+  next_expected_actor_readback: verifier
+  fixing_override_state_readback: expired
+  repair_candidate_readback: d441e95b6eb65834f52ffdb42026e7328f5c9478

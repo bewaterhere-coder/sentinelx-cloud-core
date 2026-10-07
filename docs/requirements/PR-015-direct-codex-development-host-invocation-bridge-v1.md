@@ -69,7 +69,7 @@ artifacts:
   latest_fixing_execution_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-attempt-r1-completed-20261007.yaml
   latest_fixing_execution_checkpoint_blob_sha: 2b8677e87463a4320ab9a47039b834f5ac7159db
   latest_fixing_transition_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-r1-to-acceptance-transition-receipt.yaml
-  latest_fixing_transition_receipt_blob_sha: 82be3c208a39fcfce2df18e76188c3b0833ecfa3
+  latest_fixing_transition_receipt_blob_sha: e2152ad50e637858a42afdf54b31c8d5b19e5a3e
   latest_bootstrap_fixing_recovery_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-fixing-recovery-r1-20261007.yaml
   latest_bootstrap_fixing_recovery_checkpoint_blob_sha: fbd3be7c884d0b7f12e20fd87ad265ce36345d86
   prior_slice_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-s03-completion-20261007.yaml
