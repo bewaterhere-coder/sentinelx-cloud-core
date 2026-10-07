@@ -75,7 +75,8 @@ expiry:
 override_digest: 3cd9ee272c25db4b3e662c92772b68196f3617594cb3e257f71570933d8db5bd
 
 receipt:
-  readback_verified: false
+  readback_verified: true
+  receipt_ref: docs/checkpoints/PR-020-durable-async-operation-runtime-outcome-readback-v1-bootstrap-execution-override-receipt.yaml
 
 admission:
   resolver_contract: system/task-scoped-bootstrap-execution-override-contract.md
