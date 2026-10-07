@@ -8,16 +8,20 @@ task_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
 title: SentinelX Large Runtime Root ACL Cleanup Timeout & Recovery V1
 requirement_revision: 1
 development:
-  stage: plan_review
+  stage: implementation
   gates:
     requirement_ready: true
-    plan_approved: false
+    plan_approved: true
     acceptance_approved: false
     completion_verified: false
   plan_revision: 1
-  implementation_authorized: false
-  next_expected_actor: reviewer
+  implementation_authorized: true
+  next_expected_actor: implementer
   blocking_findings: []
+  current_slice: S01
+  current_slice_state: pending
+  authorization:
+    mode: legacy_command_scoped
 transport:
   type: github-pr
   pr_number: 17
@@ -25,6 +29,9 @@ transport:
   base_branch: main
 artifacts:
   plan: docs/plans/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan.md
+  latest_plan_review: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-review-r1.md
+  latest_plan_review_transition_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-review-r1-transition-receipt.yaml
+  execution_slice_set: docs/execution/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-slices.yaml
 related_tasks:
   predecessor:
     - PR-012-execute-scoped-explicit-execution-profile-v1
