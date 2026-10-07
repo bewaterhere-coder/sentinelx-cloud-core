@@ -124,5 +124,6 @@ admission:
 
 receipt:
   created_at: "2026-10-07"
-  readback_verified: false
-  readback_ref: null
+  admission_readback_blob_sha: 3ea20f7b1a49f2a3caee90345fd79bf1e22af3b0
+  readback_verified: true
+  readback_ref: "github-pr:bewaterhere-coder/sentinelx-cloud-core#15:docs/overrides/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-execution-override.yaml@task/direct-codex-development-host-invocation-bridge-v1"
