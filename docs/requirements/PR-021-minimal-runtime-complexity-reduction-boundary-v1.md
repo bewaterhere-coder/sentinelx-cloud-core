@@ -26,6 +26,14 @@ development:
   latest_acceptance_review: docs/reviews/PR-021-minimal-runtime-complexity-reduction-boundary-v1-acceptance-r1.md
   latest_acceptance_receipt: docs/reviews/PR-021-minimal-runtime-complexity-reduction-boundary-v1-acceptance-r1-receipt.yaml
   latest_gate_transition: docs/checkpoints/PR-021-minimal-runtime-complexity-reduction-boundary-v1-acceptance-to-accepted-transition-receipt.yaml
+  finalization:
+    ready_for_merge: true
+    canonical_state_verified: true
+    plan_execution_state_verified: true
+    evidence_verified: true
+    transport_preconditions_verified: true
+    reconciliation_required_after_merge: true
+    finalization_receipt: docs/checkpoints/PR-021-minimal-runtime-complexity-reduction-boundary-v1-premerge-finalization-receipt.yaml
 transport:
   type: github-pr
   pr_number: 21
@@ -45,6 +53,7 @@ artifacts:
   pre_acceptance_evidence: docs/checkpoints/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s04-acceptance-evidence-20261008.yaml
   acceptance_review: docs/reviews/PR-021-minimal-runtime-complexity-reduction-boundary-v1-acceptance-r1.md
   acceptance_receipt: docs/reviews/PR-021-minimal-runtime-complexity-reduction-boundary-v1-acceptance-r1-receipt.yaml
+  premerge_finalization_receipt: docs/checkpoints/PR-021-minimal-runtime-complexity-reduction-boundary-v1-premerge-finalization-receipt.yaml
 related_tasks:
   workspace_materialization_bridge: PR-014-devforge-execution-workspace-materialization-bridge-v1
   direct_codex_bridge: PR-015-direct-codex-development-host-invocation-bridge-v1
