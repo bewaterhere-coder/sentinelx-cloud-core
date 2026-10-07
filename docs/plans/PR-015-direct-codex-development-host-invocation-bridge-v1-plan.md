@@ -1,4 +1,4 @@
-# PR-015-direct-codex-development-host-invocation-bridge-v1 — Plan R5
+# PR-015-direct-codex-development-host-invocation-bridge-v1 — Plan R6
 
 Requirement: `docs/requirements/PR-015-direct-codex-development-host-invocation-bridge-v1.md`, revision 2.
 
@@ -9,7 +9,7 @@ Status: **Pending Plan Review**. No implementation authorization.
 ```yaml
 sentinelx_main: 018b78ca20984176d53fbe90039dc795a7f2742f
 planning_task_head_before_r3: d67923bd7df7f45186f6852c414d2cc74f5321d6
-devforge_main: 329438b69ab0946175b805788b0412384e343e0b
+devforge_main: 748004cc3ec3932e5c4106e0d62ff06b19c5f883
 devforge_version: 2.81.0
 project_execution_binding:
   provider: direct
@@ -19,7 +19,7 @@ canonical_transport:
   pr: 15
   branch: task/direct-codex-development-host-invocation-bridge-v1
 requirement_revision: 2
-prior_plan_revision: 4
+prior_plan_revision: 5
 prior_acceptance: DecisionRequired
 material_decision:
   selected: provider_owned_deterministic_commit_on_publish
@@ -27,27 +27,36 @@ material_decision:
 
 Requirement Revision 2 is a material architecture/scope change produced by the explicit user `#开发` command after Acceptance R1. The exact Task and canonical transport are preserved.
 
-## R5 remediation delta
+## R6 remediation delta
 
-Plan R5 preserves Requirement Revision 2, the provider-owned deterministic commit-on-publish direction, and all boundaries accepted in Plan R4. It changes only the canonical blob-materialization gap rejected by Plan Review R4.
+Plan R6 preserves Requirement Revision 2 and every Plan R5 boundary already accepted by review. It changes only the checkout/persistence authority mismatch rejected by Plan Review R5.
 
 Core rule:
 
 ```text
-external repository/user process authority is forbidden
-BUT
-Git-safe canonical clean semantics must still be preserved
+the first worktree checkout
+AND
+later provider clean/staging
+MUST use one frozen provider-owned canonicalization authority snapshot
 ```
 
-R5 therefore replaces raw `hash-object --no-filters` worktree-byte hashing with a provider-owned temporary-index staging path that uses Git's builtin path-aware clean conversion **only after** all external/custom clean filters are rejected and all nonessential Git config/attribute sources are clamped.
+Remote clone/fetch may continue to use the fixed active-user authenticated Git transport because those steps only acquire repository objects/refs and do not materialize the implementation worktree. Before the first `checkout`, the provider switches to a local materialization boundary that:
 
-To invert the exact Windows checkout representation safely, the provider captures the small allowlisted checkout-normalization configuration (`core.autocrlf`, `core.eol`, `core.safecrlf`) immediately after exact checkout bootstrap and before Codex starts. That snapshot is provider-owned execution evidence and is reused during candidate materialization/recovery.
+- captures and validates the allowlisted safe checkout-normalization scalars;
+- freezes versioned attribute authority from the exact admitted parent tree;
+- disables system/global attribute authority;
+- rejects any effective custom/external `filter` assignment across tracked paths before worktree materialization;
+- clamps hooks, fsmonitor, recursive submodule materialization, editor/pager and prompt execution;
+- persists/read-backs the snapshot before checkout;
+- reuses exactly the same snapshot during provider temporary-index clean conversion after Codex.
 
-No Requirement Revision 3 is introduced. S01-S03 remain retained verified prerequisites. Only S04 remains proposed after Plan R5 approval.
+V1 conservatively treats any Codex modification to a versioned `.gitattributes` file as unsupported and fails closed before persistence. This preserves the same attribute semantics on both sides of the checkout/clean round trip rather than guessing how to invert bytes produced under an older attribute set.
+
+No Requirement Revision 3 is introduced. S01-S03 remain retained verified prerequisites. Only S04 remains proposed after Plan R6 approval.
 
 ## 1. Retained implementation baseline
 
-Plan R5 does **not** replay S01-S03. Their verified implementation remains the baseline:
+Plan R6 does **not** replay S01-S03. Their verified implementation remains the baseline:
 
 - bounded `devforge_direct_codex` builtin provider and closed model-facing schema;
 - direct/codex execution identity preserved;
@@ -64,7 +73,94 @@ Historical product candidate: `a84db15a8770599718a665fd9c201c7b82b3dd91`.
 
 Acceptance R1's real-host finding is retained as the disconfirming fixture: Codex edits and verifies successfully but does not commit, so persistence must be provider-owned.
 
-## 2. R5 architecture delta
+## 2. R6 architecture delta
+
+### D12.1 — Shared pre-checkout / persistence canonicalization authority
+
+The existing S02 remote bootstrap remains valid for remote admission and object acquisition, but Plan R6 extends it before the first worktree checkout.
+
+#### Phase A — Authenticated object acquisition only
+
+The active-user fixed Git transport may perform only the remote/object steps required to establish the exact independent repository and admitted branch/head, for example:
+
+```text
+clone --no-checkout / fetch
+-> remote head readback
+-> require remote_head == expected_remote_sha
+```
+
+No implementation worktree is materialized in this phase.
+
+#### Phase B — Freeze provider canonicalization authority before checkout
+
+Before `git checkout` or any equivalent worktree materialization, the provider MUST:
+
+1. create provider-owned execution-state locations outside the implementation candidate set for:
+   - a temporary inspection index;
+   - an empty global attributes file;
+   - an empty hooks directory;
+   - the canonicalization snapshot;
+2. read only the allowlisted effective scalar values needed for supported checkout/clean semantics:
+   - `core.autocrlf`;
+   - `core.eol`;
+   - `core.safecrlf`;
+   - `core.checkRoundtripEncoding` only when supported `working-tree-encoding` semantics require it;
+3. validate each captured value against the provider's closed schema and normalize unset/default states deterministically;
+4. persist/read-back those values as the attempt's immutable normalization snapshot;
+5. seed the provider inspection index from the exact `expected_remote_sha` tree without checkout;
+6. require `.git/info/attributes` to be absent or empty;
+7. disable system attributes and redirect global attributes to the provider-owned empty file for all local materialization inspection;
+8. enumerate the exact parent tree's tracked paths from the inspection index and resolve effective attributes from the expected tree using fixed non-executing attribute inspection;
+9. reject the repository before checkout if **any tracked path** has an effective `filter` attribute other than unspecified/unset;
+10. digest and persist/read-back:
+    - the exact versioned `.gitattributes` blob/path set from `expected_remote_sha`;
+    - the effective supported attribute projection required for checkout/clean equivalence;
+    - the empty `.git/info/attributes` proof;
+    - the normalization snapshot.
+
+Attribute inspection must not execute filters. A temporary index seeded from the expected tree plus fixed `check-attr --cached`/equivalent semantics is an acceptable design.
+
+#### Phase C — Provider-clamped checkout
+
+Only after Phase B is durably verified may the provider materialize the worktree.
+
+Checkout must use the frozen snapshot and provider-owned clamps:
+
+- system Git config excluded for local materialization;
+- global Git config excluded for local materialization after the safe snapshot has been captured;
+- system attributes disabled;
+- global attributes redirected to the provider-owned empty file;
+- provider-owned empty hooks path;
+- `core.fsmonitor=false`;
+- `submodule.recurse=false`;
+- commit/tag signing disabled where relevant;
+- pager/editor disabled;
+- terminal prompting disabled;
+- no shell wrapper;
+- no caller-supplied config;
+- replay only the frozen safe normalization scalars required for checkout semantics.
+
+Versioned `.gitattributes` from the exact admitted tree remain the only repository attribute authority used for checkout.
+
+Because every effective `filter` assignment was rejected before checkout and filter-driver configuration is not imported as local materialization authority, no repository/user custom clean/smudge/process filter may execute while creating the Codex worktree.
+
+The provider then verifies exact branch/head and persists a `checkout_materialized` state containing the canonicalization snapshot digest.
+
+#### Phase D — Same snapshot after Codex
+
+Before persistence, the provider MUST prove:
+
+- actual branch/head still satisfy the admitted direct-Codex transport rules;
+- `.git/info/attributes` remains absent/empty;
+- the frozen safe scalar snapshot digest is unchanged;
+- the expected-tree attribute snapshot remains authoritative;
+- no versioned `.gitattributes` path was added, deleted or modified by Codex.
+
+A versioned `.gitattributes` change is `DirectCodexUnsupportedAttributeMutation` in V1 and cannot be committed through the persistence broker.
+
+Only then may D14 candidate clean conversion proceed, using the exact same frozen snapshot and expected-tree attribute authority.
+
+
 
 ### D13 — Provider-owned persistence broker
 
@@ -89,96 +185,90 @@ Codex process success
 
 If any precondition changes, fail closed before publication.
 
-### D14 — Provider-owned candidate tree with safe canonical clean conversion
+### D14 — Provider-owned candidate tree using the frozen checkout authority
 
 The Codex execution checkout's Git index remains **untrusted implementation-host state**. Candidate authority uses a provider-owned temporary index seeded from the exact admitted parent.
 
-R5 additionally freezes how worktree bytes become canonical Git blobs on Windows.
+Plan R6 does not capture a new clean policy after Codex. It reuses the exact D12.1 snapshot that was persisted **before checkout**.
 
-#### D14.1 — Checkout-normalization snapshot before Codex
+#### D14.1 — Shared snapshot admission
 
-Immediately after the exact execution checkout is established and before Codex starts, the provider reads only the following safe scalar Git settings under the active-user Git context:
+Before candidate construction, require all of:
 
 ```text
-core.autocrlf
-core.eol
-core.safecrlf
+checkout_snapshot_digest == persisted_pre_checkout_snapshot_digest
+expected_attribute_snapshot_digest == persisted_expected_attribute_snapshot_digest
+.git/info/attributes == absent_or_empty
+no versioned .gitattributes mutation
+local HEAD / actual branch satisfy admitted transport invariants
 ```
 
-Unset values are normalized to their Git defaults. No arbitrary config keys are accepted or returned.
+Any mismatch fails closed before candidate object creation.
 
-The provider persists/read-backs this normalization snapshot outside the implementation candidate set and binds it to the exact repository/Task/Run/Attempt/Slice + expected head.
+#### D14.2 — Local candidate configuration clamp
 
-The persistence phase reuses this exact snapshot; it does not reread mutable global values and does not allow Codex/caller values to override it.
+Candidate materialization uses the same local materialization authority as checkout:
 
-#### D14.2 — Attribute/config authority clamp
-
-Candidate materialization runs with provider-owned local Git configuration isolation:
-
+- system/global Git configuration excluded for local candidate construction after the safe snapshot has been captured;
 - system attributes disabled;
-- global attributes file redirected to a provider-owned empty file;
-- system/global Git config excluded for local candidate construction except the explicitly replayed safe normalization snapshot;
-- `.git/info/attributes` must be absent or empty; otherwise V1 fails closed;
-- hooks path is provider-owned empty;
+- global attributes redirected to the same provider-owned empty file;
+- expected-tree versioned `.gitattributes` are the only repository attribute authority;
+- `.git/info/attributes` absent/empty;
+- hooks path provider-owned empty;
 - signing disabled;
 - fsmonitor disabled;
 - pager/editor disabled;
 - terminal prompts disabled;
+- submodule recursion disabled;
 - no shell wrapper;
-- no caller Git config.
+- no caller Git config;
+- replay only the exact frozen safe normalization scalars.
 
-Versioned repository `.gitattributes` files remain product input because they are part of the candidate worktree/tree.
+The provider re-resolves effective attributes for every eligible path under this same snapshot and again requires `filter` to be unspecified/unset.
 
-For every eligible path, before staging the provider resolves the effective attributes through fixed path-aware Git attribute inspection under the same clamped attribute source.
-
-If effective `filter` is anything other than unspecified/unset, V1 fails closed **before any clean filter can execute**.
-
-Supported builtin clean semantics include:
+Supported builtin clean semantics remain:
 
 - text/eol normalization;
 - binary/no-text behavior;
-- builtin `ident` behavior when applicable;
-- Git-supported `working-tree-encoding` conversion.
+- builtin `ident`;
+- supported Git `working-tree-encoding` conversion.
 
-Any unsupported/custom clean semantic or process-backed filter fails closed rather than silently hashing raw bytes.
+Any unsupported/custom clean semantic fails closed.
 
 #### D14.3 — Candidate construction
 
 Required sequence:
 
 ```text
-verify local HEAD == expected_remote_sha
--> verify normalization snapshot identity
+verify shared pre-checkout snapshot identity
 -> inventory worktree delta against expected_remote_sha
+-> reject any versioned .gitattributes mutation
 -> validate eligible relative paths/modes/types
--> verify unversioned attribute sources are absent/disabled
--> resolve/freeze effective eligible-path attributes
--> reject any external/custom filter semantics
 -> create provider temporary GIT_INDEX_FILE outside candidate set
 -> seed temporary index from expected_remote_sha tree
--> stage only provider-derived literal eligible paths into that temporary index
-   using Git builtin path-aware clean conversion under the clamped normalization snapshot
+-> stage only provider-derived literal eligible paths
+   using Git builtin path-aware clean conversion under the frozen checkout snapshot
 -> write candidate tree
 -> verify candidate tree == parent tree + exactly validated canonical eligible delta
 ```
 
-The fixed staging operation may use `git add`/equivalent builtin index update against the provider temporary index because external process filters have already been rejected and execution-producing config surfaces are clamped.
+The fixed staging operation may use `git add`/equivalent builtin index update against the provider temporary index because custom filter attributes were rejected before checkout and revalidated before persistence, while execution-producing config surfaces remain clamped.
 
-The Codex-owned original index is never read as candidate authority.
+The Codex-owned original index is never candidate authority.
 
 #### D14.4 — Canonicalization invariants
 
 The provider MUST prove:
 
-1. an unchanged tracked file whose Windows worktree representation differs only because of checkout-induced CRLF expansion re-materializes to the **same parent blob SHA**;
+1. an unchanged tracked file whose Windows worktree representation differs only because of the frozen checkout's CRLF expansion re-materializes to the **same parent blob SHA**;
 2. a real edit to such a CRLF worktree file produces canonical content with the semantic edit but without whole-file line-ending churn;
 3. binary paths preserve exact bytes and do not receive text normalization;
-4. supported `working-tree-encoding` paths are converted by Git's builtin clean semantics, not a caller/external process;
-5. custom/external filter attributes fail before filter execution;
-6. a change to versioned `.gitattributes` is included only as an eligible product change and its effective attribute snapshot is digested/revalidated before candidate tree finalization;
-7. any normalization/attribute snapshot drift during persistence fails closed.
+4. supported `working-tree-encoding` paths round-trip under the same pre-checkout snapshot;
+5. custom/external filter attributes cannot execute at checkout or persistence time;
+6. versioned `.gitattributes` mutation is rejected in V1 rather than changing clean authority mid-attempt;
+7. normalization/attribute snapshot drift between checkout and persistence fails closed.
 
-The provider records the normalization snapshot digest, effective-attribute digest, eligible path digest and candidate tree SHA in recovery/receipt evidence without exposing user environment or credentials.
+The receipt/recovery evidence records the shared canonicalization snapshot digest, expected-attribute digest, eligible path digest and candidate tree SHA without exposing user environment or credentials.
 
 ### D15 — Fixed Git persistence primitives and config clamp
 
@@ -187,8 +277,9 @@ Persistence uses a closed internal Git broker only. It is not model-facing and a
 Allowed semantic operations are limited to:
 
 ```text
-fixed safe-config snapshot read
-fixed effective-attribute inspection
+fixed pre-checkout safe-config snapshot read
+fixed expected-tree attribute inspection before checkout
+provider-clamped local checkout
 fixed remote readback
 validated worktree inventory
 provider temporary-index construction
@@ -199,7 +290,7 @@ ordinary fast-forward push exact candidate -> exact canonical branch
 independent remote readback
 ```
 
-Local candidate construction excludes arbitrary system/global configuration and replays only the allowlisted checkout-normalization snapshot needed to preserve canonical clean semantics.
+Checkout and local candidate construction both exclude arbitrary system/global materialization authority and replay the same frozen allowlisted checkout-normalization snapshot needed to preserve canonical clean semantics.
 
 Remote authenticated publication continues to reuse the existing fixed active-user Git credential/context boundary. Credential values are never copied, returned or logged.
 
@@ -225,9 +316,11 @@ transport:
   canonical_branch:
   expected_remote_sha:
 clean_semantics:
-  checkout_normalization_snapshot_digest:
-  effective_attributes_digest:
+  pre_checkout_snapshot_digest:
+  expected_attribute_snapshot_digest:
+  checkout_materialized_under_snapshot: true
   info_attributes_empty: true
+  versioned_gitattributes_unchanged: true
 commit_identity:
   fixed_author_name:
   fixed_author_email:
@@ -342,7 +435,7 @@ A no-change outcome and an unpersisted dirty-worktree outcome remain distinct fr
 
 ## 3. Security and authority constraints
 
-Plan R5 preserves all R2 security boundaries.
+Plan R6 preserves all R2 security boundaries.
 
 The implementation MUST NOT:
 
@@ -363,7 +456,7 @@ The persistence broker is exact-task transport finalization for the direct/Codex
 
 ## 4. Current implementation delta
 
-Plan Review should compile exactly one new current implementation slice if R5 is approved:
+Plan Review should compile exactly one new current implementation slice if R6 is approved:
 
 ### Proposed S04 — Provider-Owned Deterministic Persistence & Canonical Publish Closure
 
@@ -393,32 +486,36 @@ Historical S01-S03 implementation should not be rewritten except where a minimal
 
 Required cases:
 
-1. provider captures `core.autocrlf/core.eol/core.safecrlf` after checkout and reuses the same snapshot during persistence;
-2. parent LF blob + checkout-induced Windows CRLF worktree with no semantic edit re-materializes to the exact parent blob SHA;
-3. one-line semantic edit in that CRLF worktree file yields canonical LF blob content with only the semantic edit, not whole-file EOL churn;
-4. binary fixture preserves exact bytes with no text normalization;
-5. supported `working-tree-encoding` fixture round-trips through Git builtin clean conversion deterministically;
-6. effective custom `filter` attribute fails closed before its marker process can execute;
-7. global/system attributes are disabled for local candidate construction and non-empty `.git/info/attributes` fails closed;
-8. pre-staged excluded path in the Codex-owned index does not enter the provider candidate tree;
-9. provider temporary index is seeded from the exact admitted parent and contains only validated canonical eligible delta;
-10. hooks/signing/fsmonitor/editor/pager/terminal prompts cannot execute through the persistence path;
-11. provider control/recovery artifacts are not committed;
-12. unmerged index/worktree state fails closed;
-13. unsupported gitlink/submodule mutation fails closed;
-14. symlink/path traversal cannot read or commit content outside the execution checkout;
-15. normalization/attribute snapshot drift during persistence fails closed;
-16. canonical checkout branch/head/index/worktree metadata remain unchanged;
-17. remote head drift before publish fails without push;
-18. ordinary push succeeds only to the exact canonical branch;
-19. remote readback mismatch fails receipt validation;
-20. no eligible changes does not manufacture an empty implementation commit;
-21. malformed persistence receipt fails;
-22. local dirty/uncommitted work cannot be success;
-23. same admitted attempt reconstructs a **bit-identical candidate SHA** after interruption at `prepared`, `tree_ready`, `candidate_ready` and local-ref-ready boundaries;
-24. crash after `publish_intent` performs readback only and never creates another candidate or automatic second push;
-25. remote readback after uncertain push correctly distinguishes candidate published / base still present / transport drift;
-26. existing S01-S03 direct-Codex, firewall, scoped-verification and user-scoped Git regressions remain green.
+1. clone/fetch obtains the exact admitted commit without materializing the worktree;
+2. provider captures and validates the safe normalization scalars **before checkout** and persists/read-backs the snapshot;
+3. provider inspection index is seeded from `expected_remote_sha` before checkout;
+4. effective custom `filter` on any tracked path in expected-tree `.gitattributes` fails closed before its marker process can execute during checkout;
+5. global/system attributes are neutralized for checkout and non-empty `.git/info/attributes` blocks checkout;
+6. checkout runs under provider clamps with empty hooks path, fsmonitor off, submodule recursion off, no pager/editor/prompt and no arbitrary user config authority;
+7. parent LF blob + checkout-induced Windows CRLF worktree under the frozen snapshot re-materializes to the exact parent blob SHA;
+8. one-line semantic edit in that CRLF worktree file yields canonical LF content with only the semantic edit;
+9. binary fixture preserves exact bytes with no text normalization;
+10. supported `working-tree-encoding` fixture round-trips under the same frozen snapshot;
+11. Codex modification/add/delete of any versioned `.gitattributes` path fails closed before candidate construction;
+12. snapshot/attribute drift between checkout and persistence fails closed;
+13. pre-staged excluded path in the Codex-owned index does not enter the provider candidate tree;
+14. provider temporary candidate index is seeded from the exact admitted parent and contains only validated canonical eligible delta;
+15. hooks/signing/fsmonitor/editor/pager/terminal prompts cannot execute through the persistence path;
+16. provider control/recovery artifacts are not committed;
+17. unmerged index/worktree state fails closed;
+18. unsupported gitlink/submodule mutation fails closed;
+19. symlink/path traversal cannot read or commit content outside the execution checkout;
+20. canonical checkout branch/head/index/worktree metadata remain unchanged;
+21. remote head drift before publish fails without push;
+22. ordinary push succeeds only to the exact canonical branch;
+23. remote readback mismatch fails receipt validation;
+24. no eligible changes does not manufacture an empty implementation commit;
+25. malformed persistence receipt fails;
+26. local dirty/uncommitted work cannot be success;
+27. same admitted attempt reconstructs a **bit-identical candidate SHA** after interruption at `prepared`, `tree_ready`, `candidate_ready` and local-ref-ready boundaries;
+28. crash after `publish_intent` performs readback only and never creates another candidate or automatic second push;
+29. remote readback after uncertain push correctly distinguishes candidate published / base still present / transport drift;
+30. existing S01-S03 direct-Codex, firewall, scoped-verification and user-scoped Git regressions remain green.
 
 ### Physical Windows proof
 
@@ -434,7 +531,13 @@ real Codex modifies isolated checkout
 -> canonical checkout unchanged
 ```
 
-The physical proof must additionally use a tracked text fixture whose Windows worktree representation is CRLF while the parent Git blob is LF. It must prove an unchanged path canonicalizes to the parent blob SHA and a one-line real edit remains LF-canonical without whole-file EOL churn.
+The physical proof must additionally prove the shared boundary end to end:
+
+- a repository fixture with a custom `filter` attribute is rejected before checkout and its marker process never runs;
+- a normal tracked text fixture is materialized as Windows CRLF under the frozen pre-checkout snapshot while the parent Git blob is LF;
+- the unchanged path canonicalizes back to the exact parent blob SHA under the same snapshot;
+- a one-line real edit remains LF-canonical without whole-file EOL churn;
+- changing a versioned `.gitattributes` file during the Codex run fails closed before persistence.
 
 The physical proof must also run a remote-drift negative and prove no replacement transport/force path is used.
 
@@ -453,7 +556,7 @@ adapter: codex
 
 The previous CodeBuddy override is expired and bound to Plan R2. It cannot be reused.
 
-Because the direct/Codex bridge cannot yet persist its own implementation work, an approved Plan R5 may require a **new explicit Task-scoped bootstrap override** bound to Plan R5 and its reviewed Slice Set:
+Because the direct/Codex bridge cannot yet persist its own implementation work, an an approved Plan R6 may require a **new explicit Task-scoped bootstrap override** bound to Plan R6 and its reviewed Slice Set:
 
 ```text
 #开发引导执行 PR-015-direct-codex-development-host-invocation-bridge-v1 direct:codebuddy
@@ -516,22 +619,22 @@ Mitigation: private fixed operations only, no model-facing Git fields, no generi
 
 ## 9. Plan Review questions
 
-Plan Review R5 must specifically verify:
+Plan Review R6 must specifically verify:
 
-- the Codex-owned checkout index remains explicitly untrusted;
-- provider candidate construction still uses a temporary provider-owned index seeded from the exact admitted parent;
-- safe checkout normalization config is captured before Codex and replayed deterministically during persistence;
-- system/global attribute/config execution authority is clamped and `.git/info/attributes` cannot silently influence candidate semantics;
-- effective custom `filter` attributes are rejected before any external process can execute;
-- Git builtin text/eol, binary, ident and supported working-tree-encoding clean semantics remain available;
-- Windows CRLF checkout bytes canonicalize back to the parent LF blob when semantically unchanged;
-- a small real edit does not become whole-file EOL churn;
-- the final candidate tree is proven to equal parent + exactly the validated canonical eligible delta;
-- every commit-SHA input remains frozen before candidate creation or derivable from canonical attempt identity;
-- recovery journal state remains outside the candidate set and same-attempt recovery reconstructs the bit-identical candidate SHA;
-- `publish_intent` continues to prevent hidden automatic re-push after uncertain publication;
+- remote clone/fetch object acquisition is separated from first worktree materialization;
+- the safe canonicalization snapshot is captured, validated and durably read back before checkout;
+- expected-tree attributes are inspected from provider-owned pre-checkout state without executing filters;
+- any effective custom `filter` on any tracked path blocks checkout before external execution;
+- system/global attribute authority is neutralized and `.git/info/attributes` cannot influence checkout;
+- checkout and persistence use the same frozen safe normalization + expected-tree attribute authority;
+- hooks/fsmonitor/submodule recursion/editor/pager/prompt and arbitrary user materialization config are clamped during checkout;
+- versioned `.gitattributes` mutation is deliberately unsupported in V1 so checkout/clean semantics cannot diverge mid-attempt;
+- Windows CRLF checkout bytes canonicalize back to the parent LF blob when unchanged and small edits do not become whole-file churn;
+- the Codex-owned index remains untrusted and provider candidate construction still uses a temporary index seeded from the exact admitted parent;
+- every commit-SHA input remains frozen before candidate creation and same-attempt recovery remains bit-identical;
+- `publish_intent` still prevents hidden automatic re-push after uncertain publication;
 - provider-owned persistence remains a bounded direct/Codex transport broker rather than a generic Git surface;
 - retained S01-S03 evidence remains valid and only S04 is newly implementation-authorized after approval;
-- a new Plan-R5-bound bootstrap override is required before S04 execution.
+- a new Plan-R6-bound bootstrap override is required before S04 execution.
 
-Approval must compile a new current Slice Set for Plan R5. This Plan does not self-approve and does not authorize implementation.
+Approval must compile a new current Slice Set for Plan R6. This Plan does not self-approve and does not authorize implementation.
