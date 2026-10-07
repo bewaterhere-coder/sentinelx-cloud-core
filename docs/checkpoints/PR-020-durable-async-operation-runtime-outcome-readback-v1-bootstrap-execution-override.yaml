@@ -1,0 +1,87 @@
+schema_version: "1.1"
+kind: devforge_task_scoped_bootstrap_execution_override
+task_id: PR-020-durable-async-operation-runtime-outcome-readback-v1
+state: active
+mode: implementation_bootstrap
+
+authority:
+  command: "#开发引导执行"
+  capability: development.bootstrap_execution_override
+  task_id: PR-020-durable-async-operation-runtime-outcome-readback-v1
+
+bootstrap_relation:
+  blocked_provider:
+    provider: direct
+    adapter: codex
+    source: explicit_project_binding
+  missing_or_broken_capability: development_host.durable_async_operation_outcome_readback_v1
+  task_delivers_or_repairs_capability: true
+  evidence_refs:
+    - docs/execution/PR-020-durable-async-operation-runtime-outcome-readback-v1-slices.yaml@106eedfa8a6f1047e486c4b57369d1e279915cff
+    - docs/plans/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan.md@304cbf2ab58b4fa3835c35b343bd1214565c2920
+    - docs/reviews/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan-review-r4.md@2082e376c8bda337f5d82eb34785a499d6295a5c
+
+target:
+  provider: direct
+  adapter: codebuddy
+  registered: true
+  available: true
+  registration_evidence:
+    - DevForge adapter: adapters/development/codebuddy.md
+  availability_evidence:
+    - current Windows Host reports an active CodeBuddy consumer surface
+    - DevForge user rule is present with alwaysApply=true and enabled=true
+    - current-day CodeBuddy activity evidence is present
+  persisted_host_absolute_paths: false
+
+binding:
+  requirement_ref: docs/requirements/PR-020-durable-async-operation-runtime-outcome-readback-v1.md
+  requirement_revision: 1
+  plan_ref: docs/plans/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan.md
+  plan_revision: 4
+  plan_digest: 304cbf2ab58b4fa3835c35b343bd1214565c2920
+  slice_set_ref: docs/execution/PR-020-durable-async-operation-runtime-outcome-readback-v1-slices.yaml
+  slice_set_digest: 106eedfa8a6f1047e486c4b57369d1e279915cff
+  canonical_transport_ref: github-pr:bewaterhere-coder/sentinelx-cloud-core#20@task/durable-async-operation-runtime-outcome-readback-v1
+  canonical_pr: 20
+  canonical_branch: task/durable-async-operation-runtime-outcome-readback-v1
+  acceptance: null
+
+scope:
+  stages: [implementation]
+  max_slice_completions_per_execute: 1
+  max_fixing_attempts_per_execute: 1
+  acceptance_authority: forbidden
+  credential_expansion: forbidden
+  fallback: forbidden
+  gate_change: forbidden
+  permission_expansion: forbidden
+  plan_change: forbidden
+  replacement_branch: forbidden
+  replacement_pr: forbidden
+  requirement_change: forbidden
+  write_scope_expansion: forbidden
+
+expiry:
+  on_all_bound_plan_slices_completed: true
+  on_requirement_semantic_change: true
+  on_plan_semantic_change: true
+  on_transport_drift: true
+  on_target_unavailable: true
+  on_task_leaves_bound_stage: true
+  on_task_cancelled: true
+  on_explicit_revoke: true
+
+override_digest: 3cd9ee272c25db4b3e662c92772b68196f3617594cb3e257f71570933d8db5bd
+
+receipt:
+  readback_verified: false
+
+admission:
+  resolver_contract: system/task-scoped-bootstrap-execution-override-contract.md
+  resolver_version: "1.1"
+  disposition: BootstrapOverrideAdmitted
+  reason_code: null
+  project_binding_mutated: false
+  implementation_execution_authorized_by_this_command: false
+  provider_fallback: false
