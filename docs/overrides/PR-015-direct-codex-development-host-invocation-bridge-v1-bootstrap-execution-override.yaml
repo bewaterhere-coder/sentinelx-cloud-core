@@ -141,5 +141,7 @@ admission:
 receipt:
   created_at: "2026-10-07"
   readback_required: true
-  readback_verified: false
+  readback_verified: true
   checkpoint_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-fixing-recovery-r2-20261007.yaml
+  checkpoint_blob_sha: 603e4491542caeb4ead394eb84349a72b31e4ef2
+  checkpoint_commit: de81056d97c7971e8fd31e736e74a358155e61da
