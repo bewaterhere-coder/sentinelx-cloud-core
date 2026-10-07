@@ -25,6 +25,13 @@ development:
   bootstrap_execution_override_state: active
   bootstrap_execution_override_mode: implementation_bootstrap
   bootstrap_execution_override_digest: 3cd9ee272c25db4b3e662c92772b68196f3617594cb3e257f71570933d8db5bd
+  execution_disposition: blocked
+  execution_blocker: WorkspaceMaterializationProviderUnavailable
+  latest_execution_run: docs/execution/PR-020-durable-async-operation-runtime-outcome-readback-v1-s01-run-001.yaml
+  latest_execution_checkpoint: docs/checkpoints/PR-020-durable-async-operation-runtime-outcome-readback-v1-s01-blocked-20261008.yaml
+  blocked_by_tasks:
+    - PR-014-devforge-execution-workspace-materialization-bridge-v1
+    - PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1
 transport:
   type: github-pr
   pr_number: 20
