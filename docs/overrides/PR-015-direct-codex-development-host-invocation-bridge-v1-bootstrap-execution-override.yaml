@@ -1,34 +1,47 @@
 schema_version: "1.0"
 kind: devforge_task_scoped_bootstrap_execution_override
-state: expired
+state: active
+override_revision: 2
 
 authority:
   command: "#开发引导执行"
   capability: development.bootstrap_execution_override
   task_id: PR-015-direct-codex-development-host-invocation-bridge-v1
+  source_command: "#开发引导执行 PR-015-direct-codex-development-host-invocation-bridge-v1 direct:codebuddy"
+  granted_by: human
 
 bootstrap_relation:
   blocked_provider:
     provider: direct
     adapter: codex
-  missing_capability: bounded_direct_codex_development_host_invocation_surface
+  missing_capability: bounded_direct_codex_persistence_closure
   task_delivers_missing_capability: true
+  relation: >-
+    The persistent direct/codex provider can invoke the real Codex Development
+    Host but cannot complete this exact S04 because successful real-host edits
+    still require the provider-owned deterministic persistence/publish closure
+    that S04 itself implements.
   evidence_refs:
     - docs/requirements/PR-015-direct-codex-development-host-invocation-bridge-v1.md
     - docs/plans/PR-015-direct-codex-development-host-invocation-bridge-v1-plan.md
-    - docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r2.md
-    - docs/execution/PR-015-direct-codex-development-host-invocation-bridge-v1-slices.yaml
+    - docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r6.md
+    - docs/execution/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-r6-slices.yaml
+    - docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r1.md
 
 target:
   provider: direct
   adapter: codebuddy
   registration_evidence:
-    - bewaterhere-coder/DevForge@6fa162ff829cd1082c769908b5f85e23cd164a19:adapters/development/codebuddy.md
-    - bewaterhere-coder/DevForge@6fa162ff829cd1082c769908b5f85e23cd164a19:contracts/development/project-binding.md
+    - bewaterhere-coder/DevForge@e16948004601829813f19dbef4cf3cc018606ff9:adapters/development/codebuddy.md
+    - bewaterhere-coder/DevForge@e16948004601829813f19dbef4cf3cc018606ff9:contracts/development/project-binding.md
   host_availability_evidence:
     platform: windows
+    host_id: host_7f0e709ded71ab24
     codebuddy_executable_present: true
     codebuddy_cli_present: true
+    codebuddy_executable_ref: "C:\\Users\\liqiu\\AppData\\Local\\Programs\\CodeBuddy CN\\CodeBuddy CN.exe"
+    codebuddy_cli_ref: "C:\\Users\\liqiu\\AppData\\Local\\Programs\\CodeBuddy CN\\bin\\buddycn.cmd"
+    devforge_user_rule_ref: "C:\\Users\\liqiu\\.codebuddy\\rules\\devforge.md"
     devforge_user_rule_present: true
     devforge_user_rule_enabled: true
     devforge_user_rule_always_apply: true
@@ -37,12 +50,16 @@ target:
 
 binding:
   requirement_ref: docs/requirements/PR-015-direct-codex-development-host-invocation-bridge-v1.md
-  requirement_revision: 1
+  requirement_revision: 2
+  requirement_blob_sha: 0c3a00074d24e440cc347d69730770b74c660637
   plan_ref: docs/plans/PR-015-direct-codex-development-host-invocation-bridge-v1-plan.md
-  plan_revision: 2
-  plan_digest: b1414f58e31e69fd5718479d04eb6b7e9e8475bd
-  slice_set_ref: docs/execution/PR-015-direct-codex-development-host-invocation-bridge-v1-slices.yaml
-  slice_set_digest: a02a4be5aeb4ae3f9f15b9108068576ea9ba165e
+  plan_revision: 6
+  plan_digest: 2bcea2a44f88e51c8b9378ba6297b61897e638da
+  plan_review_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r6.md
+  plan_review_digest: 5e6ff106b7d5befcae4fccc77d83ddae3c674764
+  slice_set_ref: docs/execution/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-r6-slices.yaml
+  slice_set_digest: 192e5446036423297cbcece01a27492ae9aae390
+  current_slice: S04
   canonical_transport:
     type: github-pr
     repository: bewaterhere-coder/sentinelx-cloud-core
@@ -55,6 +72,7 @@ binding:
 
 scope:
   stages: [implementation]
+  selected_slice: S04
   max_slice_completions_per_execute: 1
   replacement_branch: forbidden
   replacement_pr: forbidden
@@ -68,6 +86,11 @@ scope:
   transport_migration: forbidden
   devforge_runtime_mutation: forbidden
   host_policy_mutation: forbidden
+  production_hub_mutation: forbidden
+  generic_shell_or_exec: forbidden
+  generic_git_surface: forbidden
+  force_push: forbidden
+  canonical_checkout_mutation: forbidden
 
 expiry:
   on_all_bound_plan_slices_completed: true
@@ -78,29 +101,28 @@ expiry:
 
 admission:
   devforge_runtime:
-    version: "2.69.0"
-    revision: 6fa162ff829cd1082c769908b5f85e23cd164a19
+    version: "2.82.0"
+    revision: e16948004601829813f19dbef4cf3cc018606ff9
   task_stage: implementation
   plan_approved: true
-  current_slice: S01
-  pr_head_before_override: 80172bcdec778edfe5c0dc5e091fabf5aa81febc
+  implementation_authorized: true
+  current_slice: S04
+  current_slice_state: pending
+  pr_head_before_override: 0465feb2d1466982158c9cde464bba68fb715cd6
   canonical_main: 018b78ca20984176d53fbe90039dc795a7f2742f
   self_host_relation_verified: true
   target_registered: true
   target_available: true
-  transport_preserved: true
+  canonical_transport_locked: true
+  write_scope_preserved: true
+  project_binding_preserved: true
   authority_widened: false
+  prior_override:
+    state: expired
+    bound_plan_revision: 2
+    reused_as_authority: false
 
 receipt:
-  created_at: "2026-10-06"
-  readback_verified: true
-  readback_ref: github_blob:f42072e49a4fa3a0df7f02af3348063da41d45e9
-
-resolution:
-  expired_by_condition: all_bound_plan_slices_completed
-  task_stage_after_acceptance_entry: acceptance
-  project_binding_restored_by_fallthrough: true
-  project_binding:
-    provider: direct
-    adapter: codex
-  acceptance_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r1.md
+  created_at: "2026-10-07"
+  readback_verified: false
+  readback_ref: null
