@@ -1,0 +1,91 @@
+schema_version: "0.1"
+kind: devforge_execution_run_ledger
+identity:
+  task_id: PR-021-minimal-runtime-complexity-reduction-boundary-v1
+  run_id: RUN-PR021-S01-001
+
+events:
+  - event_id: PR021-S01-001-E001
+    task_id: PR-021-minimal-runtime-complexity-reduction-boundary-v1
+    run_id: RUN-PR021-S01-001
+    attempt_id: null
+    sequence: 1
+    timestamp: "2026-10-08"
+    type: run.created
+    actor: devforge_orchestration
+    payload:
+      slice_id: S01
+      execution_mode: direct_short
+      product_source_mutation_authorized: false
+    artifact_refs:
+      - docs/execution/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s01-run-001.yaml
+
+  - event_id: PR021-S01-001-E002
+    task_id: PR-021-minimal-runtime-complexity-reduction-boundary-v1
+    run_id: RUN-PR021-S01-001
+    attempt_id: ATTEMPT-001
+    sequence: 2
+    timestamp: "2026-10-08"
+    type: attempt.started
+    actor: github_repository_api
+    payload:
+      operation: canonical_read_only_inventory
+      codebuddy_invoked: false
+      codex_invoked: false
+    artifact_refs: []
+
+  - event_id: PR021-S01-001-E003
+    task_id: PR-021-minimal-runtime-complexity-reduction-boundary-v1
+    run_id: RUN-PR021-S01-001
+    attempt_id: ATTEMPT-001
+    sequence: 3
+    timestamp: "2026-10-08"
+    type: artifact.observed
+    actor: github_repository_api
+    payload:
+      sentinelx_main: 1028030b33f0ea792a884491a431fffe566f6aa5
+      devforge_main: bb737a2a9354d9cf518422d2c32ec527d5ff0be7
+      devforge_version: "2.100.0"
+      active_related_prs: [14, 19, 20]
+      harness_slice_consumer_pr: bewaterhere-coder/devforge-harness#229
+      devforge_core_slice_pr: bewaterhere-coder/DevForge#3
+    artifact_refs:
+      - docs/execution/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s01-attempt-001-receipt.yaml
+
+  - event_id: PR021-S01-001-E004
+    task_id: PR-021-minimal-runtime-complexity-reduction-boundary-v1
+    run_id: RUN-PR021-S01-001
+    attempt_id: ATTEMPT-001
+    sequence: 4
+    timestamp: "2026-10-08"
+    type: verification.passed
+    actor: devforge_orchestration
+    payload:
+      canonical_evidence_collected: true
+      active_lineage_evidence_collected: true
+      ownership_dependency_unknowns_recorded: true
+      product_source_mutated: false
+      tests_mutated: false
+      production_hub_mutated: false
+      project_binding_mutated: false
+    artifact_refs:
+      - docs/execution/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s01-attempt-001-receipt.yaml
+
+  - event_id: PR021-S01-001-E005
+    task_id: PR-021-minimal-runtime-complexity-reduction-boundary-v1
+    run_id: RUN-PR021-S01-001
+    attempt_id: ATTEMPT-001
+    sequence: 5
+    timestamp: "2026-10-08"
+    type: attempt.completed
+    actor: github_repository_api
+    payload:
+      outcome: succeeded
+      external_product_side_effects: none
+      durable_evidence_persisted: true
+    artifact_refs:
+      - docs/execution/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s01-attempt-001-receipt.yaml
+
+integrity:
+  final_sequence: 5
+  digest_basis: git_blob_sha_on_readback

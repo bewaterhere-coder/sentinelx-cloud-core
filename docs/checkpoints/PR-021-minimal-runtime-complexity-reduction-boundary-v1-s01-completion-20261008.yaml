@@ -1,0 +1,97 @@
+schema_version: "1.1"
+kind: devforge_slice_completion_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-021-minimal-runtime-complexity-reduction-boundary-v1
+slice_id: S01
+source_command: "#开发执行 PR-021-minimal-runtime-complexity-reduction-boundary-v1"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  version: "2.100.0"
+  revision: bb737a2a9354d9cf518422d2c32ec527d5ff0be7
+  workflow: project_development
+  workflow_version: "2.1"
+
+plan_lineage:
+  requirement_revision: 1
+  plan_revision: 1
+  plan_blob_sha: fcb9d8ef2f802ab5c90c575110e732ee690328d2
+  slice_set_blob_sha_at_admission: 11f99ea71db3768aae7f5703a140cefbf24126c8
+
+execution:
+  run_id: RUN-PR021-S01-001
+  run_ref: docs/execution/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s01-run-001.yaml
+  run_blob_sha: 663aa5e94e38d7a77fda98d41234eaa9ea74a95e
+  finalization_ref: docs/execution/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s01-run-001-finalization.yaml
+  finalization_blob_sha: 29d84da26ccc8750399cdc410e7a10c33b9ce7c8
+  attempt_receipt_ref: docs/execution/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s01-attempt-001-receipt.yaml
+  attempt_receipt_blob_sha: b20be0f937b9a74aecd5cc2c80ca21449ba85c84
+  ledger_ref: docs/execution/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s01-run-001-ledger.yaml
+  ledger_blob_sha: 11beb37688a5e79929ca64addefb620d60fd5be9
+
+transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 21
+  branch: task/minimal-runtime-complexity-reduction-boundary-v1
+  canonical_main: 1028030b33f0ea792a884491a431fffe566f6aa5
+  task_branch_head_before_checkpoint: 411151b5bfc0d8df00902cf93b7ae9773d9e7d3e
+
+inventory_result:
+  canonical_main_capability_surface_collected: true
+  direct_codex_module_family_collected: true
+  mutation_security_surface_collected: true
+  local_api_projection_surface_collected: true
+  background_job_and_pending_result_surface_collected: true
+  verification_surface_collected: true
+  pr014_current_lineage_collected: true
+  pr019_current_lineage_collected: true
+  pr020_current_lineage_collected: true
+  devforge_core_slicing_contract_collected: true
+  devforge_harness_pr229_resolved: true
+  ownership_dependency_unknowns_recorded: true
+  final_disposition_frozen: false
+  final_disposition_owner: S02_and_S03
+
+key_observations:
+  - Direct Codex on main is a full SentinelX-owned Agent lifecycle path with a 300-second real sandbox probe and multiple Codex-specific support modules.
+  - Generic background execution already exists independently through jobs/client/script/exec, with a one-hour ceiling; pending_results preserves completion delivery, not running-job truth.
+  - Mutation Scope, fail-closed mutation audit, AppContainer/ACL/Job sandbox, operation/effect registry and canonical repository firewall are security substrates, not long-Agent orchestration features.
+  - PR-014 is blocked at S02 on DirectDevelopmentHostInvocationProjectionUnavailable with direct:codebuddy bootstrap, while its completed S01 branch code reuses existing scope/sandbox security primitives.
+  - PR-020 is blocked before S01 and proposes a generic Durable Async runtime specifically to make long operations survive the synchronous request lifetime.
+  - PR-229 is bewaterhere-coder/devforge-harness#229, a Harness consumer task for incremental_execution.slice_v1; DevForge Core slicing itself is already merged in DevForge#3 and current Core contract v1.1.
+  - Current DevForge project registry still binds sentinelx-cloud-core to provider=direct adapter=codex; PR-021 does not authorize changing that binding.
+
+unknowns_forwarded:
+  - U1: minimal short-mutation need for PR-014 workspace placement/sandbox substrate
+  - U2: independent non-development consumer need for PR-020 durable operation truth
+  - U3: reusable short evidence/receipt pieces inside Direct Codex after guided CLI
+  - U4: PR-019 baseline definition after Direct Codex ceases to be core
+  - U5: capability-class routing rule for short verification versus guided CLI
+  - U6: successor ownership of any project-binding change
+
+verification:
+  required_evidence_read_back: true
+  run_finalization_completed: true
+  product_source_mutated: false
+  tests_mutated: false
+  production_hub_mutated: false
+  active_related_pr_state_mutated: false
+  project_binding_mutated: false
+  codebuddy_invoked: false
+  codex_invoked: false
+
+safety:
+  implementation_transport: github_repository_api
+  host_local_product_mutation_used: false
+  canonical_checkout_mutated: false
+  host_policy_mutated: false
+  live_agent_installed_or_restarted: false
+  timeout_extended: false
+
+postconditions:
+  s01_verification_satisfied: true
+  s01_completion_eligible: true
+  s02_executed: false
+  next_slice: S02
+  next_slice_state: pending
+  completion_claimed_for_task: false
