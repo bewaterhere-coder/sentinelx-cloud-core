@@ -31,7 +31,7 @@ development:
         - focused pytest for tests/test_direct_codex_execution.py
         - focused pytest for tests/test_stable_baseline.py
   blocking_findings:
-    - S01 implementation candidate is published and remotely read back, but exact-candidate focused pytest is blocked by the currently installed Host runtime: devforge_runtime.execute_scoped and terminalize_scope both fail because WindowsMutationSandbox.terminalize is absent. The preserved verification scope remains active after service restart. PR-017 owns the terminalization/cleanup repair; PR-019 must not duplicate or activate that unmerged repair.
+    - S01 implementation candidate is published and remotely read back, but exact-candidate focused pytest is blocked by Host mutation-scope schema incompatibility. The upgraded Agent main@1028030b includes WindowsMutationSandbox.terminalize(), but canonical main MutationScopeRecord does not accept runtime_read_authority_roots while the preserved active scope was written with that field. terminalize_scope therefore fails with HostMutationScopeCorrupt. Residual scope authority is unresolved; PR-019 must not strip the field, open a new mutating window, or silently activate unmerged PR-017 code.
   recovery:
     run_id: run-pr019-s01-20261008-001
     interrupted_attempt_id: attempt-001
@@ -59,7 +59,7 @@ artifacts:
   latest_recovery_stabilization: docs/reviews/PR-019-stable-baseline-stabilization-exit-gate-v1-s01-attempt1-recovery-hold-20261008.yaml
   latest_recovery_terminalization: docs/checkpoints/pr019-s01-recovery-terminal-r3.yaml
   latest_execution_checkpoint: docs/checkpoints/PR-019-stable-baseline-stabilization-exit-gate-v1-s01-candidate-published-verification-pending-20261008.yaml
-  latest_dependency_blocker: docs/checkpoints/PR-019-stable-baseline-stabilization-exit-gate-v1-s01-blocked-pr017-terminalization-runtime-20261008.yaml
+  latest_dependency_blocker: docs/checkpoints/PR-019-stable-baseline-stabilization-exit-gate-v1-s01-blocked-scope-schema-compatibility-20261008.yaml
 related_tasks:
   evidence_predecessors:
     - PR-011-scoped-verification-toolchain-dependency-capsule-v1
