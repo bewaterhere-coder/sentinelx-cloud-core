@@ -18,19 +18,16 @@ development:
   implementation_authorized: true
   next_expected_actor: implementer
   blocking_findings:
-    - S02 repair is complete on exact candidate 4896a55cb951dec47422c738ccb1ba98762e13a9, but S03 cannot start until that exact candidate (or an explicitly reconciled descendant) is activated on the Windows Host.
-    - The Host currently runs concurrent PR-015 candidate d441e95b6eb65834f52ffdb42026e7328f5c9478, so live evidence from that Agent cannot be claimed for PR-017 S03.
-    - The prior failed PowerShell scope mss_62URoGdXBbPJCnNK6Xdm_dye is still projected only as historical terminal; the bounded inspect_scope projection does not expose sandbox_identity/runtime-root SID state, so exact SID absence remains unproven.
-    - Direct read of C:\ProgramData\SentinelX\state\mutation-scopes\authority.json is denied by file_ops and PR-017 forbids widening file_ops as a workaround.
-    - The current model-facing sentinel_script_run still rejects execution with execution_profile_required, so it cannot be used to install the PR-017 exact candidate or run an out-of-band icacls proof.
-    - No new PowerShell/Unity scoped mutation is permitted until candidate activation and old-SID closure are both proven.
-  current_slice: S03
-  current_slice_state: blocked
+    - Live S03 proof on exact repair candidate 4896a55cb951dec47422c738ccb1ba98762e13a9 invalidated S02 repair completion authority: residual runtime-read authority is now durably preserved as revoked, but devforge_runtime.terminalize_scope cannot perform OS cleanup because the generic mutation_scope lifecycle service calls MutationScopeStore.terminalize_scope without a runtime_cleanup callback.
+    - The real scope mss_JB_VJlJg4Np6LdrxgKd_fCw9 is correctly revoked after scoped execution cleanup could not close within the request, proving false-terminal repair works.
+    - An explicit bounded terminalize retry on that same scope returned HostMutationResidualAuthorityDetected instead of performing WindowsMutationSandbox cleanup, violating R5's reachable revoked -> cleanup retry -> terminal requirement.
+    - No new PowerShell/Unity live scope is permitted until the explicit retry surface is wired to the canonical WindowsMutationSandbox cleanup path.
+  current_slice: S02
+  current_slice_state: repair_required
   authorization:
     mode: legacy_command_scoped
   completed_slices:
     - S01
-    - S02
 transport:
   type: github-pr
   pr_number: 17
@@ -41,9 +38,9 @@ artifacts:
   latest_plan_review: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-review-r1.md
   latest_plan_review_transition_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-review-r1-transition-receipt.yaml
   execution_slice_set: docs/execution/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-slices.yaml
-  latest_slice_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-resume-blocked-host-candidate-and-sid-readback-20261007.yaml
+  latest_slice_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-live-invalidates-s02-retry-surface-20261007.yaml
   latest_slice_completion_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-repair-completion-receipt-r2.yaml
-  latest_slice_invalidation: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-live-invalidation-r1.md
+  latest_slice_invalidation: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-live-invalidation-r2.md
 related_tasks:
   predecessor:
     - PR-012-execute-scoped-explicit-execution-profile-v1
