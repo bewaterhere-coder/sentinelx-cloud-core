@@ -7,20 +7,19 @@ project_id: sentinelx-cloud-core
 task_id: PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1
 requirement_revision: 1
 development:
-  stage: plan_review
+  stage: implementation
   gates:
     requirement_ready: true
-    plan_approved: false
+    plan_approved: true
     acceptance_approved: false
     completion_verified: false
   plan_revision: 2
-  implementation_authorized: false
-  next_expected_actor: reviewer
-  blocking_findings:
-    - Plan R2 addresses Plan Review R1 findings without changing Requirement Revision 1 or canonical transport.
-    - Implementation remains blocked until a fresh #开发评审 approves Plan R2 and a current execution Slice Set is compiled/read back.
-  current_slice: null
-  current_slice_state: not_compiled
+  implementation_authorized: true
+  next_expected_actor: implementer
+  blocking_findings: []
+  current_slice: S01
+  current_slice_state: pending
+  completed_slices: []
 transport:
   type: github-pr
   pr_number: 18
@@ -29,11 +28,11 @@ transport:
   stacked_on_pr: 17
 artifacts:
   plan: docs/plans/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-plan.md
-  latest_plan_review: docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-plan-review-r1.md
-  latest_plan_review_transition_receipt: docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-plan-review-r1-transition-receipt.yaml
+  latest_plan_review: docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-plan-review-r2.md
+  latest_plan_review_transition_receipt: docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-plan-review-r2-transition-receipt.yaml
   latest_plan_remediation: docs/checkpoints/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-plan-remediation-r2-20261007.yaml
   latest_plan_remediation_transition_receipt: docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-plan-remediation-r2-transition-receipt.yaml
-  execution_slice_set: null
+  execution_slice_set: docs/execution/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-slices.yaml
 related_tasks:
   predecessor:
     - PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
@@ -324,7 +323,7 @@ This task does not:
 ~~~yaml
 requirement_ready: true
 diagnostic_hypothesis_frozen: true
-implementation_fix_not_yet_frozen: true
+implementation_fix_not_yet_frozen: false
 material_product_decision_pending: false
 current_task_p0_dependencies:
   - PR-017 stacked base remains available
