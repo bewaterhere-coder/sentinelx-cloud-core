@@ -1,0 +1,42 @@
+schema_version: "1.0"
+kind: devforge_completion_workspace_gc_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
+source_command: "#开发完成 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1"
+created_at: "2026-10-08"
+
+task_completion:
+  stage: done
+  completion_verified: true
+  integration_verified: true
+  merge_commit: f72ac8bfe643cd9fbdea231e4a69f9e88a0595e9
+
+workspace_gc:
+  state: BlockedByTool
+  required_capability: development.workspace_gc_destructive_execute
+  registered_structured_destructive_capability_exposed_to_current_host: false
+  devforge_runtime_actions_observed:
+    - provision_scope
+    - revalidate_scope
+    - inspect_scope
+    - terminalize_scope
+    - execute_scoped
+  runtime_owned_workspace_inventory_verified: false
+  runtime_authority_state_direct_read_available: false
+  failure_code: RuntimeWorkspaceAuthorityUnavailable
+  destructive_mutation_attempted: false
+  generic_delete_used: false
+  generic_script_used: false
+  recursive_delete_fallback_used: false
+  permission_expansion_attempted: false
+
+safety:
+  drive_root_or_parent_delete_attempted: false
+  canonical_checkout_delete_attempted: false
+  inferred_workspace_ownership_used: false
+  task_done_rolled_back: false
+
+disposition:
+  task_completion_remains_valid: true
+  cleanup_completion_claimed: false
+  gc_reconciliation_required_if_registered_capability_becomes_available: true
