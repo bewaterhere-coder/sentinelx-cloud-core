@@ -3,45 +3,45 @@ task_id: PR-015-direct-codex-development-host-invocation-bridge-v1
 title: SentinelX Direct Codex Development Host Invocation Bridge V1
 project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
-requirement_revision: 1
+requirement_revision: 2
 development:
-  stage: acceptance
-  implementation_execution_complete: true
+  stage: planning
+  implementation_execution_complete: false
   gates:
     requirement_ready: true
-    plan_approved: true
+    plan_approved: false
     acceptance_approved: false
     completion_verified: false
-  plan_revision: 2
-  implementation_authorized: true
-  latest_plan_review: approved_round_2
-  latest_plan_remediation: r2_applied
-  review_disposition: approved
-  next_expected_actor: human
-  acceptance_disposition: decision_required
-  blocking_findings:
-    - Real direct-Codex host performs implementation work but does not commit it, so the bridge cannot produce a persisted successful receipt under Plan R2; persistence ownership requires a material architecture decision.
+  plan_revision: 3
+  implementation_authorized: false
+  latest_plan_review: pending_round_3
+  latest_plan_remediation: null
+  review_disposition: pending
+  next_expected_actor: planner
+  acceptance_disposition: invalidated_by_requirement_revision_2
+  blocking_findings: []
   authorization:
     mode: durable
     ref: docs/authorizations/PR-015-direct-codex-development-host-invocation-bridge-v1-development-authorization.yaml
 artifacts:
   plan: docs/plans/PR-015-direct-codex-development-host-invocation-bridge-v1-plan.md
-  latest_plan_review: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r2.md
-  prior_plan_review: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r1.md
-  latest_plan_remediation: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-remediation-r2-20261006.yaml
-  execution_slices: docs/execution/PR-015-direct-codex-development-host-invocation-bridge-v1-slices.yaml
+  prior_plan_review: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r2.md
+  historical_plan_review_r1: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r1.md
+  prior_plan_remediation: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-remediation-r2-20261006.yaml
+  prior_execution_slice_set: docs/execution/PR-015-direct-codex-development-host-invocation-bridge-v1-slices.yaml
+  requirement_change_impact: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-requirement-r2-impact-analysis.md
+  proposed_slice_impact: docs/execution/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-r3-slice-impact.yaml
   latest_slice_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-s03-completion-20261007.yaml
   latest_slice_completion_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-s03-completion-receipt.yaml
-  latest_acceptance: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r1.md
-  latest_acceptance_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r1-decision-required-20261007.yaml
+  prior_acceptance: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r1.md
+  prior_acceptance_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r1-decision-required-20261007.yaml
+  acceptance_invalidation: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r1-invalidation-r2.md
 implementation_entry:
   bootstrap_required: true
   intended_target: direct:codebuddy
-  override_state: expired
+  override_state: not_issued_for_plan_r3
   override_ref: docs/overrides/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-execution-override.yaml
-  effective_provider:
-    provider: direct
-    adapter: codebuddy
+  effective_provider: null
   explicit_command: "#开发引导执行 PR-015-direct-codex-development-host-invocation-bridge-v1 direct:codebuddy"
 transport:
   type: github-pr
@@ -58,7 +58,7 @@ requirement_readiness:
     project_binding: direct/codex
     live_host_codex_package_observed: "@openai/codex 0.154.0"
     live_host_codex_shim_observed: "active-user npm codex.cmd -> node + @openai/codex/bin/codex.js"
-    current_blocker: DirectCodexExecutionSurfaceUnavailable
+    current_blocker: DirectCodexPersistenceClosurePendingPlanReview
     pr013_relation: related_unblocker_not_same_task
 ---
 
@@ -309,6 +309,38 @@ This Task MUST NOT solve the problem by:
 - PR-010 canonical repository mutation firewall remains mandatory for existing SentinelX operations.
 - This Task may unblock PR-013's **direct/Codex Development Host admission**, but it does not change PR-013's Plan, Slice or transport.
 
+## Requirement Revision 2 — Provider-Owned Deterministic Commit-on-Publish
+
+Acceptance R1 proved that the real installed Codex Development Host can perform bounded edits and verification inside the isolated execution checkout but does not create a Git commit. Requirement Revision 2 resolves persistence ownership explicitly: after a successful Codex run, the bounded `devforge_direct_codex` provider owns deterministic local persistence and canonical publication of the exact checkout changes.
+
+### R16 — Provider-owned deterministic persistence and publication
+
+When Codex exits successfully and the isolated checkout contains eligible implementation changes, the provider MUST:
+
+1. revalidate exact repository, Task, Run, Attempt, Slice, workspace, canonical PR, canonical branch and expected remote head;
+2. independently require that the canonical remote branch still equals the admitted `expected_remote_sha` before persistence/publication;
+3. derive the candidate path set from the isolated checkout itself; the caller cannot supply Git argv, pathspecs, commit message, author identity, remote URL or branch;
+4. exclude provider control/evidence artifacts from the implementation commit and fail closed on unmerged state, unsupported gitlinks/submodule mutation, repository metadata mutation or any path that escapes the isolated checkout;
+5. use only fixed provider-owned Git primitives with shell execution, hooks, signing and interactive prompts disabled;
+6. create exactly one provenance-bound commit whose parent is the admitted expected head and whose Task/Run/Attempt/Slice identity is deterministically represented in provider-owned commit metadata/message;
+7. publish only by ordinary fast-forward push to the existing canonical PR branch; replacement transport and force push are forbidden;
+8. independently read back the remote branch and require it to equal the provider-created candidate commit before returning success;
+9. never mutate the canonical checkout and never widen filesystem, credential, permission or execution authority;
+10. never automatically retry an uncertain externally visible publication. After uncertainty, readback determines whether the candidate was published.
+
+If Codex leaves dirty/uncommitted eligible work and the provider cannot complete this bounded persistence protocol, the result remains fail-closed and MUST NOT be reported as successful canonical execution.
+
+If the checkout contains no eligible implementation change, the provider MUST NOT fabricate an empty implementation commit merely to manufacture a success receipt; the result contract must distinguish a verified no-change outcome from persisted implementation.
+
+The provider's persistence role does not change execution identity:
+
+```text
+execution provider = direct
+development adapter = codex
+development host = Codex
+transport/persistence broker = SentinelX devforge_direct_codex
+```
+
 ## Acceptance criteria
 
 - **AC1:** `local_api.describe` exposes one bounded direct-Codex provider/action with no arbitrary command/executable/cwd/env/prompt fields.
@@ -318,11 +350,11 @@ This Task MUST NOT solve the problem by:
 - **AC5:** A physical negative test proves Codex cannot write a canonical-like protected sibling outside the exact workspace.
 - **AC6:** Exact PR/branch/expected-head mismatch fails before implementation mutation.
 - **AC7:** Codex receives the exact Requirement/Plan/Slice transport lock and cannot obtain a replacement transport from the bridge.
-- **AC8:** One successful fixture execution returns a valid direct/Codex receipt with exact Task/Run/Attempt/Slice and transport identity.
+- **AC8:** One real direct/Codex fixture execution that produces eligible changes is deterministically committed by the provider, fast-forward published to the exact canonical PR branch, independently read back, and returns a valid persisted receipt with exact Task/Run/Attempt/Slice and transport identity.
 - **AC9:** Timeout/nonzero/malformed receipt/transport drift returns a specific failure and no success claim.
 - **AC10:** Existing `script_run`, `devforge_runtime`, mutation-scope, repository firewall and verification tests remain passing.
 - **AC11:** No generic `exec`, no `operator_unrestricted`, no allowlist/permission widening, no Hub mutation.
-- **AC12:** After live activation, `#开发执行 PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1` can pass direct/Codex provider admission through this bridge without changing PR-013 Task identity or project binding.
+- **AC12:** After live activation, the bridge can complete one real persisted direct/Codex execution end to end and `#开发执行 PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1` can pass direct/Codex provider admission without changing PR-013 Task identity or project binding.
 
 ## Requirement Challenge
 
