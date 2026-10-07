@@ -5,7 +5,7 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 2
 development:
-  stage: implementation
+  stage: acceptance
   gates:
     requirement_ready: true
     plan_approved: true
@@ -16,13 +16,14 @@ development:
   prior_plan_review: approved_round_5
   latest_plan_remediation: plan_r4_remediation_r1
   prior_plan_remediation: plan_r2_remediation_r1
-  implementation_authorized: true
+  implementation_authorized: false
   blocking_findings: []
   current_slice: null
   current_slice_state: null
   completed_slices: [S01, S02]
   pending_slices: []
   implementation_execution_complete: true
+  formal_acceptance_performed: false
   completed_slices_preserved: [S01]
   preserved_completed_candidate_slices: [S02]
   preserved_s02_product_candidate: 45dc99d15a23c499b4c1500fab60ed5e76475aeb
@@ -47,7 +48,8 @@ development:
   latest_s02_reconciliation_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-r6-reconciliation-receipt.yaml
   prior_bootstrap_receipt: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-harness-bootstrap-blocked-20261008.yaml
   superseded_slice_set_status: invalidated_by_plan_revision_6
-  next_expected_actor: implementer
+  next_expected_actor: verifier
+  canonical_next_action: "#开发验收 PR-014-devforge-execution-workspace-materialization-bridge-v1"
   authorization:
     mode: legacy_command_scoped
 artifacts:
@@ -72,6 +74,7 @@ artifacts:
   prior_plan_review_transition_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r2-transition-receipt.yaml
   requirement_change_impact: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-requirement-r2-invalidation.md
   latest_slice_checkpoint: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-completion-20261008.yaml
+  latest_gate_transition: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-implementation-to-acceptance-transition-receipt.yaml
 transport:
   type: github-pr
   pr_number: 14
