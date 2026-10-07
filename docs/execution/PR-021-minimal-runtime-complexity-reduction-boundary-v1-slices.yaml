@@ -1,0 +1,148 @@
+schema_version: "1.0"
+kind: devforge_execution_slice_set
+
+identity:
+  task_id: PR-021-minimal-runtime-complexity-reduction-boundary-v1
+  slice_set_id: PR-021-minimal-runtime-complexity-reduction-boundary-v1-plan-r1
+
+plan:
+  ref: docs/plans/PR-021-minimal-runtime-complexity-reduction-boundary-v1-plan.md
+  revision: 1
+  blob_sha: fcb9d8ef2f802ab5c90c575110e732ee690328d2
+
+requirement:
+  ref: docs/requirements/PR-021-minimal-runtime-complexity-reduction-boundary-v1.md
+  revision: 1
+
+transport:
+  type: github-pr
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 21
+  branch: task/minimal-runtime-complexity-reduction-boundary-v1
+  base_branch: main
+
+execution_policy:
+  implementation_kind: documentation_only
+  one_execute_one_slice: true
+  product_source_mutation: forbidden
+  test_source_mutation: forbidden
+  production_hub_mutation: forbidden
+  project_binding_mutation: forbidden
+  active_related_pr_mutation: forbidden
+  codebuddy_or_codex_agent_execution_required: false
+
+slices:
+  - slice_id: S01
+    objective: Build the revisioned evidence inventory for the current SentinelX capability surface and active task lineages.
+    depends_on: []
+    scope:
+      refs:
+        - src/sentinelx_core/handlers/direct_codex.py
+        - src/sentinelx_core/direct_codex_acl.py
+        - src/sentinelx_core/direct_codex_discovery.py
+        - src/sentinelx_core/direct_codex_handoff.py
+        - src/sentinelx_core/direct_codex_persistence.py
+        - src/sentinelx_core/direct_codex_result.py
+        - src/sentinelx_core/direct_codex_transport.py
+        - src/sentinelx_core/direct_codex_workspace.py
+        - src/sentinelx_core/handlers/devforge_runtime.py
+        - src/sentinelx_core/local_api.py
+        - src/sentinelx_core/handlers/local_api.py
+        - src/sentinelx_core/jobs.py
+        - src/sentinelx_core/pending_results.py
+        - src/sentinelx_core/mutation_scope.py
+        - src/sentinelx_core/mutation_audit.py
+        - src/sentinelx_core/mutation_sandbox.py
+        - src/sentinelx_core/windows_mutation_sandbox.py
+        - src/sentinelx_core/operation_registry.py
+        - src/sentinelx_core/canonical_repository_firewall.py
+        - src/sentinelx_core/verification_execution.py
+        - src/sentinelx_core/verification_profile.py
+        - src/sentinelx_core/verification_readiness.py
+        - src/sentinelx_core/verification_runtime.py
+        - src/sentinelx_core/handlers/scoped_script.py
+        - PR-014-devforge-execution-workspace-materialization-bridge-v1
+        - PR-019-stable-baseline-stabilization-exit-gate-v1
+        - PR-020-durable-async-operation-runtime-outcome-readback-v1
+        - DevForge incremental_execution.slice_v1 current canonical contract
+    verification:
+      required:
+        - every material disposition candidate has canonical evidence
+        - ownership and dependency map records unknowns explicitly
+        - no disposition relies only on chat history
+        - no product or external state mutation
+    checkpoint:
+      required: true
+    state: pending
+    run_refs: []
+    completion_receipt_ref: null
+
+  - slice_id: S02
+    objective: Freeze the SentinelX Minimal Runtime Architecture Decision and direct-short versus guided-CLI execution boundary.
+    depends_on: [S01]
+    scope:
+      refs:
+        - docs/architecture/sentinelx-minimal-runtime-boundary-v1.md
+    verification:
+      required:
+        - Requirement R1-R13 traceability is explicit
+        - Q1-Q4 are resolved
+        - security invariants are preserved
+        - timeout extension is not a long-development routing mode
+        - guided CLI handoff minimum contract is explicit
+        - no product source mutation is authorized
+    checkpoint:
+      required: true
+    state: pending
+    run_refs: []
+    completion_receipt_ref: null
+
+  - slice_id: S03
+    objective: Freeze the evidence-backed KEEP/SIMPLIFY/DEPRECATE/HOLD capability disposition matrix.
+    depends_on: [S02]
+    scope:
+      refs:
+        - docs/architecture/sentinelx-capability-disposition-matrix-v1.md
+    verification:
+      required:
+        - required capability groups are all covered
+        - PR-014 PR-020 and incremental_execution.slice_v1 relation are explicit
+        - Direct Codex and CodeBuddy direct projection ownership is explicit
+        - each HOLD or DEPRECATE item has a removal precondition
+        - security-critical boundaries are not weakened
+    checkpoint:
+      required: true
+    state: pending
+    run_refs: []
+    completion_receipt_ref: null
+
+  - slice_id: S04
+    objective: Freeze one primary minimalization successor order and verify PR-021 acceptance evidence.
+    depends_on: [S03]
+    scope:
+      refs:
+        - docs/architecture/sentinelx-minimal-runtime-boundary-v1.md
+        - docs/architecture/sentinelx-capability-disposition-matrix-v1.md
+    verification:
+      required:
+        - exactly one primary successor sequence is present
+        - future removals or simplifications are separate explicit DevForge tasks
+        - PR diff contains no src/ mutation
+        - PR diff contains no tests/ mutation
+        - PR diff contains no production Hub or deployment mutation
+        - PR-014 PR-019 and PR-020 are not silently closed or merged
+        - canonical main remains unchanged by PR-021 implementation
+    checkpoint:
+      required: true
+    state: pending
+    run_refs: []
+    completion_receipt_ref: null
+
+current:
+  slice_id: S01
+  state: pending
+
+approval:
+  review_ref: docs/reviews/PR-021-minimal-runtime-complexity-reduction-boundary-v1-plan-review-r1.md
+  review_decision: Approved
+  devforge_runtime_revision: 8401598a25274bfe11c08eec8e8068e533a2f471
