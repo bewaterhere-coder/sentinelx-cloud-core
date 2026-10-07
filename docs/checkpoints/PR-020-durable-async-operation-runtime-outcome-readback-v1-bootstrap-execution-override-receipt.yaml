@@ -1,0 +1,101 @@
+schema_version: "1.1"
+kind: devforge_task_scoped_bootstrap_execution_override_receipt
+task_id: PR-020-durable-async-operation-runtime-outcome-readback-v1
+source_command: "#开发引导执行 PR-020-durable-async-operation-runtime-outcome-readback-v1 direct:codebuddy"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  canonical_branch: main
+  version: "2.95.0"
+  revision: c44591899fb7c3312ca7a30cc816ca878e12b462
+  contract: system/task-scoped-bootstrap-execution-override-contract.md
+  contract_version: "1.1"
+
+admission:
+  disposition: BootstrapOverrideAdmitted
+  reason_code: null
+  mode: implementation_bootstrap
+  override_ref: docs/checkpoints/PR-020-durable-async-operation-runtime-outcome-readback-v1-bootstrap-execution-override.yaml
+  override_blob_sha: ed0509da9da9f5d8008afc8498a557a3a62ae6ba
+  override_digest: 3cd9ee272c25db4b3e662c92772b68196f3617594cb3e257f71570933d8db5bd
+
+bindings:
+  requirement_ref: docs/requirements/PR-020-durable-async-operation-runtime-outcome-readback-v1.md
+  requirement_revision: 1
+  approved_plan_ref: docs/plans/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan.md
+  approved_plan_revision: 4
+  approved_plan_blob_sha: 304cbf2ab58b4fa3835c35b343bd1214565c2920
+  slice_set_ref: docs/execution/PR-020-durable-async-operation-runtime-outcome-readback-v1-slices.yaml
+  slice_set_blob_sha: 106eedfa8a6f1047e486c4b57369d1e279915cff
+  canonical_transport: github-pr:bewaterhere-coder/sentinelx-cloud-core#20@task/durable-async-operation-runtime-outcome-readback-v1
+
+project_binding:
+  provider: direct
+  adapter: codex
+  source: explicit_project_binding
+  mutated: false
+
+self_host_relation:
+  verified: true
+  blocked_provider: direct:codex
+  missing_or_broken_capability: development_host.durable_async_operation_outcome_readback_v1
+  task_delivers_or_repairs_capability: true
+  evidence_refs:
+    - docs/execution/PR-020-durable-async-operation-runtime-outcome-readback-v1-slices.yaml@106eedfa8a6f1047e486c4b57369d1e279915cff
+    - docs/plans/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan.md@304cbf2ab58b4fa3835c35b343bd1214565c2920
+    - docs/reviews/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan-review-r4.md@2082e376c8bda337f5d82eb34785a499d6295a5c
+
+target:
+  provider: direct
+  adapter: codebuddy
+  registered: true
+  available: true
+  registration_evidence:
+    - DevForge adapters/development/codebuddy.md exists on canonical main
+  live_availability_evidence:
+    - current Windows Host exposes an active CodeBuddy consumer surface
+    - DevForge CodeBuddy rule readback has alwaysApply=true and enabled=true
+    - current-day CodeBuddy activity evidence exists
+  absolute_host_path_persisted: false
+
+scope:
+  stage: implementation
+  current_slice: S01
+  max_slice_completions_per_execute: 1
+  fallback: forbidden
+  project_binding_mutation: forbidden
+  requirement_change: forbidden
+  plan_change: forbidden
+  gate_change: forbidden
+  acceptance_authority: forbidden
+  permission_expansion: forbidden
+  credential_expansion: forbidden
+  write_scope_expansion: forbidden
+  replacement_branch: forbidden
+  replacement_pr: forbidden
+
+authority:
+  implementation_execution_by_bootstrap_command: false
+  later_execute_may_consider_override: true
+  provider_fallback: false
+  acceptance_approval: false
+  project_binding_mutation: false
+
+task_binding:
+  task_blob_sha_before_reference_write: cf4f4a060c395a23fa7d4a2ef41abb2a292e8a9a
+  task_blob_sha_after_reference_write: pending
+
+verification:
+  override_readback_verified: true
+  exact_plan_binding_verified: true
+  exact_slice_set_binding_verified: true
+  canonical_transport_lock_verified: true
+  self_host_relation_verified: true
+  target_registration_verified: true
+  target_availability_verified: true
+  project_binding_unchanged_verified: pending
+  task_reference_readback_verified: false
+  receipt_readback_verified: false
+  verified: false
+
+next_action_after_verification: "#开发执行 PR-020-durable-async-operation-runtime-outcome-readback-v1"
