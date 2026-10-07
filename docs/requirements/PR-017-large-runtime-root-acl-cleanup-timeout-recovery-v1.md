@@ -18,16 +18,15 @@ development:
   implementation_authorized: true
   next_expected_actor: implementer
   blocking_findings:
-    - S03 exact-candidate Host activation is blocked because the currently deployed Agent is 0.24.1.dev499+g02eb3de2e rather than PR-017 candidate d083921b3f0146455bd4b0732d8e0ce219728344.
-    - The model-facing sentinel_script_run projection does not expose execution_profile while current Host policy requires explicit execution_profile, so the exact-SHA pip activation command is rejected before process execution.
-    - No unrestricted/profile-bypass/config-disable/file-ops widening fallback is permitted by PR-017.
-  current_slice: S03
-  current_slice_state: blocked
+    - Live S03 exact-candidate evidence invalidated S02 completion authority: a runtime ACL grant/compensation path returned HostMutationSandboxResidualAuthority but the outer scoped-script exception path subsequently published the scope as terminal.
+    - This violates R4/R5: residual-authority ambiguity must remain fail-closed/revoked and must never be converted to terminal by generic exception cleanup.
+    - No further Unity/PowerShell live probe is permitted until S02 repair closes this durable-state gap.
+  current_slice: S02
+  current_slice_state: repair_required
   authorization:
     mode: legacy_command_scoped
   completed_slices:
     - S01
-    - S02
 transport:
   type: github-pr
   pr_number: 17
@@ -38,8 +37,9 @@ artifacts:
   latest_plan_review: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-review-r1.md
   latest_plan_review_transition_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-review-r1-transition-receipt.yaml
   execution_slice_set: docs/execution/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-slices.yaml
-  latest_slice_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-completion-20261007.yaml
+  latest_slice_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-live-evidence-invalidates-s02-completion-20261007.yaml
   latest_slice_completion_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-completion-receipt.yaml
+  latest_slice_invalidation: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-live-invalidation-r1.md
 related_tasks:
   predecessor:
     - PR-012-execute-scoped-explicit-execution-profile-v1

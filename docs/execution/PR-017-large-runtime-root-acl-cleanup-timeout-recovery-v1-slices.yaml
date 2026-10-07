@@ -106,7 +106,7 @@ slices:
   - slice_id: S02
     objective: Close partial runtime-root grant ambiguity and prove fail-closed revoked/retry terminalization recovery.
     depends_on: [S01]
-    state: completed
+    state: repair_required
     scope:
       refs:
         - src/sentinelx_core/windows_mutation_sandbox.py
@@ -183,10 +183,10 @@ slices:
     run_refs: []
     completion_receipt_ref: null
 execution_state:
-  current_slice: S03
-  current_slice_state: blocked
-  completed_slices: [S01, S02]
-  pending_slices: [S03]
+  current_slice: S02
+  current_slice_state: repair_required
+  completed_slices: [S01]
+  pending_slices: [S02, S03]
   all_slices_completed: false
 acceptance_boundary:
   all_current_plan_slices_must_be_completed: true

@@ -1,0 +1,54 @@
+schema_version: "1.0"
+kind: devforge_slice_evidence_invalidation_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
+source_command: "#开发执行 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1"
+result: RepairRequired
+live_candidate:
+  version: 0.24.1.dev426+gd083921b3
+  product_sha: d083921b3f0146455bd4b0732d8e0ce219728344
+host_policy:
+  runtime_acl_timeout_seconds: 300
+  original_runtime_roots_restored: true
+  operator_unrestricted_enabled: false
+evidence:
+  failed_scope_id: mss_62URoGdXBbPJCnNK6Xdm_dye
+  failed_scope_generation: 1
+  execution_error: HostMutationSandboxResidualAuthority
+  failure_class: runtime_acl_grant_compensation_closure_unproven
+  post_failure_scope_state: terminal
+  expected_post_failure_scope_state: revoked
+  requirement_violation:
+    - R4_partial_grant_must_compensate_or_remain_fail_closed
+    - R5_cleanup_ambiguity_must_not_publish_terminal
+evidence_disposition:
+  S01: preserved_no_replay
+  S02: completion_invalidated_repair_required
+  S03: blocked_incomplete
+workflow:
+  requirement_revision: 1
+  plan_revision: 1
+  plan_review_still_valid: true
+  implementation_authorized: true
+  current_slice: S02
+  current_slice_state: repair_required
+  completed_slices:
+    - S01
+  pending_slices:
+    - S02
+    - S03
+forbidden_until_repair:
+  - further_live_Unity_scopes
+  - further_live_PowerShell_scopes
+  - task_completion_claim
+  - acceptance_claim
+  - unrestricted_fallback
+next_repair_contract:
+  - persist activation-time residual runtime-read authority so generic terminalization cannot skip cleanup
+  - preserve revoked state on HostMutationSandboxResidualAuthority
+  - add handler-level end-to-end regression for activation residual-authority failure
+  - prove later authoritative cleanup before terminal
+completion_guard:
+  task_completion_verified: false
+  acceptance_approved: false
+  canonical_next_action: "#开发执行 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1"
