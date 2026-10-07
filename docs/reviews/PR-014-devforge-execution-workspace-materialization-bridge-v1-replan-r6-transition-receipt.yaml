@@ -1,0 +1,90 @@
+schema_version: "1.0"
+kind: devforge_artifact_state_transition_receipt
+task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
+from_stage: implementation
+to_stage: plan_review
+transition_rule: explicit_user_directed_plan_revision_invalidates_current_implementation_authority
+source_command: "#开发 PR-014-devforge-execution-workspace-materialization-bridge-v1 修订当前方案"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  canonical_branch: main
+  revision: 7b45640926dac9c559d558f8ddbbb137ba30b69b
+  release: v2.102.0
+
+evidence_refs:
+  - docs/plans/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan.md@4fc74fba9d787120798d5ed6a4f04b7da9cb6a5f
+  - docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-replan-r6-20261008.yaml@e6922a417b59d333bafbeb47c9ea9f483bab068e
+  - docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-completion-20261008.yaml@cc6352134f7710ee677d4e892e5fb101c8c3401d
+  - docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-completion-receipt.yaml@dd40e27c93376b73a95ed4c5ab1d13f91f5df4af
+  - docs/overrides/PR-014-devforge-execution-workspace-materialization-bridge-v1-bootstrap-execution-override.yaml@a4fc1ba324692f62e6c0717b082e2c10efea141d
+
+task_before_digest: 3ac88e2d15534682ebd2545d4d393a110a68a5a7
+task_after_digest: 3b5cf12cdb921d69f22e493f57cea2f81a8a08ab
+semantic_after_state_digest: 3b5cf12cdb921d69f22e493f57cea2f81a8a08ab
+semantic_after_digest_basis: canonical_task_blob_readback
+verified: true
+
+replan:
+  requirement_revision: 2
+  requirement_semantics_changed: false
+  prior_plan_revision: 5
+  prior_plan_blob_sha: ff8581ec026a0d123ae89d9595271397429145c0
+  revised_plan_revision: 6
+  revised_plan_blob_sha: 4fc74fba9d787120798d5ed6a4f04b7da9cb6a5f
+  prior_slice_set_ref: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-r5-slices.yaml
+  prior_slice_set_blob_sha: 12e9b0c2001fa0806ef21b38f821213fd5116917
+  prior_slice_set_status: superseded_by_plan_revision_6
+
+preserved_completion_evidence:
+  s01: completed
+  s02_candidate: 45dc99d15a23c499b4c1500fab60ed5e76475aeb
+  s02_checkpoint_verified: true
+  s02_receipt_verified: true
+  deterministic_suite: "147 passed / 1 skipped / 0 failed"
+  changed_blob_readback: "9/9 byte-identical"
+  product_mutation_replay: forbidden
+
+verification_policy:
+  repository_hosted_ci:
+    applicability: NotEvaluated
+    gating: false
+    task_billing_authority: not_granted
+    workflow_creation_or_modification: forbidden
+  acceptance_physical_gate_preserved: true
+
+override:
+  prior_override_state: active
+  state_after: expired
+  expiry_trigger: plan_semantic_change
+  new_bootstrap_required_now: false
+
+state_after:
+  stage: plan_review
+  plan_revision: 6
+  plan_approved: false
+  implementation_authorized: false
+  current_slice: null
+  execution_slice_set: null
+  completed_slices_preserved: [S01]
+  preserved_completed_candidate_slices: [S02]
+  next_expected_actor: reviewer
+
+safety:
+  product_implementation_executed: false
+  product_code_mutated: false
+  product_tests_mutated: false
+  workflow_created_or_modified: false
+  ci_invoked: false
+  host_mutation_performed: false
+  canonical_main_mutated: false
+  project_binding_mutated: false
+  permission_or_credential_expansion_used: false
+  pr013_s03_replayed: false
+
+completion_guard:
+  revised_plan_readback_verified: true
+  task_transition_readback_verified: true
+  automatic_plan_review_loop_admitted: false
+  reason_review_not_self_executed: legacy_command_scoped_task_requires_explicit_plan_review_command
+  canonical_next_action: "#开发评审 PR-014-devforge-execution-workspace-materialization-bridge-v1"
