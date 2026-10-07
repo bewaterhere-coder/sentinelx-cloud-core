@@ -66,4 +66,11 @@ authority:
 
 readback:
   required: true
-  verified: false
+  verified: true
+  verification_commit: 8e6d39174823605c141c06fcccb0f0f78d80e2b6
+  task_stage_readback: acceptance
+  next_expected_actor_readback: verifier
+  acceptance_disposition_readback: pending_reverification
+  execution_disposition_readback: fixing_r1_readiness_restored_ready_for_acceptance
+  task_blob_sha_readback: b88a88667789239eadc02bfb8af116cbb55ae77c
+  repair_checkpoint_blob_sha_readback: 3c0119777435813278f111839fcd9f4ff743d80e
