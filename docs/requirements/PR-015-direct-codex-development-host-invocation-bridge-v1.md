@@ -5,38 +5,39 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 2
 development:
-  stage: plan_review_rejected
+  stage: plan_review
   implementation_execution_complete: false
   gates:
     requirement_ready: true
     plan_approved: false
     acceptance_approved: false
     completion_verified: false
-  plan_revision: 4
+  plan_revision: 5
   implementation_authorized: false
-  latest_plan_review: rejected_round_4
-  latest_plan_remediation: pending_r5
-  review_disposition: rejected
-  next_expected_actor: planner
+  latest_plan_review: pending_round_5
+  latest_plan_remediation: r5_applied
+  review_disposition: pending
+  next_expected_actor: reviewer
   acceptance_disposition: invalidated_by_requirement_revision_2
-  blocking_findings:
-    - Canonical blob materialization incomplete: Plan R4 hashes raw no-filter Windows worktree bytes, which can commit checkout-induced CRLF/encoding differences instead of canonical Git content.
+  blocking_findings: []
   authorization:
     mode: durable
     ref: docs/authorizations/PR-015-direct-codex-development-host-invocation-bridge-v1-development-authorization.yaml
 artifacts:
   plan: docs/plans/PR-015-direct-codex-development-host-invocation-bridge-v1-plan.md
-  plan_blob_sha: cc351da6bd5746a171bdd14bdb34fa07e41c6336
-  latest_plan_review: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r4.md
+  plan_blob_sha: c45a373e4f7a62ae11fceba89316dd8cf6353969
+  prior_plan_review_r4: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r4.md
   prior_plan_review_r3: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r3.md
   prior_plan_review: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r2.md
   historical_plan_review_r1: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r1.md
-  latest_plan_remediation: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-remediation-r4-20261007.yaml
+  latest_plan_remediation: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-remediation-r5-20261007.yaml
+  prior_plan_remediation_r4: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-remediation-r4-20261007.yaml
   prior_plan_remediation: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-remediation-r2-20261006.yaml
   prior_execution_slice_set: docs/execution/PR-015-direct-codex-development-host-invocation-bridge-v1-slices.yaml
   requirement_change_impact: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-requirement-r2-impact-analysis.md
-  prior_slice_impact: docs/execution/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-r3-slice-impact.yaml
-  proposed_slice_impact: docs/execution/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-r4-slice-impact.yaml
+  historical_slice_impact_r3: docs/execution/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-r3-slice-impact.yaml
+  prior_slice_impact: docs/execution/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-r4-slice-impact.yaml
+  proposed_slice_impact: docs/execution/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-r5-slice-impact.yaml
   prior_slice_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-s03-completion-20261007.yaml
   prior_slice_completion_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-s03-completion-receipt.yaml
   prior_acceptance: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r1.md
@@ -47,7 +48,7 @@ artifacts:
 implementation_entry:
   bootstrap_required: true
   intended_target: direct:codebuddy
-  override_state: not_issued_for_plan_r4
+  override_state: not_issued_for_plan_r5
   override_ref: null
   prior_override_ref: docs/overrides/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-execution-override.yaml
   effective_provider: null
@@ -67,7 +68,7 @@ requirement_readiness:
     project_binding: direct/codex
     live_host_codex_package_observed: "@openai/codex 0.154.0"
     live_host_codex_shim_observed: "active-user npm codex.cmd -> node + @openai/codex/bin/codex.js"
-    current_blocker: DirectCodexPersistenceClosurePendingPlanReviewR4
+    current_blocker: DirectCodexPersistenceClosurePendingPlanReviewR5
     pr013_relation: related_unblocker_not_same_task
 ---
 
