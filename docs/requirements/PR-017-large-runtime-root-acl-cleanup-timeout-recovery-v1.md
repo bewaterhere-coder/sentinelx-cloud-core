@@ -18,16 +18,17 @@ development:
   implementation_authorized: true
   next_expected_actor: implementer
   blocking_findings:
-    - S02 retry-surface repair is complete on exact candidate a214921cd34fcab5874696f45281306622a73421, but S03 cannot resume until that exact candidate is activated on the Windows Host.
-    - The Host currently runs prior PR-017 candidate 4896a55cb951dec47422c738ccb1ba98762e13a9; live retry evidence from that Agent cannot prove the new devforge_runtime terminalize wiring.
-    - Preserve real revoked scope mss_JB_VJlJg4Np6LdrxgKd_fCw9 for the next physical retry; do not replace it with a fresh scope before repaired-candidate retry evidence.
-  current_slice: S03
-  current_slice_state: blocked
+    - Live retry on exact candidate a214921cd34fcab5874696f45281306622a73421 successfully reached canonical WindowsMutationSandbox OS cleanup, proving the bounded terminalize retry wiring works.
+    - Cleanup then failed on C:\Windows\System32\WindowsPowerShell\v1.0 with Access Denied before exact SID absence could be read back.
+    - Source readback shows _remove_runtime_read currently performs icacls /remove:g before DACL readback. This makes a no-op closure case unreachable when the grant never installed the SID but the service lacks write permission on the protected runtime root.
+    - S02 cleanup-proof semantics therefore remain incomplete: exact SID absence must be checked first; if already absent, closure is proven without mutation. Only if SID is present should removal be attempted and followed by a second readback.
+    - The real scope mss_JB_VJlJg4Np6LdrxgKd_fCw9 remains correctly revoked and must be preserved for post-repair retry evidence.
+  current_slice: S02
+  current_slice_state: repair_required
   authorization:
     mode: legacy_command_scoped
   completed_slices:
     - S01
-    - S02
 transport:
   type: github-pr
   pr_number: 17
@@ -38,9 +39,9 @@ artifacts:
   latest_plan_review: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-review-r1.md
   latest_plan_review_transition_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-review-r1-transition-receipt.yaml
   execution_slice_set: docs/execution/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-slices.yaml
-  latest_slice_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-retry-surface-repair-completion-20261007.yaml
+  latest_slice_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-live-invalidates-s02-pre-read-cleanup-proof-20261007.yaml
   latest_slice_completion_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-repair-completion-receipt-r3.yaml
-  latest_slice_invalidation: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-live-invalidation-r2.md
+  latest_slice_invalidation: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-live-invalidation-r3.md
 related_tasks:
   predecessor:
     - PR-012-execute-scoped-explicit-execution-profile-v1
