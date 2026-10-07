@@ -1,0 +1,33 @@
+schema_version: "1.0"
+kind: devforge_artifact_state_transition_receipt
+task_id: PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1
+from_stage: accepted
+to_stage: done
+transition_rule: accepted_finalization_and_verified_integration_to_done
+source_command: "#开发完成 PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"
+
+evidence_refs:
+  - docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-acceptance-r3.yaml@e89f80f4a4e15b39f0699b02cd931e553307d189
+  - docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-acceptance-r3-transition-receipt.yaml@c8e0175bb6b9f61aefa3c324acbe41cea3a207b8
+  - docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-completion-finalization-r1.yaml@06a17c7d535788e2f2cd4de4f02e6c9fa1cae9a6
+  - docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-integration-receipt-r1.yaml@ddb844054b97b7d99c9acd26bf720d3ce9c94c58
+  - docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-completion-r1.md@2bed163ee587729c1bd30303ec092c9001f4f16b
+
+task_before_blob_sha: "a0baafeefba78e78b09a09fedce062f428d4619f"
+task_after_blob_sha: "de363140b9bccd00899ce51addab1038325338fa"
+verified: true
+
+readback_expected:
+  task_stage: done
+  requirement_ready: true
+  plan_approved: true
+  acceptance_approved: true
+  completion_verified: true
+  integration_verified: true
+  integration_ref: e9ac9e9f34f04aefb320ab750a5083f462d77d8e
+  next_expected_actor: null
+
+postconditions:
+  finalization_verified: true
+  integration_receipt_verified: true
+  done_verified: true

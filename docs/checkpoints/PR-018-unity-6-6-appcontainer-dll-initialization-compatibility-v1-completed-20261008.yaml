@@ -1,0 +1,26 @@
+schema_version: "1.0"
+kind: devforge_completion_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1
+source_command: "#开发完成 PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"
+created_at: "2026-10-08"
+
+completion:
+  revision: 1
+  stage: done
+  completion_verified: true
+  acceptance_revision: 3
+  integration_verified: true
+  merge_commit: "e9ac9e9f34f04aefb320ab750a5083f462d77d8e"
+  pr_number: 18
+  finalized_head: "8c65a779c6b19330fc15fc57c5ef321b52e10ca5"
+  exact_product_candidate: "73a52013055a8b3bb70b319a0ed7b7ba832ae0c9"
+  product_replayed_during_finalization: false
+  next_expected_actor: null
+
+evidence:
+  finalization_blob_sha: "06a17c7d535788e2f2cd4de4f02e6c9fa1cae9a6"
+  integration_receipt_blob_sha: "ddb844054b97b7d99c9acd26bf720d3ce9c94c58"
+  completion_review_blob_sha: "2bed163ee587729c1bd30303ec092c9001f4f16b"
+  task_after_blob_sha: "de363140b9bccd00899ce51addab1038325338fa"
+  plan_after_blob_sha: "3ed338bd5ae7030c72ff14a0926f5e625020ddb5"

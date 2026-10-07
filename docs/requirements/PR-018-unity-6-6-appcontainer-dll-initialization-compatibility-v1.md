@@ -7,25 +7,28 @@ project_id: sentinelx-cloud-core
 task_id: PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1
 requirement_revision: 1
 development:
-  stage: accepted
+  stage: done
   gates:
     requirement_ready: true
     plan_approved: true
     acceptance_approved: true
-    completion_verified: false
+    completion_verified: true
   plan_revision: 2
   acceptance_revision: 3
+  completion_revision: 1
   implementation_authorized: false
   finalization:
-    ready_for_merge: true
+    ready_for_merge: false
     canonical_state_verified: true
     plan_execution_state_verified: true
     evidence_verified: true
     transport_preconditions_verified: true
-    integration_verified: false
-    merge_pending: true
-  next_expected_actor: integration
+    integration_verified: true
+    integration_ref: e9ac9e9f34f04aefb320ab750a5083f462d77d8e
+    merge_pending: false
+  next_expected_actor: null
   acceptance_disposition: approved_r3
+  execution_disposition: completion_r1_verified
   blocking_findings: []
   current_slice: S03
   current_slice_state: completed
@@ -52,6 +55,10 @@ artifacts:
   latest_acceptance: docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-acceptance-r3.yaml
   latest_acceptance_transition_receipt: docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-acceptance-r3-transition-receipt.yaml
   completion_finalization: docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-completion-finalization-r1.yaml
+  integration_receipt: docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-integration-receipt-r1.yaml
+  completion_review: docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-completion-r1.md
+  completion_transition_receipt: docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-completion-transition-receipt-r1.yaml
+  completion_checkpoint: docs/checkpoints/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-completed-20261008.yaml
 related_tasks:
   predecessor:
     - PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1

@@ -1,0 +1,73 @@
+schema_version: "1.0"
+kind: devforge_integration_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1
+source_command: "#开发完成 PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"
+created_at: "2026-10-08"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  version: "2.102.0"
+  main_sha: "12cf21254a6c7ca89840dc0cb8445793e913eed8"
+  merge_finalization_contract:
+    version: "1.1"
+    blob_sha: "6dfc6d6c7960bad2179b93f164c0bf732d99ffd6"
+
+lineage:
+  requirement_revision: 1
+  plan_revision: 2
+  acceptance_revision: 3
+  completion_revision: 1
+  acceptance_ref: docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-acceptance-r3.yaml
+  acceptance_blob_sha: "e89f80f4a4e15b39f0699b02cd931e553307d189"
+  finalization_ref: docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-completion-finalization-r1.yaml
+  finalization_blob_sha: "06a17c7d535788e2f2cd4de4f02e6c9fa1cae9a6"
+  exact_product_candidate: "73a52013055a8b3bb70b319a0ed7b7ba832ae0c9"
+
+transport:
+  type: github-pr
+  pr_number: 18
+  branch: task/unity-6-6-appcontainer-dll-initialization-compatibility-v1
+  original_stacked_base: task/large-runtime-root-acl-cleanup-timeout-recovery-v1
+  final_base: main
+  transport_normalization_commit: "46edcc83c6d73021855f148b2169a5de229b2a3a"
+  finalized_head: "8c65a779c6b19330fc15fc57c5ef321b52e10ca5"
+  base_before_merge: "b0c5addad3aab0c63271dc241a6942b313d6b82d"
+  merge_method: merge
+  expected_head_cas_used: true
+  transport_identity_preserved: true
+
+integration:
+  result: verified
+  pr_state: closed
+  merged: true
+  merge_commit: "e9ac9e9f34f04aefb320ab750a5083f462d77d8e"
+  merged_at: "2026-10-07T22:22:42Z"
+  main_readback: "e9ac9e9f34f04aefb320ab750a5083f462d77d8e"
+  finalized_head_match_verified: true
+  main_match_verified: true
+  final_task_state_on_merge_readback: accepted
+  finalization_ready_for_merge_on_merge_readback: true
+  plan_execution_metadata_on_merge_readback: completed_approved_all_slices_completed
+  product_code_diff_against_main_at_merge: none
+  stacked_product_payload_already_integrated_via_pr017: true
+  pr017_merge_commit: "f72ac8bfe643cd9fbdea231e4a69f9e88a0595e9"
+
+verification:
+  acceptance_r3_approved: true
+  real_windows_unity_6000_6_4f1_proof: true
+  pr011_node_npm_readiness_reproved: true
+  product_code_changed_during_finalization: false
+  product_implementation_replayed: false
+  transport_normalization_preserved_current_main_product_tree: true
+
+safety:
+  permission_or_allowlist_expansion_used: false
+  operator_unrestricted_used: false
+  unrestricted_fallback_used: false
+  replacement_development_pr_created: false
+
+completion:
+  integration_verified: true
+  completion_state_persistence_required: true
+  completion_verified: false
