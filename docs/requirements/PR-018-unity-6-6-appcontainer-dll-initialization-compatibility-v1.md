@@ -7,19 +7,18 @@ project_id: sentinelx-cloud-core
 task_id: PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1
 requirement_revision: 1
 development:
-  stage: plan_review_rejected
+  stage: plan_review
   gates:
     requirement_ready: true
     plan_approved: false
     acceptance_approved: false
     completion_verified: false
-  plan_revision: 1
+  plan_revision: 2
   implementation_authorized: false
-  next_expected_actor: planner
+  next_expected_actor: reviewer
   blocking_findings:
-    - Plan Review R1 rejected Plan Revision 1; Requirement Revision 1 remains Ready.
-    - PR-018 implementation Slices must not directly mutate PR-017 transport/Task state or replay PR-017 S03; integration belongs to PR-018 finalization and PR-017 replay remains PR-017-owned.
-    - Generic Session-0 window-object authority requires durable MutationScopeStore representation and fail-closed cleanup/readback ordering; process-local _verification_session_reads is insufficient for the generic untrusted path.
+    - Plan R2 addresses Plan Review R1 findings without changing Requirement Revision 1 or canonical transport.
+    - Implementation remains blocked until a fresh #开发评审 approves Plan R2 and a current execution Slice Set is compiled/read back.
   current_slice: null
   current_slice_state: not_compiled
 transport:
@@ -32,6 +31,8 @@ artifacts:
   plan: docs/plans/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-plan.md
   latest_plan_review: docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-plan-review-r1.md
   latest_plan_review_transition_receipt: docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-plan-review-r1-transition-receipt.yaml
+  latest_plan_remediation: docs/checkpoints/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-plan-remediation-r2-20261007.yaml
+  latest_plan_remediation_transition_receipt: docs/reviews/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-plan-remediation-r2-transition-receipt.yaml
   execution_slice_set: null
 related_tasks:
   predecessor:
