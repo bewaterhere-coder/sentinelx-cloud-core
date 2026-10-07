@@ -5,31 +5,33 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 2
 development:
-  stage: plan_review
+  stage: plan_review_rejected
   gates:
     requirement_ready: true
     plan_approved: false
     acceptance_approved: false
     completion_verified: false
   plan_revision: 3
-  latest_plan_review: null
+  latest_plan_review: rejected_round_3
   prior_plan_review: approved_round_2
   latest_plan_remediation: null
   prior_plan_remediation: plan_r2_remediation_r1
   implementation_authorized: false
-  blocking_findings: []
+  blocking_findings:
+    - BootstrapExecutionAuthorityUndefined
   current_slice: null
   current_slice_state: null
   completed_slices_preserved: [S01]
   prior_plan_revision: 2
   prior_slice_set_status: invalidated_by_requirement_revision_2
   requirement_change_impact: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-requirement-r2-invalidation.md
-  next_expected_actor: reviewer
+  next_expected_actor: planner
   authorization:
     mode: legacy_command_scoped
 artifacts:
   requirement_review: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-requirement-review-r1.md
   plan: docs/plans/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan.md
+  latest_plan_review: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r3.md
   prior_plan_review: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r2.md
   prior_plan_remediation: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-remediation-r1.yaml
   prior_execution_slice_set: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-slices.yaml
