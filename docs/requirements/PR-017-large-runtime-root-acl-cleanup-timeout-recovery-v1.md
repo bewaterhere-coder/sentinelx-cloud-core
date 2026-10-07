@@ -18,10 +18,11 @@ development:
   implementation_authorized: true
   next_expected_actor: implementer
   blocking_findings:
-    - S03 production-subset integration is complete and verified at f9e07da9cc37f6e882c3258280869b415cafcb5c; all 11 target blobs match and scoped_script.py remains unchanged.
-    - Real Host proof is blocked because installed Host runtime 0.24.1.dev530+g7adfa7a74 reports host_mutation_sandbox_v1 unavailable with a durable scope-store schema mismatch: runtime_read_authority_roots is not accepted by the installed MutationScopeRecord.
-    - The separately admitted development_host.direct_codex_v1 attempt run-pr017-r5-s03-20261008-001 / attempt-001 timed out at the Hub response window after 60 seconds and has no observed canonical publish. Its outcome must be resolved before any retry; generic exec/script fallback is forbidden.
-    - S03 remains pending. No completion receipt exists and no S03 completion claim is authorized.
+    - S03 production-subset integration remains complete and verified at f9e07da9cc37f6e882c3258280869b415cafcb5c; all 11 target blobs match and scoped_script.py remains unchanged.
+    - All automatically triggered CI / Windows / macOS verification workflows for the integrated candidate are green, including pr010-s03 Windows regression with 59 passed.
+    - The only current blocker is ExactCandidateHostRuntimeActivationCapabilityMissing: installed Host runtime 0.24.1.dev530+g7adfa7a74 lacks the MutationScopeRecord fields required by the integrated candidate, while the formal Host update playbook is main-only and no exact-PR-candidate activation action is exposed.
+    - Generic script_run fallback, substituting main for the PR candidate, or submitting a second direct-Codex attempt are not authorized.
+    - S03 remains pending; no completion receipt exists and no completion claim is authorized.
   current_slice: S03
   current_slice_state: pending
   authorization:
@@ -49,9 +50,9 @@ artifacts:
   latest_plan_remediation_transition_receipt_r5: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-remediation-r5-transition-receipt.yaml
   execution_slice_set: docs/execution/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-slices.yaml
   execution_slice_set_plan_revision: 5
-  execution_slice_set_blob_sha: 2f444dd7cee8ad06d58eb758b04d6d332eefa66f
-  latest_slice_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-blocked-host-runtime-schema-direct-codex-outcome-20261008.yaml
-  latest_slice_checkpoint_blob_sha: b959ae24ffc22b3f3e50e21d944b4e62780fe3fd
+  execution_slice_set_blob_sha: 79a02704a67689950f89729a91dafa6168f05398
+  latest_slice_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-blocked-exact-candidate-host-activation-unavailable-20261008.yaml
+  latest_slice_checkpoint_blob_sha: 7fdefb012c9f88c98468bc4dec9cba2b08ca89c8
   latest_integrated_candidate: f9e07da9cc37f6e882c3258280869b415cafcb5c
   execution_slice_set: docs/execution/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-slices.yaml
   latest_slice_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-blocked-unity-dll-initialization-20261007.yaml
