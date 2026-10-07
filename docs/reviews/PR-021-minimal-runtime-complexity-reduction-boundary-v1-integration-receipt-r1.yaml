@@ -31,7 +31,7 @@ reconciliation:
   same_task_identity: true
   original_transport_preserved: true
   reconciliation_branch: reconcile/pr-021-minimal-runtime-complexity-reduction-boundary-v1-completion
-  reconciliation_pr_number: pending
+  reconciliation_pr_number: 22
 
 verification:
   original_pr_closed: true
