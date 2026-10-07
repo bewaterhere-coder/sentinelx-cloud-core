@@ -83,7 +83,7 @@ authority:
 
 task_binding:
   task_blob_sha_before_reference_write: cf4f4a060c395a23fa7d4a2ef41abb2a292e8a9a
-  task_blob_sha_after_reference_write: pending
+  task_blob_sha_after_reference_write: a679f62ff928ee81e9d6c1581efdcd5d4dfc9625
 
 verification:
   override_readback_verified: true
@@ -93,9 +93,9 @@ verification:
   self_host_relation_verified: true
   target_registration_verified: true
   target_availability_verified: true
-  project_binding_unchanged_verified: pending
-  task_reference_readback_verified: false
-  receipt_readback_verified: false
-  verified: false
+  project_binding_unchanged_verified: true
+  task_reference_readback_verified: true
+  receipt_readback_verified: true
+  verified: true
 
 next_action_after_verification: "#开发执行 PR-020-durable-async-operation-runtime-outcome-readback-v1"
