@@ -1,0 +1,73 @@
+schema_version: "1.0"
+kind: devforge_artifact_state_transition_receipt
+task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
+from_stage: implementation
+to_stage: plan_review
+transition_rule: explicit_user_directed_plan_revision_invalidates_current_implementation_authority
+source_command: "#开发 PR-014-devforge-execution-workspace-materialization-bridge-v1 修订当前方案"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  canonical_branch: main
+  revision: 050d9c9559a173a3e0b37fcd2a9db702b6b5a7e6
+  release: v2.98.0
+
+evidence_refs:
+  - docs/plans/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan.md@ff8581ec026a0d123ae89d9595271397429145c0
+  - docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-replan-r5-20261008.yaml@81292be26781e5566501d1a4351a6e38db880861
+  - docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-harness-bootstrap-blocked-20261008.yaml@f9c00ba13aac8bf5f369e9a241ca0977a94505b6
+
+task_before_digest: 5f3911e49e92722ffd2723aaa14e75e7bc00d9c0
+task_after_digest: 921df3474f35f4dd3ea3c71efd7f1f7912fcd0b2
+semantic_after_state_digest: 921df3474f35f4dd3ea3c71efd7f1f7912fcd0b2
+semantic_after_digest_basis: canonical_task_blob_readback
+verified: true
+
+replan:
+  requirement_revision: 2
+  requirement_semantics_changed: false
+  prior_plan_revision: 4
+  prior_plan_blob_sha: 2c930c0f9dc8c901691ebd8819f1f0bd19d6dc50
+  revised_plan_revision: 5
+  revised_plan_blob_sha: ff8581ec026a0d123ae89d9595271397429145c0
+  prior_slice_set_blob_sha: c8786d85e081986e3d3c4ed7ede2f290a8756f7e
+  prior_slice_set_status: superseded_by_plan_revision_5
+  completed_slices_preserved: [S01]
+
+planned_bootstrap:
+  target: direct:codebuddy
+  command: "#开发引导执行 PR-014-devforge-execution-workspace-materialization-bridge-v1 direct:codebuddy"
+  admission_attempted: false
+  override_created: false
+  harness_required: false
+  pr229_required: false
+  pr020_required: false
+  execution_workspace_materialize_required_for_seed_persistence: false
+
+state_after:
+  stage: plan_review
+  plan_revision: 5
+  plan_approved: false
+  implementation_authorized: false
+  current_slice: null
+  execution_slice_set: null
+  completed_slices_preserved: [S01]
+  next_expected_actor: reviewer
+
+safety:
+  product_implementation_executed: false
+  codebuddy_invoked: false
+  harness_invoked: false
+  host_mutation_performed: false
+  canonical_main_mutated: false
+  project_binding_mutated: false
+  permission_or_credential_expansion_used: false
+  write_scope_expansion_used: false
+  generic_git_used: false
+  shell_or_script_run_used: false
+  pr013_s03_replayed: false
+
+completion_guard:
+  revised_plan_readback_verified: true
+  task_transition_readback_verified: true
+  canonical_next_action: "#开发评审 PR-014-devforge-execution-workspace-materialization-bridge-v1"

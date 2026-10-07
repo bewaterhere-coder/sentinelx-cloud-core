@@ -1,0 +1,81 @@
+schema_version: "1.0"
+kind: devforge_user_directed_replan_checkpoint
+task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
+source_command: "#开发 PR-014-devforge-execution-workspace-materialization-bridge-v1 修订当前方案"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  canonical_branch: main
+  revision: 050d9c9559a173a3e0b37fcd2a9db702b6b5a7e6
+  release: v2.98.0
+
+trigger:
+  type: dependency_cycle
+  cycle: "PR-014 -> PR-229 -> PR-020 -> PR-014"
+  prior_plan_revision: 4
+  prior_plan_blob_sha: 2c930c0f9dc8c901691ebd8819f1f0bd19d6dc50
+  prior_slice_set_ref: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-r4-slices.yaml
+  prior_slice_set_blob_sha: c8786d85e081986e3d3c4ed7ede2f290a8756f7e
+  blocked_bootstrap_ref: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-harness-bootstrap-blocked-20261008.yaml
+  blocked_bootstrap_blob_sha: f9c00ba13aac8bf5f369e9a241ca0977a94505b6
+
+output:
+  requirement_revision: 2
+  requirement_semantics_changed: false
+  revised_plan_revision: 5
+  revised_plan_ref: docs/plans/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan.md
+  revised_plan_blob_sha: ff8581ec026a0d123ae89d9595271397429145c0
+  canonical_transport_changed: false
+  project_binding_changed: false
+  s01_completion_preserved: true
+  implementation_started_under_r5: false
+  r5_slice_set_compiled: false
+
+r5_bootstrap_design:
+  target: direct:codebuddy
+  command: "#开发引导执行 PR-014-devforge-execution-workspace-materialization-bridge-v1 direct:codebuddy"
+  authority_source: development.bootstrap_execution_override
+  repository_write_role: persistence_only
+  local_execution_workspace_required: false
+  harness_required: false
+  incremental_execution_slice_v1_required: false
+  development_execution_workspace_materialize_required_for_seed_persistence: false
+  pr020_required: false
+  pr229_required: false
+  pr013_required: false
+  generic_git: forbidden
+  shell: forbidden
+  script_run: forbidden
+  generic_host_filesystem_write: forbidden
+  caller_selected_host_path: forbidden
+  canonical_main_write: forbidden
+  replacement_branch: forbidden
+  replacement_pr: forbidden
+  permission_expansion: forbidden
+  credential_expansion: forbidden
+  write_scope_expansion: forbidden
+  pr013_s03_replay: forbidden
+
+r5_execution_shape:
+  completed_slices_preserved: [S01]
+  pending_slices_after_review: [S02]
+  windows_physical_integration_owner: acceptance
+  acceptance_source_only_claim: forbidden
+
+safety:
+  product_code_mutated: false
+  host_mutation_performed: false
+  harness_invoked: false
+  codebuddy_invoked: false
+  slice_set_compiled: false
+  canonical_main_mutated: false
+  project_binding_mutated: false
+  pr013_s03_replayed: false
+
+next_state:
+  stage: plan_review
+  plan_revision: 5
+  plan_approved: false
+  implementation_authorized: false
+  current_slice: null
+  next_expected_actor: reviewer

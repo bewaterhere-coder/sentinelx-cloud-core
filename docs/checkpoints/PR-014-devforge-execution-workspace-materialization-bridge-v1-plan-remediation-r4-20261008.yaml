@@ -1,0 +1,74 @@
+schema_version: "1.0"
+kind: devforge_plan_remediation_checkpoint
+task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
+source_command: "#开发计划修复 PR-014-devforge-execution-workspace-materialization-bridge-v1"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  canonical_branch: main
+  revision: 9551d38b1d70b5bfb3f692725e8f5c70b74693a6
+  sentinelx_canonical_main: 1028030b33f0ea792a884491a431fffe566f6aa5
+
+input:
+  requirement_revision: 2
+  rejected_plan_revision: 3
+  rejected_plan_blob_sha: bf44533eec62652b4d252b629c9498df596f43cd
+  rejected_review_ref: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r3.md
+  rejected_review_blob_sha: 05046c0e4eddda02ddbad7574d64c68921bc99e4
+  blocking_findings:
+    - BootstrapExecutionAuthorityUndefined
+
+output:
+  revised_plan_revision: 4
+  revised_plan_ref: docs/plans/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan.md
+  revised_plan_blob_sha: 2c930c0f9dc8c901691ebd8819f1f0bd19d6dc50
+  requirement_semantics_changed: false
+  transport_changed: false
+  project_binding_changed: false
+  implementation_started: false
+
+addressed_findings:
+  - id: BootstrapExecutionAuthorityUndefined
+    resolution: "Plan R4 replaces repository-transport-as-authority with an explicit task-scoped Harness bootstrap override after Plan approval and exact Slice Set compilation; GitHub PR #14 remains locked transport/persistence only."
+
+frozen_plan_r4:
+  bootstrap_command: "#开发引导执行 PR-014-devforge-execution-workspace-materialization-bridge-v1 harness"
+  bootstrap_target: harness
+  bootstrap_mode: implementation_bootstrap
+  project_binding_remains: direct/codex
+  required_harness_capability: incremental_execution.slice_v1
+  canonical_transport: github-pr
+  canonical_pr: 14
+  canonical_branch: task/devforge-execution-workspace-materialization-bridge-v1
+  repository_write_role: persistence_only_inside_admitted_harness_execution
+  harness_internal_host_selection: opaque
+  harness_internal_workspace_strategy: opaque
+  fallback: forbidden
+  direct_orchestration_repository_implementation: forbidden
+  requirement_r2_changed: false
+  source_capsule_design_changed: false
+  materializer_design_changed: false
+  pr013_ownership_changed: false
+  s01_replay: forbidden
+
+safety:
+  canonical_main_mutated: false
+  product_code_mutated: false
+  host_mutation_performed: false
+  harness_invoked: false
+  slice_set_compiled: false
+  project_binding_mutated: false
+  permission_expansion_used: false
+  credential_mutation_used: false
+  provider_fallback_used: false
+  pr013_s03_replayed: false
+
+next_state:
+  stage: plan_review
+  requirement_revision: 2
+  plan_revision: 4
+  plan_approved: false
+  implementation_authorized: false
+  completed_slices_preserved: [S01]
+  current_slice: null
+  next_expected_actor: reviewer

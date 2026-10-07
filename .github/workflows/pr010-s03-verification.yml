@@ -24,3 +24,4 @@ jobs:
           tests/test_operation_effect_registry.py
           tests/test_scoped_script_execution.py
           tests/test_windows_mutation_sandbox.py
+          tests/test_devforge_workspace_placement.py

@@ -1,0 +1,85 @@
+schema_version: "1.0"
+kind: devforge_plan_remediation_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
+source_command: "#开发计划修复 PR-014-devforge-execution-workspace-materialization-bridge-v1"
+runtime:
+  repository: bewaterhere-coder/DevForge
+  version: 2.41.0
+  revision: 902a9d71b425753928c01904be1e9b2b60f0c3fe
+  workflow: project_development
+  workflow_version: "2.1"
+  review_contract: "1.3"
+input:
+  requirement_revision: 1
+  requirement_semantics_changed: false
+  task_blob_before_remediation: a1b4bce79ea653d3ef8cd610365424b96b9490a7
+  rejected_plan_revision: 1
+  rejected_plan_blob_sha: 62fe1ab6643d6c6e958e5e78725a3e0ef493a34d
+  rejected_review_ref: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r1.md
+  rejected_review_blob_sha: 52cbb1a49a49145ba647f897eb01e9af76a7737c
+repository_reality:
+  sentinelx_main: e7064c9bf4fcd15bdb6f5a2678414210c01d1c00
+  task_branch_head_before_plan_r2: 949d5a6ccf88270cccef753193bcf7d75c5df11f
+  plan_r2_commit: 4e5596ebd509181bdd12f92453560793b4eaaaf3
+  pr013:
+    pr: 13
+    head: 1d98951425b148f04d3981830996b2da24d97a60
+    state: open_draft
+    stage: implementation
+    current_slice: S01_pending
+    plan_approved: true
+    implementation_authorized: true
+    current_changed_files: task_artifacts_only
+  pr012: done_merged_canonical
+  pr010: done_merged_canonical
+  local_canonical_checkout:
+    branch: main
+    head: e7064c9bf4fcd15bdb6f5a2678414210c01d1c00
+    dirty: true
+    observed_changes: line_ending_drift
+    cleanup_authorized: false
+output:
+  plan_revision: 2
+  plan_ref: docs/plans/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan.md
+  plan_blob_sha: bf40efdd1c4804ea6ef5f858e22d2e558fdd8e70
+  implementation_authorized: false
+  execution_slice_set_compiled: false
+findings:
+  - id: F1-placement-receipt-pre-scope
+    classification: plan_local
+    disposition: remediated
+    changes:
+      - provider-owned DevForge Placement Receipt store is explicit evidence-only state
+      - placement receipt is persisted and read back before scope mint/revalidation
+      - optional caller/DevForge placement evidence remains compare-only
+      - stale Host-binding generation invalidates receipt reuse
+  - id: F2-devforge-sandbox-root-admission
+    classification: plan_local
+    disposition: remediated
+    changes:
+      - DevforgeSandboxRootBinding is derived only from current Host workspace binding and Placement Receipt
+      - WindowsMutationSandbox selects legacy or DevForge root through trusted provider strategy, never caller path input
+      - reparse/final-path/protected-root checks anchor to the selected DevForge execution root
+      - parent traversal authority is operation-scoped/traverse-only with exact ACL restoration and readback when required
+      - no Host config rewrite, file_ops/command allowlist widening or canonical-repository ACL broadening is authorized
+  - id: F3-pr013-transaction-overlap
+    classification: plan_local
+    disposition: remediated
+    changes:
+      - removed every fallback allowing PR-014 to implement repository source broker/materializer or retained-scope transaction primitives
+      - S02/S03 require PR-013 merged + accepted + completion-verified canonical evidence before product mutation
+      - absent dependency produces BlockedByDependency with no substitute implementation
+      - PR-013 ownership cancellation/change requires new Plan remediation/re-review
+nonsemantic_refresh:
+  devforge_runtime_updated_to: 2.41.0
+  pr013_state_updated_to: implementation_s01_pending
+requirement_semantics_changed: false
+transport_changed: false
+product_implementation_mutated: false
+host_policy_mutated: false
+live_agent_mutated: false
+hub_modified: false
+next_stage: plan_review
+next_expected_actor: plan_reviewer
+canonical_next_action: "#开发评审 PR-014-devforge-execution-workspace-materialization-bridge-v1"

@@ -1,0 +1,142 @@
+schema_version: "1.1"
+kind: devforge_bootstrap_execution_override_receipt
+task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
+source_command: "#开发引导执行 PR-014-devforge-execution-workspace-materialization-bridge-v1 direct:codebuddy"
+status: Admitted
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  version: "2.98.0"
+  revision: 050d9c9559a173a3e0b37fcd2a9db702b6b5a7e6
+  bootstrap_contract: "1.1"
+
+task_state:
+  stage: implementation
+  requirement_revision: 2
+  plan_revision: 5
+  plan_approved: true
+  implementation_authorized: true
+  current_slice: S02
+  current_slice_state: pending
+  task_blob_sha: 2eb1e1a79968dc89685e1eed7e4ba849f9a5f81c
+
+self_host_relation:
+  blocked_provider:
+    provider: direct
+    adapter: codex
+  missing_capability: development.execution_workspace_materialize
+  task_delivers_missing_capability: true
+  verified: true
+
+override:
+  ref: docs/overrides/PR-014-devforge-execution-workspace-materialization-bridge-v1-bootstrap-execution-override.yaml
+  blob_sha: a016e7f108da7b639196d6668a7a2d0bdf450e42
+  state: active
+  mode: implementation_bootstrap
+  readback_verified: true
+  target:
+    provider: direct
+    adapter: codebuddy
+
+binding:
+  plan_ref: docs/plans/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan.md
+  plan_revision: 5
+  plan_blob_sha: ff8581ec026a0d123ae89d9595271397429145c0
+  review_ref: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r5.md
+  review_blob_sha: 6054807e82aa523617c58bbae340c8bac05310c6
+  slice_set_ref: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-r5-slices.yaml
+  slice_set_blob_sha: 0ece35496e27dbf6ca900b8fa7d96b3b16129201
+
+transport:
+  type: github-pr
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  canonical_pr: 14
+  canonical_branch: task/devforge-execution-workspace-materialization-bridge-v1
+  observed_pr_head_after_task_admission: 699fa946de9ac9fda360492a9b8eb1055cc3d844
+  canonical_main: 1028030b33f0ea792a884491a431fffe566f6aa5
+  replacement_branch: forbidden
+  replacement_pr: forbidden
+  fallback: forbidden
+  consistent: true
+
+project_binding:
+  before:
+    provider: direct
+    adapter: codex
+  after:
+    provider: direct
+    adapter: codex
+  mutated: false
+
+target_availability:
+  registered_adapter_ref: bewaterhere-coder/DevForge@050d9c9559a173a3e0b37fcd2a9db702b6b5a7e6:adapters/development/codebuddy.md
+  adapter_blob_sha: d1e0547ef212a0e45da59b5129d61ee1804cf722
+  host_id: host_7f0e709ded71ab24
+  host_operational: true
+  sentinelx_agent_version: 0.24.1.dev530+g7adfa7a74
+  codebuddy_executable_present: true
+  codebuddy_cli_present: true
+  devforge_user_rule_present: true
+  devforge_user_rule_enabled: true
+  devforge_user_rule_always_apply: true
+  thin_handoff_target_available: true
+
+scope:
+  bound_slices: [S02]
+  max_slice_completions_per_execute: 1
+  repository_write_scope: exact_s02_allowlist_only
+  local_execution_workspace: forbidden
+  permission_expansion: false
+  credential_expansion: false
+  write_scope_expansion: false
+  transport_migration: false
+  project_binding_mutation: false
+  host_policy_mutation: false
+  canonical_main_mutation: false
+  generic_git: false
+  generic_shell_or_exec: false
+  generic_script_run: false
+  generic_host_filesystem_write: false
+  pr013_s03_replay: false
+  provider_fallback: false
+
+dependency_closure:
+  harness_required: false
+  pr229_required: false
+  pr020_required: false
+  pr013_completion_required: false
+  execution_workspace_materialize_required_for_seed_persistence: false
+
+expiry:
+  all_bound_slices_completed: true
+  requirement_semantic_change: true
+  plan_semantic_change: true
+  transport_drift: true
+  target_unavailable: true
+  task_leaves_implementation: true
+  task_cancelled: true
+  explicit_revoke: true
+
+readback:
+  override_verified: true
+  task_verified: true
+  plan_verified: true
+  slice_set_verified: true
+  transport_verified: true
+  project_binding_unchanged_verified: true
+  target_availability_verified: true
+
+safety:
+  bootstrap_command_executed_slice: false
+  product_implementation_executed: false
+  codebuddy_product_execution_started: false
+  host_product_mutation_performed: false
+  canonical_main_mutated: false
+  project_binding_mutated: false
+  permission_or_credential_expansion_used: false
+  write_scope_expansion_used: false
+  pr013_s03_replayed: false
+
+completion_guard:
+  satisfied: true
+  canonical_next_action: "#开发执行 PR-014-devforge-execution-workspace-materialization-bridge-v1"

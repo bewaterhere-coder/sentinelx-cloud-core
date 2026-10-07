@@ -1,0 +1,212 @@
+schema_version: "1.0"
+kind: devforge_execution_slice_set
+identity:
+  task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
+  slice_set_id: PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-r2
+plan:
+  ref: docs/plans/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan.md
+  revision: 2
+  reviewed_blob_sha: bf40efdd1c4804ea6ef5f858e22d2e558fdd8e70
+review:
+  ref: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r2.md
+  blob_sha: 822263edcaa8edccc4acd6fe9141ca936d20840f
+  decision: Approved
+runtime:
+  devforge_version: 2.42.0
+  devforge_revision: 01e82b221b5a22be4defb3dcbb67ada468f923a5
+  workflow: project_development
+  workflow_version: "2.1"
+  slicing_contract: "1.1"
+repository_baseline:
+  main_sha: e7064c9bf4fcd15bdb6f5a2678414210c01d1c00
+  reviewed_task_head: f52b8cb6820bf7d5f70f870ec9a8985f79d5c4b7
+  pr013_head: 1d98951425b148f04d3981830996b2da24d97a60
+  pr013_state: open_implementation_s01_pending
+  pr012_state: done_merged_canonical
+  pr010_state: done_merged_canonical
+execution_progress:
+  last_execution_runtime_version: 2.42.0
+  last_execution_runtime_revision: 74ad7ce0a3ea345478f37f1c79bfdf8fb0ec8f4f
+  current_slice: S02
+  current_slice_state: pending
+  completed_slices: [S01]
+  exact_s01_product_candidate: a1a14908ff2a95c87b9a6eeb96d5e18e354b5548
+  s01_checkpoint: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-s01-completion-20261005.yaml
+  s02_dependency_gate: pr013_canonical_transaction_capability
+  s02_dependency_satisfied_at_s01_completion: false
+implementation_entry_guard:
+  required_before_each_slice: true
+  rules:
+    - re-read current DevForge main/runtime and preserve current canonical development semantics
+    - re-read current sentinelx-cloud-core main and PR-014 remote task head before product mutation
+    - approved Requirement revision 1 and Plan revision 2 lineage must remain materially unchanged
+    - preserve PR #14 branch and transport identity; no replacement Task/branch/PR
+    - local canonical checkout must be main, non-detached, ahead=0, behind=0, and clean before material product mutation
+    - current S01 completion readback observed local canonical checkout main + clean; every later slice must freshly revalidate rather than inherit this observation
+    - use only an admitted Host execution workspace/provider path; canonical checkout is never an implementation workspace
+    - re-read PR #13 state/head/changed files before each slice; incompatible overlap stops before mutation
+    - PR-012 execution_profile=scoped_mutation and PR-010 canonical firewall remain canonical baselines and must stay regression-covered
+    - no generic shell/exec/Git/copy fallback, operator_unrestricted, allowlist widening, provider escalation, caller-selected Host path/root, or Hub mutation
+    - completed slices cannot be replayed; recoverable interruption resumes the same slice/run under current DevForge Resume semantics
+    - one explicit #开发执行 invocation may complete at most one slice
+external_dependency_gate:
+  pr013_canonical_transaction_capability:
+    applies_to: [S02, S03]
+    required:
+      - PR #13 merged into sentinelx-cloud-core/main
+      - PR-013 canonical Task acceptance_approved is true
+      - PR-013 canonical Task completion_verified is true
+      - current main contains the accepted PR-013 integration result
+      - current main exposes repository_transaction_v1 admission/state
+      - current main exposes provider repository materializer semantics
+      - current main exposes multi-operation operation-closure semantics
+      - legacy scoped_script compatibility evidence remains canonical
+      - no ownership change transfers these primitives away from PR-013
+    on_failure: BlockedByDependency
+    fallback_implementation_forbidden: true
+acceptance_boundary:
+  live_agent_activation:
+    implementation_slice: false
+    verifier_owned_acceptance: true
+  production_hub_mutation: forbidden
+  independent_codex_requirement: false
+slices:
+  - slice_id: S01
+    objective: Implement the DevForge-specific durable Placement Receipt, Host-derived execution-root binding, and provider-only scope/sandbox root-selection seams while preserving legacy mutation placement behavior and performing no repository materialization.
+    depends_on: []
+    scope:
+      refs:
+        - src/sentinelx_core/devforge_workspace_placement.py
+        - src/sentinelx_core/devforge_workspace_materialization.py only for placement/root coordination skeleton if needed
+        - src/sentinelx_core/mutation_scope.py only for provider-generated placement/root binding seam
+        - src/sentinelx_core/windows_mutation_sandbox.py only for trusted provider root-selection/traversal seam
+        - focused placement/root/scope tests
+        - directly related documentation
+      authorized_changes:
+        - resolve and validate current locations.devforge_workspace_root without rewriting Host configuration
+        - derive execution_root and exact workspace deterministically from repository/task/attempt semantics
+        - persist and read back provider-owned DevForge-compatible Placement Receipt before scope-admission seam
+        - make optional caller/DevForge placement evidence comparison-only and fail closed on mismatch
+        - derive internal DevforgeSandboxRootBinding from current Host binding plus Placement Receipt
+        - seal placement kind, receipt/root/workspace digests through provider-owned scope authority
+        - select legacy or DevForge sandbox root only through trusted provider strategy
+        - add operation-scoped traverse-only ancestor authority only if physically required, with previous ACL capture, exact restoration and readback; broader authority fails closed
+        - preserve legacy mutation_execution.workspace_root behavior exactly for non-DevForge scoped_script
+      forbidden_changes:
+        - repository_transaction_v1 implementation
+        - repository source broker/materializer implementation
+        - multi-operation operation-closure implementation
+        - repository publication/CAS implementation
+        - Host config rewrite or canonical checkout cleanup
+    verification:
+      required:
+        - provider Placement Receipt is durably read back before scope-admission seam is invoked
+        - same semantic identity and current Host binding converge to the same placement receipt/target
+        - stale Host-binding generation invalidates receipt reuse
+        - caller path/root/strategy cannot retarget placement or sandbox authority
+        - exact workspace is a strict descendant of provider-derived DevForge execution root
+        - alternate provider root is rejected
+        - reparse/final-path/protected-root checks are anchored to the selected DevForge execution root
+        - Windows physical negative test proves scoped identity cannot enumerate/read/write canonical or repository siblings
+        - transient traverse-only ACL, if used, restores exact prior state and is read back
+        - legacy scoped_script still resolves mutation_execution.workspace_root and existing regressions pass
+        - no repository transaction/materializer/operation-closure product code is added
+      overlap_guard:
+        - if PR-013 begins product mutation on the exact S01 surfaces/lines, stop before conflicting mutation and require impact reconciliation rather than overwrite
+    checkpoint:
+      required: true
+      ref: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-s01-completion-20261005.yaml
+    verification_result:
+      focused_windows_run_id: 37298434667
+      focused_windows_tests_passed: 49
+      generic_ci: success
+      macos_agent: success
+      pr010_s01_s05: success
+    exact_product_candidate: a1a14908ff2a95c87b9a6eeb96d5e18e354b5548
+    state: completed
+    run_refs:
+      - github-actions:37298434667
+      - github-actions:37298434715
+      - github-actions:37298434713
+    completion_receipt_ref: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-s01-completion-20261005.yaml
+
+  - slice_id: S02
+    objective: Implement the DevForge materialize_workspace adapter and materialization receipt projection strictly over the completed canonical PR-013 repository transaction/materializer capability.
+    depends_on: [S01]
+    scope:
+      refs:
+        - src/sentinelx_core/devforge_workspace_materialization.py
+        - src/sentinelx_core/handlers/devforge_runtime.py
+        - canonical PR-013 repository transaction/materializer modules only as adapter consumers
+        - focused adapter/readback/retry tests
+        - Windows physical materialization tests
+      authorized_changes:
+        - bind current Placement Receipt and DevForge sandbox-root binding into canonical repository transaction authority
+        - expose bounded path-free materialize_workspace schema/routing
+        - pass immutable source_binding.expected_commit into canonical provider materializer
+        - compose existing audit START, sandbox activation, source materialization and readback evidence
+        - project repository identity, exact HEAD, isolation, scope, placement and audit evidence into DevForge materialization receipt
+        - converge verified same-Attempt retry by durable readback without replay
+      forbidden_changes:
+        - source broker/materializer implementation
+        - repository transaction state-machine implementation
+        - operation-closure implementation
+        - credential transport or publication implementation
+      dependency_gate: pr013_canonical_transaction_capability
+    verification:
+      required:
+        - exact PR-013 canonical dependency receipt/readback is persisted before S02 product mutation
+        - local_api.describe exposes materialize_workspace without destination/root/credential/operation-class authority fields
+        - scope workspace/root/placement receipt are mutually consistent
+        - durable audit START precedes material workspace mutation
+        - wrong repository/ref/SHA, stale/foreign scope and root/placement mismatch fail closed
+        - valid materialization reads back admitted repository identity and exact expected HEAD
+        - pre-existing unbound/non-empty target fails closed
+        - verified retry does not repeat materialization
+        - credential unavailable is bounded with no generic fallback
+        - canonical source branch/HEAD/cleanliness is unchanged by bridge materialization
+    checkpoint:
+      required: true
+    state: pending
+    run_refs: []
+    completion_receipt_ref: null
+
+  - slice_id: S03
+    objective: Bind repeated DevForge execute_scoped operations to the same canonical repository transaction/workspace, consume canonical PR-013 operation closure, and prove explicit terminal readback without changing legacy one-shot scoped_script semantics.
+    depends_on: [S02]
+    scope:
+      refs:
+        - src/sentinelx_core/handlers/devforge_runtime.py
+        - src/sentinelx_core/handlers/scoped_script.py only for DevForge transaction lookup/composition
+        - canonical PR-013 repository transaction/operation-closure modules only as consumers
+        - focused lifecycle/cwd/legacy regression tests
+        - Windows physical end-to-end fixture
+      authorized_changes:
+        - resolve canonical repository transaction from the provider-owned DevForge workspace binding
+        - route repeated explicit execution_profile=scoped_mutation operations to the same sealed workspace
+        - enforce relative cwd confinement under the sealed repository workspace
+        - consume canonical PR-013 zero-process/Job/temporary-ACL operation closure between successful operations
+        - terminalize the same scope/transaction explicitly at Attempt boundary and read back same scope generation terminal/revoked/expired
+        - preserve ordinary scoped_script one-shot auto-terminalization
+      forbidden_changes:
+        - retained-scope/operation-closure implementation
+        - repository transaction state-machine implementation
+        - source materializer implementation
+        - publication/CAS implementation
+      dependency_gate: pr013_canonical_transaction_capability
+    verification:
+      required:
+        - exact PR-013 canonical dependency remains satisfied before S03 mutation
+        - materialize once then execute bounded operation A successfully
+        - zero operation process/Job/temporary ACL authority is read back while transaction remains current
+        - bounded operation B succeeds against the same workspace/scope/transaction
+        - caller cannot retarget cwd/workspace/control namespace
+        - explicit terminalization reads terminal/revoked/expired for the same scope generation
+        - third execution after terminalization is rejected
+        - legacy one-shot scoped_script still terminalizes after one successful operation
+        - Windows physical evidence covers root confinement, two sequential operations and terminal readback
+    checkpoint:
+      required: true
+    state: pending
+    run_refs: []
+    completion_receipt_ref: null
