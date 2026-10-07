@@ -151,7 +151,7 @@ slices:
   - slice_id: S03
     objective: Prove the exact candidate on real Windows with a large Unity runtime root and close affected security/regression evidence.
     depends_on: [S02]
-    state: pending
+    state: blocked
     scope:
       refs:
         - affected mutation sandbox/policy/scoped execution tests
@@ -184,7 +184,7 @@ slices:
     completion_receipt_ref: null
 execution_state:
   current_slice: S03
-  current_slice_state: pending
+  current_slice_state: blocked
   completed_slices: [S01, S02]
   pending_slices: [S03]
   all_slices_completed: false

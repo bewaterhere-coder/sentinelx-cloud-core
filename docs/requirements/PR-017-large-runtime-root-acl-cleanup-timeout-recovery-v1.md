@@ -17,9 +17,12 @@ development:
   plan_revision: 1
   implementation_authorized: true
   next_expected_actor: implementer
-  blocking_findings: []
+  blocking_findings:
+    - S03 exact-candidate Host activation is blocked because the currently deployed Agent is 0.24.1.dev499+g02eb3de2e rather than PR-017 candidate d083921b3f0146455bd4b0732d8e0ce219728344.
+    - The model-facing sentinel_script_run projection does not expose execution_profile while current Host policy requires explicit execution_profile, so the exact-SHA pip activation command is rejected before process execution.
+    - No unrestricted/profile-bypass/config-disable/file-ops widening fallback is permitted by PR-017.
   current_slice: S03
-  current_slice_state: pending
+  current_slice_state: blocked
   authorization:
     mode: legacy_command_scoped
   completed_slices:
