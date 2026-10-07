@@ -50,7 +50,6 @@ lifecycle:
 receipt:
   source_command: "#开发 SentinelX Direct Codex Development Host Invocation Bridge V1"
   readback_required: true
-  latest_narrowing_command: "#开发评审 PR-015-direct-codex-development-host-invocation-bridge-v1"
   plan_binding_readback_required: true
   latest_acceptance_command: "#开发验收 PR-015-direct-codex-development-host-invocation-bridge-v1"
   latest_acceptance_result: DecisionRequired
