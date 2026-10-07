@@ -17,9 +17,9 @@ development:
   latest_plan_review: approved_round_6
   latest_plan_remediation: r6_applied
   review_disposition: approved
-  next_expected_actor: implementer
+  next_expected_actor: codebuddy
   acceptance_disposition: rejected_repair_local
-  execution_disposition: fixing_bootstrap_admitted
+  execution_disposition: fixing_external_handoff_ready
   blocking_findings:
     - direct_codex_workspace_acl_handoff_incompatible_with_codex_sandbox
   repair_evidence:
@@ -68,6 +68,7 @@ artifacts:
   latest_acceptance_transition_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r7-transition-receipt.yaml
   latest_acceptance_transition_receipt_blob_sha: 9b3fe781802450bfdce2c810077d27572ce7b26d
   latest_fixing_execution_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-attempt-r1-completed-20261007.yaml
+  latest_fixing_handoff: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-attempt-r2-codebuddy-handoff-20261007.yaml
   latest_fixing_execution_checkpoint_blob_sha: 2b8677e87463a4320ab9a47039b834f5ac7159db
   latest_fixing_transition_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-r1-to-acceptance-transition-receipt.yaml
   latest_fixing_transition_receipt_blob_sha: e2152ad50e637858a42afdf54b31c8d5b19e5a3e
