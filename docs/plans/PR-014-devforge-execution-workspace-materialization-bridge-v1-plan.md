@@ -1,43 +1,112 @@
-# PR-014 — SentinelX DevForge Execution Workspace Materialization Bridge V1 — Plan R5
+# PR-014 — SentinelX DevForge Execution Workspace Materialization Bridge V1 — Plan R6
 
 ## Plan State
 
 ```yaml
 task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
-plan_revision: 5
+plan_revision: 6
 plan_status: ready_for_review
 implementation_authority: false
 requirement_ref: docs/requirements/PR-014-devforge-execution-workspace-materialization-bridge-v1.md
 requirement_revision: 2
-requirement_blob_sha: 5f3911e49e92722ffd2723aaa14e75e7bc00d9c0
+requirement_blob_sha: 3ac88e2d15534682ebd2545d4d393a110a68a5a7
 requirement_change_impact: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-requirement-r2-invalidation.md
-prior_plan_revision: 4
-prior_plan_blob_sha: 2c930c0f9dc8c901691ebd8819f1f0bd19d6dc50
-superseded_plan_review_ref: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r4.md
-superseded_plan_review_blob_sha: 3de8413c84733f8c233762965e3500cc3c307608
-superseded_slice_set_ref: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-r4-slices.yaml
-superseded_slice_set_blob_sha: c8786d85e081986e3d3c4ed7ede2f290a8756f7e
-replan_trigger_ref: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-harness-bootstrap-blocked-20261008.yaml
+prior_plan_revision: 5
+prior_plan_blob_sha: ff8581ec026a0d123ae89d9595271397429145c0
+superseded_plan_review_ref: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r5.md
+superseded_plan_review_blob_sha: 6054807e82aa523617c58bbae340c8bac05310c6
+superseded_slice_set_ref: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-r5-slices.yaml
+superseded_slice_set_blob_sha: 12e9b0c2001fa0806ef21b38f821213fd5116917
+replan_trigger_ref: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-completion-receipt.yaml
 transport:
   type: github-pr
   pr_number: 14
   branch: task/devforge-execution-workspace-materialization-bridge-v1
   base_branch: main
 planning_baseline:
-  sentinelx_main: 1028030b33f0ea792a884491a431fffe566f6aa5
-  task_head_before_plan_r5: 8e30a2b3a3c35f9ad9ca90449b8e0dec6b39439a
-  devforge_main: 050d9c9559a173a3e0b37fcd2a9db702b6b5a7e6
-  devforge_release: v2.98.0
+  sentinelx_main: b0c5addad3aab0c63271dc241a6942b313d6b82d
+  task_head_before_plan_r6: f42e5d4d4b5c3fd8786446b42b5de4d42de8c600
+  devforge_main: 7b45640926dac9c559d558f8ddbbb137ba30b69b
+  devforge_release: v2.102.0
 project_binding:
   provider: direct
   adapter: codex
   source: explicit_project_binding
 completed_evidence_preserved:
   - S01
+  - S02_product_candidate_45dc99d15a23c499b4c1500fab60ed5e76475aeb
+  - S02_completion_checkpoint
+  - S02_completion_receipt
 implementation_authorized: false
 ```
 
-Plan R5 is a user-directed implementation replan that preserves Requirement R2 and S01 completed evidence while replacing the blocked R4 execution-entry design.
+## R6 Verification Policy Repair — CI removed from this Task gate
+
+Plan R6 is a verification-policy-only revision. It does not change Requirement R2, the S02 implementation design, product scope, canonical transport, security boundaries, or the completed S02 product candidate.
+
+Preserved implementation evidence:
+
+~~~yaml
+s02_product_candidate: 45dc99d15a23c499b4c1500fab60ed5e76475aeb
+s02_product_mutation_replay: forbidden
+s02_changed_blob_readback: byte_identical_all_9_changed_blobs
+s02_deterministic_suite:
+  passed: 147
+  skipped: 1
+  failures: 0
+s02_completion_checkpoint: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-completion-20261008.yaml
+s02_completion_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-completion-receipt.yaml
+~~~
+
+### Hosted CI policy for PR-014 R6
+
+Repository-hosted CI is **NotEvaluated and NonGating** for this Task.
+
+Reason:
+
+- current canonical `main` has no `.github/workflows/**` surface;
+- the operator explicitly does not authorize CI spending for this Task;
+- creating or modifying a workflow merely to satisfy PR-014 would expand scope and create an unrelated billing/execution dependency.
+
+Therefore:
+
+~~~yaml
+repository_hosted_ci:
+  applicability: NotEvaluated
+  gating: false
+  required_for_s02_completion: false
+  required_for_acceptance: false
+  create_or_modify_workflow_for_task: forbidden
+~~~
+
+R6 completion evidence for S02 is:
+
+~~~text
+exact product candidate 45dc99d...
++ exact changed-blob readback
++ deterministic suite 147 passed / 1 skipped / 0 failed
++ preserved security/authority evidence
++ mandatory Acceptance physical exact-candidate gate
+~~~
+
+The Acceptance physical gate remains unchanged and is the authoritative real-runtime proof for AC8, AC10 and AC14.
+
+### Reconciliation rule
+
+R6 MUST NOT re-run or rewrite the completed S02 product mutation.
+
+After R6 approval, the R6 Slice Set must represent:
+
+~~~text
+S01 = completed / reused
+S02 = completed / reused from candidate 45dc99d...
+pending implementation slices = none
+~~~
+
+The S02 completion checkpoint/receipt may be reused only after the reviewer verifies they remain compatible with R6. Reconciliation is artifact-state synchronization, not implementation replay.
+
+
+Plan R6 inherits the R5 bootstrap-safe implementation design and preserves Requirement R2, S01 evidence, and the completed S02 product candidate. R6 changes only the verification/completion policy described above.
 
 R4 proved that Harness bootstrap is not bootstrap-safe for this Task today: Harness itself requires `incremental_execution.slice_v1`, whose completion path participates in the cycle `PR-014 → PR-229 → PR-020 → PR-014`.
 
@@ -236,7 +305,7 @@ write_surface: repository.write
 write_mode: exact_branch_structured_persistence
 expected_head_compare_and_set: required
 post_write_branch_readback: required
-workflow_observe: existing_repository_verification_only
+workflow_observe: not_required_for_task_completion
 local_workspace_required: false
 ~~~
 
@@ -298,7 +367,7 @@ expected PR-head SHA
 → re-read changed file blobs
 ~~~
 
-Existing repository-hosted CI/checks MAY be consumed as verification evidence only when they run against the exact resulting PR head. S02 bootstrap may not modify CI workflows or inject an ad-hoc generic shell job.
+Repository-hosted CI/checks are not evaluated and are non-gating for PR-014 R6. S02 MUST NOT add or modify CI workflows or inject an ad-hoc generic shell job merely to obtain hosted verification.
 
 Lost write/check response is reconciled by GitHub branch/check readback before retry. Blind replay is forbidden.
 
@@ -687,9 +756,11 @@ S02 bootstrap verification must prove before Slice completion:
 9. no PR-020 durable async runtime was required;
 10. no PR-013 S03 replay or unmerged PR-013 import occurred;
 11. focused code/schema/tests for D1–D10 are present and internally coherent;
-12. existing repository-hosted verification evidence for the exact PR head is read back when available/required by repository policy;
-13. deterministic static/import/schema failures block completion and are repaired only within the same exact Slice/write scope;
-14. completion receipt binds exact Task/Plan/Slice/PR branch/head/changed paths and verification evidence.
+12. the exact S02 deterministic suite evidence is bound to product candidate `45dc99d15a23c499b4c1500fab60ed5e76475aeb` and proves `147 passed / 1 skipped / 0 failed`;
+13. all 9 changed product/test blobs are read back byte-identical to the verified candidate;
+14. repository-hosted CI is NotEvaluated/NonGating and no workflow is created or modified for this Task;
+15. deterministic static/import/schema failures block completion and are repaired only within the same exact Slice/write scope;
+16. completion receipt binds exact Task/Plan/Slice/PR branch/head/changed paths and verification evidence.
 
 S02 completion is an implementation checkpoint, not physical Windows Acceptance.
 
@@ -714,7 +785,7 @@ Requirement R2 acceptance mapping:
 
 ### Acceptance exact-candidate physical gate
 
-Acceptance MUST NOT infer AC8/AC10/AC14 from source or CI alone.
+Acceptance MUST NOT infer AC8/AC10/AC14 from source or deterministic-test evidence alone.
 
 It must use the existing separately authorized exact-candidate activation/verification workflow and persist/read back evidence equivalent to:
 
@@ -783,9 +854,9 @@ Mitigation: bind every mutation window to expected current PR-head/file blob ide
 
 Mitigation: R5 Slice Set freezes exact source/test path allowlist; workflow/config/credential/security metadata paths are denied unless explicitly part of the reviewed S02 product change.
 
-### Risk E — Lack of local test execution hides syntax/integration failure
+### Risk E — Hosted CI is unavailable or intentionally not used
 
-Mitigation: require deterministic source/schema review and consume existing repository-hosted verification against exact PR head. Acceptance still performs exact-candidate physical proof; no source-only Acceptance claim.
+Mitigation: hosted CI is explicitly NonGating for R6. Reuse the exact candidate deterministic suite (`147 passed / 1 skipped / 0 failed`) plus byte-identical changed-blob readback; Acceptance still performs the mandatory exact-candidate physical proof.
 
 ### Risk F — Product seed accidentally bypasses S01 sandbox
 
@@ -832,23 +903,19 @@ After this Plan is durably persisted/read back:
 ~~~yaml
 stage: plan_review
 requirement_revision: 2
-plan_revision: 5
+plan_revision: 6
 plan_approved: false
 implementation_authorized: false
 current_slice: null
 current_slice_set: null
 completed_slices_preserved: [S01]
-superseded_slice_set: plan-r4
-bootstrap_override_state: absent
+preserved_s02_completion_candidate: 45dc99d15a23c499b4c1500fab60ed5e76475aeb
+s02_reimplementation_forbidden: true
+superseded_slice_set: plan-r5
+bootstrap_override_state: expired_by_plan_revision_6
 next_expected_actor: reviewer
 ~~~
 
-No R5 execution Slice Set exists until Plan Review approves R5 and compiles/read-backs the exact current Slice Set.
+No R6 execution Slice Set exists until Plan Review approves R6 and compiles/read-backs the exact current Slice Set.
 
-If R5 is approved, the canonical next execution-authority command is expected to be:
-
-~~~text
-#开发引导执行 PR-014-devforge-execution-workspace-materialization-bridge-v1 direct:codebuddy
-~~~
-
-That command still must prove the target is registered/current/available before any implementation mutation.
+If R6 is approved, no new bootstrap or product implementation is expected. The reviewer must compile the R6 Slice Set by reusing S01 and the verified S02 completion evidence. A later canonical `#开发执行` may perform only the mechanical implementation-complete reconciliation needed to expose Acceptance; it must not replay S02 product mutation.
