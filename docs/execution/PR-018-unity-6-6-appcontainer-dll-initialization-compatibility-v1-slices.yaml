@@ -92,6 +92,8 @@ slices:
     run_refs:
       - docs/checkpoints/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-s01-blocked-host-runtime-schema-and-direct-codex-timeout-20261007.yaml@3150b248a871f2a9945b753bfc70c1f9aa464fcc
       - direct_codex_run:run-pr018-s01-20261007-001:attempt-001:response_timeout_no_remote_publish_observed
+      - docs/checkpoints/PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1-s01-partial-a-confirmed-b-host-profile-root-blocked-20261008.yaml@ac2b2b273b8158e8d4f98e0c76fa59a79c5a275c
+      - scoped_runtime_run:run-pr018-s01-20261008-002:attempt-001:variant_a_0xC0000142_scope_terminal
     completion_receipt_ref: null
 
   - slice_id: S02
