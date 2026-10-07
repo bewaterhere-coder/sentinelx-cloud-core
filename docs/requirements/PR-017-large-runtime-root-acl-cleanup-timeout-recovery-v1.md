@@ -8,27 +8,28 @@ task_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
 title: SentinelX Large Runtime Root ACL Cleanup Timeout & Recovery V1
 requirement_revision: 1
 development:
-  stage: accepted
+  stage: done
   gates:
     requirement_ready: true
     plan_approved: true
     acceptance_approved: true
-    completion_verified: false
+    completion_verified: true
   plan_revision: 5
   acceptance_revision: 3
   completion_revision: 1
   implementation_authorized: false
   finalization:
-    ready_for_merge: true
+    ready_for_merge: false
     canonical_state_verified: true
     plan_execution_state_verified: true
     evidence_verified: true
     transport_preconditions_verified: true
-    integration_verified: false
-    merge_pending: true
-  next_expected_actor: integration
+    integration_verified: true
+    integration_ref: f72ac8bfe643cd9fbdea231e4a69f9e88a0595e9
+    merge_pending: false
+  next_expected_actor: null
   acceptance_disposition: approved_r3
-  execution_disposition: finalization_r1_ready_for_merge
+  execution_disposition: completion_r1_verified
   blocking_findings: []
   repair_evidence:
     - Fixing R1 preserved exact product candidate f9e07da9cc37f6e882c3258280869b415cafcb5c and did not replay S03 or Unity.
@@ -75,6 +76,10 @@ artifacts:
   latest_fixing_transition_receipt_blob_sha: da74adac606ba764f8914a4cd8135af22ac0f0ea
   completion_finalization: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-completion-finalization-r1.yaml
   completion_finalization_blob_sha: 319aeed703515d3339bff78323f83a35bbf40663
+  integration_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-integration-receipt-r1.yaml
+  integration_receipt_blob_sha: ae7a93de6d4ea782f350f55d40779dc3f2084fd0
+  completion_review: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-completion-r1.md
+  completion_review_blob_sha: 66863506fbbc0a8267ae8813f4d6eed990b9cee3
 related_tasks:
   predecessor:
     - PR-012-execute-scoped-explicit-execution-profile-v1
