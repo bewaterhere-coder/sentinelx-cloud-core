@@ -94,9 +94,10 @@ slices:
         - no product source mutation is authorized
     checkpoint:
       required: true
-    state: pending
-    run_refs: []
-    completion_receipt_ref: null
+    state: completed
+    run_refs:
+      - docs/execution/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s02-run-001.yaml
+    completion_receipt_ref: docs/checkpoints/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s02-completion-20261008.yaml
 
   - slice_id: S03
     objective: Freeze the evidence-backed KEEP/SIMPLIFY/DEPRECATE/HOLD capability disposition matrix.
@@ -140,7 +141,7 @@ slices:
     completion_receipt_ref: null
 
 current:
-  slice_id: S02
+  slice_id: S03
   state: pending
 
 approval:
