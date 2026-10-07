@@ -66,7 +66,7 @@ artifacts:
   latest_acceptance_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r7-rejected-codex-workspace-acl-handoff-20261007.yaml
   latest_acceptance_checkpoint_blob_sha: b65d821e19245b95a4d37186044cb6f4c15ff982
   latest_acceptance_transition_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r7-transition-receipt.yaml
-  latest_acceptance_transition_receipt_blob_sha: eb5e6c42ec3cc932d33ee32cd923cf168b95f8c3
+  latest_acceptance_transition_receipt_blob_sha: 9b3fe781802450bfdce2c810077d27572ce7b26d
   latest_fixing_execution_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-attempt-r1-completed-20261007.yaml
   latest_fixing_execution_checkpoint_blob_sha: 2b8677e87463a4320ab9a47039b834f5ac7159db
   latest_fixing_transition_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-r1-to-acceptance-transition-receipt.yaml

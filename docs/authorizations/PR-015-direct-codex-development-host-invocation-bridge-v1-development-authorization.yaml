@@ -73,7 +73,7 @@ receipt:
   latest_acceptance_checkpoint_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r7-rejected-codex-workspace-acl-handoff-20261007.yaml
   latest_acceptance_checkpoint_blob_sha: b65d821e19245b95a4d37186044cb6f4c15ff982
   latest_acceptance_transition_receipt_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r7-transition-receipt.yaml
-  latest_acceptance_transition_receipt_blob_sha: eb5e6c42ec3cc932d33ee32cd923cf168b95f8c3
+  latest_acceptance_transition_receipt_blob_sha: 9b3fe781802450bfdce2c810077d27572ce7b26d
   latest_acceptance_finding_code: direct_codex_workspace_acl_handoff_incompatible_with_codex_sandbox
   latest_acceptance_fixture_pr: 230
   latest_acceptance_fixture_head: f19dbe1ef072596129884e05797936632f0fb850

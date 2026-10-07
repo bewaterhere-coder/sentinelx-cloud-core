@@ -19,8 +19,8 @@ transport:
   expected_head_before_transition: 080d31229b614c8fc753117fa7152618e4ff1e50
 
 evidence:
-  task_readback_verified: false
-  acceptance_decision_verified: false
+  task_readback_verified: true
+  acceptance_decision_verified: true
   acceptance_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r7.md
   acceptance_blob_sha: f9259d43fa5529638a294bd2c57488cbe3f3eec1
   acceptance_checkpoint_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r7-rejected-codex-workspace-acl-handoff-20261007.yaml
@@ -45,4 +45,9 @@ result:
 
 readback:
   required: true
-  verified: false
+  verified: true
+  verification_commit: 0e9ce332ae8921c853730626cbd681140e010d8e
+  task_stage_readback: fixing
+  next_expected_actor_readback: operator
+  acceptance_disposition_readback: rejected_repair_local
+  execution_disposition_readback: fixing_bootstrap_required
