@@ -563,18 +563,23 @@ def test_runtime_read_authority_marker_blocks_terminal_until_cleanup_retry(
     def residual_cleanup(*_args, **_kwargs):
         raise HostMutationSandboxResidualAuthority("injected residual runtime-read authority")
 
+    activation = fx.activate()
+    assert activation.sandbox_identity
+    active = fx.scope_store.read_scope(fx.record.scope_id)
+    assert active.state == "active"
+    assert tuple(map(str.casefold, active.runtime_read_authority_roots)) == (
+        str(fx.runtime).casefold(),
+    )
+
     monkeypatch.setattr(windows_sandbox, "_remove_runtime_read", residual_cleanup)
     with pytest.raises(HostMutationSandboxResidualAuthority):
-        fx.activate()
+        fx.sandbox.terminalize(fx.record.scope_id, fx.record.generation)
 
     revoked = fx.scope_store.read_scope(fx.record.scope_id)
     assert revoked.state == "revoked"
     assert tuple(map(str.casefold, revoked.runtime_read_authority_roots)) == (
         str(fx.runtime).casefold(),
     )
-
-    with pytest.raises(HostMutationSandboxResidualAuthority):
-        fx.sandbox.terminalize(fx.record.scope_id, fx.record.generation)
     still_revoked = fx.scope_store.read_scope(fx.record.scope_id)
     assert still_revoked.state == "revoked"
     assert still_revoked.runtime_read_authority_roots
