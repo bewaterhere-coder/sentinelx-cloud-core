@@ -18,12 +18,13 @@ development:
   implementation_authorized: true
   next_expected_actor: implementer
   blocking_findings: []
-  current_slice: S02
+  current_slice: S03
   current_slice_state: pending
   authorization:
     mode: legacy_command_scoped
   completed_slices:
     - S01
+    - S02
 transport:
   type: github-pr
   pr_number: 17
@@ -34,8 +35,8 @@ artifacts:
   latest_plan_review: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-review-r1.md
   latest_plan_review_transition_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-review-r1-transition-receipt.yaml
   execution_slice_set: docs/execution/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-slices.yaml
-  latest_slice_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s01-completion-20261007.yaml
-  latest_slice_completion_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s01-completion-receipt.yaml
+  latest_slice_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-completion-20261007.yaml
+  latest_slice_completion_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-completion-receipt.yaml
 related_tasks:
   predecessor:
     - PR-012-execute-scoped-explicit-execution-profile-v1

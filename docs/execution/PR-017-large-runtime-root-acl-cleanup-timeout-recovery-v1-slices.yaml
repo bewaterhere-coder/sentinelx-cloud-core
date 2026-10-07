@@ -106,7 +106,7 @@ slices:
   - slice_id: S02
     objective: Close partial runtime-root grant ambiguity and prove fail-closed revoked/retry terminalization recovery.
     depends_on: [S01]
-    state: pending
+    state: completed
     scope:
       refs:
         - src/sentinelx_core/windows_mutation_sandbox.py
@@ -136,8 +136,17 @@ slices:
         - existing audit/Job/no-breakaway regressions remain green
     checkpoint:
       required: true
-    run_refs: []
-    completion_receipt_ref: null
+    run_refs:
+      - commit:d083921b3f0146455bd4b0732d8e0ce219728344
+      - https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37613501873/job/112766197545
+      - https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37613501678/job/112766196691
+      - https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37613501679/job/112766196685
+      - https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37613501664/job/112766196608
+      - https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37613501728/job/112766196355
+      - https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37613501683/job/112766196343
+      - https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37613501642/job/112766196193
+      - https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37613501650/job/112766196000
+    completion_receipt_ref: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-completion-receipt.yaml
 
   - slice_id: S03
     objective: Prove the exact candidate on real Windows with a large Unity runtime root and close affected security/regression evidence.
@@ -174,10 +183,10 @@ slices:
     run_refs: []
     completion_receipt_ref: null
 execution_state:
-  current_slice: S02
+  current_slice: S03
   current_slice_state: pending
-  completed_slices: [S01]
-  pending_slices: [S02, S03]
+  completed_slices: [S01, S02]
+  pending_slices: [S03]
   all_slices_completed: false
 acceptance_boundary:
   all_current_plan_slices_must_be_completed: true

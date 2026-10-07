@@ -1,0 +1,78 @@
+schema_version: "1.0"
+kind: devforge_slice_completion_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
+slice_id: S02
+source_command: "#开发执行 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1"
+result: Completed
+product_candidate: d083921b3f0146455bd4b0732d8e0ce219728344
+repository_reality:
+  canonical_main: 018b78ca20984176d53fbe90039dc795a7f2742f
+  transport_pr: 17
+  transport_branch: task/large-runtime-root-acl-cleanup-timeout-recovery-v1
+  s01_entry_head: b4a2099f69ee7a82856d6a5ae86a201279288808
+  pr015_current_head: 71ee5d83958f6622bdfdea9f088703d2007571d6
+  pr015_s02_increment_product_overlap: false
+  pr016_current_head: f22ee1881526002547b59df2226fa57aa8f10af6
+  pr016_product_overlap_during_s02: false
+implementation:
+  commits:
+    - d083921b3f0146455bd4b0732d8e0ce219728344
+  changed_files:
+    - src/sentinelx_core/windows_mutation_sandbox.py
+    - tests/test_windows_mutation_sandbox.py
+  delivered:
+    - runtime ACL grant failure/timeouts immediately compensate the exact currently-attempted runtime root before it can be omitted from activation rollback tracking
+    - compensating removal reuses exact-root SID-absence readback from S01
+    - successful compensation preserves the original deterministic grant failure
+    - ambiguous/failed compensation is promoted to HostMutationSandboxResidualAuthority and cannot be masked by the original grant failure
+    - terminal cleanup failure remains revoked and a later real sandbox terminalization retry can reach terminal
+    - retry regression now includes a real configured runtime root and proves the exact scope AppContainer SID is absent after successful terminalization
+verification:
+  exact_candidate: d083921b3f0146455bd4b0732d8e0ce219728344
+  github_checks:
+    test:
+      conclusion: success
+      url: https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37613501873/job/112766197545
+    windows_process_firewall:
+      conclusion: success
+      url: https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37613501678/job/112766196691
+    offline_node_npm:
+      conclusion: success
+      url: https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37613501679/job/112766196685
+    verification_materialization:
+      conclusion: success
+      url: https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37613501664/job/112766196608
+    windows_regression_coverage:
+      conclusion: success
+      url: https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37613501728/job/112766196355
+    incident_security_regression:
+      conclusion: success
+      url: https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37613501683/job/112766196343
+    devforge_runtime_verification:
+      conclusion: success
+      url: https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37613501642/job/112766196193
+    windows_effect_and_structured_mutation:
+      conclusion: success
+      url: https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37613501650/job/112766196000
+  required_s02_matrix:
+    grant_timeout_compensates_exact_attempted_root: pass
+    compensation_requires_exact_sid_absence_readback: pass
+    compensation_failure_is_residual_authority: pass
+    original_grant_failure_preserved_after_successful_compensation: pass
+    terminal_cleanup_failure_stays_revoked: pass
+    terminalization_retry_reaches_terminal: pass
+    runtime_root_sid_absent_after_retry: pass
+    audit_job_no_breakaway_regression: pass
+host_activation:
+  performed_for_candidate: false
+  reason: S03 owns exact-candidate Host activation and physical Unity large-runtime proof
+slice_boundary:
+  s03_executed: false
+  unity_probe_executed: false
+  next_slice: S03
+completion_guard:
+  s02_completion_verified: true
+  task_completion_verified: false
+  acceptance_approved: false
+  canonical_next_action: "#开发执行 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1"
