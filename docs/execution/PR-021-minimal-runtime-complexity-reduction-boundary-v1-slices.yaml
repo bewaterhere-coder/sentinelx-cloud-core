@@ -73,9 +73,10 @@ slices:
         - no product or external state mutation
     checkpoint:
       required: true
-    state: pending
-    run_refs: []
-    completion_receipt_ref: null
+    state: completed
+    run_refs:
+      - docs/execution/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s01-run-001.yaml
+    completion_receipt_ref: docs/checkpoints/PR-021-minimal-runtime-complexity-reduction-boundary-v1-s01-completion-20261008.yaml
 
   - slice_id: S02
     objective: Freeze the SentinelX Minimal Runtime Architecture Decision and direct-short versus guided-CLI execution boundary.
@@ -139,7 +140,7 @@ slices:
     completion_receipt_ref: null
 
 current:
-  slice_id: S01
+  slice_id: S02
   state: pending
 
 approval:
