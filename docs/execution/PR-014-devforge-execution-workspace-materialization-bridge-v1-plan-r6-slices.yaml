@@ -1,0 +1,125 @@
+schema_version: "1.1"
+kind: devforge_execution_slice_set
+
+identity:
+  task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
+  slice_set_id: PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-r6
+
+plan:
+  ref: docs/plans/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan.md
+  revision: 6
+  blob_sha: 4fc74fba9d787120798d5ed6a4f04b7da9cb6a5f
+  requirement_revision: 2
+
+review:
+  ref: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r6.md
+  blob_sha: c9798c848dc2769f0ccd9ae7c6fc5e8aeec9a026
+  decision: Approved
+
+repository_baseline:
+  canonical_pr: 14
+  canonical_branch: task/devforge-execution-workspace-materialization-bridge-v1
+  current_main_at_review: cd42e371f18056327c1d8b744f8956a76bc11541
+
+runtime_provenance:
+  devforge_main_sha: e0ea49441c410a7008fbcd61f1782d90f014a773
+  slicing_contract_version: "1.1"
+
+slices:
+  - slice_id: S01
+    objective: Preserve the verified DevForge placement, Host-derived execution-root binding, mutation-scope authority and AppContainer/Job sandbox foundation.
+    depends_on: []
+    state: completed
+    completion_mode: reused_historical_evidence
+    provenance:
+      original_completion_ref: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-s01-completion-20261005.yaml
+      original_completion_blob_sha: b96ceba27a6eef196d1ac59ca04ca45d5159915a
+      replay: forbidden
+    checkpoint:
+      required: true
+      ref: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-s01-completion-20261005.yaml
+    completion_receipt_ref: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-s01-completion-20261005.yaml
+
+  - slice_id: S02
+    objective: Bootstrap-safe minimal path-free devforge_runtime.materialize_workspace seed preserving Host-owned placement, scope, audit, AppContainer/Job containment, firewall and receipt/readback semantics.
+    depends_on: [S01]
+    state: completed
+    completion_mode: reconciled_historical_execution_evidence
+    provenance:
+      original_plan_revision: 5
+      product_candidate: 45dc99d15a23c499b4c1500fab60ed5e76475aeb
+      historical_checkpoint_ref: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-completion-20261008.yaml
+      historical_checkpoint_blob_sha: cc6352134f7710ee677d4e892e5fb101c8c3401d
+      historical_receipt_ref: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-completion-receipt.yaml
+      historical_receipt_blob_sha: dd40e27c93376b73a95ed4c5ab1d13f91f5df4af
+      current_plan_reconciliation_ref: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-r6-reconciliation-receipt.yaml
+      current_plan_reconciliation_blob_sha: 21f6072b43bd9c33213d4579b6030f064b11b3cf
+      new_run_required: false
+      new_bootstrap_required: false
+      product_mutation_replay: forbidden
+    verification:
+      deterministic_suite:
+        passed: 147
+        skipped: 1
+        failed: 0
+      changed_product_test_blob_readback:
+        count: 9
+        result: byte_identical
+      repository_hosted_ci:
+        applicability: NotEvaluated
+        gating: false
+        workflow_creation_or_modification_for_task: forbidden
+      canonical_main_relevant_drift:
+        reviewed_through: cd42e371f18056327c1d8b744f8956a76bc11541
+        relevant_seam_changes_found: false
+      acceptance_physical_gate_required: true
+    checkpoint:
+      required: true
+      ref: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-completion-20261008.yaml
+    completion_receipt_ref: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-r6-reconciliation-receipt.yaml
+
+execution_state:
+  current_slice: null
+  current_slice_state: null
+  completed_slices: [S01, S02]
+  pending_slices: []
+  all_slices_completed: true
+  implementation_execution_complete: true
+  product_reexecution_required: false
+  bootstrap_required: false
+
+superseded_execution:
+  prior_slice_set_ref: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-r5-slices.yaml
+  prior_slice_set_status: invalidated_by_plan_revision_6
+  prior_bootstrap_override_ref: docs/overrides/PR-014-devforge-execution-workspace-materialization-bridge-v1-bootstrap-execution-override.yaml
+  prior_bootstrap_override_state: expired
+  prior_execution_evidence_reused_only_through_current_plan_reconciliation: true
+
+acceptance_boundary:
+  implementation_execution_complete: true
+  exact_candidate_physical_windows_verification_required: true
+  source_or_deterministic_test_only_acceptance_forbidden: true
+  repository_hosted_ci_required: false
+  required_physical_evidence:
+    - exact candidate activation identity/version readback
+    - local_api.list/describe exposes path-free materialize_workspace
+    - benign live materialize_workspace request
+    - Host-derived placement and exact execution-root readback
+    - source capsule and mutation-scope binding
+    - durable audit START before first workspace write
+    - AppContainer/Job containment evidence
+    - exact Git HEAD branch origin and clean-state readback
+    - temporary materializer authority closure
+    - Host-owned user-level Development Host handoff probe
+    - same-identity retry no-replay
+    - canonical source main plus clean readback
+    - security regression evidence
+    - no PR-013 S03 replay
+
+invariants:
+  - completed_s01_no_replay
+  - completed_s02_no_replay
+  - no_hosted_ci_gate_for_r6
+  - no_workflow_creation_or_modification_for_task
+  - no_receipt_no_completion_claim
+  - acceptance_physical_gate_remains_mandatory
