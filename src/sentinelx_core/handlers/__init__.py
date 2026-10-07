@@ -162,7 +162,7 @@ def build_registry(
         "upload_file": make_upload_file_handler(policy, upload_base),
         "upload_init": make_upload_init_handler(upload_base, policy),
         "upload_chunk": make_upload_chunk_handler(upload_base),
-        "upload_complete": make_upload_complete_handler(policy, upload_base),
+        "upload_complete": make_upload_complete_handler(upload_base),
 
         # Cross-host file transfer (source side, INTERNAL — driven by the Hub's
         # sentinel_transfer_file coordinator, not a model-visible tool). The
@@ -241,7 +241,7 @@ def build_registry(
                     "requested": sorted(refused),
                     "reason": (
                         "these ops are how the hub learns what this host is and "
-                        "whether it is alive; an agent that cannot answer a thing "
+                        "whether it is alive; an agent that cannot answer them "
                         "still holds a slot and still looks connected"
                     ),
                 },
@@ -255,7 +255,7 @@ def build_registry(
             extra={
                 "removed": removed,
                 # A name this agent never had is almost always a typo, and a
-                # typo in the deny list reads as protection that is not there.
+                # typo in a deny list reads as protection that is not there.
                 "not_recognised": unknown,
             },
         )

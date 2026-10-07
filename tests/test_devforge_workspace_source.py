@@ -1,3 +1,4 @@
+"""PR-014 S02 — provider-owned source role, identity, and capsule (D1-D4)."""
 from __future__ import annotations
 
 import asyncio
@@ -199,7 +200,7 @@ def test_capsule_is_durable_digest_sealed_and_reused(tmp_path, fake_remote) -> N
 
 
 def test_capsule_rejects_unsupported_tree_entries(tmp_path, fake_remote) -> None:
-    for path in ("D:/abs/path", "../escape", "a//b"):
+    for path, is_absolute in (("D:/abs/path", True), ("../escape", False), ("a//b", False)):
         with pytest.raises(source.SourceCapsuleError):
             source._safe_worktree_path(path)
     with pytest.raises(source.SourceCapsuleError):

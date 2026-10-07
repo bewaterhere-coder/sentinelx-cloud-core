@@ -459,7 +459,7 @@ class DevforgeRuntimeProvider:
             actions.append("materialize_workspace")
         return tuple(actions)
 
-    def repository_effect(self, action: str) -> OperationEffectResolution:
+    def repository_effect(self, action: str) -> "OperationEffectResolution":
         """Deterministic repository-effect metadata for every effective action.
 
         Lifecycle actions never touch a repository checkout, exactly like the
