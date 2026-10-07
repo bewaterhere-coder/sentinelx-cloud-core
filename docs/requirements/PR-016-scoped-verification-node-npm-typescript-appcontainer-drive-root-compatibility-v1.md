@@ -23,7 +23,7 @@ development:
   authorization:
     mode: legacy_command_scoped
   continuation_checkpoint:
-    ref: docs/checkpoints/PR-016-scoped-verification-node-npm-typescript-appcontainer-drive-root-compatibility-v1-s01-window-3-blocked-direct-codex-model-20261007.yaml
+    ref: docs/checkpoints/PR-016-scoped-verification-node-npm-typescript-appcontainer-drive-root-compatibility-v1-s01-window-3-attempt2-interrupted-20261007.yaml
 transport:
   type: github-pr
   pr_number: 16
