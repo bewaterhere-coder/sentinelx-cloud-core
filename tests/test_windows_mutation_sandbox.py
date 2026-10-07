@@ -28,7 +28,7 @@ from sentinelx_core.mutation_sandbox import (
     HostMutationSandboxPathViolation,
     HostMutationSandboxResidualAuthority,
 )
-from sentinelx_core.mutation_scope import MutationScopeStore
+from sentinelx_core.mutation_scope import MutationScopeStore, SessionObjectReadBinding
 from sentinelx_core.policy import MutationExecutionPolicy, Policy
 from sentinelx_core.request_context import MutationLineage, RequestContext
 from sentinelx_core.windows_mutation_sandbox import (
@@ -39,6 +39,8 @@ from sentinelx_core.windows_mutation_sandbox import (
     _grant_runtime_read,
     _profile_name,
     _remove_runtime_read,
+    WINDOW_STATION_VERIFICATION_READ,
+    DESKTOP_VERIFICATION_READ,
     _set_exact_acl,
     final_executable_path,
     requested_mutation_identity,
@@ -55,6 +57,7 @@ class Fixture:
         *,
         attempt_id: str,
         runtime_read_root: bool = False,
+        session_object_read_enabled: bool = False,
     ) -> None:
         self.root = tmp_path / "fixture"
         self.workspace_root = self.root / "workspaces"
@@ -72,6 +75,7 @@ class Fixture:
             workspace_root=self.workspace_root,
             protected_roots=(self.protected,),
             runtime_read_roots=(self.runtime,) if runtime_read_root else (),
+            runtime_session_object_read_enabled=session_object_read_enabled,
             scope_ttl_seconds=600,
             evidence_retention_days=7,
         )
@@ -700,3 +704,221 @@ def test_runtime_read_authority_marker_blocks_terminal_until_cleanup_retry(
     terminal = fx.sandbox.terminalize(fx.record.scope_id, fx.record.generation)
     assert terminal.state == "terminal"
     assert terminal.runtime_read_authority_roots == ()
+
+
+def _fake_session_binding() -> SessionObjectReadBinding:
+    return SessionObjectReadBinding(
+        cleanup_required=True,
+        session_id=0,
+        window_station_identity="session:0/window-station:Service-0x0-3e7$",
+        desktop_identity=(
+            "session:0/window-station:Service-0x0-3e7$/desktop:Default"
+        ),
+        window_station_mask=WINDOW_STATION_VERIFICATION_READ,
+        desktop_mask=DESKTOP_VERIFICATION_READ,
+    )
+
+
+def test_pr018_session_masks_are_exact_frozen_read_only_values() -> None:
+    assert WINDOW_STATION_VERIFICATION_READ == 0x00020103
+    assert DESKTOP_VERIFICATION_READ == 0x00020041
+
+
+def test_generic_session_read_disabled_path_grants_nothing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fx = Fixture(tmp_path, attempt_id="generic-session-disabled")
+    activation = fx.activate()
+
+    def forbidden_observe():
+        raise AssertionError("disabled generic path must not observe Session-0 objects")
+
+    monkeypatch.setattr(
+        windows_sandbox, "_observed_session_object_read_binding", forbidden_observe
+    )
+    process = fx.sandbox.spawn(
+        activation,
+        audit=fx.audit,
+        audit_start=fx.start,
+        argv=["cmd.exe", "/d", "/c", "exit", "0"],
+    )
+    assert process.wait(10)
+    current = fx.scope_store.read_scope(fx.record.scope_id)
+    assert current.session_object_read_binding is None
+    fx.sandbox.terminalize(fx.record.scope_id, fx.record.generation)
+
+
+def test_generic_session_read_persists_before_grant_and_cleans_on_terminal(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fx = Fixture(
+        tmp_path,
+        attempt_id="generic-session-read",
+        session_object_read_enabled=True,
+    )
+    activation = fx.activate()
+    binding = _fake_session_binding()
+    handles = (101, 202)
+    observations: list[str] = []
+
+    monkeypatch.setattr(
+        windows_sandbox,
+        "_observed_session_object_read_binding",
+        lambda: (binding, handles),
+    )
+
+    def grant(observed_handles, app_sid):
+        assert observed_handles == handles
+        current = fx.scope_store.read_scope(fx.record.scope_id)
+        assert current.session_object_read_binding == binding
+        assert current.sandbox_identity == app_sid
+        observations.append("grant-after-durable-readback")
+
+    monkeypatch.setattr(windows_sandbox, "_grant_session_object_read", grant)
+    monkeypatch.setattr(
+        windows_sandbox,
+        "_reacquire_session_object_read_binding",
+        lambda expected: handles
+        if expected == binding
+        else (_ for _ in ()).throw(AssertionError("unexpected binding")),
+    )
+    monkeypatch.setattr(
+        windows_sandbox,
+        "_remove_session_object_read",
+        lambda observed_handles, _sid: observations.append(
+            "cleanup-dual-absence-proven"
+        )
+        if observed_handles == handles
+        else None,
+    )
+
+    process = fx.sandbox.spawn(
+        activation,
+        audit=fx.audit,
+        audit_start=fx.start,
+        argv=["cmd.exe", "/d", "/c", "exit", "0"],
+    )
+    assert process.contained is True
+    assert process.breakaway_allowed is False
+    assert process.wait(10)
+
+    active = fx.scope_store.read_scope(fx.record.scope_id)
+    assert active.session_object_read_binding == binding
+    terminal = fx.sandbox.terminalize(fx.record.scope_id, fx.record.generation)
+    assert terminal.state == "terminal"
+    assert terminal.session_object_read_binding is None
+    assert observations == [
+        "grant-after-durable-readback",
+        "cleanup-dual-absence-proven",
+    ]
+
+
+def test_generic_session_grant_failure_clears_marker_only_after_cleanup(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fx = Fixture(
+        tmp_path,
+        attempt_id="generic-session-grant-failure",
+        session_object_read_enabled=True,
+    )
+    activation = fx.activate()
+    binding = _fake_session_binding()
+    handles = (303, 404)
+    cleaned: list[bool] = []
+    monkeypatch.setattr(
+        windows_sandbox,
+        "_observed_session_object_read_binding",
+        lambda: (binding, handles),
+    )
+
+    def fail_grant(_handles, _sid):
+        current = fx.scope_store.read_scope(fx.record.scope_id)
+        assert current.session_object_read_binding == binding
+        raise HostMutationSandboxAclViolation("injected second-object grant failure")
+
+    monkeypatch.setattr(windows_sandbox, "_grant_session_object_read", fail_grant)
+    monkeypatch.setattr(
+        windows_sandbox,
+        "_remove_session_object_read",
+        lambda _handles, _sid: cleaned.append(True),
+    )
+
+    with pytest.raises(
+        HostMutationSandboxAclViolation,
+        match="injected second-object grant failure",
+    ):
+        fx.sandbox.spawn(
+            activation,
+            audit=fx.audit,
+            audit_start=fx.start,
+            argv=["cmd.exe", "/d", "/c", "exit", "0"],
+        )
+
+    current = fx.scope_store.read_scope(fx.record.scope_id)
+    assert cleaned == [True]
+    assert current.session_object_read_binding is None
+    assert current.active_job_ids == ()
+    assert current.active_process_ids == ()
+    fx.sandbox.terminalize(fx.record.scope_id, fx.record.generation)
+
+
+def test_restart_cleanup_identity_mismatch_stays_revoked_then_retry_closes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fx = Fixture(tmp_path, attempt_id="generic-session-restart")
+    activation = fx.activate()
+    binding = _fake_session_binding()
+    fx.scope_store.reserve_session_object_read_binding(
+        fx.record.scope_id,
+        fx.record.generation,
+        activation.sandbox_identity,
+        binding,
+    )
+
+    restarted = WindowsMutationSandbox(
+        policy=fx.policy,
+        scope_store=fx.scope_store,
+        repository=fx.repository,
+        semantic=fx.semantic,
+        provider_protected_roots=(fx.protected,),
+    )
+
+    def mismatch(_binding):
+        raise HostMutationScopeBindingMismatch(
+            "injected durable object identity mismatch"
+        )
+
+    monkeypatch.setattr(
+        windows_sandbox, "_reacquire_session_object_read_binding", mismatch
+    )
+    with pytest.raises(
+        HostMutationSandboxResidualAuthority,
+        match="cannot prove durable Session-0 cleanup closure",
+    ):
+        restarted.terminalize(fx.record.scope_id, fx.record.generation)
+
+    revoked = fx.scope_store.read_scope(fx.record.scope_id)
+    assert revoked.state == "revoked"
+    assert revoked.session_object_read_binding == binding
+
+    handles = (505, 606)
+    monkeypatch.setattr(
+        windows_sandbox,
+        "_reacquire_session_object_read_binding",
+        lambda expected: handles
+        if expected == binding
+        else (_ for _ in ()).throw(AssertionError("unexpected binding")),
+    )
+    monkeypatch.setattr(
+        windows_sandbox, "_remove_session_object_read", lambda _handles, _sid: None
+    )
+    terminal = restarted.terminalize(fx.record.scope_id, fx.record.generation)
+    assert terminal.state == "terminal"
+    assert terminal.session_object_read_binding is None
+
+
+def test_verification_path_keeps_existing_trusted_root_handshake() -> None:
+    source = Path(windows_sandbox.__file__).read_text(encoding="utf-8")
+    assert "verification is None" in source
+    assert "self.policy.runtime_session_object_read_enabled" in source
+    assert "enable_verification_descendants" in source

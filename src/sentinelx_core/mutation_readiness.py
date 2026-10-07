@@ -67,6 +67,7 @@ def _cache_key(policy: MutationExecutionPolicy, state_root: Path) -> tuple[objec
         str(policy.workspace_root).casefold() if policy.workspace_root else None,
         tuple(str(path).casefold() for path in policy.protected_roots),
         tuple(str(path).casefold() for path in policy.runtime_read_roots),
+        policy.runtime_session_object_read_enabled,
         policy.scope_ttl_seconds,
         policy.evidence_retention_days,
     )

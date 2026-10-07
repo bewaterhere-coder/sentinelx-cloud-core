@@ -13,6 +13,7 @@ from sentinelx_core.mutation_placement import (
 )
 from sentinelx_core.mutation_scope import (
     SCOPED_SCRIPT_OPERATION_CLASS,
+    SessionObjectReadBinding,
     HostMutationScopeConflict,
     HostMutationScopeNotCurrent,
     HostMutationScopeOperationNotAllowed,
@@ -173,3 +174,82 @@ def test_runtime_acl_timeout_participates_in_policy_digest(tmp_path: Path) -> No
         runtime_acl_timeout_seconds=policy.runtime_acl_timeout_seconds + 1,
     )
     assert placement_policy_digest(changed) != placement_policy_digest(policy)
+
+
+def _session_binding() -> SessionObjectReadBinding:
+    return SessionObjectReadBinding(
+        cleanup_required=True,
+        session_id=0,
+        window_station_identity="session:0/window-station:Service-0x0-3e7$",
+        desktop_identity=(
+            "session:0/window-station:Service-0x0-3e7$/desktop:Default"
+        ),
+        window_station_mask=0x00020103,
+        desktop_mask=0x00020041,
+    )
+
+
+def test_runtime_session_object_policy_participates_in_policy_digest(
+    tmp_path: Path,
+) -> None:
+    _store, policy, _repository, _semantic, _state_root = _authority(tmp_path)
+    changed = replace(policy, runtime_session_object_read_enabled=True)
+    assert placement_policy_digest(changed) != placement_policy_digest(policy)
+
+
+def test_session_object_binding_is_durable_restart_readable_and_exactly_clearable(
+    tmp_path: Path,
+) -> None:
+    store, policy, repository, semantic, state_root = _authority(tmp_path)
+    record = _provision(store, policy, repository, semantic, state_root)
+    active = store.reserve_sandbox_identity(
+        record.scope_id, record.generation, "S-1-15-2-42"
+    )
+    binding = _session_binding()
+
+    reserved = store.reserve_session_object_read_binding(
+        active.scope_id, active.generation, active.sandbox_identity, binding
+    )
+    assert reserved.session_object_read_binding == binding
+
+    restarted = MutationScopeStore(state_root)
+    read_back = restarted.read_scope(active.scope_id)
+    assert read_back.session_object_read_binding == binding
+
+    cleared = restarted.clear_session_object_read_binding(
+        active.scope_id, active.generation, active.sandbox_identity, binding
+    )
+    assert cleared.session_object_read_binding is None
+
+
+def test_session_object_binding_blocks_store_only_terminalization(
+    tmp_path: Path,
+) -> None:
+    from sentinelx_core.mutation_scope import HostMutationResidualAuthorityDetected
+
+    store, policy, repository, semantic, state_root = _authority(tmp_path)
+    record = _provision(store, policy, repository, semantic, state_root)
+    active = store.reserve_sandbox_identity(
+        record.scope_id, record.generation, "S-1-15-2-43"
+    )
+    binding = _session_binding()
+    store.reserve_session_object_read_binding(
+        active.scope_id, active.generation, active.sandbox_identity, binding
+    )
+    store.clear_sandbox_write_authority(
+        active.scope_id, active.generation, active.sandbox_identity
+    )
+
+    with pytest.raises(HostMutationResidualAuthorityDetected):
+        store.terminalize_scope(
+            active.scope_id,
+            active.generation,
+            policy,
+            repository,
+            semantic,
+            provider_protected_roots=(state_root.resolve(),),
+        )
+
+    current = store.read_scope(active.scope_id)
+    assert current.session_object_read_binding == binding
+    assert current.state == "active"

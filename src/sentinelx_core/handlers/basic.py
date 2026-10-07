@@ -195,6 +195,9 @@ def make_capabilities_handler(
                 base_readiness=readiness,
             )
         mutation_feature = readiness.feature()
+        mutation_feature["runtime_session_object_read_enabled"] = (
+            policy.mutation_execution.runtime_session_object_read_enabled
+        )
         verification_feature = verification_readiness.feature()
         firewall_feature = (
             canonical_firewall_feature()
