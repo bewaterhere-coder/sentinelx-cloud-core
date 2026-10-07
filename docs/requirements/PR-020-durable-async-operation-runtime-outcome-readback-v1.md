@@ -24,7 +24,7 @@ transport:
 artifacts:
   plan: docs/plans/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan.md
   latest_plan_review: "https://github.com/bewaterhere-coder/sentinelx-cloud-core/pull/20#issuecomment-6042688379"
-  latest_plan_review_transition_receipt: pending
+  latest_plan_review_transition_receipt: "https://github.com/bewaterhere-coder/sentinelx-cloud-core/pull/20#issuecomment-6042713967"
   latest_plan_remediation: docs/checkpoints/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan-remediation-r3-20261008.yaml
   latest_plan_remediation_transition_receipt: docs/reviews/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan-remediation-r3-transition-receipt.yaml
 related_tasks:
