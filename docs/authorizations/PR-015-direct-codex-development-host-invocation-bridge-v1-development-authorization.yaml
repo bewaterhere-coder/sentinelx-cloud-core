@@ -58,7 +58,7 @@ receipt:
   latest_execution_checkpoint_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-attempt-r2-completed-20261007.yaml
   latest_execution_checkpoint_blob_sha: 58353ed67f7a8b1299d08fb3d09884d19b1a846c
   latest_fixing_transition_receipt_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-r2-to-acceptance-transition-receipt.yaml
-  latest_fixing_transition_receipt_blob_sha: e54241b45789f0a1c065a988bac61d0e34248ff6
+  latest_fixing_transition_receipt_blob_sha: 72851949e0c23cfb85cb6acb0f43bb97b091ea60
   latest_fixing_product_head: 7adfa7a74c437ccc29cdcd7078373c6e8d224904
   latest_fixing_github_ci_run_id: 37635132767
   latest_fixing_github_ci_result: success
