@@ -56,8 +56,8 @@ artifacts:
   prior_acceptance_attempt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-acceptance-r1-blocked-incomplete-slices-20261008.yaml
   latest_acceptance: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-acceptance-r3.yaml
   latest_acceptance_blob_sha: 4e22d9537ae9e742c19ee3639c674ed8121995bc
-  latest_acceptance_transition_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-acceptance-r2-transition-receipt.yaml
-  latest_acceptance_transition_receipt_blob_sha: fdae4397b2594d3db3353fc6e4013beeb7632b0d
+  latest_acceptance_transition_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-acceptance-r3-transition-receipt.yaml
+  latest_acceptance_transition_receipt_blob_sha: abcd48115684955aacc0d6b79fbb41e16809e9ad
   latest_fixing_execution_checkpoint: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-fixing-r1-readiness-restored-20261008.yaml
   latest_fixing_execution_checkpoint_blob_sha: 3c0119777435813278f111839fcd9f4ff743d80e
   latest_fixing_transition_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-fixing-r1-to-acceptance-transition-receipt.yaml
