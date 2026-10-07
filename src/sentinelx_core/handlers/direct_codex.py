@@ -17,10 +17,12 @@ from __future__ import annotations
 
 import os
 import platform
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any
 
+from sentinelx_core import direct_codex_acl, direct_codex_transport, windows_integrity
+from sentinelx_core.direct_codex_acl import DirectCodexAclError
 from sentinelx_core.direct_codex_discovery import (
     CodexChain,
     DirectCodexDiscoveryError,
@@ -41,8 +43,6 @@ from sentinelx_core.direct_codex_workspace import (
     ensure_outside_canonical,
     revalidate_workspace,
 )
-from sentinelx_core import direct_codex_acl, windows_integrity
-from sentinelx_core.direct_codex_acl import DirectCodexAclError
 from sentinelx_core.executor import HandlerError
 from sentinelx_core.mutation_placement import RepositoryIdentity, SemanticIdentity
 from sentinelx_core.operation_registry import (
@@ -84,6 +84,7 @@ CODEX_PROBE_PROMPT = (
 )
 CODEX_PROBE_TIMEOUT_SECONDS = 300.0
 CODEX_PROBE_MAX_OUTPUT_BYTES = 65536
+GIT_CONTEXT_PROBE_TIMEOUT_SECONDS = 30.0
 
 # The containment mechanism is a real Windows sandbox: the provider-owned
 # workspace is labeled low and every provider child starts at low integrity, so
@@ -376,6 +377,17 @@ class DevforgeDirectCodexProvider:
             )
         )
         self._containment_proof: dict[str, Any] | None = None
+        self._proof_observation: dict[str, Any] = {
+            "attempted": False,
+            "disposition": "not_attempted",
+        }
+        self._transport_context: dict[str, Any] = {
+            "kind": "user_scoped_git_v1",
+            "probe_attempted": False,
+            "verified": False,
+            "non_interactive": True,
+            "credential_material_exposed": False,
+        }
 
     # -- admission ---------------------------------------------------------
     @property
@@ -426,7 +438,7 @@ class DevforgeDirectCodexProvider:
         Any binding mismatch (a different derived workspace, Task, Run, Attempt
         or Slice) makes the proof stale for this request: it must not be reused.
         """
-        if not isinstance(proof, dict) or not proof.get("verified"):
+        if not self._proof_verified(proof):
             return False
         binding = proof.get("binding")
         if not isinstance(binding, dict):
@@ -457,6 +469,11 @@ class DevforgeDirectCodexProvider:
         try:
             proof = await self.prove_containment(repository=repository, semantic=semantic)
         except (DirectCodexDiscoveryError, UserProcessError, DirectCodexWorkspaceError) as exc:
+            self._proof_observation = {
+                "attempted": True,
+                "disposition": "failed",
+                "failure_class": getattr(exc, "code", type(exc).__name__),
+            }
             raise HandlerError(
                 "direct_codex_execution_unavailable",
                 "devforge_direct_codex containment proof failed before execution: "
@@ -510,6 +527,7 @@ class DevforgeDirectCodexProvider:
         *,
         reason: str,
         detail: str | None = None,
+        attempted: bool = False,
     ) -> dict[str, Any]:
         proof: dict[str, Any] = {
             "feature_id": FEATURE_ID,
@@ -530,7 +548,41 @@ class DevforgeDirectCodexProvider:
         if detail:
             proof["negative_probe"]["detail"] = detail
         self._containment_proof = None
+        self._proof_observation = {
+            "attempted": attempted,
+            "disposition": "failed" if attempted else "not_attempted",
+            "failure_class": reason,
+        }
         return proof
+
+    async def _probe_transport_context(self, workspace: Any, budget: float) -> dict[str, Any]:
+        """Probe the actual Direct Codex Git primitive without repository I/O.
+
+        The argv is fixed by the provider, ``git --version`` performs no network
+        or repository mutation, and the result deliberately contains no cwd,
+        command output, environment, credential, or active-user identity.
+        """
+        result: dict[str, Any] = {
+            "kind": "user_scoped_git_v1",
+            "probe_attempted": True,
+            "verified": False,
+            "non_interactive": True,
+            "credential_material_exposed": False,
+        }
+        try:
+            code, _stdout, _stderr = await direct_codex_transport.transport_git(
+                workspace.path,
+                "--version",
+                timeout=min(budget, GIT_CONTEXT_PROBE_TIMEOUT_SECONDS),
+            )
+        except DirectCodexTransportError as exc:
+            result["failure_class"] = exc.code
+        else:
+            result["verified"] = code == 0
+            if code != 0:
+                result["failure_class"] = "direct_codex_git_context_probe_failed"
+        self._transport_context = result
+        return result
 
     @staticmethod
     def _proof_verified(proof: Any) -> bool:
@@ -544,7 +596,17 @@ class DevforgeDirectCodexProvider:
         if not isinstance(proof, dict) or not proof.get("verified"):
             return False
         setup = proof.get("real_sandbox_setup")
-        return isinstance(setup, dict) and setup.get("codex_workspace_write_setup") is True
+        transport = proof.get("transport_context")
+        return bool(
+            isinstance(setup, dict)
+            and setup.get("codex_workspace_write_setup") is True
+            and isinstance(transport, dict)
+            and transport.get("kind") == "user_scoped_git_v1"
+            and transport.get("probe_attempted") is True
+            and transport.get("verified") is True
+            and transport.get("non_interactive") is True
+            and transport.get("credential_material_exposed") is False
+        )
 
     async def _probe_real_sandbox_setup(
         self,
@@ -691,6 +753,30 @@ class DevforgeDirectCodexProvider:
 
         node = resolve_node_executable(policy)
         budget = float(timeout if timeout is not None else min(policy.timeout_seconds, 120.0))
+        # Probe before the workspace is labeled low integrity.  The transport
+        # primitive runs as the active interactive user and must prove that
+        # real context itself; forcing it into the separate MIC fixture can
+        # prevent Git's runtime DLLs from initializing and would test the wrong
+        # execution contract.
+        transport_context = await self._probe_transport_context(workspace, budget)
+        if transport_context.get("verified") is not True:
+            proof = self._unproven_proof(
+                workspace,
+                reason=str(
+                    transport_context.get("failure_class")
+                    or "direct_codex_git_context_probe_failed"
+                ),
+            )
+            proof["transport_context"] = transport_context
+            self._proof_observation = {
+                "attempted": True,
+                "disposition": "failed",
+                "failure_class": str(
+                    transport_context.get("failure_class")
+                    or "direct_codex_git_context_probe_failed"
+                ),
+            }
+            return proof
 
         try:
             # The label is stamped with subtree inheritance, so everything the
@@ -698,9 +784,11 @@ class DevforgeDirectCodexProvider:
             # the same low-integrity enclave.
             activation = _activate_integrity_sandbox((workspace.path,))
         except windows_integrity.IntegritySandboxError as exc:
-            # No real sandbox, no attempt: a negative proof that cannot be
-            # enforced by the OS must never be simulated by writing outside.
-            return self._unproven_proof(workspace, reason=exc.code, detail=str(exc))
+            # Sandbox activation was physically attempted and failed.  Never
+            # simulate the negative proof by writing outside.
+            return self._unproven_proof(
+                workspace, reason=exc.code, detail=str(exc), attempted=True
+            )
 
         # Acceptance R7 repair: hand the exact workspace's ownership/DACL to
         # the active interactive user, bounded to this subtree only, so the
@@ -710,7 +798,9 @@ class DevforgeDirectCodexProvider:
         try:
             acl_handoff = direct_codex_acl.handoff_workspace_to_active_user(workspace.path)
         except DirectCodexAclError as exc:
-            return self._unproven_proof(workspace, reason=exc.code, detail=str(exc))
+            return self._unproven_proof(
+                workspace, reason=exc.code, detail=str(exc), attempted=True
+            )
 
         root_dir = workspace.path / ".devforge"
         root_dir.mkdir(parents=True, exist_ok=True)
@@ -766,6 +856,7 @@ class DevforgeDirectCodexProvider:
             and tree.process_tree_closed
             and tree.job_contained
             and sandbox_setup.get("codex_workspace_write_setup") is True
+            and transport_context.get("verified") is True
         )
         proof: dict[str, Any] = {
             "feature_id": FEATURE_ID,
@@ -778,6 +869,7 @@ class DevforgeDirectCodexProvider:
             "sandbox": activation,
             "acl_handoff": dict(acl_handoff),
             "real_sandbox_setup": sandbox_setup,
+            "transport_context": transport_context,
             "negative_probe": {
                 "attempted": True,
                 "started_inside_workspace": True,
@@ -824,6 +916,19 @@ class DevforgeDirectCodexProvider:
             revocation = {"revoked": False, "errors": [str(exc)[:200]]}
         proof["acl_handoff"]["revocation"] = revocation
         self._containment_proof = proof if verified else None
+        failure_class = None
+        if not verified:
+            if transport_context.get("verified") is not True:
+                failure_class = transport_context.get("failure_class")
+            elif sandbox_setup.get("codex_workspace_write_setup") is not True:
+                failure_class = REAL_SANDBOX_UNPROVEN_REASON
+            else:
+                failure_class = CONTAINMENT_UNPROVEN_REASON
+        self._proof_observation = {
+            "attempted": True,
+            "disposition": "verified" if verified else "failed",
+            **({"failure_class": failure_class} if failure_class else {}),
+        }
         return proof
 
     # -- effect / readiness projection ------------------------------------
@@ -877,6 +982,8 @@ class DevforgeDirectCodexProvider:
             "contract_revision": CONTRACT_REVISION,
             "reason": reasons[0] if reasons else None,
             "uncovered_classes": list(dict.fromkeys(reasons)),
+            "proof": dict(self._proof_observation),
+            "transport_context": dict(self._transport_context),
         }
 
     # -- local_api surface -------------------------------------------------
