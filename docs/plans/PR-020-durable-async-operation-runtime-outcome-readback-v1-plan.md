@@ -1,16 +1,16 @@
-# PR-020 SentinelX Durable Async Operation Runtime & Outcome Readback V1 — Plan R3
+# PR-020 SentinelX Durable Async Operation Runtime & Outcome Readback V1 — Plan R4
 
 ## Status
 
 ~~~yaml
 task_id: PR-020-durable-async-operation-runtime-outcome-readback-v1
-plan_revision: 3
+plan_revision: 4
 plan_status: ready_for_review
 implementation_authority: false
 requirement_ref: docs/requirements/PR-020-durable-async-operation-runtime-outcome-readback-v1.md
 requirement_revision: 1
-prior_plan_revision: 2
-rejected_review_ref: docs/reviews/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan-review-r2.md
+prior_plan_revision: 3
+rejected_review_ref: https://github.com/bewaterhere-coder/sentinelx-cloud-core/pull/20#issuecomment-6042688379
 transport:
   type: github-pr
   pr_number: 20
@@ -23,7 +23,31 @@ runtime:
   devforge_revision: c44591899fb7c3312ca7a30cc816ca878e12b462
 ~~~
 
-## R3 Remediation Delta
+## R4 Remediation Delta
+
+Plan R4 preserves Requirement Revision 1 and every accepted R3 technical decision. It repairs only Review R3 finding `ExecutionEntryStalePlanRevisionBinding`.
+
+The rejected review identified three execution-authoritative references that still named an older Plan revision. R4 removes that stale binding and freezes the exact current approval lineage:
+
+~~~text
+exact current Approved Plan R4 revision/digest
+→ exact Plan R4 Execution Slice Set compiled/read back
+→ explicit task-scoped bootstrap admission
+→ later explicit #开发执行
+→ at most one Slice
+~~~
+
+Rules:
+
+- bootstrap admission binds the exact Approved Plan R4 revision/digest;
+- Slice Set identity binds Plan R4, not any historical R2/R3 revision;
+- historical R2/R3 discussion remains historical evidence only;
+- no prose reference to an older approved revision may override the canonical current-plan digest;
+- future semantic Plan revision invalidates this Slice Set/bootstrap binding under existing DevForge Plan-drift rules.
+
+No Requirement, architecture, retention, bootstrap target, transport, project binding, permission, credential or Slice-semantics change is introduced.
+
+## Preserved R3 Remediation Delta
 
 Plan R3 preserves Requirement Revision 1 and every accepted R2 correction. It repairs only Plan Review R2 finding `TerminalRetentionIdentityClaimLifecycleUndefined`.
 
@@ -342,7 +366,7 @@ source: explicit_project_binding
 
 PR-020 exists because the current SentinelX synchronous Direct Codex local_api path can begin mutation and then lose its result at the request timeout. Therefore R2 explicitly forbids using that same path for the first product-changing Slice merely to see whether it finishes quickly.
 
-After Plan R2 is approved and the Execution Slice Set is compiled, S01 has this mandatory precondition:
+After the exact current Plan R4 is approved and its exact Execution Slice Set is compiled/read back, S01 has this mandatory precondition:
 
 ~~~text
 explicit #开发引导执行
@@ -781,7 +805,7 @@ Retention/GC code is core runtime infrastructure; provider-specific freshness lo
 
 ## Implementation slices
 
-Formal Slice Set is compiled only after Plan R2 approval.
+Formal Slice Set is compiled only after the exact current Plan R4 approval and must bind the exact Approved Plan R4 revision/digest.
 
 ### S01 — Core durable operation runtime and protected state
 
@@ -942,11 +966,11 @@ Do not blindly replay the earlier uncertain PR-013 S03 attempt. PR-020 does not 
 
 S01 product mutation requires an admitted task-scoped bootstrap override.
 
-Required sequence after Plan R2 approval:
+Required sequence after exact current Plan R4 approval:
 
 ~~~text
-Plan R2 Approved
-→ Execution Slice Set compiled/read back
+Exact Plan R4 Approved revision/digest
+→ exact Plan R4 Execution Slice Set compiled/read back
 → explicit #开发引导执行 PR-020... direct:codebuddy
 → DevForge verifies registered/current CodeBuddy target + exact self-host relation
 → bootstrap receipt read back
