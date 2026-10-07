@@ -2,7 +2,7 @@
 
 Requirement: `docs/requirements/PR-015-direct-codex-development-host-invocation-bridge-v1.md`, revision 2.
 
-Status: **Pending Plan Review**. No implementation authorization.
+Status: **Accepted / Merge Finalization Pending**. Plan R6 was approved; implementation and Acceptance R8 are complete. Semantic Plan content below is historical design intent.
 
 ## 0. Planning baseline
 

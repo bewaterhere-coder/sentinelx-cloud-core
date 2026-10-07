@@ -53,6 +53,10 @@ receipt:
   plan_binding_readback_required: true
   latest_acceptance_command: "#开发验收 PR-015-direct-codex-development-host-invocation-bridge-v1"
   latest_acceptance_result: approved
+  latest_finalization_command: "#开发完成 PR-015-direct-codex-development-host-invocation-bridge-v1"
+  latest_finalization_result: pending_readback
+  latest_finalization_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-completion-finalization-r1.yaml
+  latest_finalization_blob_sha: ebed5ff3e700498931c765ec46a52741c7f2f6bd
   latest_execution_command: "#开发执行 PR-015-direct-codex-development-host-invocation-bridge-v1"
   latest_execution_result: fixing_r2_completed_ready_for_acceptance
   latest_execution_checkpoint_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-attempt-r2-completed-20261007.yaml
