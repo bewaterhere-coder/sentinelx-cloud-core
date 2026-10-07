@@ -17,9 +17,9 @@ development:
   latest_plan_review: approved_round_6
   latest_plan_remediation: r6_applied
   review_disposition: approved
-  next_expected_actor: operator
+  next_expected_actor: implementer
   acceptance_disposition: rejected_repair_local
-  execution_disposition: blocked_execution_provider_self_hosting_deadlock
+  execution_disposition: fixing_bootstrap_authorized
   blocking_findings:
     - Acceptance R5 rejected the exact candidate with repair_local finding direct_codex_containment_proof_lifecycle_unreachable.
     - Host opt-in and provider projection now succeed, but live readiness remains direct_codex_containment_unproven.
@@ -68,6 +68,8 @@ artifacts:
   latest_acceptance_transition_receipt_blob_sha: cb6470ae5593c4d8dbaaa762352184d3f680b9dd
   latest_fixing_execution_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-execution-r1-provider-deadlock-20261007.yaml
   latest_fixing_execution_checkpoint_blob_sha: 3d00499f039fcddd6c34952ec3528efab324bae0
+  latest_bootstrap_fixing_recovery_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-fixing-recovery-r1-20261007.yaml
+  latest_bootstrap_fixing_recovery_checkpoint_blob_sha: fbd3be7c884d0b7f12e20fd87ad265ce36345d86
   prior_slice_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-s03-completion-20261007.yaml
   prior_slice_completion_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-s03-completion-receipt.yaml
   prior_acceptance: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r1.md
@@ -77,12 +79,15 @@ artifacts:
 implementation_entry:
   bootstrap_required: true
   intended_target: direct:codebuddy
-  override_state: expired
+  override_state: active
+  override_mode: fixing_recovery
+  override_revision: 3
   override_ref: docs/overrides/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-execution-override.yaml
-  override_blob_sha: cc39aae1ec928c07dfac5b25e30185977a15a18a
-  override_receipt_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-override-r6-20261007.yaml
+  override_blob_sha: a33802c2eeba930283a24f573c390ab4ee7bd7b7
+  override_receipt_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-fixing-recovery-r1-20261007.yaml
   prior_override_ref: docs/overrides/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-execution-override.yaml
-  effective_provider: null
+  effective_provider: direct
+  effective_adapter: codebuddy
   project_binding_fallback:
     provider: direct
     adapter: codex
@@ -106,6 +111,9 @@ requirement_readiness:
     implementation_execution_complete: true
     all_current_plan_slices_completed: true
     bootstrap_override_expired_by_slice_completion: true
+    fixing_bootstrap_override_active: true
+    fixing_bootstrap_override_revision: 3
+    fixing_bootstrap_override_mode: fixing_recovery
     pr013_relation: related_unblocker_not_same_task
 ---
 

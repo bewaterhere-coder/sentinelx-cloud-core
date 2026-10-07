@@ -57,6 +57,12 @@ receipt:
   latest_execution_result: blocked_execution_provider_self_hosting_deadlock
   latest_execution_checkpoint_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-execution-r1-provider-deadlock-20261007.yaml
   latest_execution_checkpoint_blob_sha: 3d00499f039fcddd6c34952ec3528efab324bae0
+  latest_bootstrap_command: "#开发引导执行 PR-015-direct-codex-development-host-invocation-bridge-v1 direct:codebuddy"
+  latest_bootstrap_result: fixing_recovery_authorized
+  latest_bootstrap_override_ref: docs/overrides/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-execution-override.yaml
+  latest_bootstrap_override_blob_sha: a33802c2eeba930283a24f573c390ab4ee7bd7b7
+  latest_bootstrap_receipt_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-fixing-recovery-r1-20261007.yaml
+  latest_bootstrap_receipt_blob_sha: fbd3be7c884d0b7f12e20fd87ad265ce36345d86
   latest_acceptance_review_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r5.md
   latest_acceptance_review_blob_sha: 988f2a1eb94ab8349576e3db3c88c4def93fb6c0
   latest_acceptance_checkpoint_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r5-rejected-containment-lifecycle-20261007.yaml
