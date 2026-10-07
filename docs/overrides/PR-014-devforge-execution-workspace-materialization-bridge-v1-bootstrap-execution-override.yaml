@@ -1,0 +1,169 @@
+schema_version: "1.1"
+kind: devforge_task_scoped_bootstrap_execution_override
+state: active
+mode: implementation_bootstrap
+override_revision: 1
+
+authority:
+  command: "#开发引导执行"
+  capability: development.bootstrap_execution_override
+  task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
+  source_command: "#开发引导执行 PR-014-devforge-execution-workspace-materialization-bridge-v1 direct:codebuddy"
+  granted_by: human
+
+bootstrap_relation:
+  blocked_provider:
+    provider: direct
+    adapter: codex
+  missing_or_broken_capability: development.execution_workspace_materialize
+  task_delivers_or_repairs_capability: true
+  relation: >-
+    The canonical direct/codex implementation path requires the exact
+    development.execution_workspace_materialize capability that PR-014
+    implements. The Task therefore has a verified self-host relation. R5
+    authorizes a bootstrap-safe direct CodeBuddy repository-projection path
+    that does not require a Host-local execution workspace to persist the seed.
+  evidence_refs:
+    - docs/plans/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan.md@ff8581ec026a0d123ae89d9595271397429145c0
+    - docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r5.md@6054807e82aa523617c58bbae340c8bac05310c6
+    - docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-r5-slices.yaml@0ece35496e27dbf6ca900b8fa7d96b3b16129201
+
+target:
+  provider: direct
+  adapter: codebuddy
+  registration_evidence:
+    devforge_runtime_revision: 050d9c9559a173a3e0b37fcd2a9db702b6b5a7e6
+    adapter_ref: adapters/development/codebuddy.md
+    adapter_blob_sha: d1e0547ef212a0e45da59b5129d61ee1804cf722
+  host_availability_evidence:
+    platform: windows
+    host_id: host_7f0e709ded71ab24
+    host_operational: true
+    sentinelx_agent_version: 0.24.1.dev530+g7adfa7a74
+    codebuddy_executable_present: true
+    codebuddy_executable_ref: "C:\\Users\\liqiu\\AppData\\Local\\Programs\\CodeBuddy CN\\CodeBuddy CN.exe"
+    codebuddy_cli_present: true
+    codebuddy_cli_ref: "C:\\Users\\liqiu\\AppData\\Local\\Programs\\CodeBuddy CN\\bin\\buddycn.cmd"
+    devforge_user_rule_present: true
+    devforge_user_rule_enabled: true
+    devforge_user_rule_always_apply: true
+    devforge_user_rule_ref: "C:\\Users\\liqiu\\.codebuddy\\rules\\devforge.md"
+    availability_semantics: external_direct_development_host_thin_handoff
+
+binding:
+  requirement_ref: docs/requirements/PR-014-devforge-execution-workspace-materialization-bridge-v1.md
+  requirement_revision: 2
+  requirement_blob_sha_before_override: 52e70a3f3b06acfc899fea730cd11b391e4435f9
+  plan_ref: docs/plans/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan.md
+  plan_revision: 5
+  plan_digest: ff8581ec026a0d123ae89d9595271397429145c0
+  plan_review_ref: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r5.md
+  plan_review_digest: 6054807e82aa523617c58bbae340c8bac05310c6
+  slice_set_ref: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-r5-slices.yaml
+  slice_set_digest: 0ece35496e27dbf6ca900b8fa7d96b3b16129201
+  current_slice: S02
+  canonical_transport_ref: github-pr:bewaterhere-coder/sentinelx-cloud-core#14:task/devforge-execution-workspace-materialization-bridge-v1
+  canonical_transport:
+    type: github-pr
+    repository: bewaterhere-coder/sentinelx-cloud-core
+    pr: 14
+    branch: task/devforge-execution-workspace-materialization-bridge-v1
+    admitted_head_before_override: 1489b83d48632331e19ba560047817e89b1cfa86
+    canonical_main: 1028030b33f0ea792a884491a431fffe566f6aa5
+  project_binding:
+    provider: direct
+    adapter: codex
+    mutation: forbidden
+
+scope:
+  stages: [implementation]
+  bound_slices: [S02]
+  max_slice_completions_per_execute: 1
+  repository_read: allowed
+  repository_write: exact_s02_allowlist_only
+  local_execution_workspace: forbidden
+  replacement_branch: forbidden
+  replacement_pr: forbidden
+  fallback: forbidden
+  requirement_change: forbidden
+  plan_change: forbidden
+  gate_change: forbidden
+  acceptance_authority: forbidden
+  permission_expansion: forbidden
+  credential_expansion: forbidden
+  write_scope_expansion: forbidden
+  transport_migration: forbidden
+  project_binding_mutation: forbidden
+  host_policy_mutation: forbidden
+  production_hub_mutation: forbidden
+  canonical_main_mutation: forbidden
+  generic_shell_or_exec: forbidden
+  generic_script_run: forbidden
+  generic_git_surface: forbidden
+  generic_host_filesystem_write: forbidden
+  pr013_s03_replay: forbidden
+  unmerged_pr013_import: forbidden
+  harness_invocation: forbidden
+  pr020_dependency: forbidden
+  pr229_dependency: forbidden
+
+product_write_allowlist:
+  - src/sentinelx_core/devforge_workspace_source.py
+  - src/sentinelx_core/devforge_workspace_materializer.py
+  - src/sentinelx_core/devforge_workspace_materialization.py
+  - src/sentinelx_core/handlers/devforge_runtime.py
+  - src/sentinelx_core/handlers/__init__.py
+  - src/sentinelx_core/user_git.py
+  - src/sentinelx_core/windows_mutation_sandbox.py
+  - tests/test_devforge_workspace_source.py
+  - tests/test_devforge_workspace_materializer.py
+  - tests/test_devforge_workspace_materialization.py
+  - tests/test_devforge_runtime_local_api.py
+  - tests/test_devforge_workspace_placement.py
+  - tests/test_user_scoped_git.py
+  - tests/test_windows_mutation_sandbox.py
+  - tests/test_operation_effect_registry.py
+  - tests/test_canonical_repository_firewall.py
+  - tests/test_canonical_repository_firewall_readiness.py
+
+execution_invariants:
+  - bootstrap_command_itself_executes_no_slice
+  - one_later_development_execute_completes_at_most_S02
+  - expected_head_or_file_identity_required_before_repository_write
+  - changed_blob_and_resulting_pr_head_readback_required
+  - repository_write_is_persistence_not_provider_authority
+  - no_local_execution_workspace_for_seed_persistence
+  - no_generic_git_shell_exec_script_run_or_host_filesystem_mutation
+  - no_canonical_main_write
+  - exact_s02_write_allowlist_only
+  - no_provider_fallback
+  - no_receipt_no_slice_completion_claim
+
+expiry:
+  on_all_bound_plan_slices_completed: true
+  on_requirement_semantic_change: true
+  on_plan_semantic_change: true
+  on_transport_drift: true
+  on_target_unavailable: true
+  on_task_leaves_bound_stage: true
+  on_task_cancelled: true
+  on_explicit_revoke: true
+
+admission:
+  task_stage: implementation
+  plan_approved: true
+  implementation_authorized: true
+  exact_current_slice: S02
+  exact_current_slice_set_verified: true
+  self_host_relation_verified: true
+  target_registered: true
+  target_available: true
+  canonical_transport_locked: true
+  write_scope_preserved: true
+  project_binding_preserved: true
+  authority_widened: false
+  prior_harness_override_reused: false
+
+receipt:
+  readback_required: true
+  readback_verified: false
