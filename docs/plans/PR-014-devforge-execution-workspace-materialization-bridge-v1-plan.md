@@ -41,7 +41,9 @@ Plan R5 is a user-directed implementation replan that preserves Requirement R2 a
 
 R4 proved that Harness bootstrap is not bootstrap-safe for this Task today: Harness itself requires `incremental_execution.slice_v1`, whose completion path participates in the cycle `PR-014 → PR-229 → PR-020 → PR-014`.
 
-R5 removes all PR-229 and PR-020 prerequisites from PR-014. The S02 seed is implemented through DevForge's existing explicit## R5 Replan Delta — bootstrap-safe repository projection without Harness or workspace ingress
+R5 removes all PR-229 and PR-020 prerequisites from PR-014. The S02 seed is implemented through DevForge's existing explicit Task-scoped bootstrap boundary, using a direct Development Adapter and canonical repository persistence without a Host-local execution workspace.
+
+## R5 Replan Delta — bootstrap-safe repository projection without Harness or workspace ingress
 
 Plan R5 changes no Requirement R2 semantics, product scope, Host placement policy, canonical transport, S01 evidence, security boundary, PR-013 ownership split, or final materialize-workspace behavior.
 
