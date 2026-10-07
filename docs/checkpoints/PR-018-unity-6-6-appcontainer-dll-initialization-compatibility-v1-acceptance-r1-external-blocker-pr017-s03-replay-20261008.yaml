@@ -1,0 +1,95 @@
+schema_version: "1.0"
+kind: devforge_acceptance_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1
+acceptance_revision: 1
+source_command: "#开发验收 PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"
+
+runtime:
+  devforge_repository: bewaterhere-coder/DevForge
+  devforge_main_sha: "9551d38b1d70b5bfb3f692725e8f5c70b74693a6"
+  acceptance_contract_version: "1.5"
+  acceptance_contract_blob_sha: "1c5e96a20d665e68b1f68e18b7d294945e501ec2"
+
+transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 18
+  branch: task/unity-6-6-appcontainer-dll-initialization-compatibility-v1
+  evaluated_head_before_acceptance_artifacts: "60220ad7910c65301ec3e2ac77f50d9291e0313e"
+  verified_product_candidate: "73a52013055a8b3bb70b319a0ed7b7ba832ae0c9"
+  verified_live_source_ref: "86bc881265ee3fb2ab388170a16e627caf6d723e"
+  transport_drift: false
+
+positive_evidence:
+  all_slices_completed: true
+  s01_receipt_blob: "ebf996ebf4cc42ffa2a55ab248ea7a7afdd6b045"
+  s02_receipt_blob: "325b92d4addff9c9640f56f005d2271deb342832"
+  s03_receipt_blob: "18c854e6bda38c586c59fac38862090c0b3f4e3c"
+  unity_variant_a_status: "0xC0000142"
+  unity_final_status: "0x00000000"
+  unity_version: "6000.6.4f1"
+  windows_regression_run_id: 37662137958
+  windows_regression_tests_passed: 88
+  macos_run_id: 37662137960
+  live_host_version: "0.24.1.dev484+g86bc88126"
+  live_host_mutation_sandbox_verified: true
+  live_node_npm_verification_verified: true
+  live_audit_lineage_verified: true
+  live_canonical_firewall_verified: true
+  live_runtime_session_object_read_enabled: false
+
+acceptance_matrix:
+  ac01: pass
+  ac02: pass
+  ac03: pass
+  ac04: pass
+  ac05: pass_positive_path
+  ac06: pass
+  ac07: pass
+  ac08: pass
+  ac09: pass
+  ac10: pass
+  ac11: pass
+  ac12: pass
+  ac13: pass
+  ac14: pass
+  ac15: pass
+  ac16: pass
+  ac17: pass
+  ac18: fail_external_blocker
+  ac19: pass
+
+blocking_finding:
+  code: AC18CombinedPR017S03ReplayMissing
+  classification: external_blocker
+  requirement_ref: R10
+  acceptance_criterion: 18
+  pr017:
+    pr_number: 17
+    canonical_branch: task/large-runtime-root-acl-cleanup-timeout-recovery-v1
+    current_head: "db1f29c727d619942921438cffff154f49b6b694"
+    stage: implementation
+    current_slice: S03
+    current_slice_state: blocked
+    completed_slices: [S01, S02]
+    latest_observed_unity_status: "0xC0000142"
+    combined_pr018_replay_observed: false
+    s03_completion_receipt_observed: false
+  local_pr018_repair_authorized: false
+
+decision:
+  result: Rejected
+  finding_classification: external_blocker
+  gate_transition: not_applied
+  current_stage: acceptance
+  acceptance_approved: false
+  completion_verified: false
+
+resume:
+  required_cross_task_sequence:
+    - reconcile PR-017 Requirement/Plan with PR-018 compatibility dependency
+    - integrate verified PR-018 product candidate into canonical PR-017 branch
+    - replay PR-017 S03 without replaying PR-017 S01/S02
+    - persist successful PR-017 S03 receipt
+    - rerun PR-018 Acceptance R2
+  canonical_resume_command: "#开发验收 PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"
