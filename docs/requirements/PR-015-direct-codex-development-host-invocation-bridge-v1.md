@@ -5,7 +5,7 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 2
 development:
-  stage: plan_review
+  stage: plan_review_rejected
   implementation_execution_complete: false
   gates:
     requirement_ready: true
@@ -14,18 +14,21 @@ development:
     completion_verified: false
   plan_revision: 3
   implementation_authorized: false
-  latest_plan_review: pending_round_3
-  latest_plan_remediation: null
-  review_disposition: pending
-  next_expected_actor: reviewer
+  latest_plan_review: rejected_round_3
+  latest_plan_remediation: pending_r4
+  review_disposition: rejected
+  next_expected_actor: planner
   acceptance_disposition: invalidated_by_requirement_revision_2
-  blocking_findings: []
+  blocking_findings:
+    - Candidate-tree trust boundary incomplete: Plan R3 does not isolate candidate construction from the Codex-controlled Git index or external Git filter/config execution surfaces.
+    - Deterministic commit recovery identity incomplete: Plan R3 does not freeze all commit-SHA inputs and interruption/recovery semantics strongly enough to prevent duplicate candidate commits.
   authorization:
     mode: durable
     ref: docs/authorizations/PR-015-direct-codex-development-host-invocation-bridge-v1-development-authorization.yaml
 artifacts:
   plan: docs/plans/PR-015-direct-codex-development-host-invocation-bridge-v1-plan.md
   plan_blob_sha: 6552329d7fc07526569956db8ebee477fcd08af3
+  latest_plan_review: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r3.md
   prior_plan_review: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r2.md
   historical_plan_review_r1: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r1.md
   prior_plan_remediation: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-remediation-r2-20261006.yaml
