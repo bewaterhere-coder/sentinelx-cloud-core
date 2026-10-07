@@ -5,19 +5,21 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 3
 development:
-  stage: plan_review
+  stage: plan_review_rejected
   gates:
     requirement_ready: true
     plan_approved: false
     acceptance_approved: false
     completion_verified: false
   plan_revision: 7
-  latest_plan_review: null
+  latest_plan_review: rejected_round_7
   prior_plan_review: approved_round_6
   latest_plan_remediation: plan_r4_remediation_r1
   prior_plan_remediation: plan_r2_remediation_r1
   implementation_authorized: false
-  blocking_findings: []
+  blocking_findings:
+    - PR021MinimalRuntimeDispositionNotConsumed
+    - CanonicalMainImplementationSurfaceMismatch
   current_slice: null
   current_slice_state: null
   completed_slices: [S01, S02]
@@ -58,16 +60,16 @@ development:
   prior_bootstrap_receipt: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-harness-bootstrap-blocked-20261008.yaml
   superseded_slice_set_status: invalidated_by_requirement_revision_3
   planned_pending_delta_slice: S03
-  next_expected_actor: reviewer
-  canonical_next_action: "#开发评审 PR-014-devforge-execution-workspace-materialization-bridge-v1"
+  next_expected_actor: planner
+  canonical_next_action: "#开发计划修复 PR-014-devforge-execution-workspace-materialization-bridge-v1"
   authorization:
     mode: legacy_command_scoped
 artifacts:
   requirement_review: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-requirement-review-r1.md
   requirement_change_impact: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-requirement-r3-change-impact.md
   plan: docs/plans/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan.md
-  latest_plan_review: null
-  latest_plan_review_transition_receipt: null
+  latest_plan_review: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r7.md
+  latest_plan_review_transition_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r7-transition-receipt.yaml
   prior_plan_review: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r6.md
   prior_plan_review_transition_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r6-transition-receipt.yaml
   superseded_plan_review: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r5.md
