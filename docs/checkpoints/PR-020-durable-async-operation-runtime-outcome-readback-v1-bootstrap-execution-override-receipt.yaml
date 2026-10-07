@@ -16,7 +16,7 @@ admission:
   reason_code: null
   mode: implementation_bootstrap
   override_ref: docs/checkpoints/PR-020-durable-async-operation-runtime-outcome-readback-v1-bootstrap-execution-override.yaml
-  override_blob_sha: ed0509da9da9f5d8008afc8498a557a3a62ae6ba
+  override_blob_sha: fbe24326a67fd4620e19b63123b38c4f1fe98c6f
   override_digest: 3cd9ee272c25db4b3e662c92772b68196f3617594cb3e257f71570933d8db5bd
 
 bindings:
