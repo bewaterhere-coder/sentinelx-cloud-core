@@ -1,0 +1,194 @@
+schema_version: "1.0"
+kind: devforge_slice_completion_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1
+slice_id: S03
+source_command: "#开发执行 PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"
+
+lineage:
+  requirement_revision: 1
+  plan_revision: 2
+  product_candidate_commit: "73a52013055a8b3bb70b319a0ed7b7ba832ae0c9"
+  proof_source_ref: "86bc881265ee3fb2ab388170a16e627caf6d723e"
+  canonical_pr_head_before_completion_artifacts: "4d1b2e158bba3dbfdd24abb0fb75ad1a22c27dea"
+  run_id: run-pr018-s03-20261008-001
+
+host_candidate:
+  host_id: host_7f0e709ded71ab24
+  host_label: windows
+  exact_agent_version: "0.24.1.dev484+g86bc88126"
+  exact_source_ref_readback: true
+  host_mutation_sandbox_v1_verified_before_proof: true
+  pre_execution_audit_lineage_v1_verified_before_proof: true
+  canonical_repository_mutation_firewall_v1_verified_before_proof: true
+
+temporary_proof_configuration:
+  runtime_session_object_read_enabled: true
+  runtime_acl_timeout_seconds: 300
+  operator_unrestricted_enabled: false
+  unity_runtime_root: "C:\\Program Files\\Unity\\Hub\\Editor\\6000.6.4f1"
+  temporary_provider_state_read_path:
+    path: "C:\\ProgramData\\SentinelX\\state"
+    access: read_only
+    purpose: provider_owned_scope_readback_only
+    used_for_execution: false
+  cleanup_after_proof:
+    runtime_session_object_read_enabled: false
+    temporary_provider_state_read_path_removed: true
+    host_restarted: true
+
+proof_sequence:
+  scoped_python_marker:
+    attempt_id: attempt-001
+    scope_id: mss_bGOfjtPdZsNdq3GwzKhr8FX2
+    audit_operation_id: mao_4_u4ms2LFOJzajbT-Ugiu9C4
+    returncode: 0
+    marker: PR018_S03_SCOPED_PYTHON_OK
+    terminal_state: terminal
+
+  unity_raw_and_deterministic_probe:
+    attempt_id: attempt-002
+    scope_id: mss_vJJ3Y9w2ejFuzAuJmEM3mf9H
+    audit_operation_id: mao_9W6yGucvMoeACPvOqe3GVmnS
+    exact_executable: "C:\\Program Files\\Unity\\Hub\\Editor\\6000.6.4f1\\Editor\\Unity.exe"
+    command: "Unity.exe -version"
+    raw_child_returncode: 0
+    raw_child_windows_status_hex: "0x00000000"
+    stdout: "6000.6.4f1"
+    stderr: ""
+    elapsed_seconds: 0.939
+    terminal_state: terminal
+
+  enriched_live_security_probe:
+    attempt_id: attempt-006
+    scope_id: mss_dA814i_oOmQ2ogT922i9dgpW
+    audit_operation_id: mao_p5E9B4i6KsrCTjD7IsHNmUOc
+    exact_appcontainer_sid: "S-1-15-2-3228266759-651623209-2363826891-4191451228-766042073-2320857649-922393761"
+    process_user_sid: "S-1-5-18"
+    is_appcontainer: true
+    is_process_in_job: true
+    session_id: 0
+    window_station_identity: "session:0/window-station:Service-0x0-3e7$"
+    desktop_identity: "session:0/window-station:Service-0x0-3e7$/desktop:Default"
+    window_station_entry:
+      count: 1
+      mask_decimal: 131331
+      mask_hex: "0x00020103"
+      ace_flags: 0
+    desktop_entry:
+      count: 1
+      mask_decimal: 131137
+      mask_hex: "0x00020041"
+      ace_flags: 0
+    runtime_root_entry:
+      count: 1
+      mask_decimal: 1179817
+      ace_flags: 3
+    unity:
+      returncode: 0
+      windows_status_hex: "0x00000000"
+      stdout: "6000.6.4f1"
+      stderr: ""
+      elapsed_seconds: 0.114
+    terminal_state: terminal
+    terminalized_at: "2026-10-07T18:57:18.577547Z"
+
+  post_cleanup_exact_sid_probe:
+    attempt_id: attempt-007
+    scope_id: mss_tUbBq2gbb5zqBS9hwKKAjSa4
+    audit_operation_id: mao_JMREgi5MgSF5jZS1xNs9z1Z0
+    observer_is_appcontainer: true
+    observer_is_process_in_job: true
+    observer_session_id: 0
+    previous_exact_sid: "S-1-15-2-3228266759-651623209-2363826891-4191451228-766042073-2320857649-922393761"
+    previous_window_station_entries: []
+    previous_desktop_entries: []
+    previous_runtime_root_entries: []
+    previous_sid_absent_from_all_three: true
+    observer_window_station_mask_hex: "0x00020103"
+    observer_desktop_mask_hex: "0x00020041"
+    terminal_state: terminal
+    terminalized_at: "2026-10-07T18:58:34.813740Z"
+
+diagnostic_attempts_not_used_as_completion_evidence:
+  - attempt_id: attempt-003
+    disposition: diagnostic_script_import_error
+    scope_terminalized: true
+  - attempt_id: attempt-004
+    disposition: diagnostic_ctypes_prototype_error
+    scope_terminalized: true
+  - attempt_id: attempt-005
+    disposition: host_execution_not_started_after_platform_blocked_negative_breakaway_test
+    scope_terminalized_explicitly: true
+
+closure_and_security:
+  unity_status_not_0xC0000142: true
+  deterministic_unity_version_success: true
+  exact_runtime_root_sid_absent_after_cleanup: true
+  exact_window_station_sid_absent_after_cleanup: true
+  exact_desktop_sid_absent_after_cleanup: true
+  durable_session_binding_clear_proof:
+    terminalization_is_fail_closed_on_non_null_binding: true
+    cleanup_primitive_requires_dual_exact_sid_absence_before_binding_clear: true
+    terminal_state_readback_after_cleanup: true
+    post_cleanup_exact_sid_absence_physically_observed: true
+  no_active_job_or_process_authority:
+    terminal_scope_readback: true
+    post_proof_self_check_terminal_non_active: true
+  no_breakaway:
+    live_probe_process_is_in_job: true
+    post_proof_self_check_job_no_breakaway: true
+  forbidden_session_rights_absent:
+    proof: exact_noninheriting_session_ace_masks_equal_frozen_R4_masks
+    window_station_mask_hex: "0x00020103"
+    desktop_mask_hex: "0x00020041"
+    interactive_write_expansion_observed: false
+  appcontainer_escape_observed: false
+
+regression_evidence:
+  product_candidate_commit: "73a52013055a8b3bb70b319a0ed7b7ba832ae0c9"
+  windows_ci:
+    run_id: 37662137958
+    result: success
+    tests: "88 passed in 275.69s"
+  macos_ci:
+    run_id: 37662137960
+    result: success
+  canonical_drift_after_candidate:
+    product_files_changed: false
+    test_files_changed: false
+    only_docs_changed: true
+
+post_proof_host_readback:
+  exact_agent_version: "0.24.1.dev484+g86bc88126"
+  runtime_session_object_read_enabled: false
+  temporary_provider_state_read_path_present: false
+  host_mutation_sandbox_v1:
+    available: true
+    verified: true
+    job_no_breakaway: true
+    terminal_non_active: true
+    residual_authority_absent: true
+  scoped_verification_node_npm_v1:
+    available: true
+    verified: true
+  pre_execution_audit_lineage_v1:
+    available: true
+    verified: true
+  canonical_repository_mutation_firewall_v1:
+    available: true
+    verified: true
+
+cross_task_guard:
+  pr017_task_mutated: false
+  pr017_branch_mutated: false
+  pr017_s03_replayed: false
+  demonTD_downstream_claimed_complete: false
+
+completion:
+  s03_completed: true
+  all_plan_slices_completed: true
+  acceptance_executed: false
+  task_completion_verified: false
+  one_execute_one_slice_preserved: true
+  canonical_next_action: "#开发验收 PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1"
