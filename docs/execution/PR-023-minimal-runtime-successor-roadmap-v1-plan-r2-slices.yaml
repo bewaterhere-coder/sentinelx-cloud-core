@@ -1,0 +1,146 @@
+schema_version: "1.0"
+kind: devforge_execution_slice_set
+
+identity:
+  task_id: PR-023-minimal-runtime-successor-roadmap-v1
+  slice_set_id: PR-023-minimal-runtime-successor-roadmap-v1-plan-r2
+
+plan:
+  ref: docs/plans/PR-023-minimal-runtime-successor-roadmap-v1-plan.md
+  revision: 2
+  blob_sha: 9e56b512951b8dcaa4b7d6789d3bc350a5f24dce
+  review_ref: docs/reviews/PR-023-minimal-runtime-successor-roadmap-v1-plan-review-r2.md
+  review_blob_sha: 1f065b1d55680a866f6f8d972c3e397931966fb0
+  reviewed_result: Approved
+
+requirement:
+  ref: docs/requirements/PR-023-minimal-runtime-successor-roadmap-v1.md
+  revision: 1
+  semantic_revision_changed: false
+
+transport:
+  type: github-pr
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 23
+  branch: task/minimal-runtime-successor-roadmap-v1
+  base_branch: main
+
+execution_policy:
+  implementation_kind: documentation_control_plane_only
+  one_execute_one_slice: true
+  execution_mode_resolution: per_slice_at_execution
+  long_or_uncertain_work: guided_cli
+  product_source_mutation: forbidden
+  test_source_mutation: forbidden
+  github_actions_workflow_mutation: forbidden
+  host_or_deployment_mutation: forbidden
+  project_binding_mutation: forbidden
+  devforge_repository_mutation: forbidden
+  active_related_pr_mutation: forbidden
+  direct_codex_retirement: forbidden
+  pr020_implementation: forbidden
+  release: forbidden
+
+historical_plan_r1:
+  plan_revision: 1
+  approved_plan_blob_sha: 5bdb8e70887a7b78f12d01f81477273d0b0df29b
+  execution_slice_set:
+    ref: docs/execution/PR-023-minimal-runtime-successor-roadmap-v1-slices.yaml
+    blob_sha: 875857fcf0803abf7a45ef9cb0331631b2487fea
+    immutable_historical_evidence: true
+  completed_slice_receipts:
+    S01:
+      ref: docs/checkpoints/PR-023-minimal-runtime-successor-roadmap-v1-s01-completion-20261008.yaml
+      blob_sha: a51dd051de8c7e353722b58db18ebfa6d65d1eff
+      must_verify_before_s05r: true
+      replay_authorized: false
+    S02:
+      ref: docs/checkpoints/PR-023-minimal-runtime-successor-roadmap-v1-s02-completion-20261008.yaml
+      blob_sha: 67c238b2e1fd483ea8e22410aff6be722064c7ec
+      must_verify_before_s05r: true
+      replay_authorized: false
+    S03:
+      ref: docs/checkpoints/PR-023-minimal-runtime-successor-roadmap-v1-s03-completion-20261008.yaml
+      blob_sha: c7a232dc552f317c4b7024419c3f37a29c1fca73
+      must_verify_before_s05r: true
+      replay_authorized: false
+    S04:
+      ref: docs/checkpoints/PR-023-minimal-runtime-successor-roadmap-v1-s04-completion-20261008.yaml
+      blob_sha: 7eb8d15a006f211629b770fbe935d4515a7e1754
+      must_verify_before_s05r: true
+      replay_authorized: false
+  blocked_s05:
+    run_ref: docs/execution/PR-023-minimal-runtime-successor-roadmap-v1-s05-run-001.yaml
+    run_blob_sha: c0b8bf28c3abf3266683aa7e72007e6396ed75f2
+    checkpoint_ref: docs/checkpoints/PR-023-minimal-runtime-successor-roadmap-v1-final-verification-blocked-ac2-20261008.yaml
+    checkpoint_blob_sha: d4829e0e430e842f27abf47e831737ae069de66d
+    resolved_by_this_review: false
+    execution_status: blocked_historical
+
+slices:
+  - slice_id: S05R
+    objective: >-
+      Repair only the two missing PR-021 official completion receipt references
+      under the roadmap Architecture authority, then independently verify the
+      complete Requirement AC1-AC16 and persist exact final read-back evidence.
+    depends_on: []
+    historical_read_only_prerequisites:
+      - R1_S01_verified_completion_receipt
+      - R1_S02_verified_completion_receipt
+      - R1_S03_verified_completion_receipt
+      - R1_S04_verified_completion_receipt
+      - R1_S05_blocked_attempt_as_history
+    scope:
+      write_refs:
+        - docs/architecture/sentinelx-minimal-runtime-successor-roadmap-v1.md
+        - docs/checkpoints/PR-023-minimal-runtime-successor-roadmap-v1-final-verification-*.yaml
+        - docs/execution/PR-023-minimal-runtime-successor-roadmap-v1-s05r-*.yaml
+        - docs/requirements/PR-023-minimal-runtime-successor-roadmap-v1.md
+        - docs/execution/PR-023-minimal-runtime-successor-roadmap-v1-plan-r2-slices.yaml
+      architecture_write_boundary: >-
+        Append exactly two authority list lines, each with exact path and Git blob,
+        for PR-021 Integration Receipt and Accepted-to-Done Transition Receipt.
+        All roadmap bytes outside these two lines must equal S04 Roadmap blob
+        1117d0279ed9c513424ad12f72ed1ecdb2d7a116.
+      predecessor_completion_refs:
+        integration:
+          ref: docs/reviews/PR-021-minimal-runtime-complexity-reduction-boundary-v1-integration-receipt-r1.yaml
+          blob_sha: 87bf6ebea89e12d3f8f31dd01a230bc66d8987a8
+        accepted_to_done:
+          ref: docs/checkpoints/PR-021-minimal-runtime-complexity-reduction-boundary-v1-accepted-to-done-transition-receipt.yaml
+          blob_sha: e819beaefd1a7d2529edbe561420483cff342b1c
+    verification:
+      required:
+        - requirement_revision_1_semantics_unchanged
+        - exact_plan_r2_blob_current
+        - current_r2_slice_set_readback_and_s05r_scope_admitted
+        - original_s01_s04_completion_receipts_readback_and_no_replay
+        - original_r1_slice_set_and_s05_blocked_evidence_unchanged
+        - roadmap_authority_exact_two_line_append_only
+        - predecessor_integration_and_accepted_to_done_receipt_refs_match_main_blobs
+        - full_AC1_through_AC16_evaluated_and_pass
+        - exactly_five_ordered_MRS_stages_unchanged
+        - all_s01_open_pr_baseline_rows_preserved
+        - PR014_PR019_PR020_safety_constraints_unchanged
+        - current_main_and_open_pr_baseline_revalidation
+        - no_product_source_or_tests_mutation
+        - no_github_actions_workflow_mutation
+        - no_live_host_deployment_or_agent_restart
+        - no_other_PR_or_DevForge_repo_or_binding_mutation
+        - PR23_only_transport_lineage
+        - fresh_session_readback_sufficient
+    checkpoint:
+      required: true
+    state: pending
+    run_refs: []
+    completion_receipt_ref: null
+
+current:
+  slice_id: S05R
+  state: pending
+
+execution_summary:
+  all_required_slices_completed: false
+  implementation_execution_complete: false
+  previous_r1_slices_replayed: false
+  acceptance_authorized: false
