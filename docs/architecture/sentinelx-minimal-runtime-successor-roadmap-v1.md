@@ -13,6 +13,8 @@ Architecture authority:
 - `docs/architecture/sentinelx-minimal-runtime-boundary-v1.md`
 - `docs/architecture/sentinelx-capability-disposition-matrix-v1.md`
 - `docs/requirements/PR-021-minimal-runtime-complexity-reduction-boundary-v1.md`
+- `docs/reviews/PR-021-minimal-runtime-complexity-reduction-boundary-v1-integration-receipt-r1.yaml` @ Git blob `87bf6ebea89e12d3f8f31dd01a230bc66d8987a8`
+- `docs/checkpoints/PR-021-minimal-runtime-complexity-reduction-boundary-v1-accepted-to-done-transition-receipt.yaml` @ Git blob `e819beaefd1a7d2529edbe561420483cff342b1c`
 
 ## 1. S02 Evidence Baseline
 
