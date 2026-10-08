@@ -1,43 +1,58 @@
-# PR-014 — Plan R10: Source Ownership & Actual Short-Mutation Consumer Readback
+# PR-014 Plan R11 — Canonical Source Ownership & Security Repair Disposition
 
 ```yaml
 task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
-requirement_revision: 5
-plan_revision: 10
+requirement_revision: 6
+plan_revision: 11
 stage: ready_for_plan_review
 plan_approved: false
 implementation_authorized: false
 canonical_pr: 14
 branch: task/devforge-execution-workspace-materialization-bridge-v1
-prior_plan_r9_s03a: completed_negative_reconciliation
-historical_candidate: 45dc99d15a23c499b4c1500fab60ed5e76475aeb
+historical_slices: [S01, S02, S03A, S04A]
+historical_product_candidate: 45dc99d15a23c499b4c1500fab60ed5e76475aeb
 ```
 
-## Scope
+## Objective
 
-One read-only evidence slice **S04A** only. This plan must not authorize product mutations, Git tree restoration, canonical main change, Host policy edits, materialization, agent lifecycle, CI workflows, or historical S01/S02 replay. It consumes prior S03A negative evidence and a new live Host readback: operational Windows agent `0.24.1.dev260+g45dc99d15` exposes `devforge_runtime` contract revision 2 including `execute_scoped` (API existence verified), but has not proven an actual bounded business consumer or source ownership.
+Resolve a **single read-only decision** on canonical product-source ownership and the narrow safe-runtime repair pathway before any mutation. Consumes S04A observed security failures and PR-021 minimal short-runtime boundary. No product, Host, main, CI, Git-transport or external-agent mutation.
 
-## S04A — Canonical product owner / effective policy / consumer admission
+## One proposed slice S05A (read-only only)
 
 ```yaml
-slice_id: S04A
+slice_id: S05A
 depends_on: []
-effects: [github_repository_read, sentinelx_structured_read_only_api, documentation_only_receipt_write_to_existing_pr14]
-forbidden_effects: [product_code_mutation, host_mutation, canonical_main_mutation, scope_provision, scoped_execution, materialize_workspace, git_rebase, git_cherry_pick, source_restore, s01_s02_replay, long_agent_invocation]
+allowed_effects:
+  - github_repository_read
+  - host_structured_read_only_introspection
+  - documentation_only_evidence_receipt_on_existing_pr14_branch
+forbidden_effects:
+  - product_mutation
+  - host_policy_mutation
+  - main_mutation
+  - mutation_scope_provision
+  - execute_scoped
+  - materialize_workspace
+  - source_restore
+  - rebase
+  - cherry_pick
+  - historical_slice_replay
+  - long_agent_lifecycle
 outputs:
-  - installed_agent_source_provenance_and_canonical_main_topology_matrix
-  - effective_host_policy_roots_readback_or_explicit_unverified
-  - execute_scoped_actual_consumer_and_gap_matrix
-  - no_delta_or_product_delta_decision_with_receipt
+  - canonical_implementation_source_owner_or_explicit_unverified
+  - installed_host_runtime_provenance_and_policy_readback_or_unverified
+  - additive_mutation_scope_schema_root_cause_and_safe_repair_contract
+  - safe_execution_placement_and_short_consumer_necessity_matrix
+  - final_no_delta_narrow_repair_or_blocked_decision_receipt
 checkpoint_required: true
 ```
 
-Read canonical main tree and GitHub historical file-change evidence to determine **whether and why** source paths moved/disappeared; pair with read-only installed package/runtime identity without assuming the installed version identifies canonical main. Inspect closed `devforge_runtime` projection and effective Host source/protected/execution placement policy via structured read-only endpoints only. Find an actual short `execute_scoped` consumer and distinguish its current capability from missing workspace placement needs. Explicitly mark unverifiable facts as `unverified`.
+Read current GitHub `main` tree/history, releases/build provenance and installed Host runtime/package identity without assuming the old PR is authoritative. Inspect *read-only* runtime self-check/effective Host policy: `runtime_read_authority_roots` schema incompatibility, sandbox/audit readiness and current legacy `D:\coco` workspace location. Establish whether a real `execute_scoped` short-mutation consumer requires a separate DevForge placement root. If facts remain unavailable, record `DecisionRequired/Blocked` rather than inventing a replacement source owner.
 
-Decision must be `NoAdditionalProductDeltaNeeded`, `ProductDeltaCandidateRequiresNewReviewedPlan`, or `DecisionRequired/Blocked`. A positive product-delta decision is **not implementation authority**; it only supports a separate exact-path, exact-test Plan Review. A negative result is valid S04A evidence and prevents blind development. Write evidence/receipt to PR #14, verify exact remote readback and preserve Task/branch identity.
+Freeze one disposition: `NoAdditionalProductDeltaNeeded`, `NarrowSecurityRepairCandidateRequiresSeparatePlanReview`, or `DecisionRequired/Blocked`. Document exact evidence and integration approach, then persist/read back a checkpoint and receipt to PR #14. No mutation authority follows automatically from a positive disposition. Product/security/Host deployment needs a separately reviewed, exact-path implementation Plan and physical Receipt. No S01/S02 replay, no protection carveout, no data-store deletion.
 
-## Gate and acceptance
+## Review gate
 
-Plan R10 review may admit a **single executable read-only S04A** only. The approved Plan R9 S03A completed checkpoint remains immutable. R10 cannot compile future product slices. Security invariants from Requirement R5/R4 and merged PR-021 stay frozen for future gates. PR mergeability unresolved and no automatic rebase or restore is authorized.
+A reviewer may approve **S05A only** as a documentation/evidence slice. Historical Plan R10 is superseded by R6. Any refusal to find current canonical implementation topology is a valid negative outcome; no future product slice is preauthorized.
 
-Next: `#开发评审 PR-014-devforge-execution-workspace-materialization-bridge-v1`.
+Next action: `#开发评审 PR-014-devforge-execution-workspace-materialization-bridge-v1`.
