@@ -1,0 +1,23 @@
+schema_version: "1.0"
+kind: devforge_requirement_replan_transition_receipt
+task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
+requirement_revision: 5
+plan_revision: 10
+stage_after: plan_review
+plan_approved: false
+implementation_authorized: false
+previous_s03a: completed_negative_reconciliation_preserved
+new_slice: S04A_proposed_read_only
+new_slice_authorized: false
+requirement_blob_readback: e7580c9ffec66fb6221716cf9a9040db842b5115
+requirement_commit: d0c9611038cee6ea7e0da26161886c24ca912466
+plan_blob_readback: 30a924013aebb736277265a3f469805ad6c6dca2
+plan_commit: ce8248bebb914d5687cdd869cd6719f95733409e
+host_consumer_evidence_ref: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-r5-host-consumer-readback-20261008.md
+host_consumer_evidence_commit: 90175be1a9452aa8fb3a8c5ca69daf6f3efe8d52
+product_mutation: false
+host_mutation: false
+main_mutation: false
+s01_s02_replay: false
+next_action: "#开发评审 PR-014-devforge-execution-workspace-materialization-bridge-v1"
+verified: true
