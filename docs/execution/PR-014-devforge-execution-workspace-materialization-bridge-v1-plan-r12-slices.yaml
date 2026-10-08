@@ -1,0 +1,33 @@
+schema_version: "1.0"
+kind: devforge_execution_slice_set
+identity:
+  task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
+  slice_set_id: PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-r12
+plan:
+  ref: docs/plans/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan.md
+  revision: 12
+  blob_sha: 8e7349c2f154a10b148b673c85e2bac241b8e3f5
+review:
+  ref: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r12.md
+  decision: Approved
+slices:
+  - slice_id: S06A
+    objective: Read-only post-upgrade canonical source, Direct Codex containment and firewall/placement verification
+    depends_on: []
+    scope:
+      allowed_effects: [github_repository_read, sentinelx_structured_capabilities_and_projection_read, documentation_only_receipt_on_existing_pr14_branch]
+      forbidden_effects: [product_mutation, host_mutation, canonical_main_mutation, execute_scoped, direct_codex_invoke, materialize_workspace, provision_scope, policy_write, source_restore, rebase, cherry_pick, historical_replay]
+    verification:
+      required:
+        - canonical_main_provenance_or_explicit_unverified
+        - sandbox_audit_firewall_current_readback
+        - direct_codex_containment_or_explicit_unverified
+        - separate_execution_root_or_explicit_unverified
+        - durable_decision_and_receipt_readback
+    checkpoint:
+      required: true
+    state: pending
+    run_refs: []
+    completion_receipt_ref: null
+historical_slices: [S01, S02, S03A, S04A, S05A]
+historical_replay: forbidden
