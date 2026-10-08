@@ -13,7 +13,16 @@ development:
     completion_verified: false
   plan_revision: 1
   implementation_authorized: true
-  blocking_findings: []
+  blocking_findings:
+    - RoadmapPredecessorCompletionEvidenceReferenceMissing
+  latest_execution_run: docs/execution/PR-023-minimal-runtime-successor-roadmap-v1-s05-run-001.yaml
+  latest_execution_checkpoint: docs/checkpoints/PR-023-minimal-runtime-successor-roadmap-v1-final-verification-blocked-ac2-20261008.yaml
+  s05_verification:
+    state: blocked
+    failed_acceptance_criteria: [AC2]
+    passed_count: 15
+    failed_count: 1
+    scope_repair_required: true
   next_expected_actor: implementer
   current_slice: S05
   current_slice_state: pending
