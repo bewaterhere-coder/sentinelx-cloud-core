@@ -28,9 +28,9 @@ implementation_entry_guard:
   current_owner_requirement_revision: 2
   proposed_owner_plan_revision: 5
   no_slice_execution_or_bootstrap: true
-  s01_bootstrap_required: true
-  s01_bootstrap_target: direct:codebuddy
-  s01_bootstrap_command: "#开发引导执行 PR-020-durable-async-operation-runtime-outcome-readback-v1 direct:codebuddy"
+  s01_bootstrap_required: false
+  s01_bootstrap_target: null
+  s01_bootstrap_command: null
   rules:
     - re-read current Task, exact Approved Plan R4 blob, this Slice Set, canonical main and PR #20 head before mutation
     - preserve PR #20 Task/branch/PR transport identity
@@ -280,6 +280,8 @@ owner_hold_supersession:
   s01_blocked_run_unchanged: docs/execution/PR-020-durable-async-operation-runtime-outcome-readback-v1-s01-run-001.yaml
   s01_blocker_unchanged: docs/checkpoints/PR-020-durable-async-operation-runtime-outcome-readback-v1-s01-blocked-20261008.yaml
   all_execution_authority_suspended: true
+  historical_bootstrap_target: direct:codebuddy
+  historical_bootstrap_command_not_executable: true
   bootstrap_override_state: revoked
   direct_codebuddy_bootstrap_allowed: false
   mrs01_program_exit: HOLD
