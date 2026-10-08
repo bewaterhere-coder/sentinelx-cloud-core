@@ -54,6 +54,22 @@ development:
   implementation_to_acceptance_receipt: docs/checkpoints/PR-023-minimal-runtime-successor-roadmap-v1-final-verification-s05r-implementation-to-acceptance-receipt.yaml
   r1_replay_authorized: false
   implementation_execution_complete: true
+  finalization:
+    ready_for_merge: true
+    canonical_state_verified: true
+    plan_execution_state_verified: true
+    evidence_verified: true
+    transport_preconditions_verified: true
+    acceptance_approved: true
+    integration_verified: false
+    merge_pending: true
+    reconciliation_required_after_merge: true
+    transport_base_revalidated_sha: 5d9286b22f46ae8bdf6d983b6366da0da3f1323e
+    plan_r2_pre_finalization_blob_sha: 9e56b512951b8dcaa4b7d6789d3bc350a5f24dce
+    plan_r2_finalization_blob_sha: e3221237fa03073e451d5091970c1428cf028f17
+    finalization_receipt: docs/checkpoints/PR-023-minimal-runtime-successor-roadmap-v1-premerge-finalization-r1-receipt.yaml
+    integration_receipt: docs/reviews/PR-023-minimal-runtime-successor-roadmap-v1-integration-receipt-r1.yaml
+    completion_transition_receipt: docs/checkpoints/PR-023-minimal-runtime-successor-roadmap-v1-accepted-to-done-transition-receipt.yaml
   formal_acceptance_performed: true
   latest_acceptance_review: docs/reviews/PR-023-minimal-runtime-successor-roadmap-v1-acceptance-r1.md
   latest_acceptance_review_sha: a2ec4fd0d1da224808beede6c5751b8a3c926009
