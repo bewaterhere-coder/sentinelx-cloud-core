@@ -15,9 +15,9 @@ development:
   implementation_authorized: true
   blocking_findings: []
   next_expected_actor: implementer
-  current_slice: S03
+  current_slice: S04
   current_slice_state: pending
-  completed_slices: [S01, S02]
+  completed_slices: [S01, S02, S03]
   implementation_execution_complete: false
   formal_acceptance_performed: false
 transport:
