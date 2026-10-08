@@ -1,7 +1,7 @@
 ---
 task_id: PR-023-minimal-runtime-successor-roadmap-v1
 title: SentinelX Minimal Runtime Successor Roadmap V1 — Plan
-plan_revision: 1
+plan_revision: 2
 plan_state: ready_for_review
 requirement_revision: 1
 project_id: sentinelx-cloud-core
@@ -14,7 +14,62 @@ transport:
 implementation_authorized: false
 ---
 
-# Plan R1
+# Plan R2 — AC2 Recovery Scope
+
+## R2 Narrow Amendment — Prior R1 Implementation Preserved as Historical Evidence
+
+### Reason and change-impact authority
+
+- Requirement remains **Revision 1 with identical semantics**. AC2 already requires direct predecessor completion-evidence citation.
+- S05 R1 final verification durably blocked on AC2: \`docs/checkpoints/PR-023-minimal-runtime-successor-roadmap-v1-final-verification-blocked-ac2-20261008.yaml\` (blob \`d4829e0e430e842f27abf47e831737ae069de66d\`).
+- \`docs/reviews/PR-023-minimal-runtime-successor-roadmap-v1-s05-ac2-plan-change-impact-r1.md\` (blob \`da61cf37f31fb1bad50018e2f32c217eaa160d29\`) classifies this as a narrow **Plan/Slice write-scope change**, not a new product or architecture decision.
+- Previously Approved Plan R1 blob: \`5bdb8e70887a7b78f12d01f81477273d0b0df29b\`.
+- R1 Slice Set blob: \`875857fcf0803abf7a45ef9cb0331631b2487fea\`; S01–S04 are completed **under R1 only**. Their original run/checkpoint/receipt files are immutable historical evidence and are **not** executable current-plan slices.
+- S05 R1 blocked Run \`docs/execution/PR-023-minimal-runtime-successor-roadmap-v1-s05-run-001.yaml\` (blob \`c0b8bf28c3abf3266683aa7e72007e6396ed75f2\`) is historical blocked evidence, not success.
+
+### R2 proposed implementation — single S05R repair/verification Slice
+
+**S05R is not authorized until Plan Review R2 is approved and an exact R2-bound Slice Set is compiled, persisted, and read back.** The reviewer may reject/replan if historical Slice evidence cannot safely be admitted read-only without replay.
+
+\`\`\`yaml
+slice_id: S05R
+depends_on_historical_evidence:
+  plan: R1
+  required_verified_receipts: [S01, S02, S03, S04]
+prior_r1_slice_s05:
+  state: blocked_historical_evidence
+scope:
+  write_refs:
+    - docs/architecture/sentinelx-minimal-runtime-successor-roadmap-v1.md
+    - docs/checkpoints/PR-023-minimal-runtime-successor-roadmap-v1-final-verification-*.yaml
+    - docs/execution/PR-023-minimal-runtime-successor-roadmap-v1-s05r-*.yaml
+    - docs/requirements/PR-023-minimal-runtime-successor-roadmap-v1.md
+    - docs/execution/PR-023-minimal-runtime-successor-roadmap-v1-slices.yaml
+  roadmap_write_boundary: exact_two_lines_under_architecture_authority_only
+  product_source_write: forbidden
+  other_pr_or_cross_repo_mutation: forbidden
+\`\`\`
+
+1. Re-read canonical PR #23/branch/head, Requirement R1 semantics, approved Plan R2 SHA, the freshly compiled R2 Slice Set, R1 historical S01–S04 receipts, PR-021 predecessor authority, current SentinelX \`main\` and DevForge project registry.
+2. Edit **only** the \`Architecture authority\` list in \`docs/architecture/sentinelx-minimal-runtime-successor-roadmap-v1.md\`. Append both exact paths **and current Git blob hashes**:
+   - \`docs/reviews/PR-021-minimal-runtime-complexity-reduction-boundary-v1-integration-receipt-r1.yaml\` @ \`87bf6ebea89e12d3f8f31dd01a230bc66d8987a8\`;
+   - \`docs/checkpoints/PR-021-minimal-runtime-complexity-reduction-boundary-v1-accepted-to-done-transition-receipt.yaml\` @ \`e819beaefd1a7d2529edbe561420483cff342b1c\`.
+3. Assert the Roadmap body outside that authority-list insertion is byte-identical to the S04 Roadmap blob \`1117d0279ed9c513424ad12f72ed1ecdb2d7a116\`. Do not rewrite stage titles, ordering, disposition rows or retirement gates.
+4. Evaluate **all AC1–AC16**, including AC2 direct predecessor completion authority, with exact Roadmap/readback and fresh changed-file/PR/Host/DevForge non-mutation evidence. Use the same PR #23 branch; no hosted CI, product tests or deployment.
+5. Persist S05R final verification checkpoint, Run and Completion Receipt under R2 identity. Transition into Acceptance **only** after this independently reviewed Slice passes and transport read-back is verified. No implicit S05-to-acceptance transition from Plan authoring.
+
+### R2 review / recompile gate
+
+The existing R1 Plan Review/transition receipt remains authentic historical R1 evidence; **it does not approve R2**. The R1 Slice Set must not be relabeled as R2 or reused as current authority. Only an independently authorized \`#开发评审 PR-023-minimal-runtime-successor-roadmap-v1\` may:
+
+- approve this scoped R2 change;
+- compile and verify a distinct R2 Slice Set (single S05R execution slice) with correct current Plan digest;
+- bind current Task state to implementation and current S05R;
+- prove S01–S04 verified historical inputs without replay; reject if any history is missing or contradictory.
+
+The proposed \`S05R\` is **one new execution-scope definition in the same Task/PR**, not a new Task or a replayed completed Slice. No S05 R1 blocked Run is silently marked complete.
+
+## Historical R1 plan content (reference-only; not current executable scope)
 
 ## Objective
 
