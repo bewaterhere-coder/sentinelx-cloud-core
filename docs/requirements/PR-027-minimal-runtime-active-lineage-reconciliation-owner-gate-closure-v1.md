@@ -24,7 +24,7 @@ development:
   accepted_coordination_only: true
   accepted_program_exit: false
   finalization:
-    status: ready_for_merge
+    status: original_integration_verified_completion_reconciliation
     ready_for_merge: false
     canonical_state_verified: true
     plan_execution_state_verified: true
