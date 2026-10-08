@@ -1,0 +1,56 @@
+schema_version: "1.1"
+kind: devforge_task_slice_set
+task_id: PR-026-scoped-powershell-appcontainer-initialization-recovery-v1
+slice_set_id: PR-026-scoped-powershell-appcontainer-initialization-recovery-v1-plan-r1
+plan_revision: 1
+source_plan: docs/plans/PR-026-scoped-powershell-appcontainer-initialization-recovery-v1-plan.md
+
+slices:
+  - id: S01
+    title: Live evidence and fail-closed initialization diagnostics
+    state: pending
+    admitted: true
+    scope:
+      - read-only inspection and real Windows Host evidence extraction
+      - conditional minimal fail-closed startup-failure diagnostic field in
+        scoped error/finish evidence, sampled before scope terminalization
+        closes process handles
+    allowed_paths:
+      - src/sentinelx_core/handlers/scoped_script.py
+      - src/sentinelx_core/winspawn.py
+      - src/sentinelx_core/mutation_audit.py
+      - focused regression tests under tests/
+      - docs/execution/ docs/checkpoints/ docs/reviews/ task-owned artifacts
+    forbidden:
+      - config modifications
+      - D:\coco root ACL changes
+      - PR-018 files or scripts/Win32 privilege adjustments
+      - PowerShell compatibility repair (S02 requires Plan R2 + review)
+      - unrestricted fallback execution
+      - canonical main mutation
+    completion_receipt_requires:
+      - exact installed/build/branch revision
+      - raw process exit code decimal + 0x%08X, or explicit negative readback
+      - runner marker presence
+      - AppContainer + Job identity evidence
+      - audit operation id and terminalization readback
+      - classification matrix and strongest disconfirmation
+      - source diff and focused tests
+
+  - id: S02
+    title: Evidence-authorized minimal compatibility repair
+    state: not_admitted
+    admitted: false
+    gate: requires separate Plan Revision R2 and #开发评审 approval
+
+  - id: S03
+    title: Real Windows Host acceptance and security regression
+    state: not_admitted
+    admitted: false
+    gate: requires approved R2 Slice Set after S02
+
+authority:
+  one_execute_one_slice: true
+  current_slice: S01
+  bootstrap_required: false
+  execution_performed: false
