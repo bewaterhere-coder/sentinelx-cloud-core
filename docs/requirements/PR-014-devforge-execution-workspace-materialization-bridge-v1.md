@@ -5,7 +5,7 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 6
 development:
-  stage: planning
+  stage: plan_review
   gates:
     requirement_ready: true
     plan_approved: false
@@ -50,7 +50,7 @@ development:
   bootstrap_override_state: expired_by_requirement_revision_3
   prior_bootstrap_override: docs/overrides/PR-014-devforge-execution-workspace-materialization-bridge-v1-bootstrap-execution-override.yaml
   latest_bootstrap_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-bootstrap-execution-override-r1-receipt.yaml
-  execution_disposition: requirement_r6_decision_frozen_no_product_authority
+  execution_disposition: plan_r11_pending_review_no_product_authority
   execution_blocker: RuntimeSecurityReadinessFailureAndCanonicalSourceUnresolved
   execution_failure_state: null
   execution_failure_reason: null
@@ -61,7 +61,7 @@ development:
   prior_bootstrap_receipt: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-harness-bootstrap-blocked-20261008.yaml
   superseded_slice_set_status: invalidated_by_requirement_revision_4
   planned_pending_delta_slice: null
-  next_expected_actor: planner
+  next_expected_actor: reviewer
   canonical_next_action: "#开发评审 PR-014-devforge-execution-workspace-materialization-bridge-v1"
   authorization:
     mode: legacy_command_scoped
