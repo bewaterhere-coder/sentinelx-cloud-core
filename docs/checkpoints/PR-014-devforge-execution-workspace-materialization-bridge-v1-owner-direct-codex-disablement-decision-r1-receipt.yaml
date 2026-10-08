@@ -1,0 +1,57 @@
+schema_version: "1.0"
+kind: devforge_owner_decision_receipt
+task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
+project_id: sentinelx-cloud-core
+owner_decision: host_owned_fail_closed_direct_codex_disablement
+decision_scope: owner_implementation_direction_only
+decision_authority: explicit_user_owner_selection
+selection_recorded: true
+verified: true
+host_policy_mutation_performed: false
+host_policy_mutation_authorized: false
+live_negative_reachability_proven: false
+effective_firewall_proven: false
+implementation_completed: false
+source:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  canonical_branch: main
+  main_at_decision: 2e5c69a112323867ee01783521554c43ebd731be
+  original_pr: 14
+  original_branch: task/devforge-execution-workspace-materialization-bridge-v1
+  head_before_decision: 6f8fd1c6435526239657454dfb1d40b553c3a1d6
+  requirement_revision: 8
+  plan_revision: 14
+  acceptance_review: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-acceptance-r3.md
+  decision_ref: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-owner-direct-codex-disablement-decision-r1.md
+  decision_blob_sha: 5c9e060e7842d7c197ddc256de2e7fcfd8343c11
+  task_ref: docs/requirements/PR-014-devforge-execution-workspace-materialization-bridge-v1.md
+  task_before_digest: 78f1e234fedd6263f6c315c1fe9454401f96115b
+  task_after_digest: c68d7547c7e278b58150eda9d790308a4ff7a325
+architectural_authority:
+  minimal_runtime_pr021: enforced
+  capability_disposition_matrix_section_13_rule_9: separate_devforge_task_required
+  host_owned_direct_codex_enabled_false: selected
+  externally_configured_same_name_local_api: must_be_ruled_out
+  preserve_devforge_runtime_and_other_local_api: true
+  preserve_d_coco_protected_root: true
+  no_direct_codex_process_spawn: acceptance_required_not_yet_proven
+  no_workspaces_or_repo_mutations: acceptance_required_not_yet_proven
+  no_local_api_disable_all: true
+transport:
+  status: original_PR14_remains_nonmergeable
+  no_source_restore: true
+  no_rebase: true
+  no_cherry_pick: true
+  no_force_push: true
+  no_new_PR_created_under_this_task: true
+state_after:
+  development_stage: acceptance
+  acceptance_disposition: DecisionRequired
+  acceptance_approved: false
+  completion_verified: false
+  material_owner_option_selected: true
+  owner_security_outcome_verified: false
+  mrs01: HOLD
+  mrs02_admitted: false
+  next_actor: DevForge_new_task_registration
+  proposed_next_requirement: SentinelX Direct Codex Host-Owned Fail-Closed Disablement and Negative Reachability V1

@@ -43,9 +43,17 @@ development:
   formal_acceptance_performed: true
   acceptance_disposition: decision_required_r3_owner_security_and_transport
   acceptance_blocker: DirectCodexContainmentUnprovenAndOriginalPRTransportBlocked
-  acceptance_blocker_detail: owner_must_decide_fail_closed_direct_codex_disablement_or_verified_physical_containment_and_prove_no_loss_same_PR_transport
+  acceptance_blocker_detail: owner_selected_host_policy_disablement_but_live_negative_reachability_and_lossless_transport_remain_unproven
+  owner_direct_codex_choice: host_owned_policy_fail_closed_disablement
+  owner_direct_codex_choice_state: selected_not_deployed
+  owner_decision_ref: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-owner-direct-codex-disablement-decision-r1.md
+  owner_decision_receipt_ref: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-owner-direct-codex-disablement-decision-r1-receipt.yaml
+  owner_direct_codex_negative_reachability_verified: false
+  owner_host_policy_mutation_authorized: false
+  separate_devforge_task_for_provider_disablement_required: true
+  owner_decision_pending_external_implementation_proof: true
   material_architecture_decision_required: true
-  material_architecture_decision: pr021_minimal_runtime_boundary_preserved_owner_direct_codex_security_decision_pending
+  material_architecture_decision: pr021_host_owned_fail_closed_direct_codex_disablement_selected_separate_task_required
   secondary_acceptance_finding: planned_repair_in_requirement_r3
   exact_candidate_activation_required: false
   latest_acceptance_checkpoint: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-acceptance-r3-decision-required-20261008.yaml
@@ -80,6 +88,8 @@ development:
   authorization:
     mode: legacy_command_scoped
 artifacts:
+  latest_owner_decision: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-owner-direct-codex-disablement-decision-r1.md
+  latest_owner_decision_receipt: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-owner-direct-codex-disablement-decision-r1-receipt.yaml
   acceptance_r3_review: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-acceptance-r3.md
   acceptance_r3_decision_receipt: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-acceptance-r3-decision-required-20261008.yaml
   acceptance_r3_current_evidence: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-s07a-decision-20261008.md
