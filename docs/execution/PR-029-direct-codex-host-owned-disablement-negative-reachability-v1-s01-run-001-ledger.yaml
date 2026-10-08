@@ -1,0 +1,85 @@
+schema_version: "0.1"
+kind: devforge_execution_run_ledger
+identity:
+  task_id: PR-029-direct-codex-host-owned-disablement-negative-reachability-v1
+  run_id: RUN-PR029-S01-001
+  slice_id: S01
+  plan_revision: 2
+events:
+  - event_id: RUN-PR029-S01-001-e01
+    task_id: PR-029-direct-codex-host-owned-disablement-negative-reachability-v1
+    run_id: RUN-PR029-S01-001
+    attempt_id: ATTEMPT-PR029-S01-001
+    sequence: 1
+    timestamp: "2026-10-08"
+    type: preflight.started
+    actor: devforge_orchestration_readonly
+    payload:
+      action: read_canonical_task_plan_slice_set_and_pr
+    artifact_refs:
+      - docs/requirements/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1.md
+      - docs/execution/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-plan-r2-slices.yaml
+  - event_id: RUN-PR029-S01-001-e02
+    task_id: PR-029-direct-codex-host-owned-disablement-negative-reachability-v1
+    run_id: RUN-PR029-S01-001
+    attempt_id: ATTEMPT-PR029-S01-001
+    sequence: 2
+    timestamp: "2026-10-08"
+    type: artifact.observed
+    actor: devforge_orchestration_readonly
+    payload:
+      structured_host_version: "0.24.1.dev791+g5d9286b22"
+      direct_codex_action_advertised: true
+      direct_codex_containment_verified: false
+      firewall_verified: false
+      source_and_consumer_binding_read: true
+    artifact_refs:
+      - docs/execution/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-s01-readonly-evidence-20261008.md
+  - event_id: RUN-PR029-S01-001-e03
+    task_id: PR-029-direct-codex-host-owned-disablement-negative-reachability-v1
+    run_id: RUN-PR029-S01-001
+    attempt_id: ATTEMPT-PR029-S01-001
+    sequence: 3
+    timestamp: "2026-10-08"
+    type: verification.blocked
+    actor: devforge_orchestration_readonly
+    payload:
+      reason_code: OwnerConsumerAndHostPolicyReadbackEvidenceUnverified
+      missing_gates: [G1, G2, G3, G4, G5, G6]
+      authorized_host_mutation: false
+      negative_call_executed: false
+    artifact_refs:
+      - docs/execution/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-s01-readonly-evidence-20261008.md
+  - event_id: RUN-PR029-S01-001-e04
+    task_id: PR-029-direct-codex-host-owned-disablement-negative-reachability-v1
+    run_id: RUN-PR029-S01-001
+    attempt_id: ATTEMPT-PR029-S01-001
+    sequence: 4
+    timestamp: "2026-10-08"
+    type: run.blocked
+    actor: devforge_orchestration_readonly
+    payload:
+      outcome: DecisionRequired/Blocked
+      slice_status: pending
+      no_automatic_retry: true
+    artifact_refs:
+      - docs/execution/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-s01-attempt-001-receipt.yaml
+  - event_id: RUN-PR029-S01-001-e05
+    task_id: PR-029-direct-codex-host-owned-disablement-negative-reachability-v1
+    run_id: RUN-PR029-S01-001
+    attempt_id: ATTEMPT-PR029-S01-001
+    sequence: 5
+    timestamp: "2026-10-08"
+    type: run.finalized
+    actor: devforge_orchestration_readonly
+    payload:
+      final_state: BLOCKED
+      slice_status: pending
+    artifact_refs:
+      - docs/execution/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-s01-run-001-finalization.yaml
+event_count: 5
+final_sequence: 5
+integrity:
+  source_lineage: PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-PlanR2-S01-RUN-PR029-S01-001
+  final_event_id: RUN-PR029-S01-001-e05
+  sha256: null

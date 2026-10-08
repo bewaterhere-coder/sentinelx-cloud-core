@@ -33,8 +33,14 @@ development:
   direct_codex_execution_authorized: false
   safety_negative_call_authorized: false
   canonical_main_mutation_authorized: false
-  next_expected_actor: implementer
-  canonical_next_action: "#开发执行 PR-029-direct-codex-host-owned-disablement-negative-reachability-v1"
+  next_expected_actor: owner
+  s01_run_state: BLOCKED
+  s01_latest_run_id: RUN-PR029-S01-001
+  s01_blocker: OwnerConsumerAndHostPolicyReadbackEvidenceUnverified
+  s01_owner_attestation_required: true
+  s01_investigation_verdict: DecisionRequired/Blocked
+  s01_completion_verified: false
+  canonical_next_action: null
   current_slice: S01
   pending_slices: [S01]
   completed_slices: []
@@ -50,6 +56,12 @@ transport:
   branch: task/direct-codex-host-owned-disablement-negative-reachability-v1
   base_branch: main
 artifacts:
+  s01_readonly_evidence: docs/execution/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-s01-readonly-evidence-20261008.md
+  s01_attempt_receipt: docs/execution/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-s01-attempt-001-receipt.yaml
+  s01_run_record: docs/execution/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-s01-run-001.yaml
+  s01_run_ledger: docs/execution/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-s01-run-001-ledger.yaml
+  s01_run_finalization: docs/execution/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-s01-run-001-finalization.yaml
+  s01_blocked_checkpoint: docs/checkpoints/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-s01-blocked-owner-attestation-20261008.yaml
   plan_r2_slice_set: docs/execution/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-plan-r2-slices.yaml
   plan_r2_slice_set_blob_sha: 539b385615c1d2c2bb29c0bdd7af60bce45e6f53
   latest_plan_review_approval_receipt: docs/reviews/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-plan-review-r2-approval-receipt.yaml

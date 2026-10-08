@@ -1,0 +1,48 @@
+schema_version: "1.0"
+kind: devforge_execution_attempt_receipt
+task_id: PR-029-direct-codex-host-owned-disablement-negative-reachability-v1
+run_id: RUN-PR029-S01-001
+attempt_id: ATTEMPT-PR029-S01-001
+slice_id: S01
+plan_revision: 2
+plan_blob_sha: 300b1adc237dd4220d866ecdeb4047880d203874
+slice_set_sha: 539b385615c1d2c2bb29c0bdd7af60bce45e6f53
+attempt_state: BLOCKED
+reason_code: OwnerConsumerAndHostPolicyReadbackEvidenceUnverified
+execution_scope: github_and_structured_host_readonly
+actor: devforge_orchestration_readonly
+provider_process_started: false
+local_api_call_issued: false
+host_configuration_edit_issued: false
+host_service_reload_issued: false
+host_shell_or_script_issued: false
+host_scope_mutation_issued: false
+product_code_mutation_issued: false
+canonical_main_mutation_issued: false
+test_execution_issued: false
+remote_docs_persistence_pending_receipt: true
+observed:
+  windows_host_version: "0.24.1.dev791+g5d9286b22"
+  direct_codex_builtin_action_count: 1
+  direct_codex_readiness_verified: false
+  canonical_firewall_verified: false
+  canonical_firewall_reason: local_api:direct_codex_containment_unproven
+  sandbox_verified: true
+  audit_verified: true
+  devforge_runtime_builtin_action_count: 5
+  service_running: true
+missing:
+  - ConsumerDependencyOwnerGateUnresolved
+  - PolicyEffectiveStateUnverified
+  - ExternalAliasOrNegativeProbeUnproven
+  - HostMutationTransportUnproven
+  - NoSpawnOrWorkspaceProofUnavailable
+source_evidence:
+  ref: docs/execution/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-s01-readonly-evidence-20261008.md
+  blob_sha: c788625d013a2057bbc0708c2fbd1ba8ccee0784
+verified_scope:
+  requested_effects_are_readonly: true
+  host_never_claimed_physically_unreachable: true
+  negative_call_not_performed: true
+  S01_completion_not_claimed: true
+  owner_disposition: DecisionRequired/Blocked

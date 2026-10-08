@@ -1,0 +1,52 @@
+schema_version: "1.0"
+kind: devforge_development_continuation_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-029-direct-codex-host-owned-disablement-negative-reachability-v1
+run_id: RUN-PR029-S01-001
+slice_id: S01
+plan_revision: 2
+plan_blob_sha: 300b1adc237dd4220d866ecdeb4047880d203874
+slice_set_ref: docs/execution/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-plan-r2-slices.yaml
+slice_set_before_sha: 539b385615c1d2c2bb29c0bdd7af60bce45e6f53
+task_before_sha: 032dd871e080bf5e4bd683451348fb907939dcfa
+run_state: BLOCKED
+slice_state: pending
+completion_receipt: null
+verified_s01_completion: false
+last_attempt_id: ATTEMPT-PR029-S01-001
+source_refs:
+  evidence: docs/execution/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-s01-readonly-evidence-20261008.md
+  evidence_blob_sha: c788625d013a2057bbc0708c2fbd1ba8ccee0784
+  attempt_receipt: docs/execution/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-s01-attempt-001-receipt.yaml
+  attempt_receipt_blob_sha: 0e548ddd5f9452738909b6d2dc7f7de1181b6837
+  run_record: docs/execution/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-s01-run-001.yaml
+  run_blob_sha: 92e3d8dae08645a6cd39ff4da91b0ffc60f2a2cb
+  ledger: docs/execution/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-s01-run-001-ledger.yaml
+  ledger_blob_sha: 1b6ccbeb73e5deba368904a6ad1e5f6077fe258b
+  finalization: docs/execution/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-s01-run-001-finalization.yaml
+owner_gates:
+  consumer_migration_or_HOLD: ConsumerDependencyOwnerGateUnresolved
+  effective_policy_attestation: PolicyEffectiveStateUnverified
+  all_alternate_routes_and_safe_negative_probe: ExternalAliasOrNegativeProbeUnproven
+  Host_owner_mutation_transport: HostMutationTransportUnproven
+  process_creation_and_workspace_audit: NoSpawnOrWorkspaceProofUnavailable
+  canonical_firewall: FAIL
+  Sandbox_Audit: PASS
+next:
+  disposition: DecisionRequired/Blocked
+  actor: owner
+  executable_successor_command: null
+  recommended_action: supply_secret_free_Host_policy_and_consumer_attestation_packet
+  automatic_retry_allowed: false
+  pending_S01_must_be_revalidated: true
+guard:
+  no_local_api_call: true
+  no_host_write_or_restart: true
+  no_process_execution: true
+  no_product_code_mutation: true
+  no_canonical_main_mutation: true
+  no_PR014_PR019_DevForge_mutation: true
+  no_S02_S03_S04_admission: true
+  no_S01_completion_claim: true
+  no_replay_of_blocked_run: true
+  mrs01: HOLD

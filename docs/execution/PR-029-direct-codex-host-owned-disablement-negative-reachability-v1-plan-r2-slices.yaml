@@ -100,11 +100,18 @@ slices:
         - run_finalization_and_exact_task_docs_checkpoint_readback
     checkpoint:
       required: true
-    run_refs: []
+    run_refs: [RUN-PR029-S01-001]
+    blocked_run_refs: [docs/execution/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-s01-run-001-finalization.yaml]
+    latest_blocked_checkpoint: docs/checkpoints/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-s01-blocked-owner-attestation-20261008.yaml
     completion_receipt_ref: null
 execution_state:
   current_slice: S01
   current_slice_state: pending
+  latest_run_state: BLOCKED
+  last_blocker: OwnerConsumerAndHostPolicyReadbackEvidenceUnverified
+  owner_decision: DecisionRequired/Blocked
+  owner_attestation_pending: true
+  latest_run_finalization_ref: docs/execution/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-s01-run-001-finalization.yaml
   completed_current_plan_slices: []
   pending_current_plan_slices: [S01]
   future_slices_not_compiled: [S02, S03, S04]
