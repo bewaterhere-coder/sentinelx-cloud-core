@@ -1,7 +1,7 @@
 schema_version: "1.1"
 kind: devforge_task_scoped_bootstrap_execution_override
 task_id: PR-020-durable-async-operation-runtime-outcome-readback-v1
-state: active
+state: revoked
 mode: implementation_bootstrap
 
 authority:
@@ -81,8 +81,22 @@ receipt:
 admission:
   resolver_contract: system/task-scoped-bootstrap-execution-override-contract.md
   resolver_version: "1.1"
-  disposition: BootstrapOverrideAdmitted
-  reason_code: null
+  disposition: BootstrapOverrideRevoked
+  reason_code: RequirementAndPlanSupersededByMinimalRuntimeHold
   project_binding_mutated: false
   implementation_execution_authorized_by_this_command: false
   provider_fallback: false
+
+revocation:
+  source_command: "#开发 PR-020-durable-async-operation-runtime-outcome-readback-v1 修订当前方案"
+  explicit_authority: user_requested_owner_task_HOLD
+  reason: PR021_MinimalRuntime_and_PR027_OwnerGate_HOLD
+  original_admitted_blob_sha: fbe24326a67fd4620e19b63123b38c4f1fe98c6f
+  original_admission_receipt_sha: 649747ff84130a7e60b93da15c20b77e917c8bd9
+  original_admission_historical_only: true
+  revoked_by_owner_task_revision: 2
+  original_plan_revision: 4
+  target_direct_codebuddy_start_allowed: false
+  source_slice_execution_allowed: false
+  bootstrap_not_reissued_by_plan_review: true
+  revocation_receipt_ref: docs/checkpoints/PR-020-durable-async-operation-runtime-outcome-readback-v1-bootstrap-revocation-20261008.yaml
