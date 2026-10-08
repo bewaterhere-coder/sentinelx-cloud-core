@@ -1,0 +1,47 @@
+schema_version: "1.0"
+kind: devforge_plan_review_approval_receipt
+task_id: PR-029-direct-codex-host-owned-disablement-negative-reachability-v1
+project_id: sentinelx-cloud-core
+source_command: "#开发评审 PR-029-direct-codex-host-owned-disablement-negative-reachability-v1"
+review:
+  ref: docs/reviews/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-plan-review-r2.md
+  blob_sha: 17d16ceabb9f6dd1a5fdfbdd461632577669ad81
+  decision: Approved
+  approval_scope: readonly_S01_only
+  reviewed_requirement_revision: 1
+  reviewed_task_before_blob_sha: 983c9ccba0b94e2f21088f3e6b9763289f9ccc82
+  reviewed_plan_revision: 2
+  reviewed_plan_blob_sha: 300b1adc237dd4220d866ecdeb4047880d203874
+execution_slice_set:
+  ref: docs/execution/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-plan-r2-slices.yaml
+  blob_sha: 539b385615c1d2c2bb29c0bdd7af60bce45e6f53
+  slices: [S01]
+  initial_state: pending
+  source_plan_revision: 2
+transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  original_pr: 29
+  original_branch: task/direct-codex-host-owned-disablement-negative-reachability-v1
+  reviewed_head: 266bfc8ff201a75aed4ce8c5f15994331c366db8
+  canonical_main_sha: 2e5c69a112323867ee01783521554c43ebd731be
+  devforge_main_sha: 047df4f1c45ce9099ec112017063751243c78d7b
+gates:
+  plan_approved: true
+  requirement_ready: true
+  implementation_authorized: true
+  implementation_scope: readonly_S01_evidence_only
+  host_mutation_authorized: false
+  product_mutation_authorized: false
+  direct_codex_execution_authorized: false
+  local_api_call_authorized: false
+  service_reload_authorized: false
+  successor_S02_S03_S04_admitted: false
+  task_acceptance_authorized: false
+  mrs01_program_exit: HOLD
+verified_admission:
+  exact_plan_review_and_slice_lineage_compiled: true
+  current_requirement_semantics_preserved: true
+  missing_owner_or_host_evidence_results_in_blocked_disposition: true
+  completed_s01_never_proves_full_requirement_acceptance: true
+  no_live_host_or_local_api_call_performed_by_review: true
+  no_product_or_main_mutation_performed_by_review: true

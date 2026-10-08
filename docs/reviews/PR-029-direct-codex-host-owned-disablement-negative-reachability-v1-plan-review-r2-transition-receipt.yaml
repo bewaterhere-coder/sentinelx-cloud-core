@@ -1,0 +1,64 @@
+schema_version: "1.1"
+kind: devforge_artifact_state_transition_receipt
+task_id: PR-029-direct-codex-host-owned-disablement-negative-reachability-v1
+project_id: sentinelx-cloud-core
+source_command: "#开发评审 PR-029-direct-codex-host-owned-disablement-negative-reachability-v1"
+from_stage: plan_review
+to_stage: implementation
+transition_rule: plan_review_approved_with_current_slice_set
+verified: true
+review_decision: Approved
+review_approval_scope: readonly_S01_only
+runtime:
+  repository: bewaterhere-coder/DevForge
+  revision: 047df4f1c45ce9099ec112017063751243c78d7b
+  review_contract_version: "1.3"
+  slice_contract_version: "1.1"
+  resolver_contract_version: "1.1"
+lineage:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 29
+  original_branch: task/direct-codex-host-owned-disablement-negative-reachability-v1
+  canonical_main_sha: 2e5c69a112323867ee01783521554c43ebd731be
+  head_before_review: 266bfc8ff201a75aed4ce8c5f15994331c366db8
+  requirement_revision: 1
+  plan_revision: 2
+  plan_ref: docs/plans/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-plan.md
+  plan_blob_sha: 300b1adc237dd4220d866ecdeb4047880d203874
+  task_before_digest: 983c9ccba0b94e2f21088f3e6b9763289f9ccc82
+  task_after_digest: 032dd871e080bf5e4bd683451348fb907939dcfa
+  review_ref: docs/reviews/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-plan-review-r2.md
+  review_blob_sha: 17d16ceabb9f6dd1a5fdfbdd461632577669ad81
+  approval_receipt_ref: docs/reviews/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-plan-review-r2-approval-receipt.yaml
+  approval_receipt_sha: 30ee774305d5fa632fa600bc3564399d43fb22cf
+  slice_set_ref: docs/execution/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-plan-r2-slices.yaml
+  slice_set_sha: 539b385615c1d2c2bb29c0bdd7af60bce45e6f53
+state_after:
+  stage: implementation
+  requirement_ready: true
+  plan_approved: true
+  implementation_authorized: true
+  implementation_scope: readonly_S01_evidence_only
+  current_slice: S01
+  current_slice_state: pending
+  completed_slices: []
+  pending_slices: [S01]
+  next_expected_actor: implementer
+  canonical_next_action: "#开发执行 PR-029-direct-codex-host-owned-disablement-negative-reachability-v1"
+  acceptance_approved: false
+  completion_verified: false
+security:
+  host_mutation_authorized: false
+  product_mutation_authorized: false
+  direct_codex_invocation_authorized: false
+  negative_local_api_call_authorized: false
+  service_reload_authorized: false
+  canonical_main_mutation_authorized: false
+  no_other_task_PR_or_Host_write: true
+  future_S02_S03_S04_admitted: false
+  no_automatic_successor_slice: true
+  mrs01_program_exit: HOLD
+  mrs02_admitted: false
+completion_guard:
+  exact_plan_review_slice_task_receipt_readback_required: true
+  s01_not_executed_by_this_review: true

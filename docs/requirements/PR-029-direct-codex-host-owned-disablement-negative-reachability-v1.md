@@ -5,31 +5,38 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 1
 development:
-  stage: plan_review
+  stage: implementation
   gates:
     requirement_ready: true
-    plan_approved: false
+    plan_approved: true
     acceptance_approved: false
     completion_verified: false
   plan_revision: 2
-  latest_plan_review: pending_round_2
+  latest_plan_review: approved_round_2
   latest_rejected_plan_review: rejected_round_1
-  latest_reviewed_plan_sha: 17c3846423bc40b9e836f8713e5ffa2f20a55376
+  latest_reviewed_plan_sha: 300b1adc237dd4220d866ecdeb4047880d203874
   plan_remediation_required: false
   plan_remediation_completed_round: 1
-  plan_remediation_disposition: revised_plan_r2_pending_review
+  plan_remediation_disposition: revised_plan_r2_approved_readonly_s01
   proposed_current_plan_slices: [S01]
-  executable_slices_admitted: []
-  plan_review_blocking_findings: [R1-F01, R1-F02, R1-F03, R1-F04]
-  implementation_authorized: false
+  executable_slices_admitted: [S01]
+  implementation_scope: readonly_S01_evidence_only
+  current_slice_state: pending
+  product_code_mutation_authorized: false
+  service_reload_authorized: false
+  local_api_call_authorized: false
+  plan_review_blocking_findings: []
+  historical_rejected_findings: [R1-F01, R1-F02, R1-F03, R1-F04]
+  external_owner_dependency_gate: pending_S01_readback
+  implementation_authorized: true
   host_policy_mutation_authorized: false
   direct_codex_execution_authorized: false
   safety_negative_call_authorized: false
   canonical_main_mutation_authorized: false
-  next_expected_actor: reviewer
-  canonical_next_action: "#开发评审 PR-029-direct-codex-host-owned-disablement-negative-reachability-v1"
-  current_slice: null
-  pending_slices: []
+  next_expected_actor: implementer
+  canonical_next_action: "#开发执行 PR-029-direct-codex-host-owned-disablement-negative-reachability-v1"
+  current_slice: S01
+  pending_slices: [S01]
   completed_slices: []
   implementation_execution_complete: false
   material_architecture_decision: owner_selected_host_owned_direct_codex_policy_disable
@@ -43,10 +50,15 @@ transport:
   branch: task/direct-codex-host-owned-disablement-negative-reachability-v1
   base_branch: main
 artifacts:
+  plan_r2_slice_set: docs/execution/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-plan-r2-slices.yaml
+  plan_r2_slice_set_blob_sha: 539b385615c1d2c2bb29c0bdd7af60bce45e6f53
+  latest_plan_review_approval_receipt: docs/reviews/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-plan-review-r2-approval-receipt.yaml
   latest_plan_remediation: docs/checkpoints/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-plan-remediation-r1-20261008.md
   latest_plan_remediation_transition_receipt: docs/reviews/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-plan-remediation-r1-transition-receipt.yaml
-  latest_plan_review: docs/reviews/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-plan-review-r1.md
-  latest_plan_review_transition_receipt: docs/reviews/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-plan-review-r1-transition-receipt.yaml
+  latest_rejected_plan_review: docs/reviews/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-plan-review-r1.md
+  latest_plan_review: docs/reviews/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-plan-review-r2.md
+  latest_rejected_plan_review_transition_receipt: docs/reviews/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-plan-review-r1-transition-receipt.yaml
+  latest_plan_review_transition_receipt: docs/reviews/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-plan-review-r2-transition-receipt.yaml
   provisional_intake: docs/intake/direct-codex-host-owned-disablement-negative-reachability-v1.md
   requirement_refinement: docs/reviews/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-requirement-refinement-r1.md
   requirement_ready_receipt: docs/checkpoints/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-requirement-ready-r1-receipt.yaml
