@@ -1,0 +1,82 @@
+schema_version: "1.0"
+kind: devforge_merge_finalization
+project_id: sentinelx-cloud-core
+task_id: PR-010-canonical-repository-mutation-firewall-v1
+source_command: "#开发完成 PR-010-canonical-repository-mutation-firewall-v1"
+lineage:
+  requirement_revision: 2
+  plan_revision: 4
+  acceptance_revision: 1
+  acceptance_ref: docs/reviews/PR-010-canonical-repository-mutation-firewall-v1-acceptance-r1.md
+  acceptance_checkpoint: docs/checkpoints/PR-010-canonical-repository-mutation-firewall-v1-acceptance-r1-approved-20261003.yaml
+transport:
+  type: github-pr
+  pr_number: 10
+  branch: task/canonical-repository-mutation-firewall-v1
+  base_branch: main
+  accepted_head: 265f4b8bf10f7328de0a2440b415ae5fd764f961
+  integration_product_head: ee116655cea374bea4a666eecfc7b7a3fbca6fea
+  expected_base_head: df9252fd4305eed361d8dc84e04da90222cd622e
+  draft: false
+  mergeable: true
+  unresolved_review_threads: 0
+integration_reconciliation:
+  main_merge_commit: d53aca230b8edfa6712b0d55048097eb1ee46357
+  original_conflict:
+    path: src/sentinelx_core/handlers/__init__.py
+    resolution: compose_pr007_runtime_wiring_with_pr010_firewall_readiness
+  first_verifier:
+    run_id: 37210787982
+    conclusion: failure
+    finding: mutation_scope_effect_unknown
+  repair:
+    commit: ee116655cea374bea4a666eecfc7b7a3fbca6fea
+    classification: integration_compatibility_repair
+    behavior: mutation_scope lifecycle is provider-state mutation, not repository checkout mutation
+    repository_effect: non_repository_mutation
+    firewall_coverage: not_required
+    requirement_or_plan_semantics_changed: false
+  repaired_verifier:
+    run_id: 37211123556
+    conclusion: success
+verification:
+  acceptance_approved: true
+  integration_verifier_run_id: 37211123556
+  integration_verifier_result: success
+  s05_windows_push_run_id: 37211123564
+  s05_windows_push_result: success
+  s05_windows_pr_run_id: 37211126824
+  s05_windows_pr_result: success
+  ci_run_id: 37211126841
+  ci_result: success
+  macos_run_id: 37211126829
+  macos_result: success
+  s01_s04_exact_head_regressions: success
+  canonical_state_verified: true
+  plan_execution_state_verified: true
+  evidence_verified: true
+  transport_preconditions_verified: true
+finalization:
+  ready_for_merge: true
+  stage: accepted
+  completion_verified: false
+  merge_pending: true
+  next_expected_actor: integration
+safety:
+  hub_modified: false
+  canonical_local_checkout_mutated: false
+  canonical_main_mutated_before_merge: false
+  permission_expansion_used: false
+  allowlist_expansion_used: false
+  operator_unrestricted_used: false
+  unrestricted_fallback_used: false
+  requirement_semantics_rewritten: false
+  done_claimed_before_integration: false
+post_merge_requirement:
+  integration_receipt_required: true
+  authoritative_done_requires_main_readback: true
+  transition: accepted_to_done_only_after_verified_merge_and_completion_state_persistence
+freshness:
+  generated_date: "2026-10-04"
+  devforge_main: c6972894f187da7d41e384bfbc663a1ae06d1e35
+  merge_finalization_contract: v1.1

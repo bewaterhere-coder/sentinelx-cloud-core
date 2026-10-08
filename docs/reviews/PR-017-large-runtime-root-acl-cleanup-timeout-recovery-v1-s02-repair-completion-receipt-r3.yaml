@@ -1,0 +1,37 @@
+schema_version: "1.0"
+kind: devforge_slice_repair_completion_receipt
+task_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
+slice_id: S02
+receipt_revision: 3
+source_command: "#开发执行 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1"
+decision: CompletedAfterRepair
+lineage:
+  requirement_revision: 1
+  plan_revision: 1
+  invalidation_ref: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-live-invalidation-r2.md
+  prior_repair_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-repair-completion-receipt-r2.yaml
+  repair_candidate: a214921cd34fcab5874696f45281306622a73421
+verification:
+  devforge_runtime_terminalize_routes_to_canonical_windows_cleanup: pass
+  no_runtime_authority_store_fast_path_preserved: pass
+  durable_scope_binding_preserved: pass
+  no_second_executor_or_scope_store: pass
+  main_test: pass
+  windows_incident_security_regression: pass
+  windows_regression_coverage: pass
+  verification_materialization: pass
+  windows_process_firewall: pass
+  offline_node_npm: pass
+  devforge_runtime_verification: pass
+  macos_regression: pass
+live_gate:
+  repaired_candidate_activated: false
+  preserved_revoked_scope: mss_JB_VJlJg4Np6LdrxgKd_fCw9
+  required_next_evidence: repaired candidate must terminalize this same revoked scope through devforge_runtime and authoritative OS cleanup before any new PowerShell/Unity scope
+postconditions:
+  s01_state: completed
+  s02_state: completed
+  s03_state: blocked
+  current_slice: S03
+  task_completion_verified: false
+  acceptance_approved: false

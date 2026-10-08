@@ -1,0 +1,80 @@
+schema_version: "1.0"
+kind: devforge_completion_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-015-direct-codex-development-host-invocation-bridge-v1
+source_command: "#开发完成 PR-015-direct-codex-development-host-invocation-bridge-v1"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  version: "2.93.0"
+  main_sha: 041f390592a78c13f5eabdc542735dc72485e0ef
+  merge_finalization_contract:
+    version: "1.1"
+    blob_sha: 6dfc6d6c7960bad2179b93f164c0bf732d99ffd6
+  durable_authorization_contract:
+    version: "1.2"
+    blob_sha: 9e67f1de99f1f32274f52ac3f3785bf91074319a
+
+lineage:
+  requirement_revision: 2
+  plan_revision: 6
+  acceptance_revision: 8
+  completion_revision: 1
+  acceptance_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r8.md
+  acceptance_transition_receipt: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r8-transition-receipt.yaml
+  finalization_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-completion-finalization-r1.yaml
+  integration_receipt_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-integration-receipt-r1.yaml
+  integration_receipt_blob_sha: 4d014305b871f98f60634feafbc384cdf6c274d1
+  completion_review_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-completion-r1.md
+  completion_review_blob_sha: c8a9f1bf38ca51f3e75a936fd59ddc2c20b77567
+
+transport:
+  type: github-pr
+  pr_number: 15
+  branch: task/direct-codex-development-host-invocation-bridge-v1
+  finalized_head: a5cec60d7315418509e3bd9a4d1a4f39eba9fb56
+  base_before_merge: 018b78ca20984176d53fbe90039dc795a7f2742f
+  merge_commit: c55c43a183de35e1f12dbe1d7f54c165f4eb2363
+  integration_receipt_commit: 8d810dc307d28c3e0e9c32b22389834511d1d254
+
+integration:
+  pr_merged: true
+  pr_state: closed
+  main_merge_readback_verified: true
+  merge_tree_equals_finalized_head: true
+  integration_receipt_read_back_verified: true
+
+verification:
+  acceptance_r8_approved: true
+  exact_product_candidate: 7adfa7a74c437ccc29cdcd7078373c6e8d224904
+  finalized_head_workflows_success: 13
+  finalized_head_workflows_failed: 0
+  live_direct_codex_readiness_verified: true
+  live_fixture_persisted_head: 900e29a349a8e65d54ab1cad45507c88641d59d3
+  pr013_provider_admission_verified: true
+  pr013_s03_executed: false
+  no_product_code_change_after_verified_candidate: true
+
+authorization:
+  authorization_id: AUTH-PR-015-DIRECT-CODEX-BRIDGE-V1
+  prior_state: active
+  terminal_state: exhausted
+  exhaustion_reason: task_done
+
+safety:
+  hub_modified: false
+  canonical_local_checkout_mutated: false
+  permission_or_allowlist_expansion_used: false
+  operator_unrestricted_used: false
+  unrestricted_fallback_used: false
+  implementation_replayed: false
+  replacement_development_pr_created: false
+  workspace_gc_performed: false
+
+postconditions:
+  stage: done
+  acceptance_approved: true
+  integration_verified: true
+  completion_verified: true
+  next_expected_actor: none
+  no_receipt_no_completion_claim: satisfied

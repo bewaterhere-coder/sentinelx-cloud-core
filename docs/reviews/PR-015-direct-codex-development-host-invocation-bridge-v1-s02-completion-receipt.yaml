@@ -1,0 +1,68 @@
+schema_version: "1.0"
+kind: devforge_slice_completion_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-015-direct-codex-development-host-invocation-bridge-v1
+slice_id: S02
+source_command: "#开发执行 PR-015-direct-codex-development-host-invocation-bridge-v1"
+created_at: "2026-10-07"
+
+authority:
+  durable_authorization: AUTH-PR-015-DIRECT-CODEX-BRIDGE-V1
+  authorization_state: active
+  authorization_revision: 2
+  bootstrap_override: active
+  effective_target: direct:codebuddy
+  persistent_project_binding: direct/codex
+  plan_revision: 2
+  plan_blob_sha: b1414f58e31e69fd5718479d04eb6b7e9e8475bd
+
+result:
+  slice_state: completed
+  implementation_landed: true
+  product_candidate_sha: 9803afae1fe5b6746f3f87f968d213bf30ee042e
+  completed_slice_count: 2
+  one_execute_one_slice_preserved: true
+  verified_side_effect_replay: none
+
+transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  canonical_pr: 15
+  canonical_branch: task/direct-codex-development-host-invocation-bridge-v1
+  pr_head_before_mutation: b581b82fbef83ea53ed8e228de1907836aaf9179
+  canonical_main_at_execution: 018b78ca20984176d53fbe90039dc795a7f2742f
+  replacement_transport_created: false
+  remote_readback_required_before_completion_claim: true
+
+verification_evidence:
+  focused_suite: tests/test_direct_codex_execution.py + tests/test_user_process.py
+  focused_result: 29 passed in 7.88s (test_direct_codex_execution 25, test_user_process 4)
+  regression_subset: tests/test_policy.py + tests/test_user_scoped_git.py + tests/test_direct_codex_provider.py: 81 passed; only the documented symlink-privilege test failed (WinError 1314, pre-existing host limitation, not a regression)
+  regression_subset_passed: true
+  physical_windows_containment_proof: re-verified on this host
+  physical_windows_containment_proof_owner: S02 provider-enforced boundary + OS-visible integrity/session read-back
+  deployed_live_activation_proof_owner: acceptance
+
+correction:
+  correction_pass: "2026-10-07 (S02 wrap-up / 收口)"
+  scope: S02 wrap-up only; S03 explicitly out of scope and not started
+  fixes:
+    - user_process reuses user_git.active_user_base_environment (CreateEnvironmentBlock) for a real active-user child environment, merged under the provider-owned request.environment and never returned or persisted
+    - policy.codex_package pinned to @openai/codex and removed from operator-configurable fields
+    - removed the untracked .pytest-tmp scratch directory and local test logs from the workspace
+    - verified no line-ending-only churn: git diff --ignore-cr-at-eol is identical to the plain diff stat
+
+guard:
+  acceptance_claim: false
+  completion_claim: false
+  gate_transition: none
+  requirement_change: false
+  plan_change: false
+  permission_expansion: false
+  write_scope_expansion: false
+  provider_fallback: false
+  no_receipt_no_completion_claim: honored
+
+next_action:
+  canonical_command: "#开发执行 PR-015-direct-codex-development-host-invocation-bridge-v1"
+  next_slice: S03
+  note: S03 is deferred; this pass wraps up S02 only and does not start S03.

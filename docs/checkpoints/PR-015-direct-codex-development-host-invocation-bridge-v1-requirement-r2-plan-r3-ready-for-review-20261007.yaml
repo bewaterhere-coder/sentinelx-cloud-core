@@ -1,0 +1,73 @@
+schema_version: "1.0"
+kind: devforge_requirement_revision_planning_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-015-direct-codex-development-host-invocation-bridge-v1
+source_command: "#开发 PR-015-direct-codex-development-host-invocation-bridge-v1 修订当前方案：采用 provider-owned deterministic commit-on-publish ..."
+runtime:
+  repository: bewaterhere-coder/DevForge
+  version: "2.81.0"
+  revision: cf995df50d392aafdba7d48d27fb5dacab492ecb
+transport:
+  type: github-pr
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 15
+  branch: task/direct-codex-development-host-invocation-bridge-v1
+  base_branch: main
+  canonical_main: 018b78ca20984176d53fbe90039dc795a7f2742f
+  head_after_planning_artifacts_before_checkpoint: 446800cacaca25ef160da0d062176c0b94fd4e55
+  transport_drift: false
+decision:
+  material_decision: provider_owned_deterministic_commit_on_publish
+  decided_by: human
+  requirement_revision: 2
+  plan_revision: 3
+  current_stage: plan_review
+  plan_approved: false
+  implementation_authorized: false
+artifacts:
+  requirement:
+    ref: docs/requirements/PR-015-direct-codex-development-host-invocation-bridge-v1.md
+    blob_sha: f7ebfc6c1a46be0b195ff6d1f0d8ca55bcee7ae4
+  requirement_change_impact:
+    ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-requirement-r2-impact-analysis.md
+    blob_sha: 119be4af5beb6b5db6ed1bf316dcce37d4b156a9
+  plan:
+    ref: docs/plans/PR-015-direct-codex-development-host-invocation-bridge-v1-plan.md
+    blob_sha: 6552329d7fc07526569956db8ebee477fcd08af3
+  slice_impact:
+    ref: docs/execution/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-r3-slice-impact.yaml
+    blob_sha: ac145a537bef149ddb03f01efe25677f049d0877
+  acceptance_invalidation:
+    ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r1-invalidation-r2.md
+    blob_sha: e455a27494020e453ce485454470b1ae89d6d9ac
+  durable_authorization:
+    ref: docs/authorizations/PR-015-direct-codex-development-host-invocation-bridge-v1-development-authorization.yaml
+    blob_sha: 00b87407ddfcfd9bdda27b3b8c918f10514a7735
+    lifecycle: active
+    revision: 4
+    plan_binding: pending_review
+evidence_disposition:
+  retained_without_replay: [S01, S02, S03]
+  prior_plan_r2_current_authority: invalidated
+  prior_slice_set_current_authority: invalidated
+  prior_acceptance_r1_current_authority: invalidated
+  formal_plan_r3_slice_set: not_compiled_before_review
+  proposed_delta: S04
+bootstrap:
+  prior_codebuddy_override: expired
+  new_r3_override: not_issued
+  explicit_override_required_after_plan_approval: true
+security:
+  project_binding: direct/codex
+  replacement_transport: forbidden
+  generic_git_or_shell: forbidden
+  force_push: forbidden
+  canonical_checkout_mutation: forbidden
+  permission_expansion: forbidden
+postconditions:
+  requirement_durable: true
+  plan_durable: true
+  transport_preserved: true
+  stage: plan_review
+  next_expected_actor: reviewer
+  canonical_next_action: "#开发评审 PR-015-direct-codex-development-host-invocation-bridge-v1"

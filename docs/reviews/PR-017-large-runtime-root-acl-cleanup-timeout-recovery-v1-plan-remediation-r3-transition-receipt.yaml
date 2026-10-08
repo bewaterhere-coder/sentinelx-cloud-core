@@ -1,0 +1,75 @@
+schema_version: "1.0"
+kind: devforge_artifact_state_transition_receipt
+task_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
+source_command: "#开发计划修复 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1"
+
+transition:
+  from_stage: plan_review_rejected
+  to_stage: plan_review
+  rule: rejected_plan_findings_remediated_without_requirement_semantic_change
+
+runtime:
+  devforge_repository: bewaterhere-coder/DevForge
+  devforge_main_sha: "15f6e62263931531ab9a2298766fee43611afcbc"
+
+lineage:
+  requirement_revision: 1
+  requirement_blob_before: "413dd59fe55258d37853141efacc431434ccf9a6"
+  requirement_blob_after: "6fd4d1cbe0233368f6e33a3c9be3b5b9236a9eea"
+  rejected_plan_revision: 2
+  rejected_plan_blob_sha: "350b3c07778f5a6f5bd1eb78bf50e375fde8a94e"
+  rejected_review_ref: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-review-r2.md
+  rejected_review_blob_sha: "8edf8cc863f70ee0c66e9255c74a23d3b06fe322"
+  revised_plan_revision: 3
+  revised_plan_blob_sha: "4c73e1b33489c5965ff2fd42156e680b74a6887e"
+  remediation_checkpoint_ref: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-remediation-r3-20261008.yaml
+  remediation_checkpoint_blob_sha: "8fa991292e042843e376def656d84ef44485a85b"
+
+findings:
+  PR018DiagnosticSeamIncludedInIntegrationPayload:
+    status: addressed
+    resolution: preserve current PR-017 scoped_script.py blob 4580475ba9bd8ba5301b579ee11a584abbd75d4b
+  PR018DiagnosticMethodsEmbeddedInWindowsSandboxBlob:
+    status: addressed
+    resolution: use precomputed production-subset blob 1e662eba2dbc61825bc874e102a735e7a9d9a179
+
+production_subset:
+  projected_file_count: 11
+  derived_windows_sandbox_blob: "1e662eba2dbc61825bc874e102a735e7a9d9a179"
+  derived_windows_test_blob: "926900b91055707528a6cfdd5fb131d11abdfc89"
+  scoped_script_preserved_blob: "4580475ba9bd8ba5301b579ee11a584abbd75d4b"
+  implementation_inference_required: false
+
+preserved_slice_lineage:
+  s01:
+    state: completed
+    replay: forbidden
+  s02:
+    state: completed
+    replay: forbidden
+  s03:
+    r1_state: blocked_historical
+    r3_recompile_pending: true
+
+state_after:
+  stage: plan_review
+  plan_revision: 3
+  plan_approved: false
+  implementation_authorized: false
+  acceptance_approved: false
+  completion_verified: false
+  next_expected_actor: reviewer
+
+safety:
+  canonical_main_mutated: false
+  product_code_mutated: false
+  tests_mutated: false
+  host_policy_mutated: false
+  slice_set_mutated: false
+  pr017_s01_replayed: false
+  pr017_s02_replayed: false
+  pr018_task_state_mutated: false
+  self_approval_performed: false
+
+completion_guard:
+  canonical_next_action: "#开发评审 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1"

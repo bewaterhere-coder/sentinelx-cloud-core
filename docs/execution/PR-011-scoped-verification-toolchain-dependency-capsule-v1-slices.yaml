@@ -1,0 +1,261 @@
+schema_version: "1.1"
+kind: devforge_execution_slice_set
+identity:
+  task_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1
+  slice_set_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-r6
+plan:
+  ref: docs/plans/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan.md
+  revision: 6
+  blob_sha: fc59575081f3d35b7195711961ed387bc7a56fb2
+  requirement_revision: 2
+review:
+  ref: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-review-r6.md
+  blob_sha: 7c166bae043228f4c6e2c8bb643cfe4b3fc2fa78
+  decision: Approved
+repository_baseline:
+  main_sha: e7064c9bf4fcd15bdb6f5a2678414210c01d1c00
+  canonical_dependencies:
+    pr007: merged
+    pr010: merged
+    pr012: merged
+runtime_provenance:
+  devforge_version: "2.51.0"
+  devforge_main_sha: 7e5a098473d89f88a69066a9bc88d1213b2f7e49
+  devforge_runtime_blob_sha: 54eb9e4f0c79620357bc2cf1b8d06d6af9771d6d
+prior_slice_set:
+  plan_revision: 4
+  blob_sha: b0e92968c7a082cba6dce251bc3ff5ba50b334e8
+  disposition: stale_non_authorizing_after_real_host_disproof
+impact_analysis:
+  ref: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-r5-real-host-descendant-process-impact-analysis.md
+  blob_sha: c3c35ab25448621a4136d736d1aa515dd2dce3ed
+implementation_entry_guard:
+  required_before_each_pending_slice: true
+  rules:
+    - re-read current remote main and PR-011 transport head before product mutation
+    - re-read exact current Plan R6 and this Slice Set before execution
+    - preserve canonical PR-010 repository firewall semantics
+    - preserve canonical PR-012 explicit execution_profile=scoped_mutation semantics
+    - preserve the single scoped executor, MutationScopeStore, AppContainer/Job sandbox and MutationAuditJournal authority
+    - fail closed on material Requirement, Plan, repository, transport, Host runtime or security-boundary drift
+    - do not publish the dirty diagnostic S04 workspace wholesale
+    - preserve one explicit #开发执行 invocation to at most one Slice
+historical_evidence:
+  S02:
+    prior_state: completed
+    current_authority: partial_historical_only
+    completion_receipt_ref: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s02-completion-receipt.yaml
+    preserved:
+      - source and dependency capsule materialization
+      - audit binding and pre-SPAWN integrity checks
+      - terminal cleanup and residual-authority evidence
+      - provider stores remain non-writable
+    invalidated:
+      - protected ancestor ACL widening for provider-toolchain reachability
+  S03:
+    prior_state: completed
+    current_authority: partial_historical_only
+    completion_receipt_ref: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s03-completion-receipt.yaml
+    preserved:
+      - environment and credential sanitization
+      - exact-workspace cwd confinement
+      - workspace-local cache/temp/home composition
+      - sealed verification evidence and post-run integrity contracts
+      - unaffected unprofiled runtime regression evidence
+    invalidated:
+      - real-Host descendant process completion authority
+      - real Node/npm descendant execution completion authority
+downstream_integration_evidence:
+  owner: bewaterhere-coder/ChatGPTControlShell#15
+  authority: separate_task_only
+  required_for_pr011_acceptance_or_completion: false
+  implementation_slice: false
+
+slices:
+  - slice_id: S01
+    objective: Provider-owned verification policy and pure integrity/admission contracts for Node/npm verification.
+    depends_on: []
+    state: completed
+    evidence_disposition: preserved_no_replay
+    imported_from_plan_revision: 3
+    scope:
+      refs:
+        - src/sentinelx_core/policy.py
+        - src/sentinelx_core/verification_profile.py
+        - config.example.windows.yaml
+    completion_receipt_ref: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s01-completion-receipt.yaml
+    checkpoint:
+      required: false
+      reason: imported_verified_completion
+
+  - slice_id: S02R
+    objective: Repair provider-toolchain minimum read/execute authority without protected/system ancestor ACL widening.
+    depends_on: [S01]
+    state: completed
+    evidence_disposition: completed_plan_r6_real_host_and_ci_verified
+    scope:
+      refs:
+        - src/sentinelx_core/windows_mutation_sandbox.py
+        - tests/test_verification_windows_materialization.py
+        - focused stable-toolchain/AppContainer ACL tests
+        - docs/scoped-verification-node-npm-v1.md
+      authorized_changes:
+        - exact admitted toolchain root may receive transient AppContainer RX
+        - protected/system ancestors must not be rewritten merely for toolchain reachability
+        - fail closed if existing ancestor traversal is insufficient
+        - exact transient toolchain grant must be removed at terminalization
+      forbidden:
+        - protected ancestor ACL widening
+        - toolchain write authority
+        - canonical repository authority
+        - generic runtime_read_roots substitution for profile admission
+        - replay of unaffected S02 side effects
+    verification:
+      required:
+        - C:\Program Files or equivalent protected parent ACL remains unchanged
+        - exact admitted toolchain root receives transient RX only
+        - toolchain write attempts fail
+        - provider source/capsule stores remain non-writable
+        - insufficient traversal fails closed
+        - terminalization removes transient toolchain authority
+        - unaffected S02 materialization/integrity/audit regressions pass
+    checkpoint:
+      required: true
+    run_refs:
+      - docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s02r-completion-20261006.yaml
+    completion_receipt_ref: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s02r-completion-receipt.yaml
+
+  - slice_id: S03R
+    objective: Repair real-Host descendant-process creation inside the existing AppContainer/Job scoped execution path without containment widening.
+    depends_on: [S02R]
+    state: completed
+    evidence_disposition: completed_plan_r6_real_host_verified
+    scope:
+      refs:
+        - src/sentinelx_core/winspawn.py
+        - src/sentinelx_core/windows_mutation_sandbox.py
+        - src/sentinelx_core/handlers/scoped_script.py
+        - focused real-Windows descendant-process diagnostics/tests
+        - tests/test_verification_scoped_execution.py
+      authorized_changes:
+        - minimum correction inside existing Windows spawn/AppContainer/Job path
+        - child-process attribute/handle/token/environment initialization fixes
+        - bounded diagnostic evidence required to identify child creation stage
+      forbidden:
+        - Job breakaway
+        - launching descendants outside AppContainer
+        - second executor or sandbox
+        - broker-side unrestricted child fan-out
+        - generic Host shell/exec fallback
+        - caller-minted process authority
+        - network or credential widening
+    verification:
+      required:
+        - minimal AppContainer python -> python child succeeds on real Host
+        - child remains in same no-breakaway Job
+        - direct admitted Node execution succeeds
+        - direct admitted npm CLI execution succeeds
+        - offline npm/package-script/lifecycle descendants succeed
+        - DNS/HTTP/network fallback remains unavailable
+        - credentials remain absent
+        - process tree quiesces and scope terminalizes with zero residual authority
+        - unaffected unprofiled Python/PowerShell/Pwsh regressions pass
+    external_availability_rule: real Windows Host physical proof is mandatory; CI-only evidence is insufficient
+    checkpoint:
+      required: true
+    run_refs:
+      - docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s03r-completion-20261006.yaml
+    completion_receipt_ref: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s03r-completion-receipt.yaml
+
+  - slice_id: S04
+    objective: Add separately gated Node/npm verification readiness/capability after repaired real descendant execution is physically proven.
+    depends_on: [S03R]
+    state: completed
+    evidence_disposition: completed_plan_r6_real_host_verified
+    stopped_candidate_disposition: reconciled_selectively_no_wholesale_publish
+    scope:
+      refs:
+        - src/sentinelx_core/verification_readiness.py
+        - src/sentinelx_core/handlers/basic.py
+        - src/sentinelx_core/handlers/scoped_script.py
+        - config.example.windows.yaml
+        - docs/scoped-verification-node-npm-v1.md
+        - tests/test_verification_readiness.py
+        - relevant Windows physical verification workflow
+      authorized_changes:
+        - separately gated scoped_verification_node_npm readiness
+        - real physical self-check using repaired descendant path
+        - bounded operator diagnostics
+      forbidden:
+        - treating old dirty S04 candidate as approved implementation
+        - network or credential widening
+        - canonical repository mutation authority
+        - operator_unrestricted or generic execution fallback
+    verification:
+      required:
+        - readiness false for absent/incomplete/unusable profile
+        - base scoped readiness unaffected by profile absence
+        - real AppContainer Node/npm/offline verification succeeds
+        - protected roots remain inaccessible/non-mutable
+        - credentials and network remain unavailable
+        - transient authority absent after terminalization
+        - post-readiness toolchain tamper fails before successful execution
+        - PR-010/PR-012 regressions and relevant CI pass
+    external_availability_rule: real Windows Host physical proof is mandatory
+    checkpoint:
+      required: true
+    run_refs:
+      - docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s04-completion-20261006.yaml
+    completion_receipt_ref: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s04-completion-receipt.yaml
+
+  - slice_id: S05
+    objective: Extend canonical devforge_runtime.execute_scoped with bounded verification selector and prove live Agent-owned schema/execution readback.
+    depends_on: [S04]
+    state: completed
+    evidence_disposition: completed_plan_r6_ci_and_live_agent_verified
+    scope:
+      refs:
+        - src/sentinelx_core/handlers/devforge_runtime.py
+        - builtin provider registration/schema tests
+        - sentinel_local_api/devforge_runtime integration tests
+        - live Agent readback evidence
+      authorized_changes:
+        - bounded logical verification selector
+        - logical profile/source/capsule/integrity identifiers only
+        - forwarding to the one existing scoped handler
+        - bounded verification evidence projection
+      forbidden:
+        - second executor, scope store, sandbox or audit path
+        - Hub modification
+        - caller-selected Host paths/executables/cache/network endpoints
+        - generic shell/exec fallback or permission widening
+    verification:
+      required:
+        - describe devforge_runtime exposes current verification selector
+        - unknown authority/path/network fields fail schema/admission
+        - explicit execution_profile=scoped_mutation remains required
+        - valid verification request reaches canonical scoped handler
+        - live admitted execution returns bounded profile/toolchain/capsule/offline/audit/terminal evidence
+        - unprofiled execute_scoped/lifecycle regressions remain compatible
+    external_availability_rule: live Agent/Windows Host evidence is mandatory
+    checkpoint:
+      required: true
+    run_refs:
+      - docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s05-live-activation-blocked-20261006.yaml
+      - docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s05-live-profile-unconfigured-20261006.yaml
+      - docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s05-dcoco-policy-conflict-20261006.yaml
+      - docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s05-live-proof-passed-cleanup-pending-20261006.yaml
+      - docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s05-completion-20261006.yaml
+    completion_receipt_ref: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-s05-completion-receipt.yaml
+
+execution_state:
+  current_slice: null
+  current_slice_state: completed
+  completed_slices: [S01, S02R, S03R, S04, S05]
+  pending_slices: []
+  historical_partial_slices: [S02, S03]
+  all_slices_completed: true
+acceptance_boundary:
+  all_current_plan_slices_must_be_completed: true
+  pr015_downstream_evidence_required: false
+  acceptance_command: "#开发验收 PR-011-scoped-verification-toolchain-dependency-capsule-v1"

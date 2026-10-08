@@ -1,0 +1,107 @@
+schema_version: 1
+kind: devforge_execution_slice_completion_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1
+requirement_revision: 2
+plan_revision: 4
+slice_id: S07
+status: completed
+completed_at: "2026-10-02T16:00:06Z"
+canonical_main:
+  sha: f7e878f3497582547e5d52cd33b060cae18d2e84
+  unchanged_from_review_baseline: true
+transport:
+  type: github-pr
+  pr_number: 7
+  branch: task/host-mutation-scope-control-surface-mcp-admission-bridge-v1
+implementation:
+  product_commit: 603f9f9fc2912a7a3aeec7d54f0947f731758176
+  verifier_add_commit: d1c14d7ed14e63b895a8fcb7348214611ccb53d8
+  verifier_cleanup_commit: c01242a1e8eef26318617b87dfdc2546cf9d52cb
+  final_product_equivalent_head_before_checkpoint: c01242a1e8eef26318617b87dfdc2546cf9d52cb
+  product_equivalence:
+    compare_base: 603f9f9fc2912a7a3aeec7d54f0947f731758176
+    compare_head: c01242a1e8eef26318617b87dfdc2546cf9d52cb
+    changed_files: 0
+  surfaces:
+    - src/sentinelx_core/handlers/devforge_runtime.py
+    - src/sentinelx_core/handlers/__init__.py
+    - tests/test_devforge_runtime_local_api.py
+    - tests/test_scoped_script_execution.py
+verification:
+  focused_verifier:
+    workflow: pr007-s07-verify
+    run_id: 37030119696
+    tested_commit: d1c14d7ed14e63b895a8fcb7348214611ccb53d8
+    conclusion: success
+    ubuntu_job:
+      job_id: 110914544377
+      conclusion: success
+      ruff: success
+      pytest:
+        conclusion: success
+        passed: 64
+        duration_seconds: 0.59
+    windows_security_job:
+      job_id: 110914544911
+      runner: windows-2025-vs2026
+      conclusion: success
+      pytest:
+        conclusion: success
+        passed: 15
+        duration_seconds: 357.04
+      files:
+        - tests/test_scoped_script_execution.py
+        - tests/test_incident_20260927_d_root_recursive_delete.py
+  regular_ci:
+    run_id: 37030125627
+    tested_commit: d1c14d7ed14e63b895a8fcb7348214611ccb53d8
+    conclusion: success
+  macos_agent:
+    run_id: 37030125753
+    tested_commit: d1c14d7ed14e63b895a8fcb7348214611ccb53d8
+    conclusion: success
+  temporary_verifier_cleanup:
+    removal_commit: c01242a1e8eef26318617b87dfdc2546cf9d52cb
+    compare_base: d1c14d7ed14e63b895a8fcb7348214611ccb53d8
+    compare_head: c01242a1e8eef26318617b87dfdc2546cf9d52cb
+    only_changed_path: .github/workflows/pr007-s07-verify.yml
+    change: removed
+    product_code_unchanged: true
+security_assertions:
+  exact_outer_request_context_preserved: true
+  profiled_script_handler_shared_with_top_level_script_run: true
+  duplicate_scope_store_added: false
+  duplicate_executor_added: false
+  duplicate_sandbox_added: false
+  duplicate_audit_path_added: false
+  execution_profile_fixed_to_scoped_mutation: true
+  cleanup_fixed_true: true
+  caller_execution_profile_rejected: true
+  caller_cleanup_override_rejected: true
+  caller_workspace_authority_rejected: true
+  caller_operation_class_authority_rejected: true
+  positive_model_response_projection: true
+  provider_private_cwd_command_script_path_workdir_stripped: true
+  unknown_future_response_fields_stripped: true
+  disabled_script_run_blocks_execute_scoped: true
+  shell_exec_python_allowlist_fallback_added: false
+  operator_unrestricted_fallback_added: false
+  legacy_unrestricted_fallback_added: false
+  destructive_escape_incident_regression_green: true
+local_validation_boundary:
+  model_facing_script_run_projection_missing_execution_profile: true
+  related_non_blocking_task: PR-008-provider-execution-profile-tool-surface-alignment-v1
+  disposition: no_bypass_used_ci_and_windows_verifier_consumed_instead
+workspace_integrity:
+  canonical_local_checkout_mutated: false
+  dedicated_execution_workspace_used: true
+  workspace: D:\coco\workspaces\bewaterhere-coder\sentinelx-cloud-core\PR-007-S07
+completion_rule:
+  focused_adapter_tests_passed: true
+  windows_security_regressions_passed: true
+  regular_ci_passed: true
+  macos_agent_passed: true
+  no_duplicate_executor_sandbox_audit_store: true
+  durable_checkpoint_written: true
+next_slice: S08

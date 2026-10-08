@@ -1,0 +1,43 @@
+schema_version: 1
+kind: development_plan_remediation_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-010-canonical-repository-mutation-firewall-v1
+command: '#开发计划修复 PR-010-canonical-repository-mutation-firewall-v1'
+source_gate: plan_review_rejected
+target_gate: plan_review
+plan_revision_before: 1
+plan_revision_after: 2
+requirement_semantics_changed: false
+transport_preserved:
+  type: github-pr
+  pr_number: 10
+  branch: task/canonical-repository-mutation-firewall-v1
+  base_branch: main
+planning_baseline_main: f7e878f3497582547e5d52cd33b060cae18d2e84
+review_input:
+  path: docs/reviews/PR-010-canonical-repository-mutation-firewall-v1-plan-review-r1.md
+  result: Rejected
+  classification: plan_local
+findings_addressed:
+  - id: ProviderWideCoverageRegistrationFailClosedMechanism
+    disposition: addressed
+    plan_changes:
+      - authoritative operation registration carries exposure and repository-effect classification
+      - model-facing unknown or missing effect classification invalidates firewall readiness
+      - required but uncovered mutation invalidates firewall readiness
+      - internal-only and read-only operations are explicit classifications
+      - readiness derives from the effective dispatch registry rather than a parallel hand-maintained list
+  - id: DependencyReadbackOrderingBeforeOverlapMutation
+    disposition: addressed
+    plan_changes:
+      - exact dependency reconciliation moved to a per-slice pre-mutation entry gate
+      - S03 must re-read PR-007 and PR-008 before touching scoped/capability overlap files
+      - S04 repeats reconciliation on later dependency drift
+observed_dependencies_at_remediation:
+  pr_007_head: 4b8bfd897b2e614bdb30fa85bcc400ee01c2469b
+  pr_008_head: f7594c468d764ad85c0dc508ad47f009c89793c1
+  note: observations_only_not_implementation_authority
+implementation_authorized: false
+execution_slice_set: null
+next_expected_actor: reviewer
+next_command: '#开发评审 PR-010-canonical-repository-mutation-firewall-v1'

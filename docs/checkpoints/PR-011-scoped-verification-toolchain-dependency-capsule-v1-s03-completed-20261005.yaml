@@ -1,0 +1,78 @@
+schema_version: "1.0"
+kind: devforge_slice_completion_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1
+slice_id: S03
+source_command: "#开发执行 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
+runtime:
+  repository: bewaterhere-coder/DevForge
+  workflow: project_development
+  workflow_version: "2.1"
+plan:
+  revision: 3
+  ref: docs/plans/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan.md
+state:
+  stage: implementation
+  completed_slice: S03
+  next_slice: S04
+  implementation_authorized: true
+  completion_claimed: true
+repository_reality:
+  canonical_main: e7064c9bf4fcd15bdb6f5a2678414210c01d1c00
+  exact_task_head: d7301a49efd0d675abdb0c559b659fd83f565c83
+  exact_pr_merge_ref: 80f943bd5f67b900a0f6af31d1e6dde9478d3ec8
+  mergeable_with_main: true
+implementation:
+  disposition: resume_existing_candidate_and_close_verified_slice
+  summary:
+    - provider-owned Node/npm verification remains inside existing scoped AppContainer/Job execution
+    - admitted source and dependency inputs remain integrity-bound and workspace-local
+    - runtime baseline restored after diagnostic experiments
+    - npm behavior remains constrained by provider-sealed offline/runtime flags
+    - no Host PATH/npm fallback or unrestricted execution path introduced
+verification:
+  pr011_s03:
+    run_id: 37298665122
+    job_id: 111725880509
+    conclusion: success
+    tests: 22
+    passed: 22
+    failed: 0
+  native_cwd_diagnostic:
+    run_id: 37298665099
+    conclusion: success
+  generic_ci:
+    run_id: 37298665194
+    conclusion: success
+  macos_agent:
+    run_id: 37298665091
+    conclusion: success
+  pr011_s01:
+    run_id: 37298665113
+    conclusion: success
+  pr011_s02:
+    run_id: 37298665069
+    conclusion: success
+  pr010_regressions:
+    s01_run_id: 37298665233
+    s02_run_id: 37298665097
+    s03_run_id: 37298665150
+    s04_run_id: 37298665088
+    s05_run_id: 37298665123
+    conclusion: success
+safety:
+  canonical_checkout_mutated: false
+  broad_parent_acl_granted: false
+  host_path_or_npm_fallback_used: false
+  network_fallback_used: false
+  allowlist_expansion_used: false
+  operator_unrestricted_used: false
+  duplicate_executor_introduced: false
+  duplicate_sandbox_introduced: false
+  hub_modification_required: false
+  s04_executed: false
+completion:
+  required_verification_satisfied: true
+  exact_head_readback_satisfied: true
+  slice_completion_eligible: true
+  next_action: "#开发执行 PR-011-scoped-verification-toolchain-dependency-capsule-v1"

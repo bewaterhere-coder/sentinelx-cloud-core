@@ -1,0 +1,163 @@
+schema_version: "1.0"
+kind: devforge_slice_blocked_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
+slice_id: S03
+source_command: "#开发执行 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1"
+
+lineage:
+  requirement_revision: 1
+  plan_revision: 5
+  plan_blob_sha: "1542d734c3e0aed6aa6818947a75dc26814e8912"
+  slice_set_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-r5
+  slice_set_blob_sha_at_entry: "ecbde1cc90ce10144dcdcf62b46ef791b597e04c"
+  run_id: run-pr017-r5-s03-20261008-001
+
+canonical_transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 17
+  branch: task/large-runtime-root-acl-cleanup-timeout-recovery-v1
+  entry_head: "d59e3415ad2c5c67af9121021bad73a8421745f1"
+  integrated_head: "f9e07da9cc37f6e882c3258280869b415cafcb5c"
+  integrated_tree: "a96adf088c834f7a2ae940c7486bd4b7a5f22bf2"
+
+integration:
+  status: verified
+  method: git_object_tree_commit_ref_lease
+  projected_file_count: 11
+  changed_file_count: 11
+  changed_files_exactly_match_manifest: true
+  all_target_blobs_read_back_exactly: true
+  preserved_scoped_script:
+    path: src/sentinelx_core/handlers/scoped_script.py
+    expected_blob: "4580475ba9bd8ba5301b579ee11a584abbd75d4b"
+    actual_blob: "4580475ba9bd8ba5301b579ee11a584abbd75d4b"
+    unchanged: true
+  forbidden_pr018_s01_diagnostic_import_observed: false
+
+target_blobs:
+  config.example.windows.yaml: a76b1772361517838b40de019bee1e9aa9fb9c85
+  src/sentinelx_core/handlers/basic.py: 5a99296d9c80b164d344abf519f5627eae5f52fe
+  src/sentinelx_core/handlers/mutation_scope.py: af310b650151de168a9ff437140fbe0e1187cf6d
+  src/sentinelx_core/mutation_placement.py: 6ee33bacee65dac566116a4252756e40e25c4662
+  src/sentinelx_core/mutation_readiness.py: aa318aec6e25b2b0ce3d13feb9c46c6680852144
+  src/sentinelx_core/mutation_scope.py: 1a6dce6d066c07569ea5676cd9a411105171a9f6
+  src/sentinelx_core/policy.py: 82cc82615f090f19777161125c1e2aff14e63806
+  src/sentinelx_core/windows_mutation_sandbox.py: 1e662eba2dbc61825bc874e102a735e7a9d9a179
+  tests/test_mutation_scope_admission.py: 4dd4db78a3c20487ae442ac312760dd6dbaa4b1e
+  tests/test_policy.py: fd1d002d8426f58c71c0b5f66a343f00c786e943
+  tests/test_windows_mutation_sandbox.py: 926900b91055707528a6cfdd5fb131d11abdfc89
+
+verification_observed:
+  pr010_s03_windows:
+    run_id: 37677712083
+    result: success
+    tests:
+      - tests/test_process_mutation_effect_registry.py
+      - tests/test_operation_effect_registry.py
+      - tests/test_scoped_script_execution.py
+      - tests/test_windows_mutation_sandbox.py
+    pytest_summary: "59 passed in 155.09s"
+  ci:
+    run_id: 37677712121
+    status: completed
+    conclusion: success
+  macos_agent:
+    run_id: 37677712178
+    status: completed
+    conclusion: success
+  pr011_s01:
+    run_id: 37677712142
+    status: completed
+    conclusion: success
+  pr011_s05:
+    run_id: 37677712097
+    status: completed
+    conclusion: success
+  pr011_s02:
+    run_id: 37677712219
+    status: in_progress
+    conclusion: null
+  pr011_s03:
+    run_id: 37677712124
+    status: in_progress
+    conclusion: null
+  pr011_s04:
+    run_id: 37677712088
+    status: completed
+    conclusion: success
+  still_required_before_completion:
+    - direct execution evidence for tests/test_policy.py
+    - direct execution evidence for tests/test_mutation_scope_admission.py
+    - completion of pending affected Windows verification runs
+    - real Host scoped Python marker
+    - real Unity 6000.6.4f1 probe
+    - runtime-root and Session-0 post-cleanup SID absence
+    - durable SessionObjectReadBinding clear readback
+    - post-proof default-off Host health readback
+
+host_runtime_blocker:
+  host_id: host_7f0e709ded71ab24
+  host_label: windows
+  observed_agent_version: "0.24.1.dev530+g7adfa7a74"
+  host_mutation_sandbox_v1:
+    available: false
+    verified: false
+    reason: "HostMutationScopeCorrupt: invalid scope record: MutationScopeRecord.__init__() got an unexpected keyword argument 'runtime_read_authority_roots'"
+  scoped_verification_node_npm_v1:
+    available: false
+    verified: false
+  canonical_repository_mutation_firewall_v1:
+    available: true
+    verified: true
+  classification: installed_host_runtime_schema_mismatch
+  fail_closed: true
+
+direct_codex_recovery:
+  capability:
+    feature_id: development_host.direct_codex_v1
+    available: true
+    verified: true
+    endpoint: devforge_direct_codex
+    action: execute_task
+  submitted:
+    run_id: run-pr017-r5-s03-20261008-001
+    attempt_id: attempt-001
+    slice_id: S03
+    expected_remote_sha: "f9e07da9cc37f6e882c3258280869b415cafcb5c"
+  hub_outcome:
+    status: unresolved
+    observation: "local_api response window timed out after 60 seconds"
+    canonical_publish_observed_after_timeout: false
+    observed_remote_head_after_timeout: "f9e07da9cc37f6e882c3258280869b415cafcb5c"
+  recovery_rule:
+    - do not submit a second concurrent attempt while attempt-001 outcome is unresolved
+    - resolve provider result or canonical publish readback before any retry
+    - no generic exec/script fallback
+
+decision_boundary:
+  blocker_code: HostRuntimeActivationUnavailableAndDirectCodexOutcomeUnresolved
+  blocker_class: external_runtime
+  integration_must_be_preserved: true
+  rollback_authorized: false
+  s03_completed: false
+  completion_receipt_created: false
+  current_slice_state: pending
+  one_execute_one_slice_preserved: true
+
+safety:
+  pr017_s01_replayed: false
+  pr017_s02_replayed: false
+  pr018_task_state_mutated: false
+  generic_exec_fallback_used: false
+  script_run_fallback_used: false
+  operator_unrestricted_enabled: false
+  canonical_main_mutated: false
+
+resume:
+  first_actions:
+    - resolve direct-Codex attempt-001 durable outcome / canonical readback
+    - read affected workflow completion status
+    - re-read current Host exact runtime capability
+    - if exact combined-candidate Host activation is admitted, continue same S03 real proof
+  canonical_next_action: "#开发执行 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1"

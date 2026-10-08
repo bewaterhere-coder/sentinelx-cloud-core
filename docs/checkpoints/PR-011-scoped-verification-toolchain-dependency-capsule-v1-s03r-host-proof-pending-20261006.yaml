@@ -1,0 +1,368 @@
+schema_version: "1.0"
+kind: devforge_slice_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1
+slice_id: S03R
+source_command: "#开发执行 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
+status: host_proof_pending
+completion_claim: false
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  version: "2.51.0"
+  revision: 7e5a098473d89f88a69066a9bc88d1213b2f7e49
+
+lineage:
+  requirement_revision: 2
+  plan_revision: 6
+  plan_blob_sha: fc59575081f3d35b7195711961ed387bc7a56fb2
+  plan_review_blob_sha: 7c166bae043228f4c6e2c8bb643cfe4b3fc2fa78
+  slice_set_blob_sha: d0d92b5c4766f0520818403e885ab9a02951d451
+  task_blob_sha: fe6a60177d26a3e1a37491942526b509a5e8061a
+  entry_pr_head: 1918ef30ca9c1adba9a19f0e575a8f93d5312403
+  candidate_product_head: f5247f99b7ce6532b335e4a0abcc5f848c007ea3
+
+real_host_diagnosis:
+  host_id: host_7f0e709ded71ab24
+  os: Windows-11-10.0.26200-SP0
+  agent_version: 0.24.1.dev175+g1e4012d7d
+  service_boundary: LocalSystem_session_0
+  observations:
+    - minimal production-path AppContainer python child succeeds and terminalizes
+    - verification-like environment still permits a minimal python child
+    - C:\Python314\python.exe child succeeds from the production venv-root AppContainer process
+    - cmd.exe descendant succeeds
+    - hostname.exe descendant succeeds
+    - whoami.exe descendant fails with 0xC0000142
+    - node.exe descendant fails with 0xC0000142 even when copied under the exact workspace
+    - CREATE_NEW_CONSOLE does not repair node.exe initialization
+    - child import ctypes fails because _ctypes DLL initialization fails
+    - child import ssl fails because _ssl DLL initialization fails
+    - child import sqlite3 succeeds
+  pe_import_discriminator:
+    user32_linked_failed:
+      - node.exe
+      - whoami.exe
+    non_user32_children_observed_success:
+      - cmd.exe
+      - hostname.exe
+      - python.exe
+  root_cause:
+    classification: service_session_window_object_read_authority_missing
+    evidence_strength: strong_real_host_discriminator_plus_platform_corroboration
+    explanation: >
+      The AppContainer SID can start descendants, but USER32-dependent descendants fail
+      DLL initialization in the LocalSystem service session. The minimal repair is
+      verification-only read access to the service session window station and desktop,
+      not Job breakaway or a second executor.
+  public_platform_corroboration:
+    - https://learn.microsoft.com/en-us/answers/questions/556403/starting-a-process-in-an-appcontainer-from-a-servi
+    - https://learn.microsoft.com/en-us/windows/win32/winstation/window-station-security-and-access-rights
+    - https://learn.microsoft.com/en-us/windows/win32/winstation/desktop-security-and-access-rights
+
+candidate:
+  changed_product_files:
+    - src/sentinelx_core/windows_mutation_sandbox.py
+    - tests/test_verification_windows_materialization.py
+    - tests/test_verification_scoped_execution.py
+  semantics:
+    - grant verification-only AppContainer SID read access to the broker current window station
+    - grant verification-only AppContainer SID read access to the broker current thread desktop
+    - use documented GENERIC_READ-equivalent object-specific masks only
+    - merge one non-inheriting unique-SID allow ACE into each existing shared DACL
+    - revoke the unique AppContainer SID ACE during fail-closed cleanup and terminalization
+    - verify the SID is absent after revocation
+    - add minimal python descendant and USER32-linked descendant probes
+    - prove python descendant is Job-contained with IsProcessInJob
+  masks:
+    window_station: "READ_CONTROL|WINSTA_ENUMDESKTOPS|WINSTA_READATTRIBUTES|WINSTA_ENUMERATE"
+    desktop: "READ_CONTROL|DESKTOP_READOBJECTS|DESKTOP_ENUMERATE"
+  forbidden_authority_not_added:
+    - WINSTA_ACCESSCLIPBOARD
+    - WINSTA_ACCESSGLOBALATOMS
+    - WINSTA_CREATEDESKTOP
+    - WINSTA_WRITEATTRIBUTES
+    - WINSTA_READSCREEN
+    - DESKTOP_CREATEWINDOW
+    - DESKTOP_WRITEOBJECTS
+    - Job_breakaway
+    - second_executor
+    - network_authority
+    - credential_authority
+
+verification_so_far:
+  generic_ci:
+    run_id: 37416438892
+    conclusion: success
+  macos_agent:
+    run_id: 37416438958
+    conclusion: success
+  pr011_s01:
+    run_id: 37416438841
+    conclusion: success
+  pr011_s02:
+    run_id: 37416438850
+    conclusion: success
+    note: includes physical add/readback/revoke checks for the new session-object ACEs
+  pr011_s03_native_cwd:
+    run_id: 37416438861
+    conclusion: success
+  pr010_regressions:
+    s01:
+      run_id: 37416438869
+      conclusion: success
+    s02:
+      run_id: 37416438839
+      conclusion: success
+    s03:
+      run_id: 37416438889
+      conclusion: success
+    s04:
+      run_id: 37416438928
+      conclusion: success
+  pr011_s03:
+    run_id: 37416438920
+    conclusion: success
+    note: includes minimal python child, IsProcessInJob, USER32-linked whoami, Node/npm offline and lifecycle probes
+  pending_at_checkpoint:
+    pr010_s05:
+      run_id: 37416438849
+      status: in_progress
+
+real_host_candidate_proof:
+  status: required
+  reason: >
+    GitHub hosted Windows runners are not the LocalSystem session-0 deployment boundary.
+    S03R cannot complete from CI alone.
+  prepared_workspace: D:\coco\workspaces\bewaterhere-coder\sentinelx-cloud-core\pr011-s03r-session-object-v3
+  prepared_proof_script: .devforge-s03r-system-proof.ps1
+  required_context: SYSTEM_session_0
+  proof_targets:
+    - tests/test_verification_windows_materialization.py::test_verification_toolchain_is_read_execute_only_and_revoked_at_terminal
+    - tests/test_verification_scoped_execution.py::test_profiled_scoped_execution_runs_real_node_npm_offline_and_bounds_evidence
+
+safety:
+  canonical_main_mutated: false
+  live_agent_modified: false
+  hub_modified: false
+  operator_unrestricted_used: false
+  generic_exec_fallback_used: false
+  job_breakaway_used: false
+  second_executor_introduced: false
+  network_or_credential_authority_widened: false
+  next_slice_executed: false
+
+
+host_proof_attempt_2:
+  workspace: D:\coco\workspaces\bewaterhere-coder\sentinelx-cloud-core\pr011-s03r-session-object-v4
+  basetemp: .devforge-s03r-system-proof-20261006-131704
+  scheduled_identity: SYSTEM
+  scheduled_session: session_0
+  result:
+    physical_acl_test: passed
+    scoped_node_npm_test: failed_timeout
+    pytest_summary: "1 failed, 1 passed, 1 warning"
+  audit:
+    operation_id: mao_X_vEz0vLCx49nNUa7jzwrScp
+    root_process_spawned: true
+    appcontainer: true
+    job_contained: true
+    breakaway_allowed: false
+    root_pid: 26756
+    process_spawned_at: "2026-10-06T05:19:28.759017Z"
+    terminalized_at: "2026-10-06T05:21:28.794551Z"
+    finish_status: timeout
+    process_tree_quiescent: true
+    residual_process_ids: []
+    residual_job_ids: []
+    sandbox_write_authority_present_after_terminalization: false
+  decisive_artifacts:
+    progress_file_created: false
+    stdout_file_created: false
+    stderr_file_created: false
+    returncode_file_created: false
+  interpretation: >
+    The root AppContainer process existed and was Job-contained but never entered
+    sentinelx_runner.py. This is a regression introduced by granting the Session-0
+    window-station/desktop SID ACE before CreateProcess. The timeout is therefore
+    upstream of Python child, whoami, Node and npm descendants.
+
+timing_repair:
+  candidate_head: 31678bcc2f1495336fcb1041c8e49e3d682f5919
+  design:
+    - verification materialization grants only the exact toolchain RX authority
+    - create the AppContainer root suspended using the previously proven root-process path
+    - prove the suspended root is no-breakaway Job-contained
+    - only then grant the unique verification AppContainer SID Session-0 read ACE
+    - commit durable PROCESS_SPAWNED evidence and resume the root
+    - revoke Session-0 ACE during fail-closed cleanup and terminalization
+  rationale: >
+    Session-0 read authority is needed by USER32-linked descendants, but must not
+    perturb root CreateProcess initialization. Delaying the grant until after the
+    root exists suspended preserves the prior proven creation boundary while still
+    making the authority available before any descendant can run.
+  verification_update:
+    - physical ACL test now asserts Session-0 authority is absent before spawn
+    - physical ACL test asserts it is present after suspended-root creation/spawn
+    - terminalization still requires complete ACE revocation
+  prepared_workspace: D:\coco\workspaces\bewaterhere-coder\sentinelx-cloud-core\pr011-s03r-session-object-v5
+  prepared_proof_script: .devforge-s03r-system-proof.ps1
+  host_proof_status: pending
+
+
+host_proof_attempt_3:
+  workspace: D:\coco\workspaces\bewaterhere-coder\sentinelx-cloud-core\pr011-s03r-session-object-v5
+  basetemp: .devforge-s03r-system-proof-20261006-150448
+  scheduled_identity: SYSTEM
+  scheduled_session: session_0
+  result:
+    physical_acl_test: passed
+    scoped_node_npm_test: failed_timeout
+    pytest_summary: "1 failed, 1 passed, 1 warning"
+  audit:
+    operation_id: mao_iKdNtYMr35YUvj4eNrC9Wmcb
+    root_pid: 35500
+    root_process_spawned: true
+    appcontainer: true
+    job_contained: true
+    breakaway_allowed: false
+    process_spawned_at: "2026-10-06T07:07:05.695282Z"
+    terminalized_at: "2026-10-06T07:09:05.732047Z"
+    finish_status: timeout
+    process_tree_quiescent: true
+    residual_process_ids: []
+    residual_job_ids: []
+    sandbox_write_authority_present_after_terminalization: false
+  decisive_artifacts:
+    progress_file_created: false
+    stdout_file_created: false
+    stderr_file_created: false
+    returncode_file_created: false
+  interpretation: >
+    Moving the Session-0 read ACE from pre-CreateProcess to the suspended-root
+    boundary is still too early. USER32/DLL initialization occurs after resume;
+    the root Python is therefore still perturbed before the trusted runner can
+    execute. The authority must be gated on a trusted root-ready handshake.
+
+trusted_runner_handshake_repair:
+  candidate_head: a7ef0c29eaefef00619864f2b0d1ea7a03450861
+  design:
+    - create the verification root without Session-0 read ACEs
+    - bind the root to the existing no-breakaway Job and durably record PROCESS_SPAWNED
+    - resume the root with the previously proven environment/creation path
+    - provider-owned sentinelx_runner writes root-ready before runpy/user script execution
+    - root waits on provider-owned authority-ready marker
+    - broker observes root-ready, then grants the unique AppContainer SID Session-0 read ACE
+    - broker writes authority-ready and the trusted runner proceeds
+    - descendants execute under the same AppContainer/Job
+    - terminalization revokes Session-0 ACE and verifies absence
+  security_properties:
+    - user script cannot run before root-ready/authority-ready handshake completes
+    - caller cannot mint or select Session-0 authority
+    - no second executor
+    - no Job breakaway
+    - no network or credential widening
+    - no generic Host shell fallback
+  host_proof_status: pending
+
+
+host_proof_attempt_4:
+  workspace: D:\coco\workspaces\bewaterhere-coder\sentinelx-cloud-core\pr011-s03r-trusted-runner-v6
+  basetemp: .devforge-s03r-system-proof-20261006-152603
+  scheduled_identity: SYSTEM
+  scheduled_session: session_0
+  result:
+    physical_acl_test: passed
+    scoped_node_npm_test: failed_before_trusted_runner_handshake
+    pytest_summary: "1 failed, 1 passed, 1 warning"
+  failure:
+    type: HostMutationSandboxUnavailable
+    message: verification root did not reach trusted descendant handshake
+    root_ready_observed: false
+  interpretation: >
+    The Session-0 ACE was no longer present during CreateProcess/resume, yet the
+    verification root still did not enter the provider-owned runner. This
+    disproves Session-0 ACE timing as the root-start blocker. The remaining
+    material difference from the known-good generic scoped Python root is the
+    verification-specific environment being supplied to the root interpreter.
+
+verification_environment_capsule_repair:
+  candidate_head: 8f48249f1202fb3dfd22b514edd8698325a9f95d
+  design:
+    - launch trusted root Python with the known-good sanitized base scoped environment
+    - root runner writes root-ready before any caller script executes
+    - broker grants the unique AppContainer SID Session-0 read authority
+    - broker writes authority-ready
+    - trusted runner loads a provider-written verification environment capsule
+    - trusted runner replaces os.environ with the deterministic verification environment
+    - only then run the caller verification script and descendants
+  security_properties:
+    - caller credentials remain stripped before root startup
+    - verification environment capsule contains only provider-composed string environment values
+    - caller script cannot execute before authority and environment transition
+    - no second executor or Job breakaway
+    - no network/credential authority widening
+  rationale: >
+    Real-host generic scoped Python and verification-like child environment probes
+    both succeed, but the profiled root stalls before Python runner entry when the
+    verification environment is passed at CreateProcess. Applying that environment
+    from the trusted runner after Python initialization isolates interpreter startup
+    from verification descendant configuration while preserving descendant semantics.
+  host_proof_status: pending
+
+
+host_proof_attempt_5:
+  workspace: D:\coco\workspaces\bewaterhere-coder\sentinelx-cloud-core\pr011-s03r-env-capsule-v7
+  basetemp: .devforge-s03r-system-proof-20261006-154019
+  scheduled_identity: SYSTEM
+  scheduled_session: session_0
+  result:
+    physical_acl_test: passed
+    scoped_node_npm_test: failed_before_trusted_runner_handshake
+    pytest_summary: "1 failed, 1 passed, 1 warning"
+  failure:
+    type: HostMutationSandboxUnavailable
+    message: verification root did not reach trusted descendant handshake
+    root_ready_observed: false
+  audit:
+    operation_id: mao_XKws9aSsQ8b5j5lUd_DlPK9s
+    root_pid: 25948
+    root_process_spawned: true
+    job_contained: true
+    breakaway_allowed: false
+    terminalized: true
+    process_tree_quiescent: true
+    residual_process_ids: []
+    residual_job_ids: []
+    sandbox_write_authority_present_after_terminalization: false
+  interpretation: >
+    Launching the root with the base scoped environment still does not reach the
+    trusted runner. This disproves the verification environment passed at
+    CreateProcess as the remaining root-start blocker. The material CreateProcess
+    difference still present is verification root cwd=source versus generic
+    scoped root cwd=exact workspace; the expanded handshake runner imports are
+    also unnecessary startup differences.
+
+root_start_isolation_repair:
+  candidate_head: 886a9c89fc434cceaea2b45d1823bd8db861d2f7
+  design:
+    - root process starts from the exact workspace, matching the known-good generic scoped path
+    - sealed process intent binds the exact-workspace root cwd
+    - provider-selected verification source cwd is persisted separately as runtime/cwd.txt
+    - trusted runner performs handshake first, then loads verification environment and chdirs to the sealed source cwd
+    - user script still observes the expected verification cwd=source
+    - pre-handshake runner imports are reduced to the original known-good Python runner set plus builtin time
+    - json/os are imported only after authority-ready
+  security_properties:
+    - process cwd remains inside exact provider workspace
+    - user verification cwd remains inside admitted source snapshot
+    - no caller-selected Host path authority
+    - no second executor
+    - no Job breakaway
+    - no network or credential widening
+  host_proof_status: pending
+
+completion_guard:
+  s03r_completed: false
+  s04_started: false
+  no_receipt_no_completion_claim: true

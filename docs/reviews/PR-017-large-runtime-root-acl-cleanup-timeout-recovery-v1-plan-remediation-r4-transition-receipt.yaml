@@ -1,0 +1,65 @@
+schema_version: "1.0"
+kind: devforge_artifact_state_transition_receipt
+task_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
+source_command: "#开发计划修复 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1"
+
+transition:
+  from_stage: plan_review_rejected
+  to_stage: plan_review
+  rule: stale_plan_revision_authority_references_corrected_without_semantic_change
+
+lineage:
+  requirement_revision: 1
+  requirement_blob_before: "42938a6c8cae3605574f1dbecd6915e02403b530"
+  requirement_blob_after: "c1f6eddf91dcf13aab6d0e4abf457b6465df3267"
+  rejected_plan_revision: 3
+  rejected_plan_blob_sha: "4c73e1b33489c5965ff2fd42156e680b74a6887e"
+  rejected_review_ref: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-review-r3.md
+  rejected_review_blob_sha: "749f94c02c8ddf0adedfaaa066068cbea081cca3"
+  revised_plan_revision: 4
+  revised_plan_blob_sha: "7191bfdf51153bb07bac1e912ec83f4699fcbee5"
+  remediation_checkpoint_ref: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-remediation-r4-20261008.yaml
+  remediation_checkpoint_blob_sha: "2b165efcd8239862d89fb1216b0a8ab4fe880d12"
+
+finding:
+  id: StalePlanR2AuthorityReferences
+  status: addressed
+  stale_refs_after_remediation: 0
+  technical_semantics_changed: false
+
+technical_semantics_preserved:
+  manifest_version: pr017-pr018-production-subset-v1
+  projected_file_count: 11
+  derived_windows_sandbox_blob: "1e662eba2dbc61825bc874e102a735e7a9d9a179"
+  derived_windows_test_blob: "926900b91055707528a6cfdd5fb131d11abdfc89"
+  scoped_script_preserved_blob: "4580475ba9bd8ba5301b579ee11a584abbd75d4b"
+  s03_verification_scope_changed: false
+
+preserved_slice_lineage:
+  s01:
+    state: completed
+    replay: forbidden
+  s02:
+    state: completed
+    replay: forbidden
+  s03:
+    r1_state: blocked_historical
+    r4_recompile_pending: true
+
+state_after:
+  stage: plan_review
+  plan_revision: 4
+  plan_approved: false
+  implementation_authorized: false
+  next_expected_actor: reviewer
+
+safety:
+  canonical_main_mutated: false
+  product_code_mutated: false
+  tests_mutated: false
+  host_policy_mutated: false
+  slice_set_mutated: false
+  self_approval_performed: false
+
+completion_guard:
+  canonical_next_action: "#开发评审 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1"

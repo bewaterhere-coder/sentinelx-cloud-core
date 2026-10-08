@@ -1,0 +1,49 @@
+schema_version: "1.0"
+kind: devforge_plan_remediation_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1
+source_command: "#开发计划修复 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
+runtime:
+  repository: bewaterhere-coder/DevForge
+  version: 2.34.0
+  revision: e0fe219252b160ec35d7349bb1dc27c16227229a
+  workflow: project_development
+  workflow_version: "2.1"
+input:
+  requirement_revision: 1
+  requirement_blob_sha: 841dc291cad3c4351fdf7f52923ce81042a8cf59
+  rejected_plan_revision: 1
+  rejected_plan_blob_sha: 0ecca078bfaf01131c293c1d7b16e6f28ba60cd8
+  review_ref: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan-review-r1.md
+  review_blob_sha: f8a2a7deb8bdbc5ec3a6678cf97ebcc157c53622
+output:
+  plan_revision: 2
+  plan_ref: docs/plans/PR-011-scoped-verification-toolchain-dependency-capsule-v1-plan.md
+  plan_blob_sha: c30d771ea5167db92f549bcb8e55589a7550dafd
+  implementation_authorized: false
+findings:
+  - id: PR011-R1-F1-source-under-test-materialization-pre-toolchain-binding
+    classification: plan_local
+    disposition: remediated
+    changes:
+      - added immutable SourceUnderTestSnapshot bound to exact repository and transport revision identity
+      - source is broker-materialized into exact workspace after durable START and before SPAWN
+      - package-lock must exist and match the sealed digest before any profiled root process can spawn
+      - downstream PR-015 procedure binds snapshot to exact PR head and mcp source bytes
+      - post-run source/lock checks remain tamper detection only
+  - id: PR011-R1-F2-toolchain-capsule-integrity-resource-bounds
+    classification: plan_local
+    disposition: remediated
+    changes:
+      - deterministic complete readable-toolchain manifest and digest contract
+      - provider-generated workspace-local node/npm launcher shims replace Host PATH npm launchers
+      - request-time toolchain revalidation occurs before START and again before SPAWN
+      - concrete source/dependency resource defaults and hard ceilings are frozen
+      - bounded copy and partial-copy cleanup plus negative tests are required
+requirement_semantics_changed: false
+transport_changed: false
+execution_slice_set_compiled: false
+product_implementation_mutated: false
+next_stage: plan_review
+next_expected_actor: reviewer
+canonical_next_action: "#开发评审 PR-011-scoped-verification-toolchain-dependency-capsule-v1"

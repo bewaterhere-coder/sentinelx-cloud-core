@@ -1,0 +1,74 @@
+schema_version: "1.0"
+kind: devforge_acceptance_repair_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1
+requirement_revision: 2
+plan_revision: 6
+acceptance_revision: 1
+source_command: "#开发执行 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
+
+finding:
+  classification: repair_local
+  code: AC11RelevantWindowsCIRegression
+  criterion: AC11
+  acceptance_ref: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-acceptance-r1.md
+
+repair:
+  status: completed
+  repair_commit: e02ae617860d8181ec9946ecae41c9ac81d3d2dc
+  impact_analysis_ref: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-acceptance-r1-fix-impact-analysis.md
+  changed_product_surfaces:
+    - .github/workflows/pr011-s04-verification.yml
+  runtime_product_code_changed: false
+  test_semantics_changed: false
+  real_host_gate_weakened: false
+  behavior:
+    - hosted Windows workflow is explicitly regression coverage, not provider Host acceptance proof
+    - three non-Host readiness contract tests remain in hosted CI
+    - affected Windows sandbox/materialization/runtime/profile/scoped-script suites remain in hosted CI
+    - two provider-Host physical readiness tests remain mandatory in the separate SYSTEM Host gate
+    - no runtime, policy, sandbox, readiness or handler semantics changed
+
+verification:
+  repaired_s04_workflow:
+    run_id: 37467396706
+    job_id: 112281796516
+    result: success
+    passed: 53
+    warnings: 1
+    duration_seconds: 153.87
+  generic_ci:
+    run_id: 37467396768
+    result: success
+  macos_agent:
+    run_id: 37467396785
+    result: success
+  pr011_s05_regression:
+    run_id: 37467396747
+    result: success
+  retained_real_host_evidence:
+    s04_system_gate: "35 passed, 0 failed"
+    s04_focused_tamper_gate: passed
+    s05_live_readiness: passed
+    s05_live_profiled_execution: passed
+    s05_live_terminal_readback: passed
+  evidence_validity:
+    impact_analysis_performed: true
+    existing_real_host_evidence_invalidated: false
+    reason: CI orchestration only; no runtime/test/security semantics changed
+
+safety:
+  hub_modified: false
+  host_policy_modified: false
+  provider_authority_changed: false
+  permission_or_allowlist_widened: false
+  operator_unrestricted_used: false
+  generic_exec_fallback_used: false
+  implementation_slices_replayed: false
+  canonical_main_mutated_by_repair: false
+
+continuation:
+  next_gate: acceptance
+  next_action: "#开发验收 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
+  acceptance_approved: false
+  completion_verified: false

@@ -1,0 +1,57 @@
+schema: devforge.continuation-checkpoint.v1
+project_id: sentinelx-cloud-core
+task_id: PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1
+stage: implementation
+source_command: "#开发执行 PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1"
+active_slice_id: S01
+slice_state: verification_blocked
+implementation:
+  implementation_head: 910f2150c0b7c790aefdb4588345865996500924
+  reconciliation_commit: 27bf2c036c00e6a5943ceef0c3b1a5cf5c355707
+  canonical_main: f7e878f3497582547e5d52cd33b060cae18d2e84
+  pr008_head_observed: f7594c468d764ad85c0dc508ad47f009c89793c1
+  changed_surfaces:
+    - src/sentinelx_core/mutation_scope.py
+    - src/sentinelx_core/handlers/scoped_script.py
+    - tests/test_mutation_scope_admission.py
+    - tests/test_scoped_script_execution.py
+verification:
+  static:
+    python_compile:
+      result: passed
+      mechanism: sentinel_edit python validator dry-run
+      files:
+        - src/sentinelx_core/mutation_scope.py
+        - src/sentinelx_core/handlers/scoped_script.py
+        - tests/test_mutation_scope_admission.py
+        - tests/test_scoped_script_execution.py
+    git_diff_check: passed
+  dynamic:
+    result: blocked
+    blocker: HubToolProjectionRequired
+    attempted_command: pytest -q tests/test_mutation_scope_admission.py tests/test_scoped_script_execution.py
+    observed_error: execution_profile_required
+    evidence:
+      required_argument: execution_profile
+      feature: script_run_execution_profile_v1
+      supported_profiles:
+        - scoped_mutation
+    reason: current model-facing sentinel_script_run schema still cannot carry execution_profile
+  alternate_paths:
+    github_pr_workflow_runs: none
+    local_api_test_endpoint: unavailable
+boundary:
+  disposition: blocked
+  reason: S01DynamicVerificationUnavailable
+  implementation_landed: true
+  slice_completed: false
+continuation:
+  mode: verify_current_slice
+  next_slice_id: S01
+  next_expected_actor: implementer
+  next_action_hint: "#开发执行 PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1"
+invariants:
+  direct_python_allowlist_not_changed: true
+  wrapper_fallback_not_used: true
+  operator_unrestricted_not_used: true
+  s02_not_started: true

@@ -1,0 +1,114 @@
+schema_version: "1.0"
+kind: devforge_slice_completion_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-015-direct-codex-development-host-invocation-bridge-v1
+slice_id: S04
+source_command: "#开发引导执行 PR-015-direct-codex-development-host-invocation-bridge-v1 direct:codebuddy"
+created_at: "2026-10-07"
+
+authority:
+  durable_authorization: docs/authorizations/PR-015-direct-codex-development-host-invocation-bridge-v1-development-authorization.yaml
+  authorization_state: active
+  bootstrap_override: active (expires when all bound plan slices complete)
+  effective_target: direct:codebuddy
+  persistent_project_binding: direct/codex
+  plan_revision: 6
+  plan_blob_sha: 2bcea2a44f88e51c8b9378ba6297b61897e638da
+  slice_set_blob_sha: 192e5446036423297cbcece01a27492ae9aae390
+  bootstrap_override_blob_sha: 91b527f4c31d422e25ea7e00cc3d317e7a184fd4
+  requirement_revision: 2
+
+result:
+  slice_state: completed
+  implementation_landed: true
+  product_candidate_sha: 02eb3de2ec9c137b3285398e555f1e037b574965
+  completed_current_slices: 1
+  historical_prerequisite_evidence: [S01, S02, S03]
+  one_execute_one_slice_preserved: true
+  verified_side_effect_replay: none
+  resolves_prior_material_finding: >-
+    S03's real-host persistence gap (a real Codex host edits but never commits, so the
+    bridge could only report implementation_not_persisted) is closed: persistence is
+    provider-owned and the real host is proven to produce a persisted, published,
+    readback-verified direct/codex receipt.
+
+transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  canonical_pr: 15
+  canonical_branch: task/direct-codex-development-host-invocation-bridge-v1
+  pr_head_before_mutation: d36cf27b1b0518d116bbd15aec0955031442c8ed
+  canonical_main_at_execution: 018b78ca20984176d53fbe90039dc795a7f2742f
+  replacement_transport_created: false
+  ordinary_fast_forward_publish_only: true
+  remote_readback_required_before_completion_claim: true
+
+verification_evidence:
+  focused_suite: tests/test_direct_codex_execution.py + tests/test_direct_codex_persistence.py (+ tests/test_direct_codex_provider.py + tests/test_user_process.py)
+  focused_result: 113 passed across the direct-Codex focused set (64 in the execution + persistence suites)
+  regression_subset_1: tests/test_policy.py + tests/test_user_scoped_git.py + tests/test_windows_mutation_sandbox.py + tests/test_direct_codex_provider.py -> 85 passed, 5 failed (documented host-privilege set only)
+  regression_subset_2: tests/test_scoped_script_execution.py + tests/test_verification_scoped_execution.py + tests/test_canonical_repository_firewall.py + tests/test_operation_effect_registry.py + tests/test_git_network.py + tests/test_local_api.py + tests/test_handlers.py -> 102 passed, 7 failed (same documented AppContainer WinError 5), 2 skipped
+  regression_verdict: >-
+    No S04 regression. Every failure is the documented host-privilege limitation
+    (symlink creation WinError 1314; SetNamedSecurityInfoW WinError 5 on
+    D:\coco\workspaces) and was reproduced on the unmodified S03 workspace
+    (pr015-s03-a1) with the identical error.
+  exact_candidate_physical_proof: >-
+    The exact S04 product candidate 02eb3de2ec9c137b3285398e555f1e037b574965 ran the
+    REAL installed Codex Development Host against a bounded local bare fixture origin
+    (canonical GitHub transport untouched). Real Codex edited the isolated checkout
+    without committing; the provider derived the eligible delta, created candidate
+    commit bee3db7d9099df9190f4875d523d8e4cea3a9c07 with parent equal to the admitted
+    head 3ae20ac43a5ac4a933475bda540aa71abbe1eba4, ordinary-pushed it to the exact
+    fixture canonical branch, independently read the remote back and returned a valid
+    persisted direct/codex receipt (provider direct, adapter codex, exact identity and
+    transport echo).
+  physical_proof_proven:
+    - real Codex edit -> provider-owned candidate commit -> ordinary exact-branch
+      fast-forward push -> remote readback == candidate -> persisted receipt
+    - exactly one new commit; no replacement branch/tag; no force/force-with-lease
+    - MIC containment (EPERM on the protected workspace-root sibling, no contamination)
+    - custom filter attribute rejected before checkout with the marker process never
+      running and no worktree materialized
+    - LF parent blob materialized as Windows CRLF under the frozen snapshot and
+      re-canonicalized to the exact parent blob when unchanged (verified no-change, no
+      fabricated commit)
+    - one-line real edit canonicalized to LF with exactly one eligible change (no
+      whole-file EOL churn)
+    - versioned .gitattributes change failed closed before persistence
+    - remote-drift negative failed without push and created no replacement transport
+    - canonical-like checkout unmutated; process tree contained; no acceptance or
+      completion claim
+  deployed_live_activation_proof_owner: acceptance
+
+guard:
+  acceptance_claim: false
+  completion_claim: false
+  gate_transition: none
+  requirement_change: false
+  plan_change: false
+  slice_set_semantic_change: false
+  permission_expansion: false
+  write_scope_expansion: false
+  provider_fallback: false
+  replacement_branch_or_pr: false
+  force_push: false
+  canonical_checkout_mutation: false
+  hub_mutation: false
+  no_receipt_no_completion_claim: honored
+
+persistence_readback:
+  slice_set_updated_to_completed: true
+  completion_checkpoint_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-s04-completion-20261007.yaml
+  completion_receipt_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-s04-completion-receipt.yaml
+  product_candidate_ref: 02eb3de2ec9c137b3285398e555f1e037b574965
+  branch: task/direct-codex-development-host-invocation-bridge-v1
+  remote_readback_verified_after_push: true
+
+next_action:
+  canonical_command: "#开发验收 PR-015-direct-codex-development-host-invocation-bridge-v1"
+  note: >-
+    All bound Plan R6 slices are complete and the task-scoped bootstrap override
+    expires. Acceptance must evaluate Requirement Revision 2 against the exact S04
+    product candidate, own the deployed live-Agent activation proof and the PR-013
+    direct/Codex provider-admission recovery proof, and must not treat this receipt as
+    an acceptance or completion decision.

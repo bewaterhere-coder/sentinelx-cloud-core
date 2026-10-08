@@ -1,0 +1,79 @@
+schema_version: "1.0"
+kind: devforge_slice_continuation_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1
+slice_id: S05
+source_command: "#开发执行 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
+
+activation:
+  candidate_version: "0.24.1.dev403+g9948eb4d4"
+  candidate_commit: "9948eb4d481ca773b2ea14cf2571e0cf6342f213"
+  service_restart_after_install: passed
+  devforge_runtime_verification_selector_present: true
+
+temporary_profile:
+  provider_root: "D:\\SentinelX\\pr011-s05-live"
+  configured: true
+  readiness_after_restart:
+    available: true
+    verified: true
+    profile_id: node_npm
+    toolchain_kind: node_npm_v1
+    toolchain_digest: "612817de86940af51548cf1ef6202cf9a4ea157ebc2f204f6ccb1c73111cc4c6"
+    appcontainer_node: true
+    appcontainer_npm: true
+    dns_denied: true
+    http_denied: true
+    protected_root_denied: true
+    terminal_non_active: true
+    transient_toolchain_authority_absent: true
+
+live_execute_scoped:
+  status: passed
+  scope_id: "mss_Z3lQdi9jbPHmH7OH9DXL7ftc"
+  generation: 1
+  audit_operation_id: "mao_Pl-9T_iJRfqaB1Ya2-054Ovm"
+  terminal_state: terminal
+  output: "pr011-s05-live-profile-ok"
+  verification:
+    profile_id: node_npm
+    profile_revision: 1
+    source_id: "pr011-s05-live-source"
+    source_revision: "9948eb4d481ca773b2ea14cf2571e0cf6342f213"
+    source_manifest_digest: "c542566deec39d5dabd809cba9a04cd4175254d7cc2f6e743f3e2afdac27cd21"
+    toolchain_kind: node_npm_v1
+    toolchain_digest: "612817de86940af51548cf1ef6202cf9a4ea157ebc2f204f6ccb1c73111cc4c6"
+    capsule_id: "pr011-s05-live-empty-cache"
+    expected_package_lock_sha256: "bfcc57279ce71beea09b3a38dd94a76f36fc1afbec5587a495a79b3a3309bbe5"
+    network_mode: none
+    offline: true
+  terminal_readback:
+    state: terminal
+    terminalized_at: "2026-10-06T12:40:15.928056Z"
+
+restore:
+  prior_config_restored: true
+  service_restart_after_restore: passed
+  post_restore_readiness:
+    available: false
+    reason: "Node/npm verification profile is not configured"
+
+cleanup:
+  provider_temp_root_deleted: false
+  blocker: >-
+    SentinelX file_ops intentionally does not grant rw authority to D:\SentinelX,
+    and the user explicitly prohibited allowlist/permission widening. Manual
+    operator cleanup is therefore required for the temporary provider tree.
+  remaining_path: "D:\\SentinelX\\pr011-s05-live"
+
+safety:
+  hub_modified: false
+  allowlist_changed: false
+  permission_widened: false
+  operator_unrestricted_used: false
+  canonical_main_mutated: false
+  completion_claimed: false
+
+completion_effect:
+  s05_state: pending
+  only_remaining_gate: delete temporary provider tree and read back absence

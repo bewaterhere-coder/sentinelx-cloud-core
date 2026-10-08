@@ -1,0 +1,45 @@
+schema_version: "1.0"
+kind: devforge_continuation_checkpoint
+checkpoint_id: PR-012-completion-r1-verified
+subject:
+  repository: github.com/bewaterhere-coder/sentinelx-cloud-core
+  task_id: PR-012-execute-scoped-explicit-execution-profile-v1
+lineage:
+  requirement_revision: 1
+  plan_revision: 3
+  acceptance_revision: 1
+  completion_revision: 1
+execution:
+  stage: done
+  source_command: "#开发完成 PR-012-execute-scoped-explicit-execution-profile-v1"
+boundary:
+  disposition: completed
+  reason: CompletionR1IntegrationAndReconciliationVerified
+transport:
+  type: github-pr
+  pr_number: 12
+  merge_commit: 29c724fdc6faed28018d60e61250d3f21b02c1b3
+evidence:
+  exact_product_candidate: 1e4012d7d6bfe4fa1bff70f364f3199d67626104
+  finalization_head: 76827d63cff599d4151aecca7ef60d72de481112
+  acceptance_ref: docs/reviews/PR-012-execute-scoped-explicit-execution-profile-v1-acceptance-r1.md
+  finalization_ref: docs/reviews/PR-012-execute-scoped-explicit-execution-profile-v1-completion-finalization-r1.yaml
+  integration_receipt_ref: docs/reviews/PR-012-execute-scoped-explicit-execution-profile-v1-integration-receipt-r1.yaml
+  completion_review_ref: docs/reviews/PR-012-execute-scoped-explicit-execution-profile-v1-completion-r1.md
+  reconciliation_receipt_ref: docs/reviews/PR-012-execute-scoped-explicit-execution-profile-v1-completion-reconciliation-r1.yaml
+  integration_readback:
+    pr_merged: true
+    main_head_at_merge: 29c724fdc6faed28018d60e61250d3f21b02c1b3
+continuation:
+  mode: terminal
+  next_expected_actor: none
+  next_action_hint: none
+safety:
+  implementation_replayed: false
+  product_code_modified_by_reconciliation: false
+  hub_modified: false
+  permission_or_allowlist_widened: false
+  operator_unrestricted_used: false
+  canonical_local_checkout_mutated: false
+freshness:
+  generated_date: "2026-10-05"

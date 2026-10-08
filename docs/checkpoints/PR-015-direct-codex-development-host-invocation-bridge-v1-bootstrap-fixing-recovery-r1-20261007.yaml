@@ -1,0 +1,114 @@
+schema_version: "1.1"
+kind: devforge_task_scoped_bootstrap_execution_override_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-015-direct-codex-development-host-invocation-bridge-v1
+source_command: "#开发引导执行 PR-015-direct-codex-development-host-invocation-bridge-v1 direct:codebuddy"
+created_at: "2026-10-07"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  version: "2.89.0"
+  revision: e09e69889d6cc3b5cdaa6a1fd5afb98286611c65
+  capability: development.bootstrap_execution_override
+  contract_revision: "1.1"
+
+task_state:
+  stage: fixing
+  requirement_revision: 2
+  requirement_ref: docs/requirements/PR-015-direct-codex-development-host-invocation-bridge-v1.md
+  requirement_blob_sha: 378bac0b901c7c7e34a17ce542b799a37184a567
+  plan_revision: 6
+  plan_ref: docs/plans/PR-015-direct-codex-development-host-invocation-bridge-v1-plan.md
+  plan_blob_sha: 2bcea2a44f88e51c8b9378ba6297b61897e638da
+  plan_approved: true
+  implementation_authorized: true
+  acceptance_decision: Rejected
+  acceptance_finding_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r5.md
+  acceptance_finding_blob_sha: 988f2a1eb94ab8349576e3db3c88c4def93fb6c0
+  acceptance_finding_classification: repair_local
+  finding_code: direct_codex_containment_proof_lifecycle_unreachable
+
+self_host_relation:
+  blocked_provider:
+    provider: direct
+    adapter: codex
+  missing_or_broken_capability: direct_codex_containment_proof_lifecycle
+  relation_verified: true
+  repair_authorized_by_current_requirement_and_plan: true
+
+target:
+  provider: direct
+  adapter: codebuddy
+  registered: true
+  available: true
+  adapter_ref: bewaterhere-coder/DevForge@e09e69889d6cc3b5cdaa6a1fd5afb98286611c65:adapters/development/codebuddy.md
+  adapter_blob_sha: d1e0547ef212a0e45da59b5129d61ee1804cf722
+  host_id: host_7f0e709ded71ab24
+  host_operational: true
+  codebuddy_executable_present: true
+  codebuddy_cli_present: true
+  devforge_user_rule_present: true
+  devforge_user_rule_enabled: true
+  devforge_user_rule_always_apply: true
+
+transport:
+  type: github-pr
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 15
+  branch: task/direct-codex-development-host-invocation-bridge-v1
+  admitted_head_before_override: 4d6d8918c00d4fa5a6beaf8b770a56008051c911
+  staged_override_head: 52ca7f5fe3849693aefb748fc9661a0faba5ab32
+  canonical_main: 018b78ca20984176d53fbe90039dc795a7f2742f
+  transport_replaced: false
+
+override:
+  ref: docs/overrides/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-execution-override.yaml
+  revision: 3
+  mode: fixing_recovery
+  state: active
+  staged_readback_blob_sha: febaefbb0850ed90ad59ad1013abcbcb4417d3ee
+  final_blob_sha: a33802c2eeba930283a24f573c390ab4ee7bd7b7
+  prior_implementation_override:
+    revision: 2
+    state: expired
+    reused_as_authority: false
+
+scope:
+  stages: [fixing]
+  max_fixing_attempts_per_execute: 1
+  project_binding_mutation: forbidden
+  replacement_branch: forbidden
+  replacement_pr: forbidden
+  fallback: forbidden
+  requirement_change: forbidden
+  plan_change: forbidden
+  gate_change: forbidden
+  acceptance_authority: forbidden
+  permission_expansion: forbidden
+  credential_expansion: forbidden
+  write_scope_expansion: forbidden
+  transport_migration: forbidden
+  host_policy_mutation: forbidden
+  production_release: forbidden
+
+admission:
+  disposition: BootstrapOverrideAdmitted
+  explicit_command_verified: true
+  task_stage_verified: true
+  rejected_acceptance_verified: true
+  repair_local_findings_verified: true
+  exact_findings_bound: true
+  self_host_relation_verified: true
+  target_registered: true
+  target_available: true
+  canonical_transport_locked: true
+  requirement_plan_binding_verified: true
+  project_binding_preserved: true
+  write_scope_preserved: true
+  authority_widened: false
+  prior_implementation_override_reused: false
+  readback_verified: true
+
+handoff:
+  next_expected_actor: implementer
+  canonical_next_command: "#开发执行 PR-015-direct-codex-development-host-invocation-bridge-v1"

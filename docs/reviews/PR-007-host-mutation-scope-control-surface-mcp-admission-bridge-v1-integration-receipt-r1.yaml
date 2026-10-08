@@ -1,0 +1,38 @@
+schema_version: "1.0"
+kind: devforge_integration_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1
+source_command: "#开发完成 PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1"
+lineage:
+  requirement_revision: 2
+  plan_revision: 4
+  acceptance_revision: 3
+  finalization_ref: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-completion-finalization-r1.yaml
+transport:
+  type: github-pr
+  pr_number: 7
+  branch: task/host-mutation-scope-control-surface-mcp-admission-bridge-v1
+  finalized_head: bbf3450d7edf4bc822e139954ce868c5cf47a9b2
+  base_before_merge: f7e878f3497582547e5d52cd33b060cae18d2e84
+  merge_method: merge
+integration:
+  result: verified
+  pr_state: closed
+  merged: true
+  merge_commit: 26fe28bd5e2317d31e09d2055b191447c3f7ed37
+  merged_at: "2026-10-02T23:22:27Z"
+  main_readback: 26fe28bd5e2317d31e09d2055b191447c3f7ed37
+  head_match_verified: true
+  main_match_verified: true
+safety:
+  hub_modified: false
+  host_policy_widened: false
+  implementation_replayed: false
+  canonical_local_checkout_mutated: false
+completion:
+  integration_verified: true
+  completion_state_persistence_required: true
+  completion_verified_after_this_receipt_and_done_state_readback: true
+freshness:
+  generated_date: "2026-10-03"
+  merge_finalization_contract: v1.0

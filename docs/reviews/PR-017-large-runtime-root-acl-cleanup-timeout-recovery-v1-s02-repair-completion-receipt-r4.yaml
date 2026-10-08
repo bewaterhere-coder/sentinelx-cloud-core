@@ -1,0 +1,42 @@
+schema_version: "1.0"
+kind: devforge_slice_repair_completion_receipt
+task_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
+slice_id: S02
+receipt_revision: 4
+source_command: "#开发执行 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1"
+decision: CompletedAfterRepair
+lineage:
+  requirement_revision: 1
+  plan_revision: 1
+  invalidation_ref: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-live-invalidation-r3.md
+  prior_repair_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-repair-completion-receipt-r3.yaml
+  repair_candidate: f7249aef0d25085eb98e741596b6f567ebd83966
+verification:
+  preread_exact_dacl_before_mutation: pass
+  sid_absent_noop_closure: pass
+  sid_present_bounded_remove: pass
+  post_remove_exact_absence_readback: pass
+  preread_failure_residual_authority: pass
+  remove_denied_residual_authority: pass
+  main_test: pass
+  windows_incident_security_regression: pass
+  windows_regression_coverage: pass
+  verification_materialization: pass
+  windows_process_firewall: pass
+  offline_node_npm: pass
+  devforge_runtime_verification: pass
+  structured_mutation_regression: pass
+  macos_regression: pass
+live_gate:
+  repaired_candidate_activated: false
+  preserved_revoked_scope: mss_JB_VJlJg4Np6LdrxgKd_fCw9
+  required_next_evidence: activate f7249aef0d25085eb98e741596b6f567ebd83966 and terminalize the same revoked scope through devforge_runtime before creating any fresh PowerShell/Unity scope
+postconditions:
+  s01_state: completed
+  s02_state: completed
+  s03_state: blocked
+  current_slice: S03
+  task_completion_verified: false
+  acceptance_approved: false
+completion_guard:
+  status: satisfied_for_s02_repair_only

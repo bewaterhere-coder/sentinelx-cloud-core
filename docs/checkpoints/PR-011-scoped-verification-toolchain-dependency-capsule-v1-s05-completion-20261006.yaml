@@ -1,0 +1,99 @@
+schema_version: "1.0"
+kind: devforge_slice_completion_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1
+slice_id: S05
+source_command: "#开发执行 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
+
+lineage:
+  requirement_revision: 2
+  plan_revision: 6
+  product_candidate_commit: "9948eb4d481ca773b2ea14cf2571e0cf6342f213"
+  pre_completion_branch_head: "259b469a63039d8cb88a15aec8c0dbd77d1bed34"
+  slice_set_blob_sha_before: "02a06f1b1b344462e9a2cbbaf97e53be36cd9c56"
+  slice_set_blob_sha_after: "44089a4d3ac1c7966f0b40f7e5e6220fe033ecd6"
+
+implementation:
+  product_files:
+    - src/sentinelx_core/handlers/devforge_runtime.py
+    - tests/test_devforge_runtime_local_api.py
+    - .github/workflows/pr011-s05-verification.yml
+  properties:
+    - bounded optional verification selector accepts only logical profile/source/capsule/integrity identifiers
+    - explicit execution_profile=scoped_mutation remains required
+    - unknown path/cache/network/credential authority fields fail before executor dispatch
+    - verification request forwards to the one existing canonical profiled scoped handler
+    - bounded response projection excludes provider paths and credentials
+    - no second executor, scope store, sandbox or audit path introduced
+
+ci:
+  workflow: pr011-s05-verification
+  run_id: 37462685305
+  job_id: 112265912564
+  conclusion: success
+  result: "66 passed in 0.87s"
+
+live_agent:
+  version: "0.24.1.dev403+g9948eb4d4"
+  describe:
+    provider_kind: builtin
+    contract_revision: 1
+    verification_selector_present: true
+    verification_additional_properties: false
+    execution_profile_required: true
+    execution_profile_const: scoped_mutation
+  temporary_profile_readiness:
+    available: true
+    verified: true
+    profile_id: node_npm
+    toolchain_kind: node_npm_v1
+    toolchain_digest: "612817de86940af51548cf1ef6202cf9a4ea157ebc2f204f6ccb1c73111cc4c6"
+    node: passed
+    npm: passed
+    dns_denied: passed
+    http_denied: passed
+    protected_root_denied: passed
+    terminal_non_active: passed
+    transient_toolchain_authority_absent: passed
+  profiled_execute_scoped:
+    status: passed
+    output: pr011-s05-live-profile-ok
+    audit_operation_id: mao_Pl-9T_iJRfqaB1Ya2-054Ovm
+    scope_id: mss_Z3lQdi9jbPHmH7OH9DXL7ftc
+    terminal_state: terminal
+    profile_id: node_npm
+    toolchain_kind: node_npm_v1
+    capsule_id: pr011-s05-live-empty-cache
+    network_mode: none
+    offline: true
+  terminal_readback:
+    scope_state: terminal
+    terminalized_at: "2026-10-06T12:40:15.928056Z"
+
+restoration:
+  prior_config_restored: true
+  restart_after_restore: passed
+  post_restore_verification_profile_available: false
+  post_restore_reason: "Node/npm verification profile is not configured"
+  temporary_provider_root:
+    path: "D:\\SentinelX\\pr011-s05-live"
+    cleanup_receipt: S05_TEMP_PROVIDER_ROOT_ABSENT
+    cleanup_source: operator PowerShell readback
+    deleted: true
+
+safety:
+  canonical_main_sha: e7064c9bf4fcd15bdb6f5a2678414210c01d1c00
+  canonical_checkout_main_clean: true
+  canonical_main_mutated: false
+  hub_modified: false
+  allowlist_changed: false
+  permission_widened: false
+  operator_unrestricted_used: false
+  generic_exec_fallback_used: false
+  duplicate_executor_or_sandbox_introduced: false
+
+completion:
+  s05_completion_eligible: true
+  all_current_plan_slices_completed: true
+  acceptance_not_executed_by_this_command: true
+  next_command: "#开发验收 PR-011-scoped-verification-toolchain-dependency-capsule-v1"

@@ -1,0 +1,128 @@
+schema_version: "1.0"
+kind: devforge_plan_revision_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
+source_command: "#开发 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1 修订当前方案：将 PR-018 已验证 product candidate 集成到 PR-017 canonical branch，仅重放 PR-017 S03 / R8.3"
+
+runtime:
+  devforge_repository: bewaterhere-coder/DevForge
+  devforge_main_sha: "9551d38b1d70b5bfb3f692725e8f5c70b74693a6"
+
+input:
+  requirement_revision: 1
+  prior_plan_revision: 1
+  prior_plan_blob_sha: "3d5cb55362a4b97ee157caed6d3539df02acb0fc"
+  prior_plan_review_ref: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-review-r1.md
+  prior_plan_review_blob_sha: "11bb1278514467c68c0a5d245ab19de2b7d2e4cc"
+  current_pr17_head_before_revision: "db1f29c727d619942921438cffff154f49b6b694"
+  prior_s03_blocker_ref: docs/checkpoints/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s03-blocked-unity-dll-initialization-20261007.yaml
+  prior_s03_blocker_blob_sha: "eaedb2657ca1bb7cbb87ff04aef5d788ef71eb3c"
+
+upstream_dependency:
+  task_id: PR-018-unity-6-6-appcontainer-dll-initialization-compatibility-v1
+  pr_number: 18
+  verified_product_candidate: "73a52013055a8b3bb70b319a0ed7b7ba832ae0c9"
+  exact_live_source_ref: "86bc881265ee3fb2ab388170a16e627caf6d723e"
+  stacked_base_ref: "3858c7d0e46295d5e0dc184bb21e76da7c963346"
+  s03_completion_receipt_blob_sha: "18c854e6bda38c586c59fac38862090c0b3f4e3c"
+  acceptance_r1:
+    result: Rejected
+    blocker: AC18CombinedPR017S03ReplayMissing
+    classification: external_blocker
+    local_acceptance_criteria_passed: "AC1-AC17, AC19"
+  semantic_use: dependency_input_only
+
+repository_reconciliation:
+  pr17_current_head: "db1f29c727d619942921438cffff154f49b6b694"
+  pr17_changes_since_pr18_stacked_base:
+    product_or_test_files_changed: false
+    only_docs_changed: true
+    commits_ahead: 2
+  integration_method: exact_blob_projection
+  branch_level_merge_forbidden: true
+  moving_head_cherry_pick_forbidden: true
+  pr018_docs_import_forbidden: true
+  pr018_only_workflow_import_forbidden: true
+
+frozen_integration_payload:
+  count: 12
+  files:
+    - path: config.example.windows.yaml
+      candidate_blob: a76b1772361517838b40de019bee1e9aa9fb9c85
+    - path: src/sentinelx_core/handlers/basic.py
+      candidate_blob: 5a99296d9c80b164d344abf519f5627eae5f52fe
+    - path: src/sentinelx_core/handlers/mutation_scope.py
+      candidate_blob: af310b650151de168a9ff437140fbe0e1187cf6d
+    - path: src/sentinelx_core/handlers/scoped_script.py
+      candidate_blob: 1b8c05b14658f3ffb71e08fbd23851391132b5cf
+    - path: src/sentinelx_core/mutation_placement.py
+      candidate_blob: 6ee33bacee65dac566116a4252756e40e25c4662
+    - path: src/sentinelx_core/mutation_readiness.py
+      candidate_blob: aa318aec6e25b2b0ce3d13feb9c46c6680852144
+    - path: src/sentinelx_core/mutation_scope.py
+      candidate_blob: 1a6dce6d066c07569ea5676cd9a411105171a9f6
+    - path: src/sentinelx_core/policy.py
+      candidate_blob: 82cc82615f090f19777161125c1e2aff14e63806
+    - path: src/sentinelx_core/windows_mutation_sandbox.py
+      candidate_blob: c5a9ae35b8324adffc31ce9ed6cbbf9ebe172bde
+    - path: tests/test_mutation_scope_admission.py
+      candidate_blob: 4dd4db78a3c20487ae442ac312760dd6dbaa4b1e
+    - path: tests/test_policy.py
+      candidate_blob: fd1d002d8426f58c71c0b5f66a343f00c786e943
+    - path: tests/test_windows_mutation_sandbox.py
+      candidate_blob: 8218fa324a99ba48669a5427fdafaf714f43f25f
+
+preserved_evidence:
+  s01:
+    replay: forbidden
+    completion_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s01-completion-receipt.yaml
+  s02:
+    replay: forbidden
+    completion_receipt: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-s02-repair-completion-receipt-r4.yaml
+    exact_repair_candidate: f7249aef0d25085eb98e741596b6f567ebd83966
+  prior_powershell_evidence:
+    preserved: true
+    replay_required_by_r2: false
+
+output:
+  revised_plan_revision: 2
+  revised_plan_ref: docs/plans/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan.md
+  revised_plan_blob_sha: "350b3c07778f5a6f5bd1eb78bf50e375fde8a94e"
+  requirement_semantics_changed: false
+  transport_changed: false
+  implementation_started: false
+  slice_set_recompiled: false
+
+r2_execution_intent:
+  only_revised_slice: S03
+  s03_steps:
+    - exact 12-blob projection onto canonical PR-017 branch
+    - combined candidate readback
+    - scoped Python marker
+    - exact Unity 6000.6.4f1 deterministic version probe
+    - runtime-root and Session-0 exact SID cleanup proof
+    - Job/no-breakaway and residual-authority closure
+    - affected regression closure
+    - restore runtime_session_object_read_enabled to false
+  new_slice_after_s03: none
+
+safety:
+  canonical_main_mutated: false
+  product_code_mutated: false
+  tests_mutated: false
+  host_policy_mutated: false
+  pr017_s01_replayed: false
+  pr017_s02_replayed: false
+  pr018_task_state_mutated: false
+  permission_expansion_used: false
+  self_approval_performed: false
+
+next_state:
+  stage: plan_review
+  plan_revision: 2
+  plan_approved: false
+  implementation_authorized: false
+  current_slice: S03
+  completed_slices: [S01, S02]
+  next_expected_actor: reviewer
+  canonical_next_action: "#开发评审 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1"

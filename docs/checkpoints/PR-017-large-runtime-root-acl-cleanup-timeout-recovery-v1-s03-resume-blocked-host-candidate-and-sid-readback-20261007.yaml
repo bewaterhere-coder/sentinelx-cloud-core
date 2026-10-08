@@ -1,0 +1,70 @@
+schema_version: "1.0"
+kind: devforge_slice_blocked_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
+slice_id: S03
+source_command: "#开发执行 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1"
+result: Blocked
+repository_reality:
+  canonical_main: 018b78ca20984176d53fbe90039dc795a7f2742f
+  transport_pr: 17
+  transport_branch: task/large-runtime-root-acl-cleanup-timeout-recovery-v1
+  pr017_head_at_entry: cde1206dc46e8fc79c7e966d6784bbda6c9b7cf0
+  s02_repair_candidate: 4896a55cb951dec47422c738ccb1ba98762e13a9
+  pr015_current_head: 080d31229b614c8fc753117fa7152618e4ff1e50
+  pr016_current_head: 0f4edc69bd66ba593d0af14c7b3aec25cebc176f
+  pr016_product_sandbox_overlap: false
+host_reality:
+  host: windows
+  deployed_agent_version: 0.24.1.dev518+gd441e95b6
+  deployed_agent_candidate: d441e95b6eb65834f52ffdb42026e7328f5c9478
+  deployed_agent_lineage: concurrent_PR_015
+  required_pr017_candidate: 4896a55cb951dec47422c738ccb1ba98762e13a9
+  runtime_acl_timeout_seconds: 300
+  original_runtime_roots_present: true
+old_scope_readback:
+  scope_id: mss_62URoGdXBbPJCnNK6Xdm_dye
+  generation: 1
+  bounded_projection_state: terminal
+  sandbox_identity_projected: false
+  runtime_read_authority_projected: false
+  exact_sid_absence_proven: false
+authority_readback_constraints:
+  direct_authority_json_read:
+    result: denied
+    reason: path_not_allowed
+  file_ops_widening:
+    performed: false
+    reason: forbidden_workaround
+  read_audit_model_surface:
+    available: false
+execution_surface:
+  sentinel_script_run:
+    probe: python3_print_marker
+    result: rejected_before_process_execution
+    error: execution_profile_required
+  devforge_runtime_execute_scoped:
+    available: true
+    permitted_profile: scoped_mutation
+    limitation: cannot safely install/replace the running Agent venv and must not be used to create new live scope before prior SID closure
+blocker:
+  class: exact_candidate_activation_and_residual_sid_readback_unavailable
+  detail: S03 requires both exact-candidate Host activation and authoritative absence/readback of the prior ambiguous AppContainer SID before any new PowerShell/Unity scope may be created.
+forbidden_fallbacks_preserved:
+  - do not widen file_ops to C:\ProgramData\SentinelX\state
+  - do not disable mutation_execution
+  - do not enable operator_unrestricted
+  - do not use old PR-015 Agent as PR-017 evidence
+  - do not create new PowerShell/Unity live scope while prior SID closure is unproven
+resume_condition:
+  - PR-017 repair candidate 4896a55cb951dec47422c738ccb1ba98762e13a9 or explicitly reconciled descendant is active on Host
+  - exact AppContainer SID from mss_62URoGdXBbPJCnNK6Xdm_dye is proven absent from C:\Windows\System32\WindowsPowerShell\v1.0
+  - runtime_acl_timeout_seconds remains 300
+postconditions:
+  s01_state: completed
+  s02_state: completed
+  s03_state: blocked
+  task_completion_verified: false
+  acceptance_approved: false
+completion_guard:
+  canonical_next_action: "activate PR-017 repair candidate and prove prior exact SID absence, then rerun #开发执行 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1"

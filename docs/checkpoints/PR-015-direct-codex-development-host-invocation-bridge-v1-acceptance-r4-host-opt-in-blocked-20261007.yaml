@@ -1,0 +1,168 @@
+schema_version: "1.0"
+kind: devforge_acceptance_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-015-direct-codex-development-host-invocation-bridge-v1
+acceptance_revision: 4
+source_command: "#开发验收 PR-015-direct-codex-development-host-invocation-bridge-v1"
+created_at: "2026-10-07"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  version: "2.87.0"
+  revision: 7bb8f79919e5b92954311c639526beee86e80326
+  acceptance_contract: "1.5"
+  acceptance_contract_blob_sha: 1c5e96a20d665e68b1f68e18b7d294945e501ec2
+
+transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 15
+  branch: task/direct-codex-development-host-invocation-bridge-v1
+  evaluated_head_before_checkpoint: ec4aac5278a32b63594bf575c4c2d6c7da7c3ab0
+  canonical_main: 018b78ca20984176d53fbe90039dc795a7f2742f
+  transport_drift: false
+
+lineage:
+  requirement_revision: 2
+  requirement_blob_before_r4: b3c6f628116473d80f2593e23c44cf7e1c57c150
+  plan_revision: 6
+  plan_blob_sha: 2bcea2a44f88e51c8b9378ba6297b61897e638da
+  product_candidate_sha: 02eb3de2ec9c137b3285398e555f1e037b574965
+  prior_acceptance_checkpoint: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r3-post-restart-activation-blocked-20261007.yaml
+  prior_acceptance_checkpoint_blob_sha: 52fbd4b0873ab4e7bb2d26b67760516f21aad876
+  post_candidate_product_code_drift: false
+
+live_activation_verification:
+  host_id: host_7f0e709ded71ab24
+  hostname: Cherie_li
+  session_id: sess_5306a4882c3f
+  connected_at: "2026-10-07T09:25:43.187158+00:00"
+  agent_version: 0.24.1.dev499+g02eb3de2e
+  exact_product_candidate_active: true
+  runtime_change:
+    from_version: 0.24.1.dev403+g9948eb4d4
+    to_version: 0.24.1.dev499+g02eb3de2e
+  local_api_endpoints:
+    - devforge_runtime
+  devforge_direct_codex_exposed: false
+  describe_result:
+    ok: false
+    error: endpoint_not_available
+    message: devforge_direct_codex requires explicit direct-codex Host policy opt-in
+  host_policy:
+    config_ref: C:\ProgramData\SentinelX\config.yaml
+    direct_codex_block_present: false
+    observation: >-
+      Live Host config contains mutation_execution and canonical repository
+      firewall policy but no direct_codex block. Requirement R3 requires explicit
+      Host policy opt-in, so provider absence is correct fail-closed behavior.
+  separately_admitted_activation_observed: false
+
+canonical_checkout_verification:
+  path: D:\coco\repos\bewaterhere-coder\sentinelx-cloud-core
+  branch: main
+  head: 018b78ca20984176d53fbe90039dc795a7f2742f
+  detached: false
+  ahead: 0
+  behind: 0
+  dirty: false
+  main_plus_clean: true
+
+pr013_readback:
+  pr_number: 13
+  branch: task/host-runtime-repository-materialization-scoped-publication-bridge-v1
+  head_sha: 4a3f8e3504b65d1dc222ecb9421ffa16cd96c76d
+  state: open
+  task_stage: implementation
+  current_slice: S03
+  direct_codex_provider_admission_proof: false
+  project_binding_change_authorized: false
+
+acceptance_matrix:
+  AC1:
+    status: BLOCKED_HOST_OPT_IN
+    evidence: >-
+      Exact PR-015 candidate is active, but local_api.list exposes only
+      devforge_runtime and local_api.describe(devforge_direct_codex) returns
+      endpoint_not_available requiring explicit direct-codex Host policy opt-in.
+  AC2:
+    status: PASS
+    evidence: >-
+      Live exact-candidate behavior fails closed when Host opt-in is absent,
+      matching Requirement R3 and AC2.
+  AC3:
+    status: PASS
+    evidence: exact-candidate physical Windows active-user Codex evidence retained from S04
+  AC4:
+    status: PASS
+    evidence: live canonical checkout readback is main + clean at exact canonical main
+  AC5:
+    status: PASS
+    evidence: physical Windows MIC protected-sibling negative proof retained from S04
+  AC6:
+    status: PASS
+    evidence: remote drift and exact branch/head negatives retained from S04
+  AC7:
+    status: PASS
+    evidence: exact Requirement/Plan/Slice/transport lock retained from S04
+  AC8:
+    status: PASS
+    evidence: real Codex fixture deterministic commit, ordinary FF push, remote readback and persisted receipt retained from S04
+  AC9:
+    status: PASS
+    evidence: fail-closed timeout/nonzero/malformed/local-only/transport-drift evidence retained from S04
+  AC10:
+    status: PASS
+    evidence: focused and regression suites retained from exact product candidate
+  AC11:
+    status: PASS
+    evidence: no generic exec, operator_unrestricted, allowlist widening or Hub mutation
+  AC12:
+    status: BLOCKED_HOST_OPT_IN
+    missing:
+      - separately admitted explicit direct_codex Host policy opt-in
+      - live persisted direct/Codex execution through devforge_direct_codex
+      - PR-013 direct/Codex provider-admission recovery proof without Task/Plan/Slice/project-binding change
+
+acceptance:
+  disposition: blocked
+  finding_classification: external_blocker
+  blocker: explicit_host_policy_opt_in_missing
+  acceptance_decision_persisted: false
+  acceptance_approved: false
+  completion_verified: false
+  gate_transition: none
+  current_stage: acceptance
+  next_expected_actor: operator
+  reason: >-
+    Installation and restart are now verified: the exact PR-015 candidate is
+    running. The remaining blocker is narrower and policy-owned. Requirement R3
+    requires explicit Host opt-in, and Plan R6 says live activation occurs only
+    when separately admitted. The current #开发验收 command does not constitute
+    a separate Host-policy opt-in, so Acceptance must not mutate config.yaml to
+    enable the provider implicitly.
+
+safety:
+  canonical_checkout_mutated_by_acceptance: false
+  canonical_main_mutated_by_acceptance: false
+  host_policy_mutated_by_acceptance: false
+  production_hub_mutated: false
+  permission_expansion_used: false
+  credential_mutation_used: false
+  implementation_replayed: false
+
+resume:
+  replay_product_implementation: forbidden
+  exact_candidate_active: 02eb3de2ec9c137b3285398e555f1e037b574965
+  required_operator_decision: >-
+    Explicitly opt in this Host to devforge_direct_codex with a bounded
+    direct_codex policy and a provider-owned workspace root outside canonical
+    and protected roots. This admission is separate from #开发验收.
+  after_host_opt_in:
+    - restart SentinelX
+    - verify local_api.list/describe exposes devforge_direct_codex
+    - verify provider readiness and physical containment on the live Host
+    - execute one real persisted direct/Codex live proof with exact identity/readback
+    - reverify canonical checkout main + clean
+    - verify PR-013 direct/Codex provider admission without changing PR-013 identity or project binding
+    - finish Acceptance
+  canonical_resume_command: "#开发验收 PR-015-direct-codex-development-host-invocation-bridge-v1"

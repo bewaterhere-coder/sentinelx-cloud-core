@@ -1,0 +1,123 @@
+schema_version: "1.0"
+kind: devforge_slice_continuation_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1
+slice_id: S05
+source_command: "#开发执行 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
+
+lineage:
+  requirement_revision: 2
+  plan_revision: 6
+  implementation_candidate_head: 9948eb4d481ca773b2ea14cf2571e0cf6342f213
+  slice_set_blob_sha_before: 6ae69c51a432981c59f5aa81b779b38767617856
+  slice_set_blob_sha_after: aa505d30563b7379b8b8fd5122213f7545e6e313
+
+state:
+  stage: implementation
+  current_slice: S05
+  current_slice_state: pending
+  disposition: blocked_by_live_agent_activation_boundary
+  completion_claimed: false
+  all_slices_completed: false
+
+implementation:
+  status: candidate_published
+  commits:
+    selector_and_tests: 67078354ac34d7858c38fa28aa9beac1db9839e8
+    focused_workflow: 9948eb4d481ca773b2ea14cf2571e0cf6342f213
+  changed_product_files:
+    - src/sentinelx_core/handlers/devforge_runtime.py
+    - tests/test_devforge_runtime_local_api.py
+    - .github/workflows/pr011-s05-verification.yml
+  behavior:
+    - execute_scoped accepts optional bounded verification selector with only logical profile/source/capsule/integrity identifiers
+    - verification selector rejects additional caller path/cache/network/credential authority fields before executor dispatch
+    - explicit execution_profile=scoped_mutation remains required
+    - selector forwards to the one existing profiled scoped handler
+    - response projects only bounded verification evidence plus existing audit/scope/terminal fields
+    - no second executor, scope store, sandbox or audit path introduced
+
+ci_evidence:
+  workflow: pr011-s05-verification
+  run_id: 37462685305
+  job_id: 112265912564
+  status: completed
+  conclusion: success
+  result: "66 passed in 0.87s"
+  coverage:
+    - builtin devforge_runtime describe schema
+    - bounded verification selector admission
+    - unknown authority/path/network field rejection
+    - explicit execution profile regression
+    - sentinel_local_api routing to existing executor
+    - bounded verification evidence projection
+    - local_api regressions
+    - verification profile contract regressions
+
+live_agent_pre_activation_readback:
+  host: Cherie_li
+  platform: Windows
+  agent_version: "0.24.1.dev175+g1e4012d7d"
+  current_describe:
+    endpoint: devforge_runtime
+    provider_kind: builtin
+    contract_revision: 1
+    execute_scoped_execution_profile_required: true
+    verification_selector_present: false
+  selector_probe:
+    attempted_process_start: false
+    result: rejected
+    error: invalid_payload
+    message: "unsupported execute_scoped fields: ['verification']"
+  unprofiled_regression:
+    status: passed
+    output: pr011-s05-unprofiled-live-ok
+    execution_profile: scoped_mutation
+    audit_operation_id: mao_kTSHW5l7YDIJ8lFop9a6m14l
+    scope_id: mss_H7Z60lkOfn2sRGP8sBvK9076
+    terminal_state: terminal
+    inspect_scope_state: terminal
+
+blocker:
+  id: LIVE_AGENT_PR011_S05_CANDIDATE_NOT_ACTIVATED
+  classification: external_availability_gate
+  reason: >-
+    S05 requires live Agent-owned describe and admitted profiled execute_scoped
+    evidence from the current candidate. The connected Agent still runs the
+    pre-S05 build, so its dynamic schema does not expose verification and
+    rejects the field before execution.
+  current_user_boundary:
+    live_agent_install_or_upgrade_for_pr011: forbidden
+    live_agent_restart_for_pr011: forbidden
+  prohibited_workarounds:
+    - modify mcp.sentinelx.app Hub
+    - bypass dynamic Agent schema
+    - generic shell or exec fallback
+    - operator_unrestricted
+    - second temporary executor or sandbox
+    - caller-selected Host toolchain/cache/network authority
+  completion_effect:
+    s05_completion_eligible: false
+    acceptance_eligible: false
+
+safety:
+  canonical_main_sha: e7064c9bf4fcd15bdb6f5a2678414210c01d1c00
+  canonical_checkout_main_clean: true
+  canonical_main_mutated: false
+  hub_modified: false
+  live_agent_modified: false
+  live_agent_restarted: false
+  permission_or_allowlist_widened: false
+  operator_unrestricted_used: false
+  generic_exec_fallback_used: false
+  duplicate_executor_or_sandbox_introduced: false
+
+continuation:
+  mode: reenter_current_command_after_explicit_live_activation_is_permitted_and_completed
+  required_next_proof:
+    - activate exact PR-011 S05 candidate on the Windows Agent through an explicitly authorized provider lifecycle
+    - sentinel_local_api describe devforge_runtime must expose verification selector
+    - provision one scope with exact repository/lineage
+    - valid profiled execute_scoped must return bounded profile/toolchain/capsule/offline/audit/terminal evidence
+    - inspect_scope must read back terminal
+  no_receipt_no_completion_claim: satisfied

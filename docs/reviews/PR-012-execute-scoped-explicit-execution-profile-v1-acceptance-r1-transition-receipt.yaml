@@ -1,0 +1,40 @@
+schema_version: "1.0"
+kind: devforge_acceptance_transition_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-012-execute-scoped-explicit-execution-profile-v1
+source_command: "#开发验收 PR-012-execute-scoped-explicit-execution-profile-v1"
+runtime:
+  repository: bewaterhere-coder/DevForge
+  version: 2.40.0
+  revision: 1dc76ed0bcc1a70a2c5a860cd7a99aedd5d7820a
+lineage:
+  requirement_revision: 1
+  plan_revision: 3
+  acceptance_revision: 1
+  acceptance_ref: docs/reviews/PR-012-execute-scoped-explicit-execution-profile-v1-acceptance-r1.md
+  acceptance_blob_sha: cdd51c5908df816d06c81f67ba3b3353c68ccd48
+  task_blob_sha_after: cd659c3de4512cd134e9aae3148bfd3720d35de6
+  state_transition_commit: c6a023576d2c3f2ea16748a78ed744c3b96c05c6
+transport:
+  type: github-pr
+  pr_number: 12
+  branch: task/execute-scoped-explicit-execution-profile-v1
+  canonical_main: dbf4bfc9ebcdbde2374d41e6825b613d46aa87f2
+  transport_drift: false
+verification:
+  exact_product_candidate: 1e4012d7d6bfe4fa1bff70f364f3199d67626104
+  focused_tests_passed: 47
+  live_agent_version: 0.24.1.dev175+g1e4012d7d
+  live_describe_profile: scoped_mutation
+  live_marker_result: success
+  live_marker_audit_operation_id: mao_piytxrpXU06EHTgqwswtL-ki
+  terminal_scope_read_back: true
+  negative_profile_admission_read_back: true
+decision:
+  result: Approved
+  from_stage: acceptance
+  to_stage: accepted
+  acceptance_approved: true
+  completion_verified: false
+postconditions:
+  canonical_next_action: "#开发完成 PR-012-execute-scoped-explicit-execution-profile-v1"
