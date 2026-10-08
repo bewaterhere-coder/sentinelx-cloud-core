@@ -1,0 +1,54 @@
+schema_version: "0.1"
+kind: devforge_execution_run_ledger
+task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
+run_id: RUN-PR014-S07A-001
+slice_id: S07A
+observation_basis: reconstruction_from_durable_github_and_structured_host_readback
+events:
+  - event_id: RUN-PR014-S07A-001-001
+    task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
+    run_id: RUN-PR014-S07A-001
+    attempt_id: ATTEMPT-001
+    sequence: 1
+    timestamp: "2026-10-08T08:09:45Z"
+    type: transport.checked
+    actor: orchestration_readonly
+    payload:
+      pr: 14
+      canonical_main: 2e5c69a112323867ee01783521554c43ebd731be
+      initial_head: 8c7d1875d81df4a670909614030dae02c309961a
+      stage: implementation
+      approved_slice: S07A
+    artifact_refs: []
+  - event_id: RUN-PR014-S07A-001-002
+    task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
+    run_id: RUN-PR014-S07A-001
+    attempt_id: ATTEMPT-001
+    sequence: 2
+    timestamp: "2026-10-08T08:09:45Z"
+    type: artifact.updated
+    actor: github_connector
+    payload:
+      effect: original_pr_docs_only
+      published_commit: 59dff19d2e2947508e56168c29cfb588845842c5
+      decision_blob: 1ccd425242ac63b3e2a59cfa65d0f223e2c3d6c7
+    artifact_refs:
+      - docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-s07a-decision-20261008.md
+  - event_id: RUN-PR014-S07A-001-003
+    task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
+    run_id: RUN-PR014-S07A-001
+    attempt_id: ATTEMPT-001
+    sequence: 3
+    timestamp: "2026-10-08T08:09:45Z"
+    type: harness_receipt.observed
+    actor: github_connector
+    payload:
+      receipt_kind: equivalent_thin_manual_attempt_receipt
+      receipt_blob: d89bd5204baf506e91e94f0536c3cac3f16f3290
+      result: evidence_readback_verified
+      owner_security_gate: DecisionRequired/Blocked
+      product_or_host_mutation: false
+    artifact_refs:
+      - docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-s07a-attempt-001-receipt.yaml
+final_sequence: 3
+historical_slices_replayed: false
