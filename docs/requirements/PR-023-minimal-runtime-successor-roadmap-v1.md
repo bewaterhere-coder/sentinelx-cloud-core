@@ -5,11 +5,11 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 1
 development:
-  stage: acceptance
+  stage: accepted
   gates:
     requirement_ready: true
     plan_approved: true
-    acceptance_approved: false
+    acceptance_approved: true
     completion_verified: false
   plan_revision: 2
   prior_approved_plan_revision: 1
@@ -38,8 +38,8 @@ development:
     passed_count: 15
     failed_count: 1
     scope_repair_required: true
-  next_expected_actor: reviewer
-  canonical_next_action: "#开发验收 PR-023-minimal-runtime-successor-roadmap-v1"
+  next_expected_actor: integration
+  canonical_next_action: "#开发完成 PR-023-minimal-runtime-successor-roadmap-v1"
   current_slice: S05R
   current_slice_state: completed
   completed_slices: [S05R]
@@ -54,7 +54,12 @@ development:
   implementation_to_acceptance_receipt: docs/checkpoints/PR-023-minimal-runtime-successor-roadmap-v1-final-verification-s05r-implementation-to-acceptance-receipt.yaml
   r1_replay_authorized: false
   implementation_execution_complete: true
-  formal_acceptance_performed: false
+  formal_acceptance_performed: true
+  latest_acceptance_review: docs/reviews/PR-023-minimal-runtime-successor-roadmap-v1-acceptance-r1.md
+  latest_acceptance_review_sha: a2ec4fd0d1da224808beede6c5751b8a3c926009
+  latest_acceptance_receipt: docs/reviews/PR-023-minimal-runtime-successor-roadmap-v1-acceptance-r1-receipt.yaml
+  latest_acceptance_receipt_sha: a73a7656775b1ea8434b8e3f8ecbf4c357215b0a
+  acceptance_to_accepted_transition_receipt: docs/reviews/PR-023-minimal-runtime-successor-roadmap-v1-acceptance-r1-transition-receipt.yaml
 transport:
   type: github-pr
   pr_number: 23
@@ -70,6 +75,9 @@ artifacts:
   previous_plan_review_transition_receipt: docs/reviews/PR-023-minimal-runtime-successor-roadmap-v1-plan-review-r1-transition-receipt.yaml
   execution_slice_set: docs/execution/PR-023-minimal-runtime-successor-roadmap-v1-plan-r2-slices.yaml
   previous_execution_slice_set: docs/execution/PR-023-minimal-runtime-successor-roadmap-v1-slices.yaml
+  latest_acceptance_review: docs/reviews/PR-023-minimal-runtime-successor-roadmap-v1-acceptance-r1.md
+  latest_acceptance_receipt: docs/reviews/PR-023-minimal-runtime-successor-roadmap-v1-acceptance-r1-receipt.yaml
+  latest_acceptance_transition_receipt: docs/reviews/PR-023-minimal-runtime-successor-roadmap-v1-acceptance-r1-transition-receipt.yaml
   provisional_bootstrap: docs/checkpoints/minimal-runtime-successor-roadmap-v1-provisional-bootstrap.md
   authority_architecture: docs/architecture/sentinelx-minimal-runtime-boundary-v1.md
   authority_disposition_matrix: docs/architecture/sentinelx-capability-disposition-matrix-v1.md
