@@ -129,7 +129,10 @@ slices:
         - no broad deletion authority is created
     checkpoint:
       required: true
-    state: pending
+    state: completed
+    run_refs:
+      - docs/execution/PR-023-minimal-runtime-successor-roadmap-v1-s04-run-001.yaml
+    completion_receipt_ref: docs/checkpoints/PR-023-minimal-runtime-successor-roadmap-v1-s04-completion-20261008.yaml
 
   - slice_id: S05
     objective: Perform deterministic whole-artifact verification and persist final roadmap evidence/read-back without product/runtime mutation.
@@ -159,7 +162,7 @@ slices:
     state: pending
 
 current:
-  slice_id: S04
+  slice_id: S05
   state: pending
 
 execution_summary:
