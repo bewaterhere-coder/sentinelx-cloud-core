@@ -1,0 +1,37 @@
+schema_version: "1.0"
+kind: devforge_readonly_evidence_attempt_receipt
+task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
+run_id: RUN-PR014-S07A-001
+attempt_id: ATTEMPT-001
+slice_id: S07A
+source_command: "#开发执行 PR-014-devforge-execution-workspace-materialization-bridge-v1"
+execution_scope: github_and_structured_host_read_plus_task_scoped_docs
+canonical_transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr: 14
+  branch: task/devforge-execution-workspace-materialization-bridge-v1
+  head_at_admission: 8c7d1875d81df4a670909614030dae02c309961a
+  canonical_main: 2e5c69a112323867ee01783521554c43ebd731be
+requirement_revision: 8
+plan_revision: 14
+plan_blob: d860b40805dd0cc0c96670fd84e7e4fea6deb487
+slice_set_blob_at_start: 003844b90006542dd00da18162faf51b4b79be6d
+decision:
+  ref: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-s07a-decision-20261008.md
+  blob: 1ccd425242ac63b3e2a59cfa65d0f223e2c3d6c7
+  persisted_commit: 59dff19d2e2947508e56168c29cfb588845842c5
+  observed_at: "2026-10-08T08:09:45Z"
+  owner_result: DecisionRequired/Blocked
+  transport: TransportBlocked
+  firewall: FAIL
+  sandbox_audit: PASS
+  direct_codex_containment: unverified
+attempt_result: evidence_published_and_readback_verified
+product_code_mutated: false
+host_configuration_mutated: false
+direct_codex_invoked: false
+main_mutated: false
+historic_slices_replayed: false
+receipt_scope: readonly_decision_evidence_only
+security_exit_granted: false
+mrs01: HOLD
