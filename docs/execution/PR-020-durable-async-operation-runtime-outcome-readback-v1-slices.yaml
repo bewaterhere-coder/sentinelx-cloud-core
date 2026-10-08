@@ -21,6 +21,13 @@ runtime_provenance:
 
 implementation_entry_guard:
   required_before_each_slice: true
+  admission_state: revoked
+  implementation_authorized: false
+  reason_code: PR021_MinimalRuntime_Supersedes_TimeoutDriven_DurableAsync
+  R4_plan_approval_historical_only: true
+  current_owner_requirement_revision: 2
+  proposed_owner_plan_revision: 5
+  no_slice_execution_or_bootstrap: true
   s01_bootstrap_required: true
   s01_bootstrap_target: direct:codebuddy
   s01_bootstrap_command: "#开发引导执行 PR-020-durable-async-operation-runtime-outcome-readback-v1 direct:codebuddy"
@@ -41,7 +48,7 @@ slices:
   - slice_id: S01
     objective: Implement the provider-neutral core DurableOperationRuntime, atomic semantic-identity admission, Agent-private protected store, lifecycle, restart reconciliation, bounded retention and tombstones, without production provider adoption.
     depends_on: []
-    state: pending
+    state: suspended
     scope:
       refs:
         - src/sentinelx_core/durable_operations.py
@@ -102,7 +109,7 @@ slices:
   - slice_id: S02
     objective: Expose the bounded sentinel_operations builtin start/status/receipt surface through the existing local_api envelope using the same core runtime.
     depends_on: [S01]
-    state: pending
+    state: suspended
     scope:
       refs:
         - src/sentinelx_core/handlers/durable_operations.py
@@ -143,7 +150,7 @@ slices:
   - slice_id: S03
     objective: Adapt Direct Codex and one Host Runtime long action to the shared DurableOperationRuntime and compose current background job/pending-results delivery compatibility.
     depends_on: [S02]
-    state: pending
+    state: suspended
     scope:
       refs:
         - src/sentinelx_core/handlers/direct_codex.py
@@ -194,7 +201,7 @@ slices:
   - slice_id: S04
     objective: Produce Windows physical E2E and blocker-closure evidence for long Direct Codex, lost delivery, restart recovery, duplicate suppression, retention/GC and security preservation.
     depends_on: [S03]
-    state: pending
+    state: suspended
     scope:
       refs:
         - exact PR-020 candidate commit and remote branch readback
@@ -244,13 +251,14 @@ slices:
     completion_receipt_ref: null
 
 execution_state:
-  current_slice: S01
-  current_slice_state: pending
+  current_slice: null
+  current_slice_state: suspended
   completed_slices: []
-  pending_slices: [S01, S02, S03, S04]
+  pending_slices: []
+  suspended_historical_slices: [S01, S02, S03, S04]
   all_slices_completed: false
-  bootstrap_required_before_current_slice: true
-  bootstrap_target: direct:codebuddy
+  bootstrap_required_before_current_slice: false
+  bootstrap_target: null
 
 acceptance_boundary:
   all_current_plan_slices_must_be_completed: true
@@ -262,3 +270,18 @@ acceptance_boundary:
     - restart no-replay reconciliation
     - Direct Codex and Host Runtime generic-runtime adoption
     - security and authority regressions
+
+owner_hold_supersession:
+  current_requirement_revision: 2
+  plan_r5_review_pending: true
+  historical_approved_plan_r4_blob_sha: 304cbf2ab58b4fa3835c35b343bd1214565c2920
+  original_slice_set_blob_sha: f461220e206af7935619640b96288a3880381224
+  old_r4_approval_is_not_current_implementation_authority: true
+  s01_blocked_run_unchanged: docs/execution/PR-020-durable-async-operation-runtime-outcome-readback-v1-s01-run-001.yaml
+  s01_blocker_unchanged: docs/checkpoints/PR-020-durable-async-operation-runtime-outcome-readback-v1-s01-blocked-20261008.yaml
+  all_execution_authority_suspended: true
+  bootstrap_override_state: revoked
+  direct_codebuddy_bootstrap_allowed: false
+  mrs01_program_exit: HOLD
+  mrs02_admitted: false
+  product_mutation_allowed: false
