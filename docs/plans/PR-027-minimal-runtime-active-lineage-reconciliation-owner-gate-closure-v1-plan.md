@@ -7,19 +7,23 @@ task_id: PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure
 requirement_revision: 1
 requirement_blob_sha: 237db269f9cd965a7a2c25d938e679865e3cc102
 plan_revision: 1
-plan_state: accepted_finalization_ready
+plan_state: completed
 plan_approved: true
 implementation_authorized: false
 finalization:
-  status: accepted_finalization_ready
+  status: completed
   approved_plan_revision: 1
   approved_plan_semantic_blob_sha: 3d8b5b56e4235cdb22880ec01c45885e7fced8f6
   execution_complete: true
   completed_slices: [S01, S02, S03, S04]
   acceptance_approved: true
-  completion_verified: false
+  completion_verified: true
   original_pr_number: 27
-  integration_pending: true
+  integration_pending: false
+  integration_verified: true
+  original_merge_commit: f9ca574aeab932a70e4667e85cbec3f711e106c7
+  reconciliation_transport_pr: 28
+  authoritative_only_after_reconciliation_main_readback: true
   mrs01_program_exit: HOLD
   mrs02_admitted: false
   devforge_binding_unchanged: direct/codex
