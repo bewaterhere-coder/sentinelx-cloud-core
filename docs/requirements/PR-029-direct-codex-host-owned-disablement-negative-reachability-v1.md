@@ -5,7 +5,7 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 1
 development:
-  stage: planning
+  stage: plan_review
   gates:
     requirement_ready: true
     plan_approved: false
@@ -17,8 +17,8 @@ development:
   direct_codex_execution_authorized: false
   safety_negative_call_authorized: false
   canonical_main_mutation_authorized: false
-  next_expected_actor: planner
-  canonical_next_action: null
+  next_expected_actor: reviewer
+  canonical_next_action: "#开发评审 PR-029-direct-codex-host-owned-disablement-negative-reachability-v1"
   current_slice: null
   pending_slices: []
   completed_slices: []
@@ -38,6 +38,8 @@ artifacts:
   requirement_refinement: docs/reviews/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-requirement-refinement-r1.md
   requirement_ready_receipt: docs/checkpoints/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-requirement-ready-r1-receipt.yaml
   plan: docs/plans/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-plan.md
+  current_plan_blob_sha: 17c3846423bc40b9e836f8713e5ffa2f20a55376
+  plan_creation_transition_receipt: docs/checkpoints/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-planning-to-plan-review-r1-receipt.yaml
   upstream_owner_decision: https://github.com/bewaterhere-coder/sentinelx-cloud-core/blob/task/devforge-execution-workspace-materialization-bridge-v1/docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-owner-direct-codex-disablement-decision-r1.md
 requirement_readiness:
   result: Ready
