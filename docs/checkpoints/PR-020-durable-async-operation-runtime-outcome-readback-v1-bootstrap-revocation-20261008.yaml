@@ -55,7 +55,7 @@ task_and_plan_readback:
   plan_sha: 7bf279fd97f07db670e791fe9d886a2370ad4f24
   plan_executable: false
   historical_slice_set_ref: docs/execution/PR-020-durable-async-operation-runtime-outcome-readback-v1-slices.yaml
-  suspended_slice_set_sha: 969e96bfa1d247bc28cf13068db90ea33bfd6862
+  suspended_slice_set_sha: efe2bc0467e7efc1d57e8aa56758b1b075a36356
   all_historical_slices_suspended: true
   completed_product_slices: []
   original_s01_run_and_blocker_preserved: true
