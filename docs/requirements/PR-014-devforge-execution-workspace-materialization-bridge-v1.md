@@ -3,26 +3,26 @@ task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
 title: SentinelX DevForge Execution Workspace Materialization Bridge V1
 project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
-requirement_revision: 5
+requirement_revision: 6
 development:
-  stage: implementation
+  stage: planning
   gates:
     requirement_ready: true
-    plan_approved: true
+    plan_approved: false
     acceptance_approved: false
     completion_verified: false
-  plan_revision: 10
+  plan_revision: 11
   latest_plan_review: approved_round_10
   prior_plan_review: approved_round_6
   latest_plan_remediation: plan_r9_readonly_s03a_remediation
   prior_plan_remediation: plan_r2_remediation_r1
-  implementation_authorized: true
+  implementation_authorized: false
   blocking_findings:
     - CanonicalMainImplementationSurfaceMismatch
     - HostMutationScopeCorruptRuntimeReadAuthorityRoots
     - MissingIndependentDevForgeExecutionRootBinding
-  current_slice: S04A
-  current_slice_state: completed_negative_readback
+  current_slice: null
+  current_slice_state: null
   completed_slices: [S01, S02, S03A, S04A]
   pending_slices: []
   implementation_execution_complete: false
@@ -50,7 +50,7 @@ development:
   bootstrap_override_state: expired_by_requirement_revision_3
   prior_bootstrap_override: docs/overrides/PR-014-devforge-execution-workspace-materialization-bridge-v1-bootstrap-execution-override.yaml
   latest_bootstrap_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-bootstrap-execution-override-r1-receipt.yaml
-  execution_disposition: s04a_readonly_complete_security_and_source_decision_required
+  execution_disposition: requirement_r6_decision_frozen_no_product_authority
   execution_blocker: RuntimeSecurityReadinessFailureAndCanonicalSourceUnresolved
   execution_failure_state: null
   execution_failure_reason: null
@@ -60,9 +60,9 @@ development:
   latest_s02_reconciliation_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-r6-reconciliation-receipt.yaml
   prior_bootstrap_receipt: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-harness-bootstrap-blocked-20261008.yaml
   superseded_slice_set_status: invalidated_by_requirement_revision_4
-  planned_pending_delta_slice: S04A
-  next_expected_actor: architect
-  canonical_next_action: "#开发 PR-014-devforge-execution-workspace-materialization-bridge-v1 修订当前方案：基于 S04A 实际 Host Readback，先建立 canonical source ownership 与安全 Runtime 修复决策，不执行产品 mutation。"
+  planned_pending_delta_slice: null
+  next_expected_actor: planner
+  canonical_next_action: "#开发评审 PR-014-devforge-execution-workspace-materialization-bridge-v1"
   authorization:
     mode: legacy_command_scoped
 artifacts:
@@ -111,6 +111,25 @@ requirement_readiness:
 ---
 
 # Requirement
+
+## Requirement Revision 6 — Source-owner-first security decision
+
+**R6 overrides incompatible execution claims in previous revisions while retaining all R4/R5 security boundaries.**
+
+The authoritative S04A Host readback proves:
+- installed Windows runtime `0.24.1.dev260+g45dc99d15` exposes `execute_scoped` but does not demonstrate an actual safe consumer;
+- mutation sandbox and pre-execution audit readiness are false due to durable MutationScope field `runtime_read_authority_roots` being unsupported;
+- active legacy `locations.devforge_workspace_root=D:\coco` is not the required separately Host-owned DevForge execution root;
+- canonical `main` does not currently expose the prior branch-local product implementation surface.
+
+**Required first outcome:** establish source ownership, installed-runtime lineage, effective Host policy and minimal short-mutation consumer evidence through read-only operations only. The repair disposition must choose `NoAdditionalProductDeltaNeeded`, `NarrowSecurityRepairCandidate`, or `DecisionRequired/Blocked`. No new full workspace materializer, long Agent handoff or product mutation is approved now.
+
+A future `NarrowSecurityRepairCandidate` must pass a separately approved Plan after canonical source identification, preserve existing durable scopes (including known additive fields), maintain fail-closed unknown authority-bearing fields, separate Host source and execution placement outside protected roots, and demonstrate AppContainer/Job, pre-execution audit, exact readback and non-widening access. Do not delete durable state, restore historic source blindly, rebase/cherry-pick to conceal topology drift, relax `D:\coco`, or run unsafe `execute_scoped`.
+
+R6 source/repair decision: `docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-r6-security-and-source-decision-20261008.md`. S01/S02/S03A/S04A results are immutable historical evidence. Candidate `45dc99d15a23c499b4c1500fab60ed5e76475aeb` is not an approved product baseline.
+
+---
+
 
 ## Requirement Revision 5 — Source-owner-first decision boundary (2026-10-08)
 
