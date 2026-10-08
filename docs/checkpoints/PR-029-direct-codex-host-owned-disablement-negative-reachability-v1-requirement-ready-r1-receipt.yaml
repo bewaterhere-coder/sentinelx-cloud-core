@@ -1,0 +1,41 @@
+schema_version: "1.0"
+kind: devforge_requirement_ready_receipt
+task_id: PR-029-direct-codex-host-owned-disablement-negative-reachability-v1
+project_id: sentinelx-cloud-core
+requirement_revision: 1
+result: Ready
+verified: true
+creation_command: "#开发 SentinelX Direct Codex Host-Owned Fail-Closed Disablement and Negative Reachability V1"
+transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  type: github-pr
+  pr: 29
+  branch: task/direct-codex-host-owned-disablement-negative-reachability-v1
+  provisional_head_before_task: 3c08477e81f7dbf2def9e8ede3811434c41e9f98
+  canonical_main: 2e5c69a112323867ee01783521554c43ebd731be
+requirements:
+  path: docs/requirements/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1.md
+  blob_sha: ddb1f2a1801d09da0723417eadc3f93fd76670f8
+  revision: 1
+  refinement:
+    path: docs/reviews/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-requirement-refinement-r1.md
+    blob_sha: e228831ef6b4926a1e7e15653d811f25177b1084
+  approved_owner_direction_source: PR-014_owner_direct_codex_disablement_decision_r1
+  acceptance_criteria: [AC01, AC02, AC03, AC04, AC05, AC06, AC07, AC08]
+  depth: deep
+  ui_semantics: NotApplicable
+  material_product_questions: []
+state:
+  requirement_ready: true
+  next_gate: planning
+  plan_approved: false
+  implementation_authorized: false
+  host_policy_mutation_authorized: false
+  negative_action_call_authorized: false
+  no_run_created: true
+  mrs01: HOLD
+safety:
+  main_mutated: false
+  host_mutated: false
+  protected_roots_unchanged: true
+  provider_execution_invoked: false

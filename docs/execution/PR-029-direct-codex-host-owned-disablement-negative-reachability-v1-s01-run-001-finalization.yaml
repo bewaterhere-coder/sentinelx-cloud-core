@@ -1,0 +1,36 @@
+schema_version: "0.1"
+kind: devforge_execution_run_finalization
+identity:
+  task_id: PR-029-direct-codex-host-owned-disablement-negative-reachability-v1
+  run_id: RUN-PR029-S01-001
+  slice_ref: docs/execution/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-plan-r2-slices.yaml
+  slice_id: S01
+runtime:
+  final_state: BLOCKED
+  reason_code: OwnerConsumerAndHostPolicyReadbackEvidenceUnverified
+  final_attempt_id: ATTEMPT-PR029-S01-001
+attempts:
+  - attempt_id: ATTEMPT-PR029-S01-001
+    harness_receipt_ref: docs/execution/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-s01-attempt-001-receipt.yaml
+    provider_run_id: null
+ledger:
+  ref: docs/execution/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-s01-run-001-ledger.yaml
+  final_sequence: 5
+  digest: "git-blob:1b6ccbeb73e5deba368904a6ad1e5f6077fe258b"
+evidence:
+  refs:
+    - docs/execution/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-s01-readonly-evidence-20261008.md
+    - docs/execution/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-s01-run-001.yaml
+finalized_at: "2026-10-08"
+outcome:
+  investigation_completed_positive: false
+  physical_disablement_verified: false
+  negative_reachability_verified: false
+  slice_completion_receipt_ref: null
+  slice_state_after: pending
+  task_stage_after: implementation
+  owner_decision: DecisionRequired/Blocked
+  owner_attestation_required: true
+  product_or_host_mutation_performed: false
+  successor_slice_authorized: false
+  mrs01: HOLD

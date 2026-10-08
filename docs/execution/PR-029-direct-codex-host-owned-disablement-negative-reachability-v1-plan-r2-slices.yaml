@@ -1,0 +1,126 @@
+schema_version: "1.1"
+kind: devforge_execution_slice_set
+identity:
+  task_id: PR-029-direct-codex-host-owned-disablement-negative-reachability-v1
+  slice_set_id: PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-plan-r2
+plan:
+  ref: docs/plans/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-plan.md
+  revision: 2
+  blob_sha: 300b1adc237dd4220d866ecdeb4047880d203874
+  requirement_revision: 1
+review:
+  ref: docs/reviews/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-plan-review-r2.md
+  blob_sha: 17d16ceabb9f6dd1a5fdfbdd461632577669ad81
+  decision: Approved
+  implementation_scope: readonly_S01_only
+transport:
+  type: github-pr
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  original_pr: 29
+  original_branch: task/direct-codex-host-owned-disablement-negative-reachability-v1
+  base_branch: main
+  main_at_review: 2e5c69a112323867ee01783521554c43ebd731be
+  head_before_review: 266bfc8ff201a75aed4ce8c5f15994331c366db8
+execution_policy:
+  one_execute_one_slice: true
+  task_docs_evidence_only_write: true
+  no_automatic_s02_s03_s04: true
+  no_acceptance_claim_from_S01: true
+  no_product_implementation: true
+  no_host_mutation: true
+  no_local_api_call: true
+  no_codex_execution: true
+  no_user_CLI_launch: true
+  no_generic_shell_or_scope_workaround: true
+  no_canonical_main_write: true
+  no_other_PR_branch_write: true
+  no_protected_root_widening: true
+  owner_decision_unresolved_is_HOLD: true
+slices:
+  - slice_id: S01
+    title: Host-owned Direct Codex disablement read-only admission evidence
+    objective: Read current Host policy route and consumer dependency evidence and produce a bounded Owner security/transport decision without mutation
+    depends_on: []
+    state: pending
+    scope:
+      allowed_effects:
+        - github_current_main_devforge_main_pr29_pr14_pr19_pr021_exact_read
+        - sentinelx_structured_capabilities_and_local_api_list_describe_readonly
+        - policy_admitted_redacted_host_config_identity_read
+        - policy_admitted_service_status_and_audit_channel_discovery_read
+        - original_pr29_task_scoped_docs_run_receipt_and_checkpoint_write
+      read_refs:
+        - github:sentinelx-cloud-core/main
+        - github:DevForge/main/registry
+        - github:PR-029-current-task-plan-review
+        - github:PR-014-owner-decision-and-receipts
+        - github:PR-019-task-test-dependency
+        - github:PR-021-minimal-runtime-ADR-and-disposition
+        - Host:sentinel_capabilities
+        - Host:sentinel_local_api/list
+        - Host:sentinel_local_api/describe
+        - Host:policy-admitted-redacted-readback-if_available
+      write_refs:
+        - docs/requirements/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1.md
+        - docs/execution/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-plan-r2-slices.yaml
+        - docs/execution/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-s01-*.yaml
+        - docs/execution/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-s01-*.md
+        - docs/checkpoints/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-s01-*.yaml
+        - docs/checkpoints/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-s01-*.md
+        - docs/reviews/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-s01-*.yaml
+        - docs/reviews/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-s01-*.md
+      forbidden_effects:
+        - sentinel_local_api_call_any_endpoint
+        - direct_codex_execute_task
+        - host_configuration_or_service_mutation
+        - host_scope_provision_or_execute_scoped
+        - sentinel_exec_or_script_run
+        - process_launch_or_local_CLI_execution
+        - secrets_or_credentials_read
+        - protected_root_permissions_or_acl_change
+        - workspace_or_repository_mutation
+        - product_source_or_test_or_CI_mutation
+        - canonical_main_write
+        - PR014_PR019_or_DevForge_repository_mutation
+        - materialize_workspace
+        - source_restore
+        - rebase_cherry_pick_or_force_push
+        - unreviewed_successor_slice_execution
+    verification:
+      required:
+        - G1_exact_consumer_dependency_matrix_or_ConsumerDependencyOwnerGateUnresolved
+        - G2_loaded_host_policy_and_redacted_digest_or_PolicyEffectiveStateUnverified
+        - G3_builtin_external_alias_inventory_or_ExternalAliasOrNegativeProbeUnproven
+        - G4_host_owned_write_reload_CAS_audit_rollback_candidate_or_HostMutationTransportUnproven
+        - G5_process_creation_workspace_git_audit_coverage_or_NoSpawnOrWorkspaceProofUnavailable
+        - G6_sandbox_audit_firewall_and_protected_root_readback_or_SecurityReadinessOrCoverageUnverified
+        - G7_task_branch_main_and_receipt_readback_or_TransportOrReceiptBlocked
+        - forbidden_operation_absence_and_explicit_no_mutation_evidence
+        - deterministic_OwnerPreflightReadyForSeparatePlanReview_or_DecisionRequired_Blocked
+        - run_finalization_and_exact_task_docs_checkpoint_readback
+    checkpoint:
+      required: true
+    run_refs: [RUN-PR029-S01-001]
+    blocked_run_refs: [docs/execution/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-s01-run-001-finalization.yaml]
+    latest_blocked_checkpoint: docs/checkpoints/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-s01-blocked-owner-attestation-20261008.yaml
+    completion_receipt_ref: null
+execution_state:
+  current_slice: S01
+  current_slice_state: pending
+  latest_run_state: BLOCKED
+  last_blocker: OwnerConsumerAndHostPolicyReadbackEvidenceUnverified
+  owner_decision: DecisionRequired/Blocked
+  owner_attestation_pending: true
+  latest_run_finalization_ref: docs/execution/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-s01-run-001-finalization.yaml
+  completed_current_plan_slices: []
+  pending_current_plan_slices: [S01]
+  future_slices_not_compiled: [S02, S03, S04]
+  product_mutation_authorized: false
+  host_mutation_authorized: false
+  negative_local_api_call_authorized: false
+  mrs01: HOLD
+acceptance_boundary:
+  full_requirement_R1_not_satisfied_by_S01: true
+  physical_disablement_proof_not_supplied: true
+  acceptance_approved: false
+  separate_plan_review_required_before_any_host_mutation: true

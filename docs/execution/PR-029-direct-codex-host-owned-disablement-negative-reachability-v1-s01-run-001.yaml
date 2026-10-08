@@ -1,0 +1,43 @@
+schema_version: "1.0"
+kind: devforge_execution_run
+identity:
+  task_id: PR-029-direct-codex-host-owned-disablement-negative-reachability-v1
+  run_id: RUN-PR029-S01-001
+  slice_id: S01
+  slice_ref: docs/execution/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-plan-r2-slices.yaml
+  plan_revision: 2
+  plan_blob_sha: 300b1adc237dd4220d866ecdeb4047880d203874
+  attempt_id: ATTEMPT-PR029-S01-001
+transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 29
+  branch: task/direct-codex-host-owned-disablement-negative-reachability-v1
+  head_before_execution: b41a7511a5411684d7f4459d06ea1e47274abe19
+  main_before_execution: 2e5c69a112323867ee01783521554c43ebd731be
+execution:
+  scope: readonly_S01_preflight
+  attempted_activities:
+    - github_original_task_and_owner_consumer_readback
+    - structured_host_capabilities_local_api_list_and_describe
+    - structured_host_service_status
+    - current_main_policy_dispatch_source_readback
+  forbidden_activities_performed: []
+  run_state: BLOCKED
+  reason_code: OwnerConsumerAndHostPolicyReadbackEvidenceUnverified
+  implementation_completed: false
+  slice_completed: false
+  physical_direct_codex_disablement_verified: false
+  final_attempt_id: ATTEMPT-PR029-S01-001
+evidence:
+  ref: docs/execution/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-s01-readonly-evidence-20261008.md
+  attempt_ref: docs/execution/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-s01-attempt-001-receipt.yaml
+  ledger_ref: docs/execution/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-s01-run-001-ledger.yaml
+  finalization_ref: docs/execution/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-s01-run-001-finalization.yaml
+next_state:
+  disposition: DecisionRequired/Blocked
+  current_slice: S01
+  slice_state: pending
+  next_actor: owner
+  resume_requires_owner_attestation_and_fresh_admission: true
+  automated_retry: false
+  mrs01: HOLD
