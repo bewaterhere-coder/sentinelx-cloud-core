@@ -1,0 +1,39 @@
+schema_version: "0.1"
+kind: devforge_execution_run_finalization
+identity:
+  task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
+  run_id: RUN-PR014-S07A-001
+  slice_ref: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-r14-slices.yaml
+  slice_id: S07A
+runtime:
+  final_state: COMPLETED
+  reason_code: readonly_evidence_collected_owner_decision_blocked
+  final_attempt_id: ATTEMPT-001
+attempts:
+  - attempt_id: ATTEMPT-001
+    harness_receipt_ref: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-s07a-attempt-001-receipt.yaml
+    provider_run_id: null
+ledger:
+  ref: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-s07a-run-001-ledger.yaml
+  final_sequence: 3
+  digest: 2c554643210f58b67013ae611b74d29b67b5e47a
+evidence:
+  refs:
+    - docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-s07a-decision-20261008.md
+    - docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-s07a-attempt-001-receipt.yaml
+    - docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-s07a-run-001.yaml
+finalized_at: "2026-10-08"
+finalized_at_precision: day
+execution_result: evidence_observation_completed
+owner_security_result: DecisionRequired/Blocked
+transport_product_mutation_result: TransportBlocked
+product_implementation_admitted: false
+host_mutation_admitted: false
+physical_firewall_verified: false
+main_modified: false
+historical_slice_replayed: false
+mrs01: HOLD
+mrs02_admitted: false
+notes: >
+  COMPLETED applies only to S07A's read-only observation and negative owner decision.
+  It does not mean firewall closure, product implementation, acceptance or merge.
