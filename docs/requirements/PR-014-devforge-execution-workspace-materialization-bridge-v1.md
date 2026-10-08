@@ -22,7 +22,7 @@ development:
     - IndependentExecutionRootBindingUnverified
     - HistoricalPR014TransportDivergence
   current_slice: null
-  current_slice_state: no_pending_slice_before_plan_review_r13
+  current_slice_state: no_pending_slice_after_rejected_plan_r13
   completed_slices: [S01, S02, S03A, S04A, S05A, S06A]
   pending_slices: []
   implementation_execution_complete: false
@@ -69,9 +69,9 @@ artifacts:
   requirement_review: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-requirement-review-r1.md
   requirement_change_impact: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-requirement-r8-change-impact-20261008.md
   plan: docs/plans/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan.md
-  latest_plan_review: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r12.md
+  latest_plan_review: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r13.md
   pending_plan_review: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r13.md
-  latest_plan_review_transition_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r7-transition-receipt.yaml
+  latest_plan_review_transition_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r13-transition-receipt.yaml
   prior_plan_review: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r6.md
   prior_plan_review_transition_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r6-transition-receipt.yaml
   superseded_plan_review: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r5.md
