@@ -19,7 +19,9 @@ authority:
     revision: 1
     semantic_body_unchanged: true
     task_sha_before: 237db269f9cd965a7a2c25d938e679865e3cc102
-    task_sha_after: 56ee6da4ffe6f6a36233871c51e722c800962c4d
+    task_sha_after: d4b82b62a6d17c9ba4453475e244ecf63b671125
+    gate_prose_synchronized_after_transition: true
+    requirement_revision_semantics_changed: false
   approved_plan:
     ref: docs/plans/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-plan.md
     revision: 1
