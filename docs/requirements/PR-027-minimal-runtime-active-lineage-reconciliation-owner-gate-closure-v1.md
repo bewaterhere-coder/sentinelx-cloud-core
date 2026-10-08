@@ -5,16 +5,16 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 1
 development:
-  stage: accepted
+  stage: done
   gates:
     requirement_ready: true
     plan_approved: true
     acceptance_approved: true
-    completion_verified: false
+    completion_verified: true
   plan_revision: 1
   implementation_authorized: false
-  next_expected_actor: integration
-  canonical_next_action: "#开发完成 PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1"
+  next_expected_actor: null
+  canonical_next_action: null
   current_slice: S04
   current_slice_state: completed
   completed_slices: [S01, S02, S03, S04]
@@ -24,23 +24,32 @@ development:
   accepted_coordination_only: true
   accepted_program_exit: false
   finalization:
-    status: ready_for_merge
-    ready_for_merge: true
+    status: original_integration_verified_completion_reconciliation
+    ready_for_merge: false
     canonical_state_verified: true
     plan_execution_state_verified: true
     evidence_verified: true
     transport_preconditions_verified: true
-    integration_verified: false
+    integration_verified: true
     original_pr_number: 27
     original_branch: task/minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1
     canonical_main_at_premerge: 8d2bafba87b529fb458faaa7fbdce39fe225361f
+    original_merge_commit_sha: f9ca574aeab932a70e4667e85cbec3f711e106c7
+    original_pr_integrated: true
+    reconciliation_pr: 28
+    reconciliation_branch: reconcile/pr-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-completion
+    completion_authoritative_after_reconciliation_merge_and_main_readback: true
     accepted_plan_r1_semantic_sha: 3d8b5b56e4235cdb22880ec01c45885e7fced8f6
     plan_r1_finalization_sha: 3091f162732a6bece9a12138e379b0feaecbc2d6
+    reconciled_plan_r1_sha: b1811b4a349d9a646529dd44367156c3fe1a4c9f
     completed_current_slices: [S01, S02, S03, S04]
     acceptance_receipt_sha: bec69e2bd61ff3860bffa9f4fdc8b72d0456c99a
     acceptance_transition_receipt_sha: a1ba18aa773ac85b8740e95dab53a687b3134fc9
     premerge_receipt: docs/checkpoints/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-premerge-finalization-r1-receipt.yaml
     integration_receipt: docs/reviews/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-integration-receipt-r1.yaml
+    integration_receipt_sha: dbe53bf0d002e50fc5bede7436c76b497f1c4de0
+    completion_review: docs/reviews/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-completion-r1.md
+    completion_review_sha: d018cefebc711f5ea69fddca22ba396c4cede71b
     completion_transition_receipt: docs/checkpoints/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-accepted-to-done-transition-receipt.yaml
     mrs01_program_exit: HOLD
     mrs02_admitted: false
@@ -210,8 +219,8 @@ This is **documentation/control-plane governance**. UX/visual/interaction gates:
 
 ## 7. Gate
 
-Current Gate: **Accepted — PR #27 coordination AC1–AC16 PASS; MRS-01 remains HOLD and MRS-02 remains not admitted**. Plan Review R1 and the exact four-Slice Plan R1 execution set have been persisted and independently read back. This approves only PR #27 evidence/documentation work; no Owner PR Gate is approved, no Owner PR mutation is authorized, and no MRS-01 exit receipt has been created. `MRS01=HOLD`, `MRS02=not admitted`. Canonical next action:
+Current Gate: **Done — PR #27 coordination lifecycle integrated; MRS-01 remains HOLD, MRS-02 remains not admitted**. Plan Review R1 and the exact four-Slice Plan R1 execution set have been persisted and independently read back. This approves only PR #27 evidence/documentation work; no Owner PR Gate is approved, no Owner PR mutation is authorized, and no MRS-01 exit receipt has been created. `MRS01=HOLD`, `MRS02=not admitted`. Canonical next action:
 
 ```text
-#开发完成 PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1
+此 Task 已完成。MRS-01 Owner Gate 由 PR #13/#14/#19/#20 独立处理。
 ```
