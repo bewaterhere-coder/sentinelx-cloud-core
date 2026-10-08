@@ -3,12 +3,12 @@ task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
 title: SentinelX DevForge Execution Workspace Materialization Bridge V1
 project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
-requirement_revision: 4
+requirement_revision: 5
 development:
-  stage: implementation
+  stage: planning
   gates:
     requirement_ready: true
-    plan_approved: true
+    plan_approved: false
     acceptance_approved: false
     completion_verified: false
   plan_revision: 9
@@ -16,11 +16,11 @@ development:
   prior_plan_review: approved_round_6
   latest_plan_remediation: plan_r9_readonly_s03a_remediation
   prior_plan_remediation: plan_r2_remediation_r1
-  implementation_authorized: true
+  implementation_authorized: false
   blocking_findings:
     - CanonicalMainImplementationSurfaceMismatch
-  current_slice: S03A
-  current_slice_state: completed_negative_reconciliation
+  current_slice: null
+  current_slice_state: null
   completed_slices: [S01, S02, S03A]
   pending_slices: []
   implementation_execution_complete: false
@@ -48,7 +48,7 @@ development:
   bootstrap_override_state: expired_by_requirement_revision_3
   prior_bootstrap_override: docs/overrides/PR-014-devforge-execution-workspace-materialization-bridge-v1-bootstrap-execution-override.yaml
   latest_bootstrap_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-bootstrap-execution-override-r1-receipt.yaml
-  execution_disposition: s03a_readonly_complete_product_decision_required
+  execution_disposition: requirement_r5_canonical_owner_and_consumer_reconciliation
   execution_blocker: CanonicalMainImplementationSurfaceMismatch
   execution_failure_state: null
   execution_failure_reason: null
@@ -58,9 +58,9 @@ development:
   latest_s02_reconciliation_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-r6-reconciliation-receipt.yaml
   prior_bootstrap_receipt: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-harness-bootstrap-blocked-20261008.yaml
   superseded_slice_set_status: invalidated_by_requirement_revision_4
-  planned_pending_delta_slice: S03A
-  next_expected_actor: architect
-  canonical_next_action: "#开发 PR-014-devforge-execution-workspace-materialization-bridge-v1 修订当前方案：先核实 canonical main 的产品源码归属与实际短时 mutation consumer，再决定是否需要新增实现；不得直接恢复旧分支代码。"
+  planned_pending_delta_slice: null
+  next_expected_actor: planner
+  canonical_next_action: "#开发评审 PR-014-devforge-execution-workspace-materialization-bridge-v1"
   authorization:
     mode: legacy_command_scoped
 artifacts:
@@ -99,8 +99,8 @@ transport:
 requirement_readiness:
   result: Ready
   depth: deep
-  requirement_revision: 4
-  revision_reason: pr021_minimal_runtime_short_mutation_reconciliation
+  requirement_revision: 5
+  revision_reason: observed_host_consumer_canonical_source_unresolved
   prior_plan_revalidation_required: true
   material_questions: []
   ui_semantics:
@@ -109,6 +109,30 @@ requirement_readiness:
 ---
 
 # Requirement
+
+## Requirement Revision 5 — Source-owner-first decision boundary (2026-10-08)
+
+**Authority:** R5 supersedes conflicting execution claims in R4 and historical R1–R3 while preserving every R4 security invariant. The PR-021 Minimal Runtime Boundary remains controlling. The previously approved Plan R9/S03A is completed **negative reconnaissance evidence only**, never product modification authority. No pending product Slice exists.
+
+### Verified and unverified reality
+
+Live read-only Host observation establishes that operational Windows agent `0.24.1.dev260+g45dc99d15` exposes builtin `devforge_runtime` contract revision 2. Its closed `execute_scoped` action is an **actual API surface** for bounded `scoped_mutation`; `provision_scope` / `revalidate_scope` / `inspect_scope` / `terminalize_scope` also exist. Legacy `materialize_workspace` remains exposed in the installed agent, **but is not an R5 feature target**.
+
+GitHub `main@cd42e371f18056327c1d8b744f8956a76bc11541` still does not expose the expected core implementation paths; PR #14 branch is divergent. The installed Host version is **not proof** of which repository commit or canonical implementation surface currently owns its source. A consumer *API* is observed, but a production short-mutation use case and the need for **new** dedicated workspace placement are not proven. Effective Host policy roots and MutationScope durable schema compatibility are not yet physically verified.
+
+Reference: `docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-r5-host-consumer-readback-20261008.md`.
+
+### Required decision procedure before adding product implementation
+
+1. Read current canonical `main` and authoritative runtime package/install provenance; determine where `src/sentinelx_core` was moved, removed, or maintained. An unexplained missing canonical source surface is a **STOP**, not permission to restore historical files.
+2. Read existing effective Host policy **without changing it** and distinguish canonical source inventory, broad protected `D:\coco`, and execution placement. Do not confuse policy summary counts with effective root values. Verify security invariants and durable state compatibility in read-only mode wherever possible.
+3. Trace the actual `execute_scoped` call/consumer contract and a bounded short-mutation use case. If no demonstrable missing capability exists, prefer `NoAdditionalProductDeltaNeeded` / HOLD over new materialization code.
+4. Only if source ownership, real consumer, security delta, and safe PR integration are proven may a separate Plan Revision propose exact files/tests and seek Plan Review for minimal security code; otherwise persist `DecisionRequired/Blocked`.
+5. Preserve PR #14 and all existing receipts, S01/S02 evidence and candidate `45dc99d15a23c499b4c1500fab60ed5e76475aeb`. Never rebase/cherry-pick blindly, replay product mutations, weaken Host boundaries, or authorize long-Agent/bootstrap/handoff lifecycle.
+
+### Admission
+
+R5 authorizes **read-only reconciliation and Task documentation updates only** until a future Plan Review has approved a fully bound and verified product-delta slice. No product code, Host, canonical main, or CI mutation is authorized.
 
 ## Requirement Revision 4 — Canonical effective scope (2026-10-08)
 
