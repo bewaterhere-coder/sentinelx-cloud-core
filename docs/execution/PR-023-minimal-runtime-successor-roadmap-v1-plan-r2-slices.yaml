@@ -131,16 +131,17 @@ slices:
         - fresh_session_readback_sufficient
     checkpoint:
       required: true
-    state: pending
-    run_refs: []
-    completion_receipt_ref: null
+    state: completed
+    run_refs:
+      - docs/execution/PR-023-minimal-runtime-successor-roadmap-v1-s05r-run-001.yaml
+    completion_receipt_ref: docs/checkpoints/PR-023-minimal-runtime-successor-roadmap-v1-final-verification-s05r-completion-20261008.yaml
 
 current:
   slice_id: S05R
-  state: pending
+  state: completed
 
 execution_summary:
-  all_required_slices_completed: false
-  implementation_execution_complete: false
+  all_required_slices_completed: true
+  implementation_execution_complete: true
   previous_r1_slices_replayed: false
   acceptance_authorized: false
