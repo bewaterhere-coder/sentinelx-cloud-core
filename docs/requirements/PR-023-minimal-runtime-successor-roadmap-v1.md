@@ -5,16 +5,23 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 1
 development:
-  stage: implementation
+  stage: plan_review
   gates:
     requirement_ready: true
-    plan_approved: true
+    plan_approved: false
     acceptance_approved: false
     completion_verified: false
-  plan_revision: 1
-  implementation_authorized: true
+  plan_revision: 2
+  prior_approved_plan_revision: 1
+  prior_approved_plan_blob_sha: 5bdb8e70887a7b78f12d01f81477273d0b0df29b
+  pending_plan_review: R2
+  current_plan_review_state: pending
+  implementation_authorized: false
   blocking_findings:
     - RoadmapPredecessorCompletionEvidenceReferenceMissing
+  latest_plan_change_impact: docs/reviews/PR-023-minimal-runtime-successor-roadmap-v1-s05-ac2-plan-change-impact-r1.md
+  plan_r2_proposal_blob_sha: 9e56b512951b8dcaa4b7d6789d3bc350a5f24dce
+  r2_scope_change: roadmap_architecture_authority_two_predecessor_completion_receipt_citations
   latest_execution_run: docs/execution/PR-023-minimal-runtime-successor-roadmap-v1-s05-run-001.yaml
   latest_execution_checkpoint: docs/checkpoints/PR-023-minimal-runtime-successor-roadmap-v1-final-verification-blocked-ac2-20261008.yaml
   s05_verification:
@@ -23,10 +30,17 @@ development:
     passed_count: 15
     failed_count: 1
     scope_repair_required: true
-  next_expected_actor: implementer
-  current_slice: S05
-  current_slice_state: pending
-  completed_slices: [S01, S02, S03, S04]
+  next_expected_actor: reviewer
+  current_slice: null
+  current_slice_state: null
+  completed_slices: []
+  preserved_completed_slices_plan_r1: [S01, S02, S03, S04]
+  preserved_r1_slice_set: docs/execution/PR-023-minimal-runtime-successor-roadmap-v1-slices.yaml
+  preserved_r1_slice_set_blob_sha: 875857fcf0803abf7a45ef9cb0331631b2487fea
+  preserved_r1_blocked_slice: S05
+  proposed_plan_r2_slice: S05R
+  r2_slice_set_compiled: false
+  r1_replay_authorized: false
   implementation_execution_complete: false
   formal_acceptance_performed: false
 transport:
@@ -37,6 +51,7 @@ transport:
 artifacts:
   plan: docs/plans/PR-023-minimal-runtime-successor-roadmap-v1-plan.md
   latest_plan_review: docs/reviews/PR-023-minimal-runtime-successor-roadmap-v1-plan-review-r1.md
+  plan_r2_review_required: true
   latest_plan_review_transition_receipt: docs/reviews/PR-023-minimal-runtime-successor-roadmap-v1-plan-review-r1-transition-receipt.yaml
   execution_slice_set: docs/execution/PR-023-minimal-runtime-successor-roadmap-v1-slices.yaml
   provisional_bootstrap: docs/checkpoints/minimal-runtime-successor-roadmap-v1-provisional-bootstrap.md
