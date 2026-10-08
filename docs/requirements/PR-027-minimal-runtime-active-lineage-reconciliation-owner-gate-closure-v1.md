@@ -154,8 +154,8 @@ This is **documentation/control-plane governance**. UX/visual/interaction gates:
 
 ## 7. Gate
 
-Current Gate: **Plan Review pending**. This Requirement does not approve Plan R1, compile current-plan executable Slices, authorize any owner mutation or create owner exit receipts. Canonical next action:
+Current Gate: **Implementation — Plan R1 Approved, S01 pending**. Plan Review R1 and the exact four-Slice Plan R1 execution set have been persisted and independently read back. This approves only PR #27 evidence/documentation work; no Owner PR Gate is approved, no Owner PR mutation is authorized, and no MRS-01 exit receipt has been created. `MRS01=HOLD`, `MRS02=not admitted`. Canonical next action:
 
 ```text
-#开发评审 PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1
+#开发执行 PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1
 ```
