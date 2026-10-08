@@ -1,6 +1,6 @@
 # SentinelX Minimal Runtime Successor Roadmap V1
 
-Status: **S03 five-stage successor program materialized; S04 retirement/safety gate freeze pending**
+Status: **S04 retirement/safety gates frozen; S05 final verification pending**
 
 Task: `PR-023-minimal-runtime-successor-roadmap-v1`
 
@@ -320,3 +320,105 @@ S03 completion requires this stage contract to be durable/readable on PR #23 and
 - change `src/`, `tests/`, `.github/workflows/`, deployment or release.
 
 **Next Slice in this Task:** S04 — Retirement and Safety Gates. S04 must be separately authorized and will not be executed by the S03 command.
+
+
+## 8. S04 Retirement and Safety Gates — No-Shortcut Contract
+
+This section is an additional **fail-closed admission contract** under PR-021's frozen architecture and capability disposition. It does not implement the five stages, create their candidate Tasks, authorize an acceptance claim, delete source, change the DevForge project binding, close/merge another PR, install/restart an Agent or release SentinelX.
+
+### 8.1 Retirement admission predicate
+
+~~~text
+Admit(MRS-05 exact-capability retirement)
+  := ACCEPTED_AND_READBACK(MRS-01)
+   ∧ ACCEPTED_AND_READBACK(MRS-02)
+   ∧ ACCEPTED_AND_READBACK(MRS-03)
+   ∧ ACCEPTED_AND_READBACK(MRS-04)
+   ∧ VERIFIED(PR-019 baseline reconciliation)
+   ∧ VERIFIED(equivalent provider-neutral evidence and actual consumers)
+   ∧ APPROVED(exact component-level DevForge Task and Plan)
+   ∧ VERIFIED(current canonical source ownership and Host security admission)
+~~~
+
+**All conditions are cumulative and cannot be waived by the roadmap.** Missing, stale, untrusted, contradictory or unreachable authority/receipt evidence is a blocker. A proposal, code review, S03 roadmap or source-level CI cannot substitute for an accepted owner-scoped successor result. In particular, MRS-05 depends on independently **accepted** MRS-01, MRS-02, MRS-03 and MRS-04 with durable read-back; the fact that this roadmap describes all five is not acceptance of any stage.
+
+| Retirement gate | Required evidence and owner | Fail-closed response / forbidden shortcut |
+| --- | --- | --- |
+| **RG-01 — Reconciled active lineage** | MRS-01 owning DevForge Task acceptance/read-back; separately authorized #13/#14/#19/#20 decisions. #14 security-only source ownership resolved, #19 baseline revised, #20 development-timeout Durable Async HOLD durable; earlier candidates and receipts preserved. | Block architecture-conflicting expansion; PR #23 matrix alone cannot mutate, approve or close another PR. |
+| **RG-02 — Guided CLI replacement accepted** | MRS-02 DevForge-owned acceptance of provider-neutral mode resolver, deterministic handoff, exact Task/PR/branch/Requirement/Plan/Slice/Run scope, forbidden actions, verification, returned commit/receipt/remote read-back; negative and no-authority-transfer cases. | Block migration/retirement. No Hub timeout extension, CodeBuddy/Codex Hub lifecycle, hidden generic background long-Agent path or automatic CLI invocation as a substitute. |
+| **RG-03 — Binding migration accepted** | MRS-03 DevForge-owned Task receipt and before/after registry SHA/read-back showing migration of \`sentinelx-cloud-core\` from explicit \`direct/codex\` to the exact accepted MRS-02 routing; fail-closed provider selection and rollback evidence. | Block Minimal Runtime acceptance/retirement. No silent fallback to \`direct/codex\` or registry mutation from this SentinelX PR. |
+| **RG-04 — Physical Minimal Runtime proof accepted** | MRS-04 separately accepted exact live Host/candidate evidence for structured projection, bounded read/write/short command/short verification, Mutation Scope admission/terminalization, AppContainer/ACL/Job, durable audit, operation/effect truth, canonical firewall, receipt/read-back and guided CLI routing of long work. | Block all retirement. Source tests, a mock, or Agent self-report cannot replace physical proof. Preserve previous approved service state. |
+| **RG-05 — PR-019 stabilization baseline reconciled** | Exact PR-019 or successor owner-scoped Requirement/Plan/Acceptance receipt/read-back that protects security and short-runtime readiness **without requiring** the deprecated SentinelX-owned Direct Codex long-Agent lifecycle; preserve PR-019 candidate \`4ffb2dc312fac8d1030eb521641f6c61c33f11f0\` and Host Mutation Scope blocker findings. | Block Direct Codex retirement even if guided CLI exists. No history erasure or permanent long-Agent baseline requirement. |
+| **RG-06 — Equivalent returned-evidence validation** | Compare old and new exact Task/PR/branch/Requirement/Plan/Slice/Run/Attempt, produced commit, expected remote SHA, CAS/non-force publication, uncertain-outcome independent read-back, receipt schema, stale/replayed result rejection and verified no-replay semantics. | Block removal of reusable Codex handoff, transport, result and receipt semantics until provider-neutral equivalence is accepted. No wholesale delete. |
+| **RG-07 — Component-level Task only** | Exact consumer/dependency inventory, canonical current-main source ownership, independently approved DevForge Requirement/Plan/Slice, safe isolated candidate, acceptance Receipt, regression/negative proof and transport read-back for each retired/narrowed capability. | No global retirement Task authorizes all source removal; no automatic replay/cherry-pick of PR #14 candidate \`45dc99d15a23c499b4c1500fab60ed5e76475aeb\`. |
+| **RG-08 — Retained security and external effects** | Read back Host-owned protected root/execution placement, no caller-selected path, canonical checkout \`main + clean\`, scope/ACL/Job/AppContainer, fail-closed audit, effect classification, firewall, terminalization/no residual authority and effect-specific Receipt. | Any missing security or Host Receipt blocks mutation. No protected \`D:\\coco\` carve-out, permission weakening, unrestricted shell fallback, silent credential change or unsafe canonical write. |
+
+**Sequence invariants:** MRS-01 accepted before MRS-02; MRS-02 before MRS-03; MRS-03 before MRS-04; MRS-04 before MRS-05. RG-05 through RG-08 are *additional* necessary retirement gates, not alternative successor routes. Any new material architecture requirement must reenter the appropriate DevForge Requirement/Plan review instead of amending an accepted receipt.
+
+### 8.2 Exact future component/capability Task boundaries
+
+These are **descriptive candidate Task titles, not created Tasks**. The PR-021 Capability Disposition Matrix remains the authoritative classification.
+
+| Future candidate DevForge Task | Disposition | Component and specific pre-removal / narrowing proof |
+| --- | --- | --- |
+| **Direct Codex Execution Provider Lifecycle Retirement V1** | **DEPRECATE** | \`handlers/direct_codex.py\`; all RG-01..08, zero remaining binding/consumer dependencies, accepted local-CLI replacement, physical security proof and PR-019 reconciliation. |
+| **Codex ACL and Workspace Lifecycle Retirement V1** | **DEPRECATE** | \`direct_codex_acl.py\` and \`direct_codex_workspace.py\`; preserve generic short-mutation workspace isolation, Host-owned placement, ACL/Job/AppContainer and protected-root separation; prove no bounded consumer. |
+| **Codex Discovery Retirement V1** | **DEPRECATE** | \`direct_codex_discovery.py\`; accepted CLI-side provider discovery/identity/error cases and no remaining SentinelX bounded dependency. |
+| **Codex Persistence/Publication Lifecycle Retirement V1** | **DEPRECATE** | \`direct_codex_persistence.py\`; provider-neutral commit-production owner plus exact CAS/remote read-back/no-replay/receipt verification proven independently. |
+| **Provider-Neutral Handoff Extraction V1** | **SIMPLIFY** | \`direct_codex_handoff.py\`; preserve complete identity/scope/forbidden-action/verification fields and no-authority-transfer semantics in accepted MRS-02 successor. |
+| **Provider-Neutral Result and Receipt Verification V1** | **SIMPLIFY** | \`direct_codex_result.py\`; replacement has equivalent receipt/lineage validation, rejects missing/stale/forged results and independently checks return evidence. |
+| **Canonical Transport and Read-back Extraction V1** | **SIMPLIFY** | \`direct_codex_transport.py\`; preserve PR/branch/expected-SHA/CAS/non-force and independently verified remote state; remove Codex-only bootstrap coupling after replacement. |
+| **Bounded DevForge Host Bridge Narrowing V1** | **SIMPLIFY** | \`handlers/devforge_runtime.py\`; identify actual short-operation consumers and retain Host Mutation Scope, sandbox, audit, scoped execute, read-back. Remove only separately proven unneeded long-Agent surface. |
+| **Short-Mutation Workspace Security Substrate Narrowing V1** | **SIMPLIFY** | PR #14 \`devforge_workspace_placement.py\` / \`devforge_workspace_materialization.py\` historical lineage; current canonical source topology and exact bounded consumers must be verified first. Historical candidate is evidence only. |
+
+No single Task may interpret \`DEPRECATE\` as permission to delete every component. Each candidate independently requires its own DevForge Gate, changed-path scope and Receipt. If a component remains a live consumer dependency, it stays installed until the accepted replacement and safe retirement proof exist. If a candidate cannot prove a safe narrower owner, record HOLD rather than manufacture completion.
+
+### 8.3 PR-021 KEEP / SIMPLIFY security boundary
+
+**KEEP** at the semantic capability level, independent of module location:
+
+- \`local_api.py\`, \`handlers/local_api.py\`: structured closed bounded projection and truthful availability;
+- \`mutation_scope.py\`: Host-owned Mutation Scope admission, durable state, forward-compatible safe read/migration for additive schema fields, exact terminalization and no residual authority;
+- \`mutation_audit.py\`: fail-closed audit recorded before mutation/process start;
+- \`mutation_sandbox.py\`, \`windows_mutation_sandbox.py\`: AppContainer/ACL/Job confinement, exact scoped grants, revocation and no unrestricted fallback;
+- \`operation_registry.py\`, \`canonical_repository_firewall.py\`: complete operation/effect classification, unknown-effect failure, protected canonical repo/main;
+- \`verification_profile.py\`, \`verification_execution.py\`, \`verification_readiness.py\`, \`verification_runtime.py\`, \`handlers/scoped_script.py\`: admitted short verification and scoped mutation, without converting a Slice into a long Agent job.
+
+**SIMPLIFY**, not indiscriminately delete: \`handlers/devforge_runtime.py\` as bounded Host bridge; generic \`handlers/exec.py\` and \`handlers/script.py\` with current independent consumers intact; PR #14 workspace security substrate as proved for short mutation; provider-neutral extracted handoff/transport/result verification.
+
+**KEEP existing generic asynchronous capabilities:** \`jobs.py\`, \`pending_results.py\`, \`client.py\` background delivery and independent generic exec/script background consumers. The Minimal Runtime decision rejects **Hub-owned long development-Agent execution**, not all background execution. The PR #20 development-timeout-driven Durable Async proposal remains **HOLD**; that classification does not deprecate generic background completion/replay merely because it is asynchronous. Independent non-development running-job durability needs a new reviewed Requirement with a real consumer; no inherited authorization.
+
+DevForge core slicing and Harness Slice consumption remain workflow/consumer responsibilities outside SentinelX's long-process lifecycle. One Slice need not fit a Hub request; its workload decides direct-short versus guided CLI.
+
+### 8.4 Drift and fail-closed recovery
+
+Before any future capability retirement, re-read canonical \`main\`, exact owner Task/PR/Plan, successor receipts, DevForge binding, actual Host authority, effect/receipt evidence and live consumers. **Stop** if any of these are missing, ambiguous, changed or contradicted:
+
+1. Architecture or source ownership drift; unapproved long-Agent dependency; unresolved PR #14 current-main topology or PR #19 baseline.
+2. Route/authority drift: unreviewed project binding, hidden direct/codex fallback, CLI instruction mistaken for permission, stale Task/Plan/Slice/Run/Attempt.
+3. Security drift: reduced protected roots, caller-chosen workspace, corrupt MutationScope schema, audit/ACL/Job/AppContainer/terminalization gap, unknown effect, or canonical checkout write.
+4. Evidence drift: missing produced commit/expected remote SHA, uncertain push without independent read-back, absent real Host proof, receipt mismatch or missing completion Receipt.
+5. Scope drift: attempted bulk deletion, generic background jobs retired without independent proof, PR #14 historical code replayed, PR #20 resumed as a development timeout solution.
+
+A blocked gate leaves the previously admitted provider/capability untouched: no silent disable/uninstall/restore/merge/rebase/credential change/permission widening. Resolve the cause through the owning Task's reviewed DevForge flow with evidence preserved; do not bypass the security boundary to make a task pass.
+
+### 8.5 S04 verification and non-authority
+
+~~~yaml
+s04_gate_freeze:
+  primary_sequence: [MRS-01, MRS-02, MRS-03, MRS-04, MRS-05]
+  mrs05_requires_independent_accepted_readback: [MRS-01, MRS-02, MRS-03, MRS-04]
+  pr019_baseline_reconciliation_required: true
+  equivalent_commit_receipt_remote_readback_validation_required: true
+  exact_component_devforge_tasks_required: true
+  generic_async_background_deprecated_due_to_async_alone: false
+  pr021_keep_and_simplify_security_preserved: true
+  bulk_source_deletion_authorized: false
+  project_binding_mutation_authorized: false
+  direct_codex_disable_or_source_removal_authorized: false
+  live_host_deployment_mutation_authorized: false
+  candidate_successor_tasks_created: false
+  next_task_slice: S05
+~~~
+
+S04 freezes documentation and safety gates only. S05 separately evaluates the whole roadmap against Requirement AC1–AC16 and performs final artifact/read-back verification. **S04 does not pre-execute S05.**
