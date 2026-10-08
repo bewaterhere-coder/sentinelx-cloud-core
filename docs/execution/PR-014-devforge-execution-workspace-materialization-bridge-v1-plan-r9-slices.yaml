@@ -1,0 +1,36 @@
+schema_version: "1.0"
+kind: devforge_execution_slice_set
+identity:
+  task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
+  slice_set_id: PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-r9
+plan:
+  ref: docs/plans/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan.md
+  revision: 9
+  blob_sha: 58ffeadf5bf8be646c41123891e0dc6174d8b0ea
+review:
+  ref: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r9.md
+  decision: Approved
+slices:
+  - slice_id: S03A
+    objective: Canonical topology and bounded short-mutation consumer read-only reconciliation
+    depends_on: []
+    scope:
+      refs:
+        - "bewaterhere-coder/sentinelx-cloud-core:main"
+        - "bewaterhere-coder/sentinelx-cloud-core:task/devforge-execution-workspace-materialization-bridge-v1"
+      allowed_effects: [repository.read, documentation_only_receipt_write_on_existing_pr_branch]
+      forbidden_effects: [product_mutation, host_mutation, canonical_main_mutation, rebase, cherry_pick, source_restoration, shell_fallback, s01_s02_replay, full_workspace_materialization, agent_lifecycle]
+    verification:
+      required:
+        - current_main_sha_and_topology_readback
+        - actual_short_mutation_consumer_evidence_or_explicit_unresolved_finding
+        - safe_integration_disposition
+        - evidence_receipt_blob_and_commit_readback
+    checkpoint:
+      required: true
+    state: pending
+    run_refs: []
+    completion_receipt_ref: null
+historical_slices: [S01, S02]
+historical_slices_authority: evidence_only
+historical_s02_candidate: 45dc99d15a23c499b4c1500fab60ed5e76475aeb
