@@ -1,0 +1,32 @@
+schema_version: "1.0"
+kind: devforge_execution_slice_set
+identity:
+  task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
+  slice_set_id: PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-r11
+plan:
+  ref: docs/plans/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan.md
+  revision: 11
+  blob_sha: a9a695bbd8bccd85badf18b78b3a69a22fabb06f
+review:
+  ref: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r11.md
+  decision: Approved
+slices:
+  - slice_id: S05A
+    objective: Read-only canonical source ownership and security repair disposition
+    depends_on: []
+    scope:
+      allowed_effects: [github_repository_read, host_structured_read_only_introspection, documentation_only_evidence_receipt_on_existing_pr14_branch]
+      forbidden_effects: [product_mutation, host_mutation, main_mutation, scope_provision, execute_scoped, materialize_workspace, source_restore, rebase, cherry_pick, historical_slice_replay, long_agent_lifecycle]
+    verification:
+      required:
+        - source_owner_or_explicit_unverified
+        - host_policy_and_runtime_provenance_or_explicit_unverified
+        - schema_and_consumer_decision_evidence
+        - exact_receipt_and_remote_readback
+    checkpoint:
+      required: true
+    state: pending
+    run_refs: []
+    completion_receipt_ref: null
+historical_slices: [S01, S02, S03A, S04A]
+historical_replay: forbidden
