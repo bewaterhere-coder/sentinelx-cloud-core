@@ -1,0 +1,251 @@
+schema_version: "1.0"
+kind: devforge_owner_lineage_reality_snapshot
+project_id: sentinelx-cloud-core
+task_id: PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1
+slice_id: S01
+run_id: PR027-S01-RUN001
+source_command: "#开发执行 PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1"
+snapshot_date: "2026-10-08"
+status: evidence_verified
+verified: true
+scope: read_and_task_documentation_only
+
+authority:
+  canonical_main_sha_at_snapshot: 8d2bafba87b529fb458faaa7fbdce39fe225361f
+  devforge_main_sha_at_snapshot: ebc25425160790950bd4d4500186652d3bf52416
+  devforge_project_registry:
+    path: system/development-project-registry.yaml
+    sha: 08f50a36cbb90d5a08856d7dce2adf65248a7584
+    binding: direct/codex
+  minimal_runtime_PR021:
+    task_path: docs/requirements/PR-021-minimal-runtime-complexity-reduction-boundary-v1.md
+    task_sha: 997dc918dc877394b7d34d2f29c038183351c674
+    stage: done
+    adr_sha: 36e0290de039336a8e4ce8561c22c731f12e9602
+    capability_disposition_sha: 05b6906614715e14450a2fd03e0699200e016074
+  successor_PR023:
+    task_sha: ace3a30d9b0cb4b6574b173d0369a795e2df7744
+    stage: done
+    roadmap_path: docs/architecture/sentinelx-minimal-runtime-successor-roadmap-v1.md
+    roadmap_sha: 8a281b60c1b8e9f5d665003a94f4f6b1d906de34
+    owner_gate_program_stage: MRS-01
+    roadmap_intro_stale_workflow_text: true
+    resolution: canonical_task_and_integration_receipts_override_intro_snapshot
+  governing_slice_set:
+    path: docs/execution/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-slices.yaml
+    approved_plan_revision: 1
+    approved_plan_blob_sha: 3d8b5b56e4235cdb22880ec01c45885e7fced8f6
+    review_blob_sha: 89d727f54f5d334a7db9b4d572e25cf40808659e
+    plan_review_transition_sha: 153bb4b20359ed1905cac5813cc775b318c4bb6d
+    slice_set_sha_before_execution: 317bf3587a64ae131256317d40e997417586b9ce
+    current_slice_at_entry: S01
+    other_slices_executed: false
+  own_transport:
+    pr: 27
+    state: open
+    draft: true
+    branch: task/minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1
+    pr_head_at_entry: e2534a3ed8aaf59ca0f053c1fde58496944c5259
+
+open_pr_inventory:
+  current_pr_numbers: [13, 14, 16, 19, 20, 26, 27]
+  owner_pr_numbers: [13, 14, 19, 20]
+  excluded_independent: [16, 26]
+  owner_prs_open: true
+  owner_prs_draft: true
+  owner_prs_merged: false
+
+owner_prs:
+  "13":
+    task_id: PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1
+    pr_number: 13
+    branch: task/host-runtime-repository-materialization-scoped-publication-bridge-v1
+    head_sha: 4a3f8e3504b65d1dc222ecb9421ffa16cd96c76d
+    mergeable: false
+    current_task:
+      path: docs/requirements/PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1.md
+      sha: 55317e8ce3fc850167a38928d448fbf76b3bc6b7
+      requirement_revision: 1
+      plan_revision: 2
+      stage: implementation
+      plan_approved: true
+      implementation_authorized_in_owner_artifact: true
+      current_slice: S03
+      completed_slices: [S01, S02]
+    current_plan:
+      path: docs/plans/PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1-plan.md
+      sha: e65fceea327df2820719d0feb74759e733955efb
+      plan_revision: 2
+      introductory_plan_status_prose: Pending_Plan_Review
+      conflict_class: stale_plan_prose_vs_current_owner_task_and_review
+    current_slice_set_sha: 7608e78ffd0f99e7823928b3daf1e16ad981eeda
+    historical_receipts:
+      S01_checkpoint_sha: d51e7ba385abcf5bf6ffa30329c9297af7191fc4
+      S02_checkpoint_sha: 54e3113d3748e066598de7a986017dc73245e653
+      S02_completion_receipt_sha: 3d7f108d909da74d98aa89db6f7f16b45f26502c
+      S02_source_candidate_sha: cda502a9c6cce0ea29d3a74894b5b1cbf78148fd
+    classification:
+      lineage: current_owner_branch_readback
+      completed_history: verified_historical_read_only
+      S03_execution_compatibility_with_PR021: unresolved
+      source_transport_main_alignment: unverified
+      minimal_runtime_disposition: RESHAPE
+      owner_exit_receipt: missing
+      MRS01_exit: HOLD
+      owner_action: current_same_Task_Requirement_and_Plan_impact_review_before_S03
+      never_resume_long_agent_loop_from_old_approval: true
+
+  "14":
+    task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
+    pr_number: 14
+    branch: task/devforge-execution-workspace-materialization-bridge-v1
+    head_sha: 1dc1e8a649417fc59ee0cd641c955af155b9a687
+    mergeable: false
+    current_task:
+      path: docs/requirements/PR-014-devforge-execution-workspace-materialization-bridge-v1.md
+      sha: cbcf65d391b3aa0f89b8366b870241d5e1cc4a64
+      requirement_revision: 8
+      plan_revision: 14
+      stage: plan_review
+      plan_approved: false
+      implementation_authorized: false
+      current_slice: null
+      historical_slices: [S01, S02, S03A, S04A, S05A, S06A]
+    current_plan:
+      path: docs/plans/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan.md
+      sha: d860b40805dd0cc0c96670fd84e7e4fea6deb487
+      proposed_stage: read_only_S07A_plan_review
+      product_mutation_slices: none
+    evidence:
+      prior_rejected_plan_review_R13_sha: 4099cdcb1abbbc72526381237a777ef70fb7249f
+      requirement_R8_change_impact_sha: 3c895ccc3eeca1d0b76da9f266ecc007cf410b47
+      preserved_S02_receipt_sha: dd40e27c93376b73a95ed4c5ab1d13f91f5df4af
+      historical_candidate_sha: 45dc99d15a23c499b4c1500fab60ed5e76475aeb
+      pr_description_revision_claim: R3_Plan_R7
+      pr_description_is_stale: true
+    classification:
+      lineage: current_owner_branch_readback
+      plan_R14_review_decision: pending
+      host_effective_containment_proof: unverified_in_this_documentation_only_slice
+      independent_root_and_short_mutation_need: unverified
+      lossless_transport: unverified
+      minimal_runtime_disposition: RESHAPE_READ_ONLY_ADMISSION
+      owner_exit_receipt: missing
+      MRS01_exit: HOLD
+      owner_action: "#开发评审 PR-014-devforge-execution-workspace-materialization-bridge-v1"
+      historical_completed_slices_replayed: false
+
+  "19":
+    task_id: PR-019-stable-baseline-stabilization-exit-gate-v1
+    pr_number: 19
+    branch: task/stable-baseline-stabilization-exit-gate-v1
+    head_sha: f13dfe874f5de20c843e0c8cba4eb7e8af5731b7
+    mergeable: true
+    current_task:
+      path: docs/requirements/PR-019-stable-baseline-stabilization-exit-gate-v1.md
+      sha: 1017f9f54cd34d7868d5c0438eadac6e076f16df
+      requirement_revision: 1
+      plan_revision: 2
+      stage: implementation
+      current_slice: S01
+      current_slice_state: pending
+      published_candidate_sha: 4ffb2dc312fac8d1030eb521641f6c61c33f11f0
+    current_plan:
+      path: docs/plans/PR-019-stable-baseline-stabilization-exit-gate-v1-plan.md
+      sha: 4aff64a35c00d3e854fc63046faf3045caddaf0b
+      plan_revision: 2
+      introductory_plan_status_prose: ready_for_review
+      conflict_class: stale_plan_prose_vs_current_owner_task_and_review
+    current_slice_set_sha: ae967163354a646fa8cb801294a1d59506d8fa76
+    historical_evidence:
+      S01_scope_schema_blocker_sha: de5e3d4934968fd43cc5c193c417b6d4f1ced5b2
+      former_agent_source_sha: 1028030b33f0ea792a884491a431fffe566f6aa5
+      S01_attempt1_terminalization_receipt_sha: 01254a5c2817ec7c3e85caf45dccf8e294d0d764
+      historical_error: HostMutationScopeCorrupt
+      historical_error_field: runtime_read_authority_roots
+      current_host_reproducibility: unverified_no_fresh_windows_host_probe_in_S01
+    classification:
+      lineage: current_owner_branch_readback
+      old_failure: historical_evidence_not_current_live_fact
+      product_candidate_focused_tests: pending
+      direct_codex_long_agent_dependency: requires_minimal_runtime_owner_revision
+      owner_exit_receipt: missing
+      MRS01_exit: HOLD
+      owner_action: owner_Requirement_or_Plan_impact_review_and_real_Host_gate_before_resume
+      historical_candidate_replayed: false
+
+  "20":
+    task_id: PR-020-durable-async-operation-runtime-outcome-readback-v1
+    pr_number: 20
+    branch: task/durable-async-operation-runtime-outcome-readback-v1
+    head_sha: 96d4ad0001721d2c0b527fd9a1e2a0fe99116f30
+    mergeable: true
+    current_task:
+      path: docs/requirements/PR-020-durable-async-operation-runtime-outcome-readback-v1.md
+      sha: 2c2c33e6b969e271c4acb7277b08cd212f2f3de3
+      requirement_revision: 1
+      plan_revision: 4
+      stage: implementation
+      implementation_authorized_in_owner_artifact: true
+      current_slice: S01
+      current_slice_state: pending
+      bootstrap_override_state: active
+      execution_disposition: blocked
+    current_plan:
+      path: docs/plans/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan.md
+      sha: 304cbf2ab58b4fa3835c35b343bd1214565c2920
+      plan_revision: 4
+      introductory_plan_status_prose: ready_for_review
+      conflict_class: stale_plan_prose_vs_current_owner_task_and_review
+    current_slice_set_sha: f461220e206af7935619640b96288a3880381224
+    evidence:
+      reviewed_R4_sha: 2082e376c8bda337f5d82eb34785a499d6295a5c
+      S01_blocker_checkpoint_sha: 962e3ea9069a29db3d1eba6a8e423df4c2c214c4
+      blocked_reason: WorkspaceMaterializationProviderUnavailable
+      existing_generic_background_pending_results: retained
+    classification:
+      lineage: current_owner_branch_readback
+      canonical_conflict: prior_implementation_authorized_vs_PR021_PR023_development_timeout_HOLD
+      minimal_runtime_disposition: HOLD_PENDING_OWNER_REVIEW
+      owner_exit_receipt: missing
+      MRS01_exit: HOLD
+      owner_action: same_Task_Requirement_and_Plan_revision_or_HOLD_decision_before_any_S01_bootstrap
+      old_execution_authority_cannot_override_latest_architecture: true
+      no_owner_mutation_by_PR027: true
+
+independent_prs:
+  "16":
+    head_sha: c26de0e9fb0d908e9dc6bd16403b07965547f099
+    task_scope: Node_npm_Typescript_AppContainer_compatibility
+    status: open_independent
+    mutated: false
+  "26":
+    head_sha: 4fa5f4f481f226425719a8eb8a913ef89541f1ad
+    task_scope: Scoped_PowerShell_AppContainer_initialization_recovery
+    status: open_independent
+    mutated: false
+
+s01_verification:
+  requirement_revision_unchanged: pass
+  plan_revision_unchanged: pass
+  exact_owner_task_plan_head_sha_collected: pass
+  historical_receipts_classified: pass
+  stale_prose_vs_live_Task_classified: pass
+  all_four_owner_gates_independently_closed: false
+  current_Host_proof_not_inferred: pass
+  no_unverified_owner_exit_claimed: pass
+  missing_owner_receipt_disposition: HOLD
+  MRS01_program_exit: HOLD
+  MRS02_admitted: false
+  next_slice_if_S01_receipt_verified: S02
+
+safety:
+  owner_pr_mutation: false
+  other_task_gate_mutation: false
+  product_src_mutation: false
+  tests_CI_mutation: false
+  windows_Host_execution_or_mutation: false
+  canonical_main_mutation: false
+  devforge_project_registry_mutation: false
+  security_policy_expansion: false
+  historical_slices_replayed: false

@@ -1,0 +1,74 @@
+schema_version: "1.0"
+kind: devforge_execution_run
+project_id: sentinelx-cloud-core
+task_id: PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1
+slice_id: S04
+run_id: PR027-S04-RUN001
+source_command: "#开发执行 PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1"
+execution_mode: github_documentation_and_remote_evidence_readback
+status: completed
+verification: passed
+verified: true
+completion_boundary: slice_only
+
+authority:
+  requirement_revision: 1
+  task_blob_at_entry: 38cf7fe3417daecc94d6a4007d3fd7f67d294f3f
+  approved_plan_revision: 1
+  approved_plan_sha: 3d8b5b56e4235cdb22880ec01c45885e7fced8f6
+  plan_review_sha: 89d727f54f5d334a7db9b4d572e25cf40808659e
+  plan_review_transition_sha: 153bb4b20359ed1905cac5813cc775b318c4bb6d
+  slice_set_sha_at_entry: a02ff25d85a8825eebac32df35e19a585a4f658f
+
+transport:
+  original_pr: 27
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  branch: task/minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1
+  base: main
+  pr_head_at_start: 3f26c229a00a058c28f21e3479763adcb9600829
+  canonical_main: 8d2bafba87b529fb458faaa7fbdce39fe225361f
+  devforge_main: ebc25425160790950bd4d4500186652d3bf52416
+
+dependencies:
+  S01_receipt_sha: 37d67590fc43db7809f69da33fb700b4001ec9c7
+  S02_receipt_sha: 7d2c0844925e54daf0a9ca7250e4cc822c6d479d
+  S03_receipt_sha: a1ea1c12f291fe16e6ae94d65df54f130402e8bc
+  S01_S03_readback_verified: true
+  owner_packets:
+    "13": 0d96122d846621c04eec76477807072f6f1b02ce
+    "14": 8d5f8de30d3fff4d5d02ee4660ea8e0bafe4a75c
+    "19": b19e988336a4d53b0c9bf17bd8d435cbed94c0dd
+    "20": 3b5ef4d066293250ebc8ebbcf549d9b5f14f94cc
+
+verification_output:
+  ref: docs/checkpoints/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-s04-final-verification-20261008.yaml
+  blob_sha: 8a3c99abd340b0025dbfb94b63f6c76c88c348d5
+  independently_read_back: true
+  documentation_ac_total: 16
+  documentation_ac_passed: 16
+  documentation_ac_failed: 0
+  coordination_package_result: PASS
+
+program_projection:
+  four_original_owner_prs: [13, 14, 19, 20]
+  owner_exit_decision_receipts_verified:
+    "13": false
+    "14": false
+    "19": false
+    "20": false
+  all_owner_exits_verified: false
+  mrs01_program_exit: HOLD
+  mrs02_admitted: false
+  devforge_project_binding_change: false
+
+negative_scope:
+  owner_command_invoked: false
+  owner_PR_or_task_mutated: false
+  canonical_main_mutated: false
+  source_test_CI_host_security_or_deployment_mutation: false
+  historical_slices_replayed: false
+  acceptance_approved: false
+  completion_verified: false
+
+S04_completion_receipt_pending: true
+next_gate_after_verified_receipt: acceptance

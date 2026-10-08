@@ -1,0 +1,121 @@
+schema_version: "1.0"
+kind: devforge_development_requirement_planning_readiness_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1
+source_command: "#开发 SentinelX Minimal Runtime Active-Lineage Reconciliation & Owner-Gate Closure V1"
+date: "2026-10-08"
+result: ready_for_plan_review
+verified: true
+
+canonical_authority:
+  sentinelx_main_at_planning: 8d2bafba87b529fb458faaa7fbdce39fe225361f
+  devforge_main_at_planning: ebc25425160790950bd4d4500186652d3bf52416
+  devforge_project_registry_blob_sha: 08f50a36cbb90d5a08856d7dce2adf65248a7584
+  devforge_execution_binding: direct/codex
+  pr021_requirement_done_blob_sha: 997dc918dc877394b7d34d2f29c038183351c674
+  pr021_architecture_blob_sha: 36e0290de039336a8e4ce8561c22c731f12e9602
+  pr021_disposition_matrix_blob_sha: 05b6906614715e14450a2fd03e0699200e016074
+  pr023_roadmap_blob_sha: 8a281b60c1b8e9f5d665003a94f4f6b1d906de34
+  mrs01_source_section: "### MRS-01 — Active Work Reconciliation"
+
+current_task:
+  requirement:
+    path: docs/requirements/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1.md
+    revision: 1
+    blob_sha: 237db269f9cd965a7a2c25d938e679865e3cc102
+    acceptance_criteria: 16
+    requirement_ready: true
+  proposed_plan:
+    path: docs/plans/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-plan.md
+    revision: 1
+    blob_sha: 3d8b5b56e4235cdb22880ec01c45885e7fced8f6
+    state: ready_for_review
+    plan_approved: false
+  current_stage: plan_review
+  implementation_authorized: false
+  compiled_slice_set: null
+  no_slices_executed: true
+
+transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 27
+  branch: task/minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1
+  base_branch: main
+  state: open
+  draft: true
+  pr_head_at_plan_readback: f40c3c1e79d91bc7d512cf4edf012ce4ba2ef727
+  new_owner_pr_replacements_created: false
+
+owner_pr_snapshots:
+  "13":
+    branch: task/host-runtime-repository-materialization-scoped-publication-bridge-v1
+    head_sha: 4a3f8e3504b65d1dc222ecb9421ffa16cd96c76d
+    requirement_revision: 1
+    requirement_blob_sha: 55317e8ce3fc850167a38928d448fbf76b3bc6b7
+    plan_revision: 2
+    plan_blob_sha: e65fceea327df2820719d0feb74759e733955efb
+    development_stage: implementation
+    current_slice: S03
+    evidence_state: requires_current_main_reconciliation
+    scope_class: retained_bounded_repo_transaction_security_only
+  "14":
+    branch: task/devforge-execution-workspace-materialization-bridge-v1
+    head_sha: 1dc1e8a649417fc59ee0cd641c955af155b9a687
+    requirement_revision: 8
+    requirement_blob_sha: cbcf65d391b3aa0f89b8366b870241d5e1cc4a64
+    plan_revision: 14
+    plan_blob_sha: d860b40805dd0cc0c96670fd84e7e4fea6deb487
+    development_stage: plan_review
+    plan_approved: false
+    prior_plan_review_r13_blob_sha: 4099cdcb1abbbc72526381237a777ef70fb7249f
+    historical_candidate_sha: 45dc99d15a23c499b4c1500fab60ed5e76475aeb
+    current_owner_decision: read_only_s07a_plan_review_required
+    pr_body_stale: true
+  "19":
+    branch: task/stable-baseline-stabilization-exit-gate-v1
+    head_sha: f13dfe874f5de20c843e0c8cba4eb7e8af5731b7
+    requirement_revision: 1
+    requirement_blob_sha: 1017f9f54cd34d7868d5c0438eadac6e076f16df
+    plan_revision: 2
+    plan_blob_sha: 4aff64a35c00d3e854fc63046faf3045caddaf0b
+    current_slice: S01
+    candidate_sha: 4ffb2dc312fac8d1030eb521641f6c61c33f11f0
+    historical_blocker_receipt_sha: de5e3d4934968fd43cc5c193c417b6d4f1ced5b2
+    historical_blocker_current_host_validity: unverified
+    exit_state: owner_revalidation_required
+  "20":
+    branch: task/durable-async-operation-runtime-outcome-readback-v1
+    head_sha: 96d4ad0001721d2c0b527fd9a1e2a0fe99116f30
+    requirement_revision: 1
+    requirement_blob_sha: 2c2c33e6b969e271c4acb7277b08cd212f2f3de3
+    plan_revision: 4
+    plan_blob_sha: 304cbf2ab58b4fa3835c35b343bd1214565c2920
+    current_slice: S01
+    historical_implementation_authorized: true
+    program_disposition: HOLD
+    conflict: OwnerImplementationGateContradictsPR021MinimalRuntimeProgramHold
+    owner_action_required: true
+
+independent_exclusions:
+  "16": "scoped Node/npm TypeScript AppContainer compatibility follows owner PR"
+  "26": "scoped PowerShell AppContainer initialization recovery follows owner PR"
+
+program_exit:
+  mrs01_current_state: HOLD
+  owner_decisions_independently_verified_closed: false
+  mrs02_admitted: false
+  cannot_claim_owner_gate_closure_from_this_checkpoint: true
+  task_gate_plan_approved: false
+
+safety:
+  owner_pr_mutated: false
+  product_source_mutated: false
+  tests_or_ci_mutated: false
+  installed_host_runtime_mutated: false
+  canonical_main_mutated: false
+  devforge_project_binding_mutated: false
+  unrelated_pr_closed_merged_or_rebased: false
+  historical_slices_replayed: false
+
+next_expected_actor: reviewer
+canonical_next_action: "#开发评审 PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1"
