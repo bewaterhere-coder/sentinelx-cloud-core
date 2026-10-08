@@ -5,14 +5,14 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 8
 development:
-  stage: plan_review
+  stage: plan_review_rejected
   gates:
     requirement_ready: true
     plan_approved: false
     acceptance_approved: false
     completion_verified: false
   plan_revision: 13
-  latest_plan_review: pending_round_13
+  latest_plan_review: rejected_round_13
   prior_plan_review: approved_round_6
   latest_plan_remediation: plan_r9_readonly_s03a_remediation
   prior_plan_remediation: plan_r2_remediation_r1
@@ -50,7 +50,7 @@ development:
   bootstrap_override_state: expired_by_requirement_revision_3
   prior_bootstrap_override: docs/overrides/PR-014-devforge-execution-workspace-materialization-bridge-v1-bootstrap-execution-override.yaml
   latest_bootstrap_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-bootstrap-execution-override-r1-receipt.yaml
-  execution_disposition: s06a_completed_negative_security_decision
+  execution_disposition: r13_plan_review_rejected_product_admission_blocked
   execution_blocker: DirectCodexContainmentUnprovenAndIndependentPlacementNotAdmitted
   execution_failure_state: null
   execution_failure_reason: null
@@ -61,8 +61,8 @@ development:
   prior_bootstrap_receipt: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-harness-bootstrap-blocked-20261008.yaml
   superseded_slice_set_status: invalidated_by_requirement_revision_4
   planned_pending_delta_slice: null
-  next_expected_actor: reviewer
-  canonical_next_action: "#开发评审 PR-014-devforge-execution-workspace-materialization-bridge-v1"
+  next_expected_actor: planner
+  canonical_next_action: "#开发计划修复 PR-014-devforge-execution-workspace-materialization-bridge-v1"
   authorization:
     mode: legacy_command_scoped
 artifacts:
