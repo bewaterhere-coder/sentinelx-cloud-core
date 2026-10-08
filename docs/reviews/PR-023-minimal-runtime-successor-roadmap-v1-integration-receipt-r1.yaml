@@ -1,0 +1,54 @@
+schema_version: "1.0"
+kind: devforge_integration_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-023-minimal-runtime-successor-roadmap-v1
+source_command: "#开发完成 PR-023-minimal-runtime-successor-roadmap-v1"
+
+integration:
+  transport: github-pr
+  original_pr_number: 23
+  original_branch: task/minimal-runtime-successor-roadmap-v1
+  merged: true
+  merge_commit_sha: 31fb0c874a1a7400257eba761820a30581a5cb0d
+  merged_commit_is_ancestor_of_current_main: true
+  current_main_readback_sha: 31fb0c874a1a7400257eba761820a30581a5cb0d
+  original_pr_state: closed
+  original_pr_merged: true
+
+canonical_state_before_reconciliation:
+  task_ref: docs/requirements/PR-023-minimal-runtime-successor-roadmap-v1.md
+  task_blob_sha_on_main: 395a35b432134a3ad924deec94e4e0b710268cc9
+  task_stage: accepted
+  acceptance_approved: true
+  completion_verified: false
+  plan_ref: docs/plans/PR-023-minimal-runtime-successor-roadmap-v1-plan.md
+  plan_blob_sha_on_main: e3221237fa03073e451d5091970c1428cf028f17
+  plan_status: accepted_finalization_ready
+  reason_for_reconciliation: merge_completed_before_done_can_be_truthfully_written
+  result: WorkflowStateMismatch_post_merge_completion_reconciliation_required
+
+acceptance:
+  review_ref: docs/reviews/PR-023-minimal-runtime-successor-roadmap-v1-acceptance-r1.md
+  review_blob_sha: a2ec4fd0d1da224808beede6c5751b8a3c926009
+  receipt_ref: docs/reviews/PR-023-minimal-runtime-successor-roadmap-v1-acceptance-r1-receipt.yaml
+  receipt_blob_sha: a73a7656775b1ea8434b8e3f8ecbf4c357215b0a
+  accepted_transition_blob_sha: 8039c5c0b7c924c66542e3128a30e4e2a6872e94
+  all_verified: true
+
+premerge:
+  finalization_receipt_ref: docs/checkpoints/PR-023-minimal-runtime-successor-roadmap-v1-premerge-finalization-r1-receipt.yaml
+  finalization_receipt_blob_sha: 658c779ed7818c6fc8fcd2f5052bf4312a2ab0ab
+  readback_verified: true
+
+reconciliation:
+  kind: same_task_completion_state_reconciliation
+  new_development_task: false
+  source_branch: reconcile/pr-023-minimal-runtime-successor-roadmap-v1-completion
+  original_task_id: PR-023-minimal-runtime-successor-roadmap-v1
+  original_pr_number: 23
+  original_task_lineage_preserved: true
+  implementation_replayed: false
+  product_code_modified: false
+  host_or_deployment_mutated: false
+  authoritative_done_requires_reconciliation_merge_and_main_readback: true
+  status: pending
