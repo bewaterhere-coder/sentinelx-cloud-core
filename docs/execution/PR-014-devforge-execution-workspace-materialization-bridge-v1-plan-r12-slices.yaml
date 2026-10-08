@@ -26,8 +26,8 @@ slices:
         - durable_decision_and_receipt_readback
     checkpoint:
       required: true
-    state: pending
-    run_refs: []
-    completion_receipt_ref: null
+    state: completed
+    run_refs: [s06a-post-upgrade-readonly-20261008]
+    completion_receipt_ref: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-s06a-completion-receipt.yaml
 historical_slices: [S01, S02, S03A, S04A, S05A]
 historical_replay: forbidden
