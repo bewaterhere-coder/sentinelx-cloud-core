@@ -1,0 +1,76 @@
+schema_version: "1.0"
+kind: devforge_slice_retirement_gates_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-023-minimal-runtime-successor-roadmap-v1
+slice_id: S04
+source_command: "#开发执行 PR-023-minimal-runtime-successor-roadmap-v1"
+checkpoint_state: completion_candidate
+
+runtime:
+  devforge_version: "2.103.0"
+  devforge_main: ebc25425160790950bd4d4500186652d3bf52416
+  execution_policy_blob_sha: c5e159e143e4f9c6dbce088ef321a12fc5560ca8
+  slicing_contract_blob_sha: d173ce7aa909def855b4fe3899e9a3da54b6a330
+
+authority:
+  requirement_revision: 1
+  approved_plan_revision: 1
+  approved_plan_blob_sha: 5bdb8e70887a7b78f12d01f81477273d0b0df29b
+  prior_s03_completion_receipt:
+    path: docs/checkpoints/PR-023-minimal-runtime-successor-roadmap-v1-s03-completion-20261008.yaml
+    blob_sha: c7a232dc552f317c4b7024419c3f37a29c1fca73
+    verified: true
+  architecture:
+    path: docs/architecture/sentinelx-minimal-runtime-boundary-v1.md
+    blob_sha: 36e0290de039336a8e4ce8561c22c731f12e9602
+  capability_matrix:
+    path: docs/architecture/sentinelx-capability-disposition-matrix-v1.md
+    blob_sha: 05b6906614715e14450a2fd03e0699200e016074
+
+transport:
+  type: github-pr
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 23
+  branch: task/minimal-runtime-successor-roadmap-v1
+  canonical_main: cd42e371f18056327c1d8b744f8956a76bc11541
+  roadmap_commit: 4fbae41a7f4222f0e4a75f8b8ef4a95cf93776a4
+
+evidence:
+  roadmap_path: docs/architecture/sentinelx-minimal-runtime-successor-roadmap-v1.md
+  roadmap_blob_sha: 1117d0279ed9c513424ad12f72ed1ecdb2d7a116
+  readback_verified: true
+  s04_gate_ids: [RG-01, RG-02, RG-03, RG-04, RG-05, RG-06, RG-07, RG-08]
+  s04_gate_count: 8
+  primary_stage_order: [MRS-01, MRS-02, MRS-03, MRS-04, MRS-05]
+
+verification:
+  mrs05_depends_on_independently_accepted_mrs01_02_03_04: pass
+  pr019_baseline_reconciliation_before_direct_codex_retirement: pass
+  replacement_and_binding_migration_before_minimal_runtime_proof: pass
+  equivalent_commit_receipt_remote_readback_before_evidence_logic_removal: pass
+  separate_component_capability_tasks_required: pass
+  generic_background_jobs_not_deprecated_solely_for_async: pass
+  pr021_keep_simplify_security_boundaries_preserved: pass
+  no_bulk_source_deletion_authority: pass
+  no_project_binding_mutation_authority: pass
+  no_live_host_effects_or_deployment: pass
+  no_successor_tasks_started: pass
+  s05_not_preexecuted: pass
+  exact_approved_plan_still_current: pass
+
+safety:
+  product_source_mutated: false
+  test_source_mutated: false
+  github_actions_workflow_mutated: false
+  canonical_main_mutated: false
+  active_related_pr_mutated: false
+  devforge_repository_mutated: false
+  project_binding_mutated: false
+  direct_codex_retired: false
+  deployment_or_agent_restart_performed: false
+  release_performed: false
+
+next_slice:
+  id: S05
+  state: pending
+  execution_authority_granted_by_s04: false

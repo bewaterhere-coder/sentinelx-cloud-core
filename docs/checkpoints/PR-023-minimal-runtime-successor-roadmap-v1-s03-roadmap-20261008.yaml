@@ -1,0 +1,102 @@
+schema_version: "1.0"
+kind: devforge_slice_roadmap_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-023-minimal-runtime-successor-roadmap-v1
+slice_id: S03
+source_command: "#开发执行 PR-023-minimal-runtime-successor-roadmap-v1"
+checkpoint_state: completion_candidate
+
+runtime:
+  devforge_version: "2.103.0"
+  canonical_main_revision_at_s03: ebc25425160790950bd4d4500186652d3bf52416
+  slicing_contract_blob_sha: d173ce7aa909def855b4fe3899e9a3da54b6a330
+  execution_policy_blob_sha: c5e159e143e4f9c6dbce088ef321a12fc5560ca8
+
+authority:
+  requirement_revision: 1
+  approved_plan_revision: 1
+  approved_plan_blob_sha: 5bdb8e70887a7b78f12d01f81477273d0b0df29b
+  s02_completion_receipt:
+    path: docs/checkpoints/PR-023-minimal-runtime-successor-roadmap-v1-s02-completion-20261008.yaml
+    blob_sha: 67c238b2e1fd483ea8e22410aff6be722064c7ec
+    verified: true
+  architecture_authority:
+    path: docs/architecture/sentinelx-minimal-runtime-boundary-v1.md
+    blob_sha: 36e0290de039336a8e4ce8561c22c731f12e9602
+  disposition_authority:
+    path: docs/architecture/sentinelx-capability-disposition-matrix-v1.md
+    blob_sha: 05b6906614715e14450a2fd03e0699200e016074
+
+transport:
+  type: github-pr
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 23
+  branch: task/minimal-runtime-successor-roadmap-v1
+  base_branch: main
+  canonical_main_at_s03: cd42e371f18056327c1d8b744f8956a76bc11541
+  roadmap_commit: 4c0135446da364f64ebaea7789744172e3f74624
+
+roadmap:
+  path: docs/architecture/sentinelx-minimal-runtime-successor-roadmap-v1.md
+  blob_sha: 92d8d751ed75fe3a004e133f1626aae3cbd7a14d
+  readback_verified: true
+  stages:
+    - MRS-01
+    - MRS-02
+    - MRS-03
+    - MRS-04
+    - MRS-05
+  primary_order_count: 1
+  primary_stage_count: 5
+  each_stage_includes:
+    - problem
+    - owner
+    - repository_and_runtime_authority
+    - prerequisites
+    - allowed_scope
+    - forbidden_scope
+    - entry_gate
+    - exit_acceptance_evidence
+    - predecessor_successor_dependency
+    - candidate_follow_on_task
+    - same_repository_or_cross_repository_boundary
+
+verification:
+  exactly_five_stages_in_frozen_order: pass
+  predecessor_architecture_consumed: pass
+  active_work_matrix_preserved: pass
+  provider_neutral_handoff_identity_scope_forbidden_verification_receipt: pass
+  handoff_grants_no_new_authority: pass
+  direct_short_routing_preserved: pass
+  mrs03_devforge_owned_cross_repository: pass
+  mrs04_real_host_security_and_receipt_proof: pass
+  stage_exit_requires_separate_owner_receipts: pass
+  successor_tasks_not_created: pass
+  successor_program_stages_not_executed: pass
+  s04_retirement_gate_freeze_not_preexecuted: pass
+  forbidden_product_paths_unchanged: pass
+
+dispositions_preserved:
+  pr13: reshape
+  pr14: reshape
+  pr16: independent/non-conflicting
+  pr19: reshape
+  pr20: hold
+  pr23: continue
+
+safety:
+  product_source_mutated: false
+  test_source_mutated: false
+  github_actions_workflow_mutated: false
+  active_related_pr_mutated: false
+  devforge_repository_mutated: false
+  project_binding_mutated: false
+  deployment_or_agent_restart_performed: false
+  direct_codex_retired: false
+  release_performed: false
+
+next_slice:
+  id: S04
+  objective: Retirement and Safety Gates
+  state_before_transition: pending
+  execution_authority_from_s03: false

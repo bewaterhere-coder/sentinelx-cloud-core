@@ -1,0 +1,170 @@
+schema_version: "1.0"
+kind: devforge_execution_slice_set
+
+identity:
+  task_id: PR-023-minimal-runtime-successor-roadmap-v1
+  slice_set_id: PR-023-minimal-runtime-successor-roadmap-v1-plan-r1
+
+plan:
+  ref: docs/plans/PR-023-minimal-runtime-successor-roadmap-v1-plan.md
+  revision: 1
+  blob_sha: 5bdb8e70887a7b78f12d01f81477273d0b0df29b
+
+requirement:
+  ref: docs/requirements/PR-023-minimal-runtime-successor-roadmap-v1.md
+  revision: 1
+
+transport:
+  type: github-pr
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 23
+  branch: task/minimal-runtime-successor-roadmap-v1
+  base_branch: main
+
+execution_policy:
+  implementation_kind: documentation_control_plane_only
+  one_execute_one_slice: true
+  execution_mode_resolution: per_slice_at_execution
+  long_or_uncertain_work: guided_cli
+  product_source_mutation: forbidden
+  test_source_mutation: forbidden
+  github_actions_workflow_mutation: forbidden
+  production_hub_mutation: forbidden
+  deployment_or_agent_restart: forbidden
+  project_binding_mutation: forbidden
+  devforge_repository_mutation: forbidden
+  active_related_pr_mutation: forbidden
+  direct_codex_retirement: forbidden
+  pr020_implementation: forbidden
+  release: forbidden
+
+slices:
+  - slice_id: S01
+    objective: Capture current canonical SentinelX main, PR-021 authority, all current open SentinelX PR lineages, and current DevForge sentinelx-cloud-core execution-binding reality.
+    depends_on: []
+    scope:
+      write_refs:
+        - docs/checkpoints/PR-023-minimal-runtime-successor-roadmap-v1-reality-inventory-*.yaml
+      read_authority:
+        - current sentinelx-cloud-core main
+        - current open sentinelx-cloud-core pull requests
+        - docs/architecture/sentinelx-minimal-runtime-boundary-v1.md
+        - docs/architecture/sentinelx-capability-disposition-matrix-v1.md
+        - docs/requirements/PR-021-minimal-runtime-complexity-reduction-boundary-v1.md
+        - PR-021 acceptance and completion evidence
+        - current DevForge development-project-registry sentinelx-cloud-core entry
+    verification:
+      required:
+        - exact canonical main SHA recorded
+        - exact open PR evidence baseline recorded
+        - PR-021 authority refs are resolvable
+        - current DevForge execution binding is read back
+        - no classification relies on chat history
+        - no product or external state mutation
+    checkpoint:
+      required: true
+    state: completed
+    run_refs:
+      - docs/execution/PR-023-minimal-runtime-successor-roadmap-v1-s01-run-001.yaml
+    completion_receipt_ref: docs/checkpoints/PR-023-minimal-runtime-successor-roadmap-v1-s01-completion-20261008.yaml
+
+  - slice_id: S02
+    objective: Build the evidence-backed Active Work Reconciliation Matrix for every open SentinelX PR in the S01 baseline.
+    depends_on: [S01]
+    scope:
+      write_refs:
+        - docs/architecture/sentinelx-minimal-runtime-successor-roadmap-v1.md
+        - docs/checkpoints/PR-023-minimal-runtime-successor-roadmap-v1-reconciliation-*.yaml
+    verification:
+      required:
+        - every S01 open PR is covered or evidence-backed excluded
+        - dispositions use only continue reshape hold supersede-candidate close-candidate independent/non-conflicting
+        - PR-014 mixed security substrate versus long-Agent orchestration is explicit
+        - PR-019 historical evidence is preserved while long-Agent baseline dependency is reconciled
+        - PR-020 development-timeout direction is HOLD
+        - each classification explicitly grants no PR mutation authority
+        - no related PR is edited closed merged rebased or superseded by this Slice
+    checkpoint:
+      required: true
+    state: completed
+    run_refs:
+      - docs/execution/PR-023-minimal-runtime-successor-roadmap-v1-s02-run-001.yaml
+    completion_receipt_ref: docs/checkpoints/PR-023-minimal-runtime-successor-roadmap-v1-s02-completion-20261008.yaml
+
+  - slice_id: S03
+    objective: Materialize exactly one five-stage Minimal Runtime successor roadmap with owner, repository/runtime, prerequisites, entry/exit gates, evidence, prohibited shortcuts, and candidate follow-on Task titles.
+    depends_on: [S02]
+    scope:
+      write_refs:
+        - docs/architecture/sentinelx-minimal-runtime-successor-roadmap-v1.md
+    verification:
+      required:
+        - exactly MRS-01 through MRS-05 appear in frozen order
+        - MRS-02 is provider-neutral and includes identity scope forbidden actions verification returned evidence and no-authority-transfer requirements
+        - direct-short SentinelX routing remains valid for bounded work
+        - MRS-03 is explicitly DevForge-owned cross-repository work
+        - MRS-04 proof criteria cover projection bounded execution Mutation Scope confinement audit firewall/effect truth and receipt/read-back
+        - successor Task candidates are descriptive only and are not created or started
+    checkpoint:
+      required: true
+    state: completed
+    run_refs:
+      - docs/execution/PR-023-minimal-runtime-successor-roadmap-v1-s03-run-001.yaml
+    completion_receipt_ref: docs/checkpoints/PR-023-minimal-runtime-successor-roadmap-v1-s03-completion-20261008.yaml
+
+  - slice_id: S04
+    objective: Freeze retirement and safety gates that prevent long-Agent-specific simplification before replacement, binding migration, baseline reconciliation, Minimal Runtime proof, and equivalent evidence validation.
+    depends_on: [S03]
+    scope:
+      write_refs:
+        - docs/architecture/sentinelx-minimal-runtime-successor-roadmap-v1.md
+    verification:
+      required:
+        - MRS-05 depends on accepted MRS-01 MRS-02 MRS-03 and MRS-04
+        - PR-019 reconciliation is required before Direct Codex retirement
+        - equivalent returned-evidence validation is required before removing reusable validation semantics
+        - retirement is decomposed into explicit component or capability Tasks
+        - generic background jobs are not deprecated solely for being asynchronous
+        - security KEEP/SIMPLIFY boundaries from PR-021 remain preserved
+        - no broad deletion authority is created
+    checkpoint:
+      required: true
+    state: completed
+    run_refs:
+      - docs/execution/PR-023-minimal-runtime-successor-roadmap-v1-s04-run-001.yaml
+    completion_receipt_ref: docs/checkpoints/PR-023-minimal-runtime-successor-roadmap-v1-s04-completion-20261008.yaml
+
+  - slice_id: S05
+    objective: Perform deterministic whole-artifact verification and persist final roadmap evidence/read-back without product/runtime mutation.
+    depends_on: [S04]
+    scope:
+      write_refs:
+        - docs/checkpoints/PR-023-minimal-runtime-successor-roadmap-v1-final-verification-*.yaml
+    verification:
+      required:
+        - Requirement Revision 1 semantics remain current
+        - Approved Plan R1 blob identity remains current
+        - roadmap read-back succeeds
+        - AC1 through AC16 are explicitly evaluated
+        - exactly five primary stages remain in the required order
+        - every S01 open PR baseline entry is reconciled
+        - PR-014 PR-019 PR-020 mandatory constraints remain present
+        - no src path changed
+        - no tests path changed
+        - no .github/workflows path changed
+        - no deployment or installed-Agent state changed
+        - no active related PR state changed
+        - no DevForge repository or project-binding state changed
+        - PR 23 remains the sole transport lineage
+        - fresh-session recovery references are sufficient
+    checkpoint:
+      required: true
+    state: pending
+
+current:
+  slice_id: S05
+  state: pending
+
+execution_summary:
+  all_required_slices_completed: false
+  implementation_execution_complete: false
