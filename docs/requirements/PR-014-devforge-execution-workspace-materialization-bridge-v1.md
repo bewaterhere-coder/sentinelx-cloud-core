@@ -22,9 +22,9 @@ development:
     - MissingIndependentDevForgeExecutionRootBinding
     - DirectCodexContainmentUnproven
   current_slice: S06A
-  current_slice_state: pending
-  completed_slices: [S01, S02, S03A, S04A, S05A]
-  pending_slices: [S06A]
+  current_slice_state: completed_negative_readback
+  completed_slices: [S01, S02, S03A, S04A, S05A, S06A]
+  pending_slices: []
   implementation_execution_complete: false
   formal_acceptance_performed: false
   acceptance_disposition: superseded_by_requirement_r3_replan
@@ -50,8 +50,8 @@ development:
   bootstrap_override_state: expired_by_requirement_revision_3
   prior_bootstrap_override: docs/overrides/PR-014-devforge-execution-workspace-materialization-bridge-v1-bootstrap-execution-override.yaml
   latest_bootstrap_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-bootstrap-execution-override-r1-receipt.yaml
-  execution_disposition: r12_approved_readonly_s06a
-  execution_blocker: DirectCodexContainmentUnproven
+  execution_disposition: s06a_completed_negative_security_decision
+  execution_blocker: DirectCodexContainmentUnprovenAndIndependentPlacementNotAdmitted
   execution_failure_state: null
   execution_failure_reason: null
   latest_execution_run: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-run-001.yaml
@@ -61,8 +61,8 @@ development:
   prior_bootstrap_receipt: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-harness-bootstrap-blocked-20261008.yaml
   superseded_slice_set_status: invalidated_by_requirement_revision_4
   planned_pending_delta_slice: S06A
-  next_expected_actor: executor
-  canonical_next_action: "#开发执行 PR-014-devforge-execution-workspace-materialization-bridge-v1"
+  next_expected_actor: architect
+  canonical_next_action: "#开发 PR-014-devforge-execution-workspace-materialization-bridge-v1 修订当前方案：将当前安全阻塞收敛到 Direct Codex containment 和 Host-owned 独立执行根；不再重复 Sandbox/Audit 或旧 MutationScope 修复，禁止产品 mutation。"
   authorization:
     mode: legacy_command_scoped
 artifacts:
