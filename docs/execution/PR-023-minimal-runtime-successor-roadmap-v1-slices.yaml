@@ -86,7 +86,10 @@ slices:
         - no related PR is edited closed merged rebased or superseded by this Slice
     checkpoint:
       required: true
-    state: pending
+    state: completed
+    run_refs:
+      - docs/execution/PR-023-minimal-runtime-successor-roadmap-v1-s02-run-001.yaml
+    completion_receipt_ref: docs/checkpoints/PR-023-minimal-runtime-successor-roadmap-v1-s02-completion-20261008.yaml
 
   - slice_id: S03
     objective: Materialize exactly one five-stage Minimal Runtime successor roadmap with owner, repository/runtime, prerequisites, entry/exit gates, evidence, prohibited shortcuts, and candidate follow-on Task titles.
@@ -153,7 +156,7 @@ slices:
     state: pending
 
 current:
-  slice_id: S02
+  slice_id: S03
   state: pending
 
 execution_summary:
