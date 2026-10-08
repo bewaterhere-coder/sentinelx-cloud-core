@@ -5,24 +5,29 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 1
 development:
-  stage: plan_review_rejected
+  stage: plan_review
   gates:
     requirement_ready: true
     plan_approved: false
     acceptance_approved: false
     completion_verified: false
-  plan_revision: 1
-  latest_plan_review: rejected_round_1
+  plan_revision: 2
+  latest_plan_review: pending_round_2
+  latest_rejected_plan_review: rejected_round_1
   latest_reviewed_plan_sha: 17c3846423bc40b9e836f8713e5ffa2f20a55376
-  plan_remediation_required: true
+  plan_remediation_required: false
+  plan_remediation_completed_round: 1
+  plan_remediation_disposition: revised_plan_r2_pending_review
+  proposed_current_plan_slices: [S01]
+  executable_slices_admitted: []
   plan_review_blocking_findings: [R1-F01, R1-F02, R1-F03, R1-F04]
   implementation_authorized: false
   host_policy_mutation_authorized: false
   direct_codex_execution_authorized: false
   safety_negative_call_authorized: false
   canonical_main_mutation_authorized: false
-  next_expected_actor: planner
-  canonical_next_action: "#开发计划修复 PR-029-direct-codex-host-owned-disablement-negative-reachability-v1"
+  next_expected_actor: reviewer
+  canonical_next_action: "#开发评审 PR-029-direct-codex-host-owned-disablement-negative-reachability-v1"
   current_slice: null
   pending_slices: []
   completed_slices: []
@@ -38,13 +43,15 @@ transport:
   branch: task/direct-codex-host-owned-disablement-negative-reachability-v1
   base_branch: main
 artifacts:
+  latest_plan_remediation: docs/checkpoints/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-plan-remediation-r1-20261008.md
+  latest_plan_remediation_transition_receipt: docs/reviews/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-plan-remediation-r1-transition-receipt.yaml
   latest_plan_review: docs/reviews/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-plan-review-r1.md
   latest_plan_review_transition_receipt: docs/reviews/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-plan-review-r1-transition-receipt.yaml
   provisional_intake: docs/intake/direct-codex-host-owned-disablement-negative-reachability-v1.md
   requirement_refinement: docs/reviews/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-requirement-refinement-r1.md
   requirement_ready_receipt: docs/checkpoints/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-requirement-ready-r1-receipt.yaml
   plan: docs/plans/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-plan.md
-  current_plan_blob_sha: 17c3846423bc40b9e836f8713e5ffa2f20a55376
+  current_plan_blob_sha: 300b1adc237dd4220d866ecdeb4047880d203874
   plan_creation_transition_receipt: docs/checkpoints/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-planning-to-plan-review-r1-receipt.yaml
   upstream_owner_decision: https://github.com/bewaterhere-coder/sentinelx-cloud-core/blob/task/devforge-execution-workspace-materialization-bridge-v1/docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-owner-direct-codex-disablement-decision-r1.md
 requirement_readiness:

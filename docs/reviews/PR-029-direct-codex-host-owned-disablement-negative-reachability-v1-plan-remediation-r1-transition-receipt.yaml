@@ -1,0 +1,53 @@
+schema_version: "1.1"
+kind: devforge_artifact_state_transition_receipt
+task_id: PR-029-direct-codex-host-owned-disablement-negative-reachability-v1
+project_id: sentinelx-cloud-core
+source_command: "#开发计划修复 PR-029-direct-codex-host-owned-disablement-negative-reachability-v1"
+transition:
+  from_stage: plan_review_rejected
+  to_stage: plan_review
+  transition_rule: revised_plan_readback_for_re_review
+  decision: applied_after_remote_readback
+  verified: true
+lineage:
+  requirement_revision: 1
+  task_before_sha: 385129f8668002a8786023ecb43bb6a4122b78f3
+  task_after_sha: 983c9ccba0b94e2f21088f3e6b9763289f9ccc82
+  rejected_plan_revision: 1
+  rejected_plan_blob_sha: 17c3846423bc40b9e836f8713e5ffa2f20a55376
+  rejected_review_ref: docs/reviews/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-plan-review-r1.md
+  rejected_review_blob_sha: 4e0663bc1288487699d2eb590e427f7eb78acf89
+  revised_plan_revision: 2
+  revised_plan_ref: docs/plans/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-plan.md
+  revised_plan_blob_sha: 300b1adc237dd4220d866ecdeb4047880d203874
+  remediation_ref: docs/checkpoints/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-plan-remediation-r1-20261008.md
+  remediation_blob_sha: 23413191df31f2ee71a0e427722897431f804f94
+  findings_addressed_in_plan: [R1-F01, R1-F02, R1-F03, R1-F04]
+transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 29
+  original_branch: task/direct-codex-host-owned-disablement-negative-reachability-v1
+  expected_parent_head: 06d72d79ba5c2cf29a6a65b86cb7b8c5dc99e936
+  canonical_main_at_repair: 2e5c69a112323867ee01783521554c43ebd731be
+  devforge_main_at_repair: 047df4f1c45ce9099ec112017063751243c78d7b
+state_after:
+  stage: plan_review
+  requirement_ready: true
+  plan_approved: false
+  plan_revision: 2
+  implementation_authorized: false
+  host_mutation_authorized: false
+  local_api_call_authorized: false
+  direct_codex_execution_authorized: false
+  current_plan_slice_set_compiled: false
+  next_expected_actor: reviewer
+  canonical_next_command: "#开发评审 PR-029-direct-codex-host-owned-disablement-negative-reachability-v1"
+guards:
+  s01_executable_before_review: false
+  protected_roots_modified: false
+  canonical_main_mutated: false
+  Host_mutated: false
+  direct_codex_invoked: false
+  historical_pr14_replayed: false
+  no_auto_s02_s03_s04: true
+  mrs01: HOLD
