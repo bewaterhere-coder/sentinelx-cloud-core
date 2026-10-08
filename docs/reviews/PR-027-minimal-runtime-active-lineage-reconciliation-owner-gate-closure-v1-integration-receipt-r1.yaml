@@ -51,9 +51,9 @@ reconciliation:
   new_development_task_created: false
   original_task_identity_preserved: true
   reconciliation_branch: reconcile/pr-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-completion
-  reconciliation_pr_number: pending
+  reconciliation_pr_number: 28
   implementation_replayed: false
   product_or_host_mutation: false
   reconciliation_merge_required: true
   completion_authority_after_main_readback_only: true
-  status: prepared
+  status: prepared_for_reconciliation_merge
