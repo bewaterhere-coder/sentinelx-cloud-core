@@ -90,7 +90,7 @@ slices:
   - slice_id: S02
     title: Minimal Runtime Disposition and Owner-Gate Matrix
     depends_on: [S01]
-    state: pending
+    state: completed
     scope:
       read_refs:
         - verified:S01-Receipt
@@ -110,7 +110,10 @@ slices:
       - mrs01_HOLD_unless_all_owner_exit_receipts_verified
       - no_mrs02_or_binding_change
     completion_receipt_pattern: docs/checkpoints/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-s02-completion-*.yaml
-    run_refs: []
+    run_refs:
+      - docs/execution/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-s02-run-001.yaml
+    completion_receipt_ref: docs/checkpoints/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-s02-completion-20261008.yaml
+    completion_receipt_sha: 7d2c0844925e54daf0a9ca7250e4cc822c6d479d
   - slice_id: S03
     title: Four Owner-Scoped Decision and Handoff Packets
     depends_on: [S02]
@@ -164,10 +167,10 @@ slices:
     run_refs: []
 
 current:
-  slice_id: S02
+  slice_id: S03
   state: pending
 execution_summary:
-  completed_slices: [S01]
+  completed_slices: [S01, S02]
   implementation_execution_complete: false
   owner_gates_closed_by_this_task: false
   mrs01_program_exit: HOLD
