@@ -1,0 +1,54 @@
+schema_version: "1.0"
+kind: devforge_slice_completion_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
+slice_id: S07A
+run_id: RUN-PR014-S07A-001
+attempt_id: ATTEMPT-001
+source_command: "#开发执行 PR-014-devforge-execution-workspace-materialization-bridge-v1"
+requirement_revision: 8
+plan_revision: 14
+plan_blob_sha: d860b40805dd0cc0c96670fd84e7e4fea6deb487
+slice_set_before_completion_blob_sha: 003844b90006542dd00da18162faf51b4b79be6d
+result: completed_readonly_evidence_with_negative_owner_gate
+run_state: COMPLETED
+execution_evidence:
+  decision_ref: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-s07a-decision-20261008.md
+  decision_blob_sha: 1ccd425242ac63b3e2a59cfa65d0f223e2c3d6c7
+  attempt_ref: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-s07a-attempt-001-receipt.yaml
+  attempt_blob_sha: d89bd5204baf506e91e94f0536c3cac3f16f3290
+  ledger_ref: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-s07a-run-001-ledger.yaml
+  ledger_blob_sha: 2c554643210f58b67013ae611b74d29b67b5e47a
+  run_ref: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-s07a-run-001.yaml
+  run_blob_sha: abc9330fdd2f0c9bdb2ffa7e81e478cac147cb15
+  finalization_ref: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-s07a-run-001-finalization.yaml
+  finalization_blob_sha: 226b20f6c3d14b3b280e2d964e40184ed7232b2c
+transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  original_pr: 14
+  branch: task/devforge-execution-workspace-materialization-bridge-v1
+  canonical_main_at_execution: 2e5c69a112323867ee01783521554c43ebd731be
+  head_before_receipt: 33bac21362ddfd039772ed11ea09ac3e4aba8f0a
+owner_decision:
+  security: DecisionRequired/Blocked
+  future_product_transport: TransportBlocked
+  sandbox_audit: PASS
+  canonical_firewall: FAIL
+  direct_codex_containment: unverified
+  independent_execution_root: unverified
+  placement_delta_admitted: false
+  mrs01: HOLD
+  mrs02_admitted: false
+safety:
+  product_mutation: false
+  host_mutation: false
+  canonical_main_mutation: false
+  historical_slice_replayed: false
+  direct_codex_invoked: false
+  permission_or_protected_root_expanded: false
+completion_limit:
+  readonly_S07A_observation_only: true
+  owner_gate_exit_approved: false
+  product_implementation_approved: false
+  task_acceptance_approved: false
+  merge_approved: false
