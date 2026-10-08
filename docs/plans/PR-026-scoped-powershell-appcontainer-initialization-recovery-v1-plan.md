@@ -1,8 +1,8 @@
 ---
 task_id: PR-026-scoped-powershell-appcontainer-initialization-recovery-v1
-title: SentinelX Scoped PowerShell AppContainer Initialization Recovery V1 — Plan R1
-plan_revision: 1
-plan_state: approved
+title: SentinelX Scoped PowerShell AppContainer Initialization Recovery V1 — Plan R2
+plan_revision: 2
+plan_state: proposed
 requirement_revision: 1
 project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
@@ -12,15 +12,125 @@ transport:
   branch: task/scoped-powershell-appcontainer-initialization-recovery-v1
   base_branch: main
 review:
-  status: approved
+  status: pending
   review_ref: docs/reviews/PR-026-scoped-powershell-appcontainer-initialization-recovery-v1-plan-review-r1.md
-  next_command: "#开发执行 PR-026-scoped-powershell-appcontainer-initialization-recovery-v1"
-implementation_authorized: true
-implementation_scope: s01_diagnostic_only
-s02_s03_state: hold_pending_plan_r2_review
+  next_command: "#开发评审 PR-026-scoped-powershell-appcontainer-initialization-recovery-v1"
+implementation_authorized: false
+implementation_scope: s02_session0_discrimination_only_pending_review
+s01_state: completed_evidence_recorded_c4a4028
 ---
 
-# Plan R1 — Diagnose Before Compatibility Mutation
+# Plan R2 — Session-0 Context Discrimination Before Any Compatibility Mutation
+
+## R2.0 Baseline (S01 receipt, commit c4a4028)
+
+- S01 delivered fail-closed raw-exit-status observability (sampled before
+  terminalization; decimal + `0x%08X` in the durable FINISH event and the
+  `HostMutationSandboxUnavailable` message) plus the winspawn handle-closure
+  snapshot. Receipt hashes self-verified; remote readback byte-identical.
+- S01 classification: interpreter-image/dependency/CLR init class
+  **disconfirmed** in an interactive AppContainer session (real A/B probe,
+  PowerShell raw exit 0 with executed payload). Prime remaining suspect:
+  **Session-0 / LocalSystem service execution context** (WinSta/desktop and
+  any service-context delta). Production audit evidence: spawn PASS
+  (contained, no-breakaway Job) then silent child exit with no result marker.
+- R1 history (baseline, evidence acquisition sequence, S01 scope, stop
+  conditions) remains in force below and is **not replayed**.
+
+## R2.1 Change-control decision
+
+R2 authorizes **one new diagnostic slice, S02, and nothing else**:
+
+- S02 verifies **only** the difference between the Session-0/LocalSystem
+  service context and the already-proven interactive-session AppContainer
+  behavior, using the S01 observability patch as the evidence instrument.
+- The original raw exit code, exact workspace/lineage identity, and
+  permission/audit evidence MUST be obtained **before** any compatibility
+  repair is decided. A repair requires a further evidence-proven plan
+  revision and its own review.
+- S01 is immutable completed evidence; no replay of S01 diagnostics.
+- Forbidden (unchanged): ACL or protected-root expansion, PR-018 replay,
+  unrestricted fallback, canonical-main mutation, config modification
+  outside the explicitly granted S02 envelope, and any claim of
+  `execute_scoped` recovery.
+
+## R2.2 Slice S02 — Session-0 discrimination (single slice)
+
+**Evidence target:** one real scoped PowerShell run in the production
+service context with the S01 patch active, plus read-only environment
+differentiation evidence.
+
+### S02-A Service-context evidence path (least authority first)
+
+1. Read-only preparation: record the installed host version/dist-info,
+   byte-hashes of the two S01-patched blobs in the installed venv, and the
+   current journal tail (the "before" side of the A/B comparator). Snapshot
+   the files to be overlayed for exact rollback.
+2. Human-authorized bounded overlay (requires explicit owner authorization
+   at execution time): copy the two S01-patched files
+   (`winspawn.py`, `handlers/scoped_script.py`) into the installed venv
+   `site-packages` with byte-read-back against the candidate blobs, restart
+   the `SentinelX` service, and verify service health read-only.
+   - Overlay is restricted to exactly these two files. No config change.
+     No dependency change. Rollback is the mandatory default.
+3. Owner-triggered production probe: one real `execute_scoped` with
+   `execution_profile=scoped_mutation`, `interpreter=powershell`,
+   content `Write-Output 'SCOPED_PS_OK'`, through the same admitted
+   request path that produced the original failure. No mock, no local
+   shortcut, no unrestricted path.
+4. Read-only evidence extraction: the patched FINISH event now carries the
+   raw child exit status. Read the journal, record decimal + `0x%08X`,
+   spawn/containment identity, closure/terminalization, and any Windows
+   event correlation. Byte-read-back of the two overlayed files.
+5. Classification: Session-0-confirmed (raw code differs from the
+   interactive-session PASS) vs still-unresolved (raw code indicates a
+   different failure class). Persist the A/B evidence and the updated
+   matrix.
+6. Post-evidence disposition (mandatory same slice): restore the exact
+   pre-probe installed state and verify byte-read-back, **unless** the
+   owner explicitly directs otherwise before the run. Service restarted
+   once for the probe and once for restoration (or kept, only on explicit
+   instruction).
+
+### S02-B Explicitly out of scope
+
+- No compatibility repair, no PR-018 Unity replay, no new execution
+  surface, no ACL/protected-root or credential change, no Direct Codex,
+  no canonical-main mutation, no S03 acceptance claims.
+- If the service-context probe cannot be authorized or executed, record
+  `BlockedByAuthorization` with the exact missing authority; do not force
+  an in-task workaround.
+
+## R2.3 Completion receipt requires
+
+- exact installed/build/branch revisions and blob hashes before/after;
+- the raw child exit status (decimal + `0x%08X`) from the Session-0 run, or
+  the explicit negative readback plus the precise blocker;
+- spawn/containment/audit/terminalization read-back for the probe operation;
+- A/B comparator table (Session-0 vs interactive) and the updated
+  classification matrix;
+- restoration read-back proving the installed host returned to its exact
+  prior state (or the owner's explicit contrary instruction);
+- canonical checkout `main + clean` read-back.
+
+## R2.4 Review focus / stop conditions
+
+The reviewer must assess: least-authority of the overlay envelope;
+rollback-by-default; single-probe discipline (no retry farming);
+whether the raw-code-first ordering is preserved; and that no repair
+authority is granted by this plan. R1 stop conditions apply verbatim;
+additionally, any failure to restore the installed host state after the
+probe must be reported immediately as Degraded.
+
+Canonical next command after approval:
+
+~~~text
+#开发执行 PR-026-scoped-powershell-appcontainer-initialization-recovery-v1
+~~~
+
+---
+
+# Plan R1 (frozen history) — Diagnose Before Compatibility Mutation
 
 ## 1. Baseline and authority
 
