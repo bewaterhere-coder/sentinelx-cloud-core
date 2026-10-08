@@ -28,9 +28,9 @@ slices:
         - evidence_receipt_blob_and_commit_readback
     checkpoint:
       required: true
-    state: pending
-    run_refs: []
-    completion_receipt_ref: null
+    state: completed
+    run_refs: [s03a-readonly-reconciliation-20261008]
+    completion_receipt_ref: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-s03a-completion-receipt.yaml
 historical_slices: [S01, S02]
 historical_slices_authority: evidence_only
 historical_s02_candidate: 45dc99d15a23c499b4c1500fab60ed5e76475aeb
