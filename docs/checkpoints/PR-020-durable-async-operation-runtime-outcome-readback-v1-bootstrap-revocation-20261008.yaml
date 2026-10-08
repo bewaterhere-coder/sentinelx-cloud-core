@@ -1,0 +1,79 @@
+schema_version: "1.0"
+kind: devforge_task_scoped_bootstrap_revocation_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-020-durable-async-operation-runtime-outcome-readback-v1
+source_command: "#开发 PR-020-durable-async-operation-runtime-outcome-readback-v1 修订当前方案"
+date: "2026-10-08"
+result: Revoked
+verified: true
+
+lineage:
+  original_pr: 20
+  original_branch: task/durable-async-operation-runtime-outcome-readback-v1
+  canonical_main_at_revocation: 2e5c69a112323867ee01783521554c43ebd731be
+  previous_requirement_revision: 1
+  previous_requirement_sha: 2c2c33e6b969e271c4acb7277b08cd212f2f3de3
+  previous_approved_plan_revision: 4
+  previous_plan_sha: 304cbf2ab58b4fa3835c35b343bd1214565c2920
+  previous_slice_set_sha: f461220e206af7935619640b96288a3880381224
+  historical_admission_receipt_sha: 649747ff84130a7e60b93da15c20b77e917c8bd9
+  historical_admission_receipt_unchanged: true
+  previous_s01_run_sha: 79b9f6f3533c289acbd14b71b3d51fa102cd5ce7
+  previous_s01_blocker_sha: 962e3ea9069a29db3d1eba6a8e423df4c2c214c4
+
+superseding_authority:
+  pr021_minimal_runtime_ADR_sha: 36e0290de039336a8e4ce8561c22c731f12e9602
+  pr027_owner_matrix_sha: 7507dff0032f29a99387c25f648508c48a03b6e9
+  pr027_owner_packet_sha: 3b5ef4d066293250ebc8ebbcf549d9b5f14f94cc
+  devforge_override_contract_sha: 31fea7271020e76075b2eed656cbeda0ac8fe52b
+  owner_direction: development_timeout_driven_DurableAsync_HOLD
+  independent_product_need_verified: false
+
+revocation:
+  original_override_sha: fbe24326a67fd4620e19b63123b38c4f1fe98c6f
+  current_override_ref: docs/checkpoints/PR-020-durable-async-operation-runtime-outcome-readback-v1-bootstrap-execution-override.yaml
+  current_override_sha: b80ca8ea9ebc8755255c2d51f63874df4b9791d2
+  override_state: revoked
+  override_disposition: BootstrapOverrideRevoked
+  override_mode_historical: implementation_bootstrap
+  original_override_digest_historical: 3cd9ee272c25db4b3e662c92772b68196f3617594cb3e257f71570933d8db5bd
+  current_authority_from_original_admission: false
+  direct_codebuddy_execution_authorized: false
+  legacy_slice_set_executable: false
+  verified_by_remote_readback: true
+
+task_and_plan_readback:
+  task_revision: 2
+  task_path: docs/requirements/PR-020-durable-async-operation-runtime-outcome-readback-v1.md
+  task_sha: 4d003c6933133dcea5b689c9ae9b46323e7ba0d7
+  task_stage: plan_review
+  implementation_authorized: false
+  plan_approved: false
+  task_execution_disposition: hold
+  new_plan_revision: 5
+  plan_ref: docs/plans/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan.md
+  plan_sha: 7bf279fd97f07db670e791fe9d886a2370ad4f24
+  plan_executable: false
+  historical_slice_set_ref: docs/execution/PR-020-durable-async-operation-runtime-outcome-readback-v1-slices.yaml
+  suspended_slice_set_sha: 969e96bfa1d247bc28cf13068db90ea33bfd6862
+  all_historical_slices_suspended: true
+  completed_product_slices: []
+  original_s01_run_and_blocker_preserved: true
+
+scope_and_safety:
+  product_source_mutation: false
+  Host_mutation: false
+  test_CI_mutation: false
+  permission_or_credential_expansion: false
+  devforge_project_binding_mutation: false
+  protected_root_D_coco_widened: false
+  unrestricted_executor_fallback: false
+  background_jobs_or_pending_results_modified: false
+  historical_receipts_replayed_or_rewritten: false
+  other_owner_PR_mutation: false
+
+program_state:
+  mrs01_program_exit: HOLD
+  mrs02_admitted: false
+  owner_HOLD_plan_review_independently_approved: false
+  next_action: "#开发评审 PR-020-durable-async-operation-runtime-outcome-readback-v1"
