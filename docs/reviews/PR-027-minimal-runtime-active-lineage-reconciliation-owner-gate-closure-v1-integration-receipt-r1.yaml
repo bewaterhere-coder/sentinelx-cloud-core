@@ -1,0 +1,59 @@
+schema_version: "1.0"
+kind: devforge_integration_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1
+source_command: "#开发完成 PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1"
+verified: true
+
+integration:
+  original_pr_number: 27
+  original_branch: task/minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1
+  original_pr_merged: true
+  original_merge_commit_sha: f9ca574aeab932a70e4667e85cbec3f711e106c7
+  github_main_readback_sha: f9ca574aeab932a70e4667e85cbec3f711e106c7
+  original_pr_state: closed
+  original_pr_merge_readback_verified: true
+  main_contains_original_integration: true
+
+canonical_before_reconciliation:
+  task_path: docs/requirements/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1.md
+  task_sha: 5ef0b714a366a8779283ecdc41e0676ec3f33ced
+  task_stage: accepted
+  acceptance_approved: true
+  completion_verified: false
+  plan_path: docs/plans/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-plan.md
+  plan_sha: 3091f162732a6bece9a12138e379b0feaecbc2d6
+  plan_state: accepted_finalization_ready
+  premerge_receipt_path: docs/checkpoints/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-premerge-finalization-r1-receipt.yaml
+  premerge_receipt_sha: 15dadeddb7887f44b24acc4a5a4ba54cf997dc70
+
+verification:
+  acceptance_review_sha: 6bdf714ca1d09cf62df2b6088406f5799de34ae3
+  acceptance_receipt_sha: bec69e2bd61ff3860bffa9f4fdc8b72d0456c99a
+  acceptance_transition_sha: a1ba18aa773ac85b8740e95dab53a687b3134fc9
+  ac_total: 16
+  ac_passed: 16
+  completed_slices: [S01, S02, S03, S04]
+  owner_prs_mutated: false
+  devforge_registry_mutated: false
+
+program_boundary:
+  coordination_package_accepted: true
+  owner_pr_gate_receipts_all_verified: false
+  mrs01_program_exit: HOLD
+  mrs02_admitted: false
+  devforge_execution_binding: direct/codex
+
+reconciliation:
+  cause: WorkflowStateMismatch_postmerge_completion
+  task_id: PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1
+  requires_same_task_metadata_reconciliation: true
+  new_development_task_created: false
+  original_task_identity_preserved: true
+  reconciliation_branch: reconcile/pr-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-completion
+  reconciliation_pr_number: pending
+  implementation_replayed: false
+  product_or_host_mutation: false
+  reconciliation_merge_required: true
+  completion_authority_after_main_readback_only: true
+  status: prepared
