@@ -1,10 +1,10 @@
-# PR-014 Plan R13 — Firewall Safety Repair & Minimal Execution Binding
+# PR-014 Plan R14 — Read-only Security/Transport Admission Decision
 
 ```yaml
 task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
 project_id: sentinelx-cloud-core
 requirement_revision: 8
-plan_revision: 13
+plan_revision: 14
 stage: ready_for_plan_review
 plan_approved: false
 implementation_authorized: false
@@ -13,41 +13,62 @@ transport:
   pr_number: 14
   branch: task/devforge-execution-workspace-materialization-bridge-v1
   base: main
-canonical_source_commit: 5d9286b22f46ae8bdf6d983b6366da0da3f1323e
-installed_host_version: 0.24.1.dev791+g5d9286b22
 historical_slices: [S01, S02, S03A, S04A, S05A, S06A]
-replay_authorized: false
+historical_replay: forbidden
 ```
 
-## 1. Scope, excluded goals and verified baseline
+## R13 findings addressed
 
-PR-021 permits **only minimal isolated security substrate for bounded short Host mutations**, not long CodeBuddy/Codex Agent lifecycle, full Git checkout creation, source capsule/bootstrap/handoff or a generic `materialize_workspace` endpoint. Product source is available again on current main. Sandbox/MutationScope/Audit already verify PASS; do not repeat their historical repairs.
+R13-F01–F04 are remediation inputs. R14 removes all proposed S07/S08/S09 product and Host mutation slices. It admits at most **one evidence-only slice S07A**, with deterministic decision/negative outcomes. Approval of R14 must never imply acceptance of a product implementation.
 
-P0 is the **effective canonical repository firewall** (`local_api:direct_codex_containment_unproven`) while independent short-mutation execution root binding remains unverified. A higher Agent version does not constitute successful feature acceptance.
+## S07A — Read-only current-main source, transport, firewall/placement admission
 
-## 2. Proposed implementation slices — pending Plan Review, NOT authorized
+```yaml
+slice_id: S07A
+depends_on: []
+allowed_effects:
+  - github_current_main_and_existing_pr14_read
+  - sentinelx_structured_read_only_inspection
+  - task_scoped_documentation_and_receipt_write_on_existing_pr14_branch
+forbidden_effects:
+  - product_code_mutation
+  - host_configuration_or_runtime_mutation
+  - canonical_main_mutation
+  - direct_codex_invoke
+  - scoped_execution
+  - provision_scope
+  - materialize_workspace
+  - source_restore
+  - rebase
+  - cherry_pick
+  - force_push
+  - historical_slice_replay
+outputs:
+  - current_main_exact_owned_files_test_blobs_or_unverified
+  - no_loss_pr14_transport_mechanics_with_preconditions_abort_checks_or_TransportBlocked
+  - direct_codex_reachable_surface_negative_proof_or_DecisionRequired
+  - selected_containment_or_policy_disablement_path_with_owner_authority_or_DecisionRequired
+  - independent_root_short_consumer_necessity_or_NoAdditionalProductDeltaNeededForPlacement
+  - final_decision_checkpoint_and_readback_receipt
+checkpoint_required: true
+```
 
-**S07 — Focused effective-surface Firewall closure.** Trace `devforge_direct_codex` reachability and registration under effective Host policy, then select the smallest proven fail-closed disposition: (a) actual policy-owned disablement so unproven action cannot be called, or (b) physical containment proof for any endpoint intentionally remaining reachable. A code change is permitted only after the exact impact/transport review demonstrates necessity; no fake readiness / skipped inventory checks. Current-main candidate sources: `src/sentinelx_core/handlers/direct_codex.py`, `src/sentinelx_core/handlers/local_api.py`, `src/sentinelx_core/operation_registry.py`, `src/sentinelx_core/policy.py` and exact registration sites. Focused tests: `tests/test_canonical_repository_firewall_readiness.py`, `tests/test_canonical_repository_firewall_incident_regression.py`, `tests/test_direct_codex_provider.py`, `tests/test_local_api.py`, `tests/test_policy.py`. Never silently disable a previously active user workflow or modify live Host policy without separate explicit Host change authorization. Preserve current short `devforge_runtime` and sandbox controls.
+### 1. Source/transport admission (R13-F01)
 
-**S08 — Conditional Host-owned execution placement.** Resolve whether a demonstrated short mutation truly needs an additional independent execution-root binding. Read effective source / execution authority separately; require strict non-overlap with protected `D:\\coco`, no carve-out or caller-selectable paths. `D:\\SentinelX\\devforge-workspaces` is a candidate only, not an admitted root. If an independent root is required, design exact Host-owned config schema, placement and audit/MutationScope sealing; Host config deployment is separately gated. If not required, record `NoAdditionalProductDeltaNeededForPlacement`; keep full workspaces and long Agents in DevForge / guided CLI.
+Read fresh GitHub main SHA, actual implementation paths, immutable blob IDs, exact candidate tests, original PR #14 branch and compare metadata. Record a **proposed** lossless, same-PR-only transport process with preflight and postcondition: Git tree prospective delta must contain only the explicitly reviewed current-main-backed paths, preserve every unrelated current-main file/blob, preserve historical Task evidence and PR #14 identity, and fail closed on concurrent main or PR head drift. No prospective implementation commit or branch rewrite in S07A. If the connector cannot prove an executable lossless strategy without stale blob replacement, mark `TransportBlocked`; do not attempt a rebase, cherry-pick, force push or new PR.
 
-**S09 — Regression and physical acceptance.** Verify Windows Sandbox/AppContainer/ACL/Job and audit START-before-resume stay PASS; the uncontained Direct Codex endpoint is provably unreachable or physically contained; canonical firewall `available=true, verified=true` is truthful across every exposed mutating surface; no `D:\\coco` path mutation; sealed short scope lifecycle and receipts for any admitted short operation. Observe separate Node/npm readiness without mislabeling it. Require exact deployed candidate provenance, Host readback, failure rollback and source/PR integration receipts before any completion claim.
+### 2. Direct Codex authority decision (R13-F02)
 
-## 3. Blocking transport gate — prior to S07 product mutation
+Use structured read-only Host capability, `devforge_direct_codex` descriptor, source registrations, effective Host policy and canonical firewall diagnostics. Identify mutating reachability and classify two possibilities: **policy-owned fail-closed disablement** with a negative reachability test, or **verified physical containment** with AppContainer/ACL/Job/audit/canonical firewall evidence. This is a decision test, not an implementation option list. Select one only if owner authority, practical negative test and scope are proven; otherwise emit `DecisionRequired/Blocked`. Never hide endpoint from status alone, widen allowlists, invoke the endpoint, or claim coverage while reachable.
 
-The original PR #14 branch contains stale product code and is not a safe merge input. Before any S07 product edit, a separately reviewed same-Task PR #14 **no-loss transport normalization** must bind the proposed delta to current `main@5d9286b22` blobs. Compare proposed final Git tree against current main; abort if unintended files disappear, stale product blobs overwrite main, or historical S01/S02 mutation is replayed. No blind rebase, cherry-pick, force-push, replacement PR, or canonical-main working-tree mutation. If exact normalization cannot be proven, return `TransportBlocked` without touching product code.
+### 3. Independent execution root decision (R13-F03)
 
-Plan Review approval alone does not authorize Host configuration edits, live process execution, uncontained Agent invocation or unsafe source transport. Those mutations require explicit gated authority and receipts. A plan may be Approved conditionally for safety work only when these blockers have a concrete, independently verified admission path; otherwise Rejected/Changes Requested is correct.
+Identify an actual bounded synchronous `execute_scoped` consumer and its isolation/placement requirement, read effective Host-owned source/execution bindings, protected `D:\coco` and candidate `D:\SentinelX\devforge-workspaces` only as a **candidate**, not authority. If no additional placement consumer/gap exists, record `NoAdditionalProductDeltaNeededForPlacement`. If required, record strict non-overlap, sealed MutationScope, audit START, AppContainer/Job and separate Host deployment admission prerequisites; no path carve-out, no caller-controlled root.
 
-## 4. Review matrix
+### 4. Candidate verification disposition (R13-F04)
 
-Plan Review R13 must decide:
-- Current-main source ownership and exact S07 candidate-file/test set;
-- Direct Codex containment/disablement negative proof with complete effective Firewall coverage;
-- S08 real short-consumer necessity, independent Host-owned execution binding and unchanged `D:\\coco` protection;
-- PR #14 preservation and lossless transport strategy without old code replay;
-- S09 tests, physical Host readback, rollback and `No Receipt, No Completion`.
+No executable S09 or Host deployment admitted. Produce decision `NoAdditionalProductDeltaNeeded`, `NarrowSecurityRepairCandidateRequiresSeparateReviewedPlan`, `TransportBlocked`, or `DecisionRequired/Blocked`. Positive decision only permits a new **exact-source, exact-test Plan Review**, including physical Host proof, rollback, and readback receipts. Preserve installed dev791 Sandbox/Audit PASS as prior evidence; do not replay MutationScope remediation or historical S01–S06A. Main must remain clean and untouched.
 
-Historical Plan R12/S06A and prior S01–S05A receipts remain evidence-only. No new Slice Set is compiled or executed by this document.
+## Review Gate
 
-**Next Gate:** `#开发评审 PR-014-devforge-execution-workspace-materialization-bridge-v1`.
+Reviewer may approve exactly S07A read-only, not product or Host implementation. This plan does not self-approve and does not compile a pending Slice Set before Review. Next: `#开发评审 PR-014-devforge-execution-workspace-materialization-bridge-v1`.
