@@ -15,8 +15,12 @@ development:
   implementation_authorized: false
   execution_disposition: hold
   execution_blocker: MinimalRuntimeArchitectureSupersedesDevelopmentTimeoutExpansion
-  owner_control_state: HOLD
-  owner_hold_review_pending: true
+  owner_control_state: HOLD_ACKNOWLEDGED
+  owner_hold_review_pending: false
+  owner_hold_review_result: ApprovedForAdministrativeHoldOnly
+  owner_hold_review_ref: docs/reviews/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan-review-r5.md
+  owner_hold_review_receipt_ref: docs/reviews/PR-020-durable-async-operation-runtime-outcome-readback-v1-owner-hold-review-r5-receipt.yaml
+  owner_hold_review_stage_transition: not_applied
   blocking_findings:
     - PriorApprovedImplementationConflictsWithPR021MinimalRuntime
     - PriorBootstrapOverrideRevoked
@@ -66,7 +70,7 @@ requirement_readiness:
 
 ## 1. Decision and authority
 
-**HOLD is effective immediately for this Owner Task's development-timeout-driven Durable Async expansion.** The user explicitly instructed suspension in the existing PR #20. Plan R5 is a **non-executing HOLD reconciliation plan** pending independent DevForge Plan Review. This declaration is not acceptance, feature completion, or a MRS-01 exit decision.
+**HOLD is effective immediately for this Owner Task's development-timeout-driven Durable Async expansion.** The user explicitly instructed suspension in the existing PR #20. Plan R5 is a **non-executing HOLD reconciliation plan**. Its administrative HOLD disposition is independently reviewed and acknowledged in `docs/reviews/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan-review-r5.md`; this does not constitute executable Plan approval. This declaration is not acceptance, feature completion, or a MRS-01 exit decision.
 
 Source authorities, read back on 2026-10-08:
 - Current SentinelX `main@2e5c69a112323867ee01783521554c43ebd731be`.
@@ -129,10 +133,6 @@ R2-8. If current main, owner PR Head, Revocation Receipt, Task/Plan/legacy Slice
 
 ## 6. Gate / next action
 
-**Owner execution state:** HOLD (fail-closed). **Workflow stage:** `plan_review` (Plan R5 review pending). These are distinct; neither implies a fresh implementation authorization.
+**Owner execution state:** HOLD_ACKNOWLEDGED (fail-closed). **Workflow stage:** `plan_review` remains unchanged because an administrative HOLD has no authorized Core transition to `implementation`; Plan R5 is not an executable Plan. No Slice, bootstrap, or implementation may start.
 
-The following is the **only** next DevForge command. Reviewer must verify exact PR #20 Task, Plan R5, suspended Slice Set, revoked bootstrap and receipts. A HOLD-approval only approves administrative suspension, not product execution.
-
-```text
-#开发评审 PR-020-durable-async-operation-runtime-outcome-readback-v1
-```
+The owner HOLD review decision and receipt are recorded in `docs/reviews/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan-review-r5.md` and `docs/reviews/PR-020-durable-async-operation-runtime-outcome-readback-v1-owner-hold-review-r5-receipt.yaml`. The normal `plan_review -> implementation` transition is **not** applied; the legacy stage-command hint remains historical and is not an invitation to repeat or execute anything. Next program-level activity is independent MRS-01 owner-gate reconciliation after exact read-back of the other owners. No `#开发执行`, bootstrap, or `#开发完成` is authorized.
