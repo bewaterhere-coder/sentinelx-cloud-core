@@ -1,0 +1,113 @@
+schema_version: "1.1"
+kind: devforge_execution_run_record
+task_id: PR-026-scoped-powershell-appcontainer-initialization-recovery-v1
+slice: S01
+run_id: PR-026-scoped-powershell-appcontainer-initialization-recovery-v1-s01-run-001
+attempt_id: attempt-001
+execution_profile: scoped_diagnostic_only
+workspace: pr026-s01-a1 (independent clone of task/scoped-powershell-appcontainer-initialization-recovery-v1)
+
+revisions:
+  task_head_before_slice: 8b3dc01fdfa80fd94edb63cb8a698f980100a4e3
+  canonical_main: 2e5c69a112323867ee01783521554c43ebd731be
+  devforge_runtime: 2.103.0 @ ebc25425160790950bd4d4500186652d3bf52416
+  installed_host: 0.24.1.dev791+g5d9286b22 (service SentinelX, C:\ProgramData\SentinelX)
+  installed_host_blob_parity_vs_main: PASS (handlers/scoped_script.py, winspawn.py,
+    mutation_sandbox.py, mutation_scope.py, mutation_audit.py all byte-identical
+    to main@2e5c69a1)
+
+changes:
+  - src/sentinelx_core/winspawn.py:
+      SuspendedJobProcess.close() samples the raw child exit DWORD via
+      GetExitCodeProcess while the process handle is still open and persists
+      it as _last_exit_code; the exit_code property returns the snapshot after
+      closure (explicit negative readback stays None). Read-only diagnostic
+      accessor; termination/containment behavior unchanged.
+  - src/sentinelx_core/handlers/scoped_script.py:
+      the missing-result-marker branch now samples process.exit_code BEFORE
+      sandbox.terminalize(scope_id, generation), records it as returncode in
+      the durable OPERATION_FINISHED event, and raises
+      HostMutationSandboxUnavailable with the raw status as decimal plus
+      0x%08X (or an explicit "unavailable" negative readback). No synthetic
+      script-level return code is introduced; no fallback path added.
+  - tests/test_scoped_script_execution.py:
+      + test_scoped_powershell_startup_failure_preserves_raw_child_exit_status
+      + test_suspended_job_process_exit_code_snapshot_survives_close
+
+test_results:
+  baseline_unpatched: 7 failed / 7 passed / 1 skipped
+  patched: 8 failed / 8 passed / 1 skipped
+  delta: exactly the new diagnostic integration test, failing on the same
+    pre-existing host-privilege blocker as the 7 documented failures
+  failure_class_all: HostMutationSandboxAclViolation at provision —
+    "SetNamedSecurityInfoW failed for D:\coco\workspaces: WinError 5"
+    (non-admin user cannot modify the ancestor DACL; documented pre-existing
+    limitation, reproduced on the unpatched tree before blaming the change)
+  no_regressions_attributable_to_patch: true
+
+real_host_probe:
+  driver: docs/execution/s01-evidence/s01-probe-driver.py
+  evidence: docs/execution/s01-evidence/s01-probe-evidence.json
+  method: PATCHED winspawn primitives; real AppContainer profile per run
+    (created and deleted), exact cwd ACL (broker + AppContainer SID), real
+    child spawn in no-breakaway kill-on-close Job, raw exit status read while
+    the handle was open and re-read after close.
+  results:
+    - cmd.exe control: raw exit 0 (0x00000000), open and post-close identical
+    - powershell.exe Write-Output: raw exit 0 (0x00000000) — PowerShell 5.1
+      initialized and executed inside the AppContainer in the interactive
+      user session
+    - powershell.exe Set-Content fileproof: raw exit 1 (0x00000001), file not
+      created — PowerShell ran the command; the write to the probe cwd was
+      denied by probe-setup integrity nuance (the probe does not reproduce the
+      production exact-ACL workspace; recorded as-is)
+  environment_deltas_recorded: yes (see evidence JSON)
+
+classification_matrix:
+  interpreter_image_dependency_clr:
+    status: DISCONFIRMED_IN_INTERACTIVE_SESSION
+    basis: PowerShell 5.1 initialized and executed inside a real AppContainer
+      with raw exit 0 on this host; 0xC0000135/0xC0000142 not reproduced
+  session_0_service_context:
+    status: PRIME_REMAINING_SUSPECT
+    basis: production failure occurs only inside the LocalSystem Session-0
+      service (audit journal), while the interactive-session probe succeeds;
+      Session-0 WinSta/desktop probe requires service-context authority
+      outside this task's grant
+  acl_exactness:
+    status: NOT_PRIMARY
+    basis: production provision and spawn PASS (durable audit
+      PROCESS_SPAWNED with contained=True, no-breakaway Job); the failure is
+      post-spawn with no result marker
+  profile_environment_sanitizer:
+    status: PARTIALLY_DISCONFIRMED
+    basis: inherited (non-sanitized) probe environment initialized fine;
+      production sanitized capsule untested inside Session 0
+  lifecycle:
+    status: CONSISTENT_WITH_POST_SPAWN_INIT_FAILURE
+    basis: audit shows OPERATION_STARTED -> PROCESS_SPAWNED -> silent child
+      exit -> FINISH(failed) with quiescent closure
+  observability_gap:
+    status: FIXED_BY_S01
+    basis: raw exit code now sampled before terminalization and persisted in
+      the FINISH event and the HandlerError message
+
+strongest_disconfirmation: interpreter-image/CLR init class in an interactive
+  AppContainer session on this host
+
+open_items:
+  - raw production NTSTATUS capture requires one patched run in the
+    LocalSystem service context (installed-agent upgrade or an equivalent
+    service-owned probe), which is outside the S01 grant
+  - unprivileged scoped-pipeline tests cannot provision on this host (ancestor
+    DACL authority); unchanged by this slice
+
+safety:
+  canonical_main_mutated: false
+  canonical_checkout_state: main + clean @ cd42e371f18056327c1d8b744f8956a76bc11541
+  unrestricted_fallback_used: false
+  protected_root_permissions_changed: false
+  pr018_files_touched: false
+  config_files_modified: false
+  probe_profiles_deleted: true
+  probe_scratch: C:\Users\liqiu\s01-probe-root (user profile, outside D:\coco)

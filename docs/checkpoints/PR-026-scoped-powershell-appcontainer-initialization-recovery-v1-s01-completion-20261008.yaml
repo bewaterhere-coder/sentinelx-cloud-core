@@ -1,0 +1,48 @@
+schema_version: "1.1"
+kind: devforge_slice_completion_checkpoint
+task_id: PR-026-scoped-powershell-appcontainer-initialization-recovery-v1
+slice: S01
+state: completed_evidence_recorded
+completion_date: 2026-10-08
+run_ref: docs/execution/PR-026-scoped-powershell-appcontainer-initialization-recovery-v1-s01-run-001.yaml
+probe_evidence: docs/execution/s01-evidence/s01-probe-evidence.json
+probe_driver: docs/execution/s01-evidence/s01-probe-driver.py
+
+delivered:
+  - fail-closed raw child exit status capture in the scoped startup-failure
+    branch (sampled before scope terminalization; decimal + 0x%08X in the
+    durable FINISH event and the HandlerError; explicit negative readback
+    when unavailable; no synthetic return code)
+  - exit_code snapshot across handle closure in winspawn SuspendedJobProcess
+  - two focused regression tests
+  - real-Windows AppContainer A/B probe with raw-status readback (patched
+    primitives), environment deltas explicitly recorded
+  - evidence-gated root-cause classification matrix
+
+verification:
+  focused_suite_unpatched_baseline: 7 failed / 7 passed / 1 skipped
+  focused_suite_patched: 8 failed / 8 passed / 1 skipped
+  delta_is_new_diagnostic_test_only: true
+  preexisting_failure_class: documented non-admin ancestor-DACL limitation
+    (SetNamedSecurityInfoW WinError 5 on D:\coco\workspaces), reproduced on
+    the unpatched tree in this same run
+  regression_attributable_to_patch: none
+
+classification:
+  disconfirmed: interpreter-image/dependency/CLR init inside AppContainer in
+    an interactive user session (raw exit 0 with executed payload)
+  prime_remaining_suspect: Session-0 (LocalSystem service) execution context,
+    including WinSta/desktop access; requires service-context evidence to
+    discriminate
+  fixed_in_s01: raw exit status observability gap (the original PR-026
+    observation)
+
+not_claimed:
+  - no PowerShell recovery or compatibility fix (S02 HOLD)
+  - no execute_scoped PASS claim (S03 HOLD)
+  - no raw production NTSTATUS yet (requires patched service-context run)
+
+next_gate: plan_revision_r2_authoring
+canonical_next_action: author Plan R2 (Session-0-context discrimination with
+  least-authority evidence path), then "#开发评审
+  PR-026-scoped-powershell-appcontainer-initialization-recovery-v1"

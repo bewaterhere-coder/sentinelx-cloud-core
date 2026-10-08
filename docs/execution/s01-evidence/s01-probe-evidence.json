@@ -1,0 +1,96 @@
+{
+  "probe": "PR-026-S01-raw-status",
+  "patch_revision": "workspace pr026-s01-a1 (winspawn close-snapshot)",
+  "environment_deltas_vs_production": [
+    "cwd under user profile without ancestor FILE_TRAVERSE grants (production grants traverse on all ancestors as LocalSystem)",
+    "child environment inherited from probe driver (production uses the scoped sanitizer)",
+    "no durable audit journal (probe is not a scoped_mutation run)"
+  ],
+  "runs": [
+    {
+      "label": "cmd-control",
+      "argv": [
+        "C:\\Windows\\System32\\cmd.exe",
+        "/d",
+        "/c",
+        "exit 0"
+      ],
+      "profile": "SentinelX.Mutation.S01Probe.dab2cca3ac47",
+      "cwd": "C:\\Users\\liqiu\\s01-probe-root\\cmd-control-cwd",
+      "appcontainer_sid": "S-1-15-2-1576962459-3076414279-16986664-2963494545-3346304019-1551897267-1867747622",
+      "cwd_acl": "set_exact_acl(broker+appcontainer) applied",
+      "spawn": {
+        "pid": 9760,
+        "job_ref": "sxjob_5ba9b9eece1a410caabf6f7ef351759c",
+        "contained": true,
+        "breakaway_allowed": false,
+        "resumed": true
+      },
+      "raw_exit_code_while_open": 0,
+      "wait_completed": true,
+      "raw_exit_code_after_close": 0,
+      "job_handle_closed": true,
+      "active_process_count_after_close": 0,
+      "profile_deleted": true
+    },
+    {
+      "label": "powershell-subject",
+      "argv": [
+        "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "Write-Output SCOPED_PS_OK; exit 0"
+      ],
+      "profile": "SentinelX.Mutation.S01Probe.c2dd66b66b4e",
+      "cwd": "C:\\Users\\liqiu\\s01-probe-root\\powershell-subject-cwd",
+      "appcontainer_sid": "S-1-15-2-2854260638-3887113090-3296609444-3701069721-3428083491-1015969499-421942094",
+      "cwd_acl": "set_exact_acl(broker+appcontainer) applied",
+      "spawn": {
+        "pid": 26012,
+        "job_ref": "sxjob_350bf8a0fdd645c3bddd79eda91881f4",
+        "contained": true,
+        "breakaway_allowed": false,
+        "resumed": true
+      },
+      "raw_exit_code_while_open": 0,
+      "wait_completed": true,
+      "raw_exit_code_after_close": 0,
+      "job_handle_closed": true,
+      "active_process_count_after_close": 0,
+      "profile_deleted": true
+    },
+    {
+      "label": "powershell-fileproof",
+      "argv": [
+        "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "Set-Content -LiteralPath 'ps-ran.txt' -Value 'SCOPED_PS_OK'"
+      ],
+      "profile": "SentinelX.Mutation.S01Probe.239acc5c18f4",
+      "cwd": "C:\\Users\\liqiu\\s01-probe-root\\powershell-fileproof-cwd",
+      "appcontainer_sid": "S-1-15-2-633463240-640049503-199009352-1021291506-22824118-552684241-1621839239",
+      "cwd_acl": "set_exact_acl(broker+appcontainer) applied",
+      "spawn": {
+        "pid": 23752,
+        "job_ref": "sxjob_6200ed56542c4f90b2a6c620d77bbb74",
+        "contained": true,
+        "breakaway_allowed": false,
+        "resumed": true
+      },
+      "raw_exit_code_while_open": 1,
+      "wait_completed": true,
+      "raw_exit_code_after_close": 1,
+      "job_handle_closed": true,
+      "active_process_count_after_close": 0,
+      "profile_deleted": true
+    }
+  ],
+  "fileproof_artifact": {
+    "path": "C:\\Users\\liqiu\\s01-probe-root\\powershell-fileproof-cwd\\ps-ran.txt",
+    "exists": false,
+    "content": null
+  }
+}
