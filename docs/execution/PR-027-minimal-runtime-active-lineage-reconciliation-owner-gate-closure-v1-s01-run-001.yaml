@@ -1,0 +1,70 @@
+schema_version: "1.0"
+kind: devforge_execution_run
+task_id: PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1
+project_id: sentinelx-cloud-core
+slice_id: S01
+run_id: PR027-S01-RUN001
+source_command: "#开发执行 PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1"
+execution_mode: github_documentation_readback
+status: completed
+verification: passed
+verified: true
+completion_boundary: slice_only
+
+authority:
+  requirement_revision: 1
+  requirement_entry_blob_sha: d4b82b62a6d17c9ba4453475e244ecf63b671125
+  approved_plan_revision: 1
+  approved_plan_blob_sha: 3d8b5b56e4235cdb22880ec01c45885e7fced8f6
+  plan_review_sha: 89d727f54f5d334a7db9b4d572e25cf40808659e
+  plan_review_transition_receipt_sha: 153bb4b20359ed1905cac5813cc775b318c4bb6d
+  slice_set_sha_at_start: 317bf3587a64ae131256317d40e997417586b9ce
+  current_slice_at_start: S01
+  next_slice: S02
+
+transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 27
+  branch: task/minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1
+  base: main
+  pr_head_at_entry: e2534a3ed8aaf59ca0f053c1fde58496944c5259
+  canonical_main_at_entry: 8d2bafba87b529fb458faaa7fbdce39fe225361f
+  devforge_main_at_entry: ebc25425160790950bd4d4500186652d3bf52416
+
+output:
+  owner_reality_snapshot_ref: docs/checkpoints/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-s01-owner-reality-20261008.yaml
+  owner_reality_snapshot_sha: 91cdaea8bc77b919f42ea44c23d9b6b2d78ca164
+  owner_reality_snapshot_readback_verified: true
+  owner_tasks_re_read: [13, 14, 19, 20]
+  owner_requirement_plan_and_pr_head_verified: true
+  owner_receipt_identity_and_freshness_classified: true
+  independent_prs_excluded: [16, 26]
+  program_exit_state: HOLD
+  mrs02_admitted: false
+
+checks:
+  reviewed_plan_exact: pass
+  current_slice_authorized: pass
+  current_main_re_read: pass
+  four_owner_pr_head_task_plan_readback: pass
+  stale_owner_pr_descriptions_exposed: pass
+  historical_versus_current_status_distinguished: pass
+  pr14_R8_R14_current: pass
+  pr19_Host_blocker_historical_not_current: pass
+  pr20_owner_authorization_conflict: pass
+  missing_owner_Gate_receipts_do_not_pass: pass
+  task_owned_docs_only: pass
+  no_owner_PR_mutation: pass
+
+effects:
+  product_code_mutation: false
+  other_PR_or_Task_mutation: false
+  devforge_repository_mutation: false
+  installed_windows_Host_mutation: false
+  canonical_repo_main_mutation: false
+  security_policy_mutation: false
+  historical_slice_replay: false
+  next_slice_executed: false
+  acceptance_performed: false
+
+completion_receipt_pending: true
