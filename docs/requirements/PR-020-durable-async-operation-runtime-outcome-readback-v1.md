@@ -3,35 +3,37 @@ task_id: PR-020-durable-async-operation-runtime-outcome-readback-v1
 title: SentinelX Durable Async Operation Runtime & Outcome Readback V1
 project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
-requirement_revision: 1
+requirement_revision: 2
 development:
-  stage: implementation
+  stage: plan_review
   gates:
     requirement_ready: true
-    plan_approved: true
+    plan_approved: false
     acceptance_approved: false
     completion_verified: false
-  plan_revision: 4
-  implementation_authorized: true
-  blocking_findings: []
-  next_expected_actor: implementer
-  current_slice: S01
-  current_slice_state: pending
+  plan_revision: 5
+  implementation_authorized: false
+  execution_disposition: hold
+  execution_blocker: MinimalRuntimeArchitectureSupersedesDevelopmentTimeoutExpansion
+  owner_control_state: HOLD
+  owner_hold_review_pending: true
+  blocking_findings:
+    - PriorApprovedImplementationConflictsWithPR021MinimalRuntime
+    - PriorBootstrapOverrideRevoked
+  current_slice: null
+  current_slice_state: hold
   completed_slices: []
-  bootstrap_required_before_current_slice: true
-  bootstrap_target: direct:codebuddy
+  bootstrap_required_before_current_slice: false
+  bootstrap_target: null
+  bootstrap_execution_override_state: revoked
   bootstrap_execution_override_ref: docs/checkpoints/PR-020-durable-async-operation-runtime-outcome-readback-v1-bootstrap-execution-override.yaml
-  bootstrap_execution_override_receipt_ref: docs/checkpoints/PR-020-durable-async-operation-runtime-outcome-readback-v1-bootstrap-execution-override-receipt.yaml
-  bootstrap_execution_override_state: active
-  bootstrap_execution_override_mode: implementation_bootstrap
-  bootstrap_execution_override_digest: 3cd9ee272c25db4b3e662c92772b68196f3617594cb3e257f71570933d8db5bd
-  execution_disposition: blocked
-  execution_blocker: WorkspaceMaterializationProviderUnavailable
-  latest_execution_run: docs/execution/PR-020-durable-async-operation-runtime-outcome-readback-v1-s01-run-001.yaml
-  latest_execution_checkpoint: docs/checkpoints/PR-020-durable-async-operation-runtime-outcome-readback-v1-s01-blocked-20261008.yaml
-  blocked_by_tasks:
-    - PR-014-devforge-execution-workspace-materialization-bridge-v1
-    - PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1
+  bootstrap_revocation_receipt_ref: docs/checkpoints/PR-020-durable-async-operation-runtime-outcome-readback-v1-bootstrap-revocation-20261008.yaml
+  historical_plan_revision: 4
+  historical_slice_set_ref: docs/execution/PR-020-durable-async-operation-runtime-outcome-readback-v1-slices.yaml
+  historical_blocked_run_ref: docs/execution/PR-020-durable-async-operation-runtime-outcome-readback-v1-s01-run-001.yaml
+  historical_blocked_checkpoint_ref: docs/checkpoints/PR-020-durable-async-operation-runtime-outcome-readback-v1-s01-blocked-20261008.yaml
+  next_expected_actor: reviewer
+  canonical_next_action: "#开发评审 PR-020-durable-async-operation-runtime-outcome-readback-v1"
 transport:
   type: github-pr
   pr_number: 20
@@ -39,397 +41,90 @@ transport:
   base_branch: main
 artifacts:
   plan: docs/plans/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan.md
-  latest_plan_review: docs/reviews/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan-review-r4.md
-  latest_plan_review_transition_receipt: docs/reviews/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan-review-r4-transition-receipt.yaml
-  latest_plan_remediation: docs/checkpoints/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan-remediation-r4-20261008.yaml
-  latest_plan_remediation_transition_receipt: docs/reviews/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan-remediation-r4-transition-receipt.yaml
-  execution_slice_set: docs/execution/PR-020-durable-async-operation-runtime-outcome-readback-v1-slices.yaml
-related_tasks:
-  stabilization_gate: PR-019-stable-baseline-stabilization-exit-gate-v1
-  observed_trigger: PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1
-  provider_predecessor: PR-015-direct-codex-development-host-invocation-bridge-v1
+  requirement_r1_historical_blob_sha: 2c2c33e6b969e271c4acb7277b08cd212f2f3de3
+  plan_r4_historical_blob_sha: 304cbf2ab58b4fa3835c35b343bd1214565c2920
+  plan_r4_approval_sha: 2082e376c8bda337f5d82eb34785a499d6295a5c
+  legacy_slice_set_historical_blob_sha: f461220e206af7935619640b96288a3880381224
+  historical_bootstrap_admission_receipt_sha: 649747ff84130a7e60b93da15c20b77e917c8bd9
+  minimal_runtime_adr_sha: 36e0290de039336a8e4ce8561c22c731f12e9602
+  owner_gate_matrix_sha: 7507dff0032f29a99387c25f648508c48a03b6e9
+  owner_handoff_sha: 3b5ef4d066293250ebc8ebbcf549d9b5f14f94cc
 requirement_readiness:
-  result: Ready
-  ui_semantics:
-    applicability: NotApplicable
+  result: ReadyForHoldPlanReview
+  ui_semantics: NotApplicable
 ---
 
-# Requirement
+# Requirement R2 — Owner HOLD Reconciliation
 
-## Problem
+## 1. Decision and authority
 
-SentinelX already has Agent-side background jobs and pending-results replay, but these do not form a canonical durable operation runtime. The current pending-results module explicitly persists completed answers only; executing work still belongs to the current Agent process. Builtin local_api calls also execute synchronously inside the request/response window.
+**HOLD is effective immediately for this Owner Task's development-timeout-driven Durable Async expansion.** The user explicitly instructed suspension in the existing PR #20. Plan R5 is a **non-executing HOLD reconciliation plan** pending independent DevForge Plan Review. This declaration is not acceptance, feature completion, or a MRS-01 exit decision.
 
-A real PR-013 S03 execution exposed the missing boundary:
+Source authorities, read back on 2026-10-08:
+- Current SentinelX `main@2e5c69a112323867ee01783521554c43ebd731be`.
+- PR-021 Minimal Runtime ADR `docs/architecture/sentinelx-minimal-runtime-boundary-v1.md@36e0290de039336a8e4ce8561c22c731f12e9602` and Capability Disposition Matrix `05b6906614715e14450a2fd03e0699200e016074`.
+- PR-023 successor roadmap `8a281b60c1b8e9f5d665003a94f4f6b1d906de34`.
+- PR-027 completed Owner-Gate Matrix `7507dff0032f29a99387c25f648508c48a03b6e9`, PR #20 Owner handoff `3b5ef4d066293250ebc8ebbcf549d9b5f14f94cc`.
+- DevForge bootstrap-override contract `system/task-scoped-bootstrap-execution-override-contract.md@31fea7271020e76075b2eed656cbeda0ac8fe52b`.
 
-~~~text
-DevForge #开发执行
-→ SentinelX devforge_direct_codex.execute_task admitted
-→ physical containment proof became verified
-→ Codex/verification continued beyond the MCP request window
-→ caller received a 60-second local_api timeout
-→ no operation handle / durable terminal receipt was returned
-→ safe retry could not be proven
-~~~
+## 2. Superseding scope and disposition
 
-The system could no longer distinguish still-running, failed-before-effect, completed-with-lost-response, or externally-completed-with-lost-acknowledgement.
+The R1/R4 proposal to introduce a provider-neutral Durable Async Operation Runtime arose from the DevForge/Direct Codex request-window timeout and missing durable status/receipt handoff. PR-021 now delegates long development and Agent execution lifecycle to DevForge/Guided CLI; SentinelX retains a small bounded scoped-mutation/verification runtime. **A development-timeout workaround is not an independent product requirement.**
 
-This is not Codex-specific. Any SentinelX operation that can outlive a synchronous transport window or produce externally durable side effects can hit the same ambiguity.
+- **HOLD:** introduction of any new durable operation scheduler, persistent ADMITTED/RUNNING lifecycle, `sentinel_operations` API, provider adoption, retention/GC protocol or long-Agent bootstrap that was justified solely by the historical development timeout.
+- **KEEP unchanged:** existing Agent background exec/script jobs, completion/pending-result delivery, `pending_results` reconnect/replay, current minimal scoped Host runtime, provider-owned receipts and verified readback of bounded work.
+- **NOT DECIDED:** whether a future independent product use case warrants a new durable async capability. Such work must supply its own observable need, security/cost evidence, narrower design alternatives, and a fresh authorized Requirement/Plan/Review before any implementation.
+- **NOT CLAIMED:** that existing background jobs or pending_results already provide generic durable in-flight operation semantics; do not manufacture that guarantee.
+- **NOT AUTHORIZED:** migration of DevForge `direct/codex` binding, widening Host/ACL/AppContainer/Job/MutationScope/firewall/audit authority, or edits to PR #13/#14/#19/#21/#27 and unrelated PRs.
 
-## Goal
+## 3. Execution stop and lineage preservation
 
-Add one provider-neutral Durable Async Operation Runtime that lets eligible SentinelX operations:
+Existing original GitHub transport **must remain** PR #20 on `task/durable-async-operation-runtime-outcome-readback-v1`, base `main`; do not create a replacement Task or PR.
 
-~~~text
-admit exact operation identity
-→ persist durable operation record before material side effects
-→ return operation_id promptly
-→ execute asynchronously under the owning provider authority
-→ persist state/evidence
-→ persist terminal outcome / receipt before delivery
-→ allow status + receipt read-back after timeout, reconnect or fresh caller session
-→ reconcile uncertain external outcomes without replay
-~~~
+The formerly approved Requirement R1 (blob `2c2c33e6b969e271c4acb7277b08cd212f2f3de3`), Plan R4 (blob `304cbf2ab58b4fa3835c35b343bd1214565c2920`), approved Plan Review R4 and corresponding Slice Set are **historical, superseded, NON-EXECUTABLE**. Keep R1 original acceptance criteria AC1–AC24 and all S01–S04 planned specifications recoverable from original Git blobs. Do not replay any Slice or refire previously blocked attempt.
 
-The runtime must be reusable by Direct Development Hosts, Host Runtime builtin providers, scoped verification/materialization/publication operations, existing background exec/script jobs where compatible, and future long-running SentinelX providers.
+Read-back facts before revision:
+- S01 `BLOCKED` (`WorkspaceMaterializationProviderUnavailable`), `provider_process_started=false`, `product_mutation_started=false` in checkpoint `962e3ea9069a29db3d1eba6a8e423df4c2c214c4`.
+- Original bootstrap override blob `fbe24326a67fd4620e19b63123b38c4f1fe98c6f`, initial admission Receipt `649747ff84130a7e60b93da15c20b77e917c8bd9`; neither is a license to execute under current authority.
+- Bootstrap override is now explicitly **revoked**; historical admission Receipt remains immutable and must not be interpreted as current.
+- The old R4 Slice Set is marked historical/suspended; no current implementation Slice or approved Plan is active. No `direct:codebuddy` bootstrap, product mutation, or unrestricted executor fallback is permitted while HOLD.
+- Terminal `cancelled` is *not* asserted: this is an Owner HOLD for later explicit decision, not silent task deletion or completion.
 
-No provider may invent a competing async lifecycle.
+## 4. Review-ready requirements
 
-## Core identity
+R2-1. Preserve original Task and PR identity, exact Git history and historical Run/Review/Approval/Blocked receipts.
 
-The runtime introduces one SentinelX correlation identity: operation_id.
+R2-2. Persist and independently read back fail-closed states: `implementation_authorized=false`, `plan_approved=false`, Task Stage `plan_review`, `execution_disposition=hold`, bootstrap override `revoked`, old Slice Set `suspended`.
 
-operation_id must not replace or reinterpret upstream identities such as DevForge task_id, run_id, attempt_id, slice_id, canonical repository/PR/branch, provider_run_id, or narrower mutation-audit operation identities.
+R2-3. Plan R5 is strictly non-executable HOLD reconciliation. No S01/S02/S03/S04 product Slice is admitted, compiled, restarted, or promoted to acceptance.
 
-Where upstream lineage exists, the operation record binds it exactly. Hub job_id, PID, session ID and provider run IDs are evidence/correlation only.
+R2-4. Preserve existing generic background jobs and `pending_results` functionality verbatim. No product code, test, CI, Host, permission, service or policy mutation.
 
-## Required behavior
+R2-5. A future admission requires independent product problem/evidence, Requirement impact, explicit Plan/Review approval, new Slice Set tied to exact new approved Plan, and fresh physical Host security/receipt tests where appropriate.
 
-### R1 — Explicit async eligibility
+R2-6. The Owner Plan Review must explicitly decide `HOLD` with a durable reviewed decision/transition Receipt before PR-027 program Gate may count this owner as reconciled. Pending Review means program `MRS-01=HOLD` and `MRS-02=not admitted`.
 
-Not every operation becomes asynchronous.
+R2-7. Do not modify project binding `direct/codex`; retain AppContainer, Job, MutationScope, canonical firewall, durable audit, `D:\coco` protected root and no-fallback rules.
 
-A provider/action is eligible only when it explicitly registers a Durable Async V1 descriptor containing at least:
+R2-8. If current main, owner PR Head, Revocation Receipt, Task/Plan/legacy Slice Set, or relevant architectural blob drifts, stop and re-review exact lineage; do not auto-reactivate.
 
-- provider/action identity;
-- deterministic semantic identity source;
-- request validation/schema;
-- side-effect class;
-- terminal receipt/result sanitizer;
-- optional uncertain-outcome reconciler;
-- bounded timeout/retention policy.
+## 5. Acceptance criteria for the HOLD reconciliation
 
-Unknown or unregistered actions fail closed. Eligibility is never inferred from model name, provider name, repository, duration or chat intent.
+- **AC1** Original PR #20, branch, Requirement R1 / Plan R4 exact blob history is preserved without replay.
+- **AC2** PR-021 and PR-027 architectural reasons for HOLD are explicitly linked and independently readable.
+- **AC3** Current Task execution/Plan/bootstrap authority is disabled and Revocation Receipt is independently verified.
+- **AC4** Legacy R4 Slice Set is suspended; old blocker and initial override admission receipt remain historical.
+- **AC5** Generic background jobs and pending_results are untouched; no product/Host mutation.
+- **AC6** The new Plan R5 permits only reviewer-owned HOLD decision and receipt, never implementation.
+- **AC7** Canonical mutation firewall, AppContainer, Job, MutationScope, ACL/protected root and durable audit are not widened.
+- **AC8** `MRS-01=HOLD`, `MRS-02=false` until separately verified Owner disposition; no other Owner Task/Gate is mutated.
 
-### R2 — Prompt admission acknowledgement
+## 6. Gate / next action
 
-Starting an eligible operation returns promptly without waiting for the long-running body:
+**Owner execution state:** HOLD (fail-closed). **Workflow stage:** `plan_review` (Plan R5 review pending). These are distinct; neither implies a fresh implementation authorization.
 
-~~~yaml
-accepted: true
-operation_id: <opaque durable id>
-status: ADMITTED | RUNNING
-request_digest: <digest>
-identity_digest: <digest>
-status_readback_available: true
-receipt_readback_available: true
-~~~
+The following is the **only** next DevForge command. Reviewer must verify exact PR #20 Task, Plan R5, suspended Slice Set, revoked bootstrap and receipts. A HOLD-approval only approves administrative suspension, not product execution.
 
-No Host path, PID, credential, workspace path or provider-private state is needed by the caller to read it later.
-
-### R3 — Durable state before material side effects
-
-Before material side effects, SentinelX persists an operation record equivalent to:
-
-~~~yaml
-schema_version: "1.0"
-operation_id: <id>
-provider: <provider>
-action: <action>
-identity_digest: <digest>
-request_digest: <digest>
-lineage:
-  task_id: <optional>
-  run_id: <optional>
-  attempt_id: <optional>
-  slice_id: <optional>
-transport:
-  repository: <optional>
-  pr: <optional>
-  branch: <optional>
-state: ADMITTED
-receipt_ref: null
-external_effects_verified: false
-~~~
-
-No durable admission record means no async execution start.
-
-### R4 — Single canonical lifecycle
-
-V1 uses one shared lifecycle:
-
-~~~text
-ADMITTED
-→ RUNNING
-→ VERIFYING
-→ SUCCEEDED
-
-or terminal/non-success states:
-FAILED
-BLOCKED
-INTERRUPTED
-OUTCOME_UNKNOWN
-~~~
-
-State and reason code are separate. Provider-specific statuses normalize into this lifecycle instead of defining another state machine.
-
-SUCCEEDED is permitted only after required verification and durable receipt persistence.
-
-### R5 — Status read-back
-
-A generic bounded read API returns current durable state by operation_id, including:
-
-- provider/action;
-- state and reason;
-- timestamps;
-- safe upstream lineage refs;
-- terminal-receipt presence;
-- external-effect verification state;
-- reconciliation-required flag.
-
-It must not expose credentials, raw environment variables, unrestricted command lines, canonical checkout paths or provider-private authorization material.
-
-### R6 — Durable receipt read-back
-
-Terminal success produces a durable receipt before success is reported.
-
-The provider-neutral envelope binds:
-
-- operation_id;
-- provider/action;
-- request digest;
-- semantic identity digest;
-- upstream Task/Run/Attempt/Slice lineage when present;
-- canonical transport identity when present;
-- terminal state;
-- start/finish timestamps;
-- verification disposition;
-- external-effect disposition;
-- provider evidence/receipt digest;
-- read-back digest.
-
-No receipt means no completion claim.
-
-### R7 — Retry/idempotency
-
-A semantically identical retry must not blindly execute again.
-
-~~~text
-same semantic identity + same request digest + active operation
-→ return same operation_id/status
-
-same semantic identity + same request digest + terminal operation
-→ return same operation_id/receipt
-
-same semantic identity + changed authority-bearing request
-→ conflict; no execution
-
-verified external side effect already exists
-→ replay forbidden
-~~~
-
-For DevForge-bound operations, Task/Run/Attempt/Slice plus exact canonical transport participate in identity.
-
-Existing Hub job_id may be bound as transport correlation when present but is not canonical semantic identity.
-
-### R8 — Outcome-unknown reconciliation
-
-Timeout, process interruption or lost acknowledgement must not be converted automatically into failure or success.
-
-~~~text
-OUTCOME_UNKNOWN
-→ provider reconciler performs read-only/read-back-first inspection
-→ reconcile to SUCCEEDED / FAILED / BLOCKED / INTERRUPTED
-OR remain OUTCOME_UNKNOWN
-~~~
-
-A reconciler may not replay the original material side effect merely to discover the outcome.
-
-Examples include exact remote Git read-back, exact persisted artifact digest read-back, provider-owned durable evidence, or a dedicated external deployment read API.
-
-If no deterministic reconciler exists, OUTCOME_UNKNOWN remains and blind retry is blocked.
-
-### R9 — Connection lifecycle independence
-
-A completed operation receipt remains readable after:
-
-- the original MCP request times out;
-- WebSocket disconnect/reconnect;
-- Hub worker/session change;
-- a fresh ChatGPT conversation;
-- loss of the response that acknowledged completion.
-
-Existing pending-result replay should be reused where useful, but durable operation truth must not depend on successful Hub delivery.
-
-### R10 — Agent restart semantics
-
-V1 need not keep arbitrary child processes alive across an Agent service restart, but durable state must survive restart.
-
-On startup:
-
-1. terminal records remain terminal and readable;
-2. nonterminal records are revalidated;
-3. deterministic provider read-back may reconcile an external outcome;
-4. otherwise state becomes INTERRUPTED or OUTCOME_UNKNOWN according to evidence;
-5. stale pre-restart state is never reported as proven-live RUNNING;
-6. material operations are never auto-replayed.
-
-### R11 — Existing background jobs composition
-
-Existing background=true exec/script behavior remains compatible.
-
-The existing job_completed event and notifications flow may remain a delivery surface, but:
-
-~~~text
-durable operation truth
-!= transient WebSocket delivery
-!= Hub notification record
-~~~
-
-Where adopted, job_id binds to the durable operation record and terminal delivery derives from the same persisted outcome.
-
-### R12 — Generic local_api surface
-
-Production mcp.sentinelx.app remains an immutable external transport boundary.
-
-The new start/read-back surface must fit through the existing sentinel_local_api envelope.
-
-Recommended Agent-owned builtin endpoint:
-
-~~~text
-sentinel_operations
-~~~
-
-Recommended actions:
-
-~~~text
-start
-status
-receipt
-~~~
-
-start may invoke only actions registered in the Durable Async eligibility registry. It is not a generic arbitrary endpoint/action forwarder.
-
-The caller cannot select executables, Host paths, credentials, permissions or unregistered actions.
-
-### R13 — Provider-neutral adoption
-
-V1 architecture must support these consumer classes without provider-specific runtime forks:
-
-1. Direct Development Host actions such as current Direct Codex execution;
-2. Host Runtime builtin actions such as long devforge_runtime execution;
-3. scoped verification/materialization/publication operations when they exceed synchronous windows;
-4. existing top-level background exec/script through compatibility composition;
-5. future builtin providers that explicitly register Durable Async V1.
-
-The core runtime contains no Codex-, CodeBuddy-, game-, Unity-, repository- or model-specific lifecycle semantics.
-
-### R14 — Authority preservation
-
-Durable async changes timing and observability only.
-
-It must not broaden file write scope, mutation scope, AppContainer/Job authority, canonical repository mutation authority, Git credentials, service control, provider permissions, project binding, canonical transport, DevForge identities, force push, merge, release or deployment authority.
-
-Existing provider admission and security boundaries remain authoritative.
-
-### R15 — Cancellation
-
-V1 does not expose generic process kill/cancel as new caller authority unless an owning provider already has an explicit safe cancellation contract.
-
-Observation by operation_id is not process-control authority.
-
-### R16 — Retention and cleanup
-
-Terminal operation records have bounded Host-owned retention.
-
-- nonterminal or OUTCOME_UNKNOWN records are not deleted merely because the request timed out;
-- receipt retention must preserve verifiability for the declared window;
-- cleanup targets only provider-owned operation-state storage;
-- no generic recursive Host deletion fallback;
-- retention is not caller-selected.
-
-### R17 — Audit
-
-Lifecycle transitions must be auditable without secrets, including operation_id, provider/action, identity/request digests, transition, reason, upstream lineage refs, provider evidence/receipt ref and external-effect verification flag.
-
-Hidden reasoning, raw credentials and full environment snapshots are forbidden.
-
-## Stabilization relation
-
-PR-019 Requirement R3 classifies inability to produce required audit/receipt/read-back evidence as a baseline_blocker.
-
-The observed PR-013 attempt proves that concrete defect on the current baseline Direct Codex path: execution admission occurred, containment reached verified, synchronous local_api timed out, no durable operation handle/receipt was returned, and safe retry could not be established.
-
-PR-020 owns the generic infrastructure repair.
-
-PR-019 continues to own stabilization-exit classification and consumes PR-020 evidence rather than reimplementing async operation semantics.
-
-## Non-goals
-
-V1 does not:
-
-- modify or deploy production Hub source/schema;
-- make every short operation asynchronous;
-- replace DevForge Execution Run Runtime;
-- create a scheduler;
-- make arbitrary child processes survive Agent restart;
-- add generic process cancellation;
-- silently retry failed/unknown operations;
-- add provider fallback;
-- change project binding;
-- broaden credentials or permissions;
-- replace mutation audit, sandbox, Job or canonical repository firewall;
-- absorb PR-013 repository transaction semantics;
-- absorb PR-019 stabilization semantics.
-
-## Acceptance criteria
-
-1. one provider-neutral Durable Async Operation Runtime exists;
-2. operation state is durable before material side effects;
-3. eligible long-operation start returns promptly with operation_id;
-4. status read-back works after the original request ended;
-5. terminal receipt read-back works independently of WebSocket delivery;
-6. identical semantic retry returns the existing operation instead of replaying;
-7. authority-changing duplicate request conflicts fail closed;
-8. success requires a persisted verified receipt;
-9. lost response after successful side effect can reconcile by read-back without replay;
-10. no deterministic reconciliation leaves OUTCOME_UNKNOWN and blocks blind retry;
-11. Agent restart preserves durable records and never treats stale RUNNING as proven-live;
-12. pending-results replay remains compatible but is not canonical operation truth;
-13. existing background exec/script behavior remains compatible;
-14. Direct Codex uses the generic runtime without a Codex-specific lifecycle;
-15. a Host Runtime builtin long action uses the same runtime contract;
-16. local_api cannot start unregistered actions;
-17. callers cannot inject executable/path/credential/permission authority;
-18. canonical repository firewall semantics remain unchanged;
-19. AppContainer/Job/mutation scope semantics remain unchanged;
-20. project direct/codex binding remains unchanged;
-21. a real long-running Direct Codex fixture exceeds the normal synchronous window, returns a prompt operation handle, completes, and is later read back with a verified receipt;
-22. a lost-completion-response fixture returns the same receipt on later read-back;
-23. restart during a nonterminal fixture never replays the side effect and resolves by reconciliation or OUTCOME_UNKNOWN;
-24. PR-013 S03 is never blindly replayed as acceptance proof.
-
-## Requirement readiness
-
-~~~yaml
-requirement_ready: true
-ui_semantics: NotApplicable
-visual_fidelity: NotApplicable
-material_product_decision_pending: false
-implementation_p0_dependencies: []
-acceptance_external_evidence:
-  - Windows Agent long-running builtin operation fixture
-  - reconnect/lost-response readback
-  - restart reconciliation
-  - Direct Codex generic-runtime adoption proof
-~~~
+```text
+#开发评审 PR-020-durable-async-operation-runtime-outcome-readback-v1
+```
