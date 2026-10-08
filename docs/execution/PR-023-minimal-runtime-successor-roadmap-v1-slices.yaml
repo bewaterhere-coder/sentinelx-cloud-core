@@ -107,7 +107,10 @@ slices:
         - successor Task candidates are descriptive only and are not created or started
     checkpoint:
       required: true
-    state: pending
+    state: completed
+    run_refs:
+      - docs/execution/PR-023-minimal-runtime-successor-roadmap-v1-s03-run-001.yaml
+    completion_receipt_ref: docs/checkpoints/PR-023-minimal-runtime-successor-roadmap-v1-s03-completion-20261008.yaml
 
   - slice_id: S04
     objective: Freeze retirement and safety gates that prevent long-Agent-specific simplification before replacement, binding migration, baseline reconciliation, Minimal Runtime proof, and equivalent evidence validation.
@@ -156,7 +159,7 @@ slices:
     state: pending
 
 current:
-  slice_id: S03
+  slice_id: S04
   state: pending
 
 execution_summary:
