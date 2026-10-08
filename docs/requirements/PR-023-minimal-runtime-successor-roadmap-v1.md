@@ -51,7 +51,7 @@ development:
   r2_slice_set_compiled: true
   latest_r2_slice_set_blob_sha: d97018ff967f09f50e1b4e518e565cf6358e67da
   ac1_ac16_verification: pass
-  implementation_to_acceptance_receipt: docs/checkpoints/PR-023-minimal-runtime-successor-roadmap-v1-s05r-implementation-to-acceptance-receipt.yaml
+  implementation_to_acceptance_receipt: docs/checkpoints/PR-023-minimal-runtime-successor-roadmap-v1-final-verification-s05r-implementation-to-acceptance-receipt.yaml
   r1_replay_authorized: false
   implementation_execution_complete: true
   formal_acceptance_performed: false
