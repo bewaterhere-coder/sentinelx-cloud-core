@@ -30,22 +30,26 @@ development:
   current_slice: null
   current_slice_state: completed_readonly_evidence
   owner_gate_decision: DecisionRequired/Blocked
+  acceptance_review_round: 3
+  acceptance_review_decision: DecisionRequired
+  acceptance_approved: false
+  acceptance_owner_disposition_required: true
   product_transport_decision: TransportBlocked
   current_slice_completion_receipt_ref: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-s07a-completion-receipt.yaml
   current_plan_slice_set_blob_sha: c9a0589e8ac89023a77f967b55290bd6cb060b14
   completed_slices: [S01, S02, S03A, S04A, S05A, S06A, S07A]
   pending_slices: []
   implementation_execution_complete: true
-  formal_acceptance_performed: false
-  acceptance_disposition: superseded_by_requirement_r3_replan
-  acceptance_blocker: null
-  acceptance_blocker_detail: null
-  material_architecture_decision_required: false
-  material_architecture_decision: pr021_minimal_short_mutation_security_substrate_only
+  formal_acceptance_performed: true
+  acceptance_disposition: decision_required_r3_owner_security_and_transport
+  acceptance_blocker: DirectCodexContainmentUnprovenAndOriginalPRTransportBlocked
+  acceptance_blocker_detail: owner_must_decide_fail_closed_direct_codex_disablement_or_verified_physical_containment_and_prove_no_loss_same_PR_transport
+  material_architecture_decision_required: true
+  material_architecture_decision: pr021_minimal_runtime_boundary_preserved_owner_direct_codex_security_decision_pending
   secondary_acceptance_finding: planned_repair_in_requirement_r3
   exact_candidate_activation_required: false
-  latest_acceptance_checkpoint: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-acceptance-r2-decision-required-20261008.yaml
-  latest_acceptance_review: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-acceptance-r2.md
+  latest_acceptance_checkpoint: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-acceptance-r3-decision-required-20261008.yaml
+  latest_acceptance_review: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-acceptance-r3.md
   completed_slices_preserved: [S01]
   preserved_completed_candidate_slices: [S02]
   preserved_s02_product_candidate: 45dc99d15a23c499b4c1500fab60ed5e76475aeb
@@ -64,18 +68,21 @@ development:
   execution_blocker: product_and_host_mutation_blocked_by_negative_s07a_owner_readback
   execution_failure_state: null
   execution_failure_reason: null
-  latest_execution_run: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-run-001.yaml
+  latest_execution_run: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-s07a-run-001.yaml
   latest_execution_checkpoint: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-completion-20261008.yaml
   preserved_s02_completion_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-completion-receipt.yaml
   latest_s02_reconciliation_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-r6-reconciliation-receipt.yaml
   prior_bootstrap_receipt: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-harness-bootstrap-blocked-20261008.yaml
   superseded_slice_set_status: invalidated_by_requirement_revision_4
   planned_pending_delta_slice: S07A_readonly_evidence_only
-  next_expected_actor: verifier
-  canonical_next_action: "#开发验收 PR-014-devforge-execution-workspace-materialization-bridge-v1"
+  next_expected_actor: owner
+  canonical_next_action: null
   authorization:
     mode: legacy_command_scoped
 artifacts:
+  acceptance_r3_review: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-acceptance-r3.md
+  acceptance_r3_decision_receipt: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-acceptance-r3-decision-required-20261008.yaml
+  acceptance_r3_current_evidence: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-s07a-decision-20261008.md
   current_plan_slice_set_ref: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-r14-slices.yaml
   current_plan_slice_completion_receipt_ref: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-s07a-completion-receipt.yaml
   current_plan_run_ref: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-s07a-run-001.yaml
@@ -112,7 +119,7 @@ artifacts:
   requirement_change_impact: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-requirement-r2-invalidation.md
   latest_slice_checkpoint: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-completion-20261008.yaml
   latest_gate_transition: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-implementation-to-acceptance-transition-receipt.yaml
-  latest_acceptance_checkpoint: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-acceptance-r2-decision-required-20261008.yaml
+  latest_acceptance_checkpoint: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-acceptance-r3-decision-required-20261008.yaml
 transport:
   type: github-pr
   pr_number: 14
