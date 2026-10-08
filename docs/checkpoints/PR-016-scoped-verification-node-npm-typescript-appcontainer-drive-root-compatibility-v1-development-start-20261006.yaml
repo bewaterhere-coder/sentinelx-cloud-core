@@ -1,0 +1,72 @@
+schema_version: "1.0"
+kind: devforge_development_start_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-016-scoped-verification-node-npm-typescript-appcontainer-drive-root-compatibility-v1
+source_command: "#开发 SentinelX Scoped Verification Node/npm TypeScript AppContainer Drive-Root Compatibility V1"
+generated_at: "2026-10-06T22:39:00+08:00"
+runtime:
+  repository: bewaterhere-coder/DevForge
+  branch: main
+  version: 2.68.0
+  revision: a13b1113fb3b5938199bad1bf45539eb311ae531
+  workflow_id: project_development
+  workflow_version: "2.1"
+transport:
+  type: github-pr
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 16
+  branch: task/scoped-verification-node-npm-typescript-appcontainer-drive-root-compatibility-v1
+  base_branch: main
+  base_sha: 018b78ca20984176d53fbe90039dc795a7f2742f
+  provisional_bootstrap: docs/checkpoints/scoped-verification-node-npm-typescript-appcontainer-drive-root-compatibility-v1-provisional-bootstrap.md
+artifacts:
+  requirement:
+    ref: docs/requirements/PR-016-scoped-verification-node-npm-typescript-appcontainer-drive-root-compatibility-v1.md
+    revision: 1
+    blob_sha: c303d5a9e8e8b7dc1c1477360a73d621effa03c2
+    read_back_verified: true
+  plan:
+    ref: docs/plans/PR-016-scoped-verification-node-npm-typescript-appcontainer-drive-root-compatibility-v1-plan.md
+    revision: 1
+    blob_sha: b601704e396447a7093bb790d71b50c4491ebd85
+    read_back_verified: true
+requirement_refinement:
+  requirement_ready: true
+  material_product_decision_pending: false
+  requirement_artifact_bundle: not_required
+  ui_semantic_resolution: not_applicable
+  visual_fidelity: not_applicable
+planning:
+  plan_ready: true
+  plan_approved: false
+  implementation_authorized: false
+  current_task_p0_dependencies: []
+repository_reality:
+  sentinelx_main_at_start: 018b78ca20984176d53fbe90039dc795a7f2742f
+  existing_boundary:
+    workspace_ancestor_traverse_present: true
+    drive_anchor_in_current_ancestor_grant: false
+    file_read_attributes_constant_present: true
+  observed_downstream_failure:
+    task: bewaterhere-coder/ChatGPTControlShell#15
+    slice: S01
+    npm_ci_offline: pass
+    npm_typecheck: blocked_before_typescript
+    provider_error: "EPERM: operation not permitted, lstat 'D:\\'"
+postconditions:
+  task_id_frozen: true
+  transport_resolved_and_verified: true
+  requirement_durable_and_readback_verified: true
+  plan_durable_and_readback_verified: true
+  development_stage: plan_review
+  requirement_ready: true
+  plan_approved: false
+  next_expected_actor: reviewer
+  product_implementation_mutated: false
+completion_guard:
+  status: satisfied
+  canonical_next_action: "#开发评审 PR-016-scoped-verification-node-npm-typescript-appcontainer-drive-root-compatibility-v1"
+notes:
+  - This command created only task/plan/transport evidence; no SentinelX product source or Host policy was modified.
+  - The requirement freezes the security boundary: no broad D: read, no D:\coco access, no network widening, and exact transient authority cleanup.
+  - The plan intentionally requires real Windows mask proof before freezing the exact drive-root access mask.

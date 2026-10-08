@@ -1,0 +1,42 @@
+schema_version: "1.0"
+kind: devforge_continuation_checkpoint
+checkpoint_id: PR-016-S01-window-3-attempt2-interrupted-20261007
+subject:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  task_id: PR-016-scoped-verification-node-npm-typescript-appcontainer-drive-root-compatibility-v1
+lineage:
+  requirement_ref: docs/requirements/PR-016-scoped-verification-node-npm-typescript-appcontainer-drive-root-compatibility-v1.md
+  requirement_revision: 1
+  plan_ref: docs/plans/PR-016-scoped-verification-node-npm-typescript-appcontainer-drive-root-compatibility-v1-plan.md
+  plan_revision: 1
+  slice_set_ref: docs/execution/PR-016-scoped-verification-node-npm-typescript-appcontainer-drive-root-compatibility-v1-slices.yaml
+execution:
+  stage: implementation
+  source_command: "#开发执行 PR-016-scoped-verification-node-npm-typescript-appcontainer-drive-root-compatibility-v1"
+  active_slice_id: S01
+  active_run_id: PR-016-S01-window-3
+  active_attempt_id: "2"
+  latest_finalization_ref: null
+transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  transport_ref: github-pr:16:task/scoped-verification-node-npm-typescript-appcontainer-drive-root-compatibility-v1
+boundary:
+  disposition: interrupted
+  reason: DirectCodexInvocationResultUnresolved
+continuation:
+  mode: resume_current_run
+  next_action_hint: "#开发执行 PR-016-scoped-verification-node-npm-typescript-appcontainer-drive-root-compatibility-v1"
+evidence:
+  latest_receipt_refs:
+    - docs/reviews/PR-016-scoped-verification-node-npm-typescript-appcontainer-drive-root-compatibility-v1-s01-direct-codex-attempt2-interrupted-20261007.yaml
+  outstanding_verification_refs:
+    - reconcile-attempt2-provider-outcome
+    - S01-real-windows-drive-root-reproduction
+    - S01-minimum-path-resolution-mask-proof
+freshness:
+  source_digests:
+    plan_blob_sha: b601704e396447a7093bb790d71b50c4491ebd85
+    slice_set_blob_sha: 95cc5249c2f49e84253c052d9243e1b5b56c8cdd
+    devforge_revision: cff3483ef06870f8b507c01d152d46904f9b8ffe
+  generated_at: "2026-10-07T20:05:00+08:00"
+supersedes: docs/checkpoints/PR-016-scoped-verification-node-npm-typescript-appcontainer-drive-root-compatibility-v1-s01-window-3-blocked-direct-codex-model-20261007.yaml

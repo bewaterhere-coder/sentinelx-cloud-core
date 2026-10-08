@@ -1,0 +1,100 @@
+schema_version: "1.0"
+kind: devforge_execution_preflight_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-016-scoped-verification-node-npm-typescript-appcontainer-drive-root-compatibility-v1
+slice_id: S01
+source_command: "#开发执行 PR-016-scoped-verification-node-npm-typescript-appcontainer-drive-root-compatibility-v1"
+runtime:
+  repository: bewaterhere-coder/DevForge
+  version: "2.69.0"
+  revision: 6fa162ff829cd1082c769908b5f85e23cd164a19
+  workflow: project_development
+  workflow_version: "2.1"
+task_scope:
+  repository:
+    vcs: git
+    authority: github.com
+    path: bewaterhere-coder/sentinelx-cloud-core
+  stage: implementation
+  operation: first_implementation
+  transport:
+    type: github-pr
+    pr_number: 16
+    branch: task/scoped-verification-node-npm-typescript-appcontainer-drive-root-compatibility-v1
+  requirement_revision: 1
+  plan_revision: 1
+  slice_id: S01
+canonical_evidence:
+  task_head_before_preflight: b00793000984080993e6fcda1bbc2c5e1f00e8fa
+  canonical_main: 018b78ca20984176d53fbe90039dc795a7f2742f
+  plan_blob_sha: b601704e396447a7093bb790d71b50c4491ebd85
+  slice_set_blob_sha: 95cc5249c2f49e84253c052d9243e1b5b56c8cdd
+  project_execution_binding:
+    provider: direct
+    adapter: codex
+    source: explicit_project_binding
+admissions:
+  task_lineage:
+    state: Admitted
+    evidence_refs:
+      - docs/requirements/PR-016-scoped-verification-node-npm-typescript-appcontainer-drive-root-compatibility-v1.md
+      - docs/plans/PR-016-scoped-verification-node-npm-typescript-appcontainer-drive-root-compatibility-v1-plan.md
+      - docs/execution/PR-016-scoped-verification-node-npm-typescript-appcontainer-drive-root-compatibility-v1-slices.yaml
+  gate:
+    state: Admitted
+    evidence_refs:
+      - docs/reviews/PR-016-scoped-verification-node-npm-typescript-appcontainer-drive-root-compatibility-v1-plan-review-r1-transition-receipt.yaml
+  authorization:
+    state: Admitted
+    evidence_refs:
+      - explicit_current_command:#开发执行
+      - task_authorization:legacy_command_scoped
+  capability_compatibility:
+    state: Incompatible
+    provider_diagnosis: DirectCodexExecutionSurfaceUnavailable
+    evidence_refs:
+      - bewaterhere-coder/DevForge@6fa162ff829cd1082c769908b5f85e23cd164a19:system/development-project-registry.yaml
+      - live_sentinel_local_api:list:devforge_runtime_only
+      - live_sentinel_capability:no_development_host_direct_codex_v1
+      - docs/requirements/PR-015-direct-codex-development-host-invocation-bridge-v1.md
+preflight:
+  disposition: Blocked
+  readback_disposition: PreflightBlocked
+  primary_failure:
+    check_id: capability_compatibility
+    domain: Capability
+    canonical_execution_state: BlockedByTool
+    reason_code: RequiredExecutionCapabilityIncompatible
+provider_diagnosis:
+  required_provider: direct
+  required_adapter: codex
+  current_model_reachable_direct_codex_surface: false
+  live_local_api_endpoints:
+    - devforge_runtime
+  owning_unblocker:
+    task_id: PR-015-direct-codex-development-host-invocation-bridge-v1
+    state: implementation
+    bootstrap_override: active_for_PR015_only
+    cross_task_override_reuse: forbidden
+parallel_reconciliation:
+  pr013_primary_s01_overlap: false
+  pr014_primary_s01_overlap: false
+  pr015_primary_s01_overlap: false
+effects:
+  run_allocated: false
+  attempt_allocated: false
+  product_files_mutated: false
+  tests_executed: false
+  host_scope_provisioned: false
+  workspace_created: false
+  commit_created_for_product: false
+  provider_fallback_used: false
+  host_runtime_substitution_used: false
+  generic_shell_fallback_used: false
+result:
+  stage: implementation
+  current_slice: S01
+  current_slice_state: pending
+  slice_completion_claimed: false
+  task_completion_claimed: false
+  retry_condition: direct_codex_execution_surface_becomes_admitted_for_PR016

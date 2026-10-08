@@ -1,0 +1,153 @@
+schema_version: "1.1"
+kind: devforge_execution_slice_set
+identity:
+  task_id: PR-016-scoped-verification-node-npm-typescript-appcontainer-drive-root-compatibility-v1
+  slice_set_id: PR-016-scoped-verification-node-npm-typescript-appcontainer-drive-root-compatibility-v1-plan-r1
+plan:
+  ref: docs/plans/PR-016-scoped-verification-node-npm-typescript-appcontainer-drive-root-compatibility-v1-plan.md
+  revision: 1
+  blob_sha: b601704e396447a7093bb790d71b50c4491ebd85
+  requirement_revision: 1
+review:
+  ref: docs/reviews/PR-016-scoped-verification-node-npm-typescript-appcontainer-drive-root-compatibility-v1-plan-review-r1.md
+  blob_sha: 6330bffd1e0969e1033a9799c58fdf100d60ea47
+  decision: Approved
+repository_baseline:
+  main_sha: 018b78ca20984176d53fbe90039dc795a7f2742f
+  reviewed_task_head: b298987885bad55dffbd1ed72b26551bac60b7ee
+runtime_provenance:
+  devforge_version: "2.68.0"
+  devforge_main_sha: a32dc7cc533bc5d9cb1b52b3477c654951b6d0cb
+implementation_entry_guard:
+  required_before_each_slice: true
+  rules:
+    - re-read current main, PR-016 head, Requirement R1, Plan R1, this Slice Set and current open overlapping PR state before mutation
+    - preserve PR #16 transport identity
+    - fail closed on material Requirement, Plan, transport, Host runtime or security-boundary drift
+    - preserve the existing WindowsMutationSandbox, MutationScopeStore, MutationAuditJournal and no-breakaway Job authority
+    - preserve immutable source/capsule binding and no-network verification semantics
+    - do not move execution into D:\coco
+    - do not grant inheriting or broad volume-root read/list/write authority
+    - do not use operator_unrestricted, generic shell fallback, provider fallback or caller-selected Host paths
+    - preserve one explicit #开发执行 invocation to at most one Slice completion
+concurrent_task_reconciliation:
+  pr013:
+    observed_head: 4a3f8e3504b65d1dc222ecb9421ffa16cd96c76d
+    current_primary_file_overlap: false
+  pr014:
+    observed_head: 0bd1062396b5471cb44d36dc20cc8f31c08bcf1b
+    current_primary_file_overlap: false
+  pr015:
+    observed_head: a0060f236be471cfe330dad56f3900c9d4ff2c59
+    current_primary_file_overlap: false
+slices:
+  - slice_id: S01
+    objective: Reproduce the real Node drive-root path-resolution failure, prove the minimum non-inheriting ancestor/drive-root authority, implement it in the existing Windows sandbox, and close security/cleanup regressions.
+    depends_on: []
+    state: pending
+    scope:
+      refs:
+        - src/sentinelx_core/windows_mutation_sandbox.py
+        - tests/test_windows_mutation_sandbox.py
+        - focused real-Windows drive-root compatibility regression test when needed
+      authorized_changes:
+        - provider-derived exact workspace ancestor/drive-anchor path-resolution authority only
+        - minimal proven non-inheriting access mask only
+        - exact scope AppContainer SID tracking and reverse-order cleanup
+        - focused readiness-independent reproduction helpers/tests
+      forbidden:
+        - volume-wide RX or inheriting drive-root ACE
+        - D:\coco read authority
+        - unrelated sibling read/list authority
+        - write authority outside exact workspace
+        - second executor, scope store or AppContainer identity model
+    verification:
+      required:
+        - reproduce the pre-fix Node path-resolution failure on real Windows or an equivalent exact physical fixture
+        - prove the minimum access mask required for drive-root lstat/realpath
+        - prove volume-root enumeration remains denied beyond the admitted metadata operation
+        - prove unrelated sibling file read remains denied
+        - prove protected/canonical root read remains denied
+        - prove writes outside exact workspace remain denied
+        - prove normal terminalization removes the exact transient ancestor/drive-root SID authority
+        - prove activation/spawn failure cleanup removes the same transient authority
+        - existing exact-workspace and Job/no-breakaway sandbox tests remain green
+    checkpoint:
+      required: true
+    run_refs: []
+    completion_receipt_ref: null
+
+  - slice_id: S02
+    objective: Strengthen Node/npm readiness and add a real lockfile-bound offline TypeScript package-local verification fixture that catches the drive-root compatibility class.
+    depends_on: [S01]
+    state: pending
+    scope:
+      refs:
+        - src/sentinelx_core/verification_readiness.py
+        - tests/test_verification_readiness.py
+        - tests/test_verification_scoped_execution.py
+        - minimal fixture/support files required for real TypeScript offline verification
+      authorized_changes:
+        - readiness checks for real package-local path-resolution compatibility
+        - bounded provider-owned TypeScript fixture with package-lock bound source/capsule
+        - readiness evidence projection needed to distinguish this compatibility prerequisite
+      forbidden:
+        - network enablement
+        - mock-only replacement for real package-local execution
+        - canonical checkout access
+        - credential inheritance
+        - broad generic runtime_read_roots substitution
+    verification:
+      required:
+        - npm ci --offline passes in the existing profiled scoped environment
+        - npm run typecheck executes real tsc --noEmit and passes on the fixture
+        - readiness reports unavailable when the path-resolution prerequisite is intentionally broken
+        - readiness reports verified only after the real compatibility probe succeeds
+        - DNS/HTTP remain denied
+        - protected roots remain inaccessible
+        - transient authority is absent after terminalization
+    checkpoint:
+      required: true
+    run_refs: []
+    completion_receipt_ref: null
+
+  - slice_id: S03
+    objective: Close affected regressions and prove the exact candidate on the current Host, including downstream ChatGPTControlShell PR-015 integration only when live activation authority is separately admitted.
+    depends_on: [S02]
+    state: pending
+    scope:
+      refs:
+        - affected scoped verification/sandbox/readiness tests
+        - docs/scoped-verification-node-npm-v1.md when compatibility documentation changes are required
+        - current-Host live verification evidence
+      authorized_changes:
+        - focused regression/documentation closure
+        - exact-candidate Host activation only when separately authorized by the live runtime contract
+        - downstream PR-015 verification replay as integration evidence only
+      forbidden:
+        - implicit Agent installation/restart authority from Plan approval
+        - Host policy widening
+        - downstream ChatGPTControlShell product mutation
+        - provider fallback or unrestricted execution
+    verification:
+      required:
+        - focused and affected SentinelX regression suites pass on the exact candidate
+        - current Host readiness passes the strengthened physical self-check after exact-candidate activation when authorized
+        - downstream ChatGPTControlShell PR-015 S01 npm ci --offline passes
+        - downstream npm run typecheck passes
+        - downstream npm run check passes
+        - downstream scoped verification remains offline and terminalizes cleanly
+    external_availability_rule: live Agent activation/downstream replay requires separately admitted authority; if absent, checkpoint Blocked without fallback
+    checkpoint:
+      required: true
+    run_refs: []
+    completion_receipt_ref: null
+execution_state:
+  current_slice: S01
+  current_slice_state: pending
+  completed_slices: []
+  pending_slices: [S01, S02, S03]
+  all_slices_completed: false
+acceptance_boundary:
+  all_current_plan_slices_must_be_completed: true
+  acceptance_command: "#开发验收 PR-016-scoped-verification-node-npm-typescript-appcontainer-drive-root-compatibility-v1"
