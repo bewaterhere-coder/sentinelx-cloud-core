@@ -117,7 +117,7 @@ slices:
   - slice_id: S03
     title: Four Owner-Scoped Decision and Handoff Packets
     depends_on: [S02]
-    state: pending
+    state: completed
     scope:
       read_refs:
         - verified:S02-Receipt
@@ -139,7 +139,10 @@ slices:
       - no_owner_PR_or_Task_mutation
       - historical_completed_slices_preserved
     completion_receipt_pattern: docs/checkpoints/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-s03-completion-*.yaml
-    run_refs: []
+    run_refs:
+      - docs/execution/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-s03-run-001.yaml
+    completion_receipt_ref: docs/checkpoints/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-s03-completion-20261008.yaml
+    completion_receipt_sha: a1ea1c12f291fe16e6ae94d65df54f130402e8bc
   - slice_id: S04
     title: Deterministic Program Exit Projection and Final Verification
     depends_on: [S03]
@@ -167,10 +170,10 @@ slices:
     run_refs: []
 
 current:
-  slice_id: S03
+  slice_id: S04
   state: pending
 execution_summary:
-  completed_slices: [S01, S02]
+  completed_slices: [S01, S02, S03]
   implementation_execution_complete: false
   owner_gates_closed_by_this_task: false
   mrs01_program_exit: HOLD
