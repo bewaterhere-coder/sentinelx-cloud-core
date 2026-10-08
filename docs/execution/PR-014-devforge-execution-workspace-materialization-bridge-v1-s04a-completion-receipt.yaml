@@ -1,0 +1,24 @@
+schema_version: "1.0"
+kind: devforge_slice_completion_receipt
+task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
+requirement_revision: 5
+plan_revision: 10
+slice_id: S04A
+result: completed_with_negative_readback
+decision: DecisionRequired/Blocked
+reason: RuntimeSecurityReadinessFailureAndCanonicalSourceUnresolved
+main_sha: cd42e371f18056327c1d8b744f8956a76bc11541
+installed_version: 0.24.1.dev260+g45dc99d15
+host_mutation_sandbox_verified: false
+pre_execution_audit_lineage_verified: false
+canonical_firewall_verified: true
+mutation_scope_error: "unexpected keyword argument runtime_read_authority_roots"
+dedicated_execution_root_verified: false
+evidence_ref: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-s04a-readback-20261008.md
+evidence_commit: 81107271f2658b5fbe306f52a9874b1a1bccc97d
+evidence_blob: 43e1595e1e33736ade332379af852e48de28880e
+product_mutated: false
+host_mutated: false
+main_mutated: false
+historical_slices_replayed: false
+product_completion_claimed: false
