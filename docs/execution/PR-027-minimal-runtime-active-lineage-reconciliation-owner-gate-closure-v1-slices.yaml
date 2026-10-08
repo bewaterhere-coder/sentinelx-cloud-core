@@ -146,7 +146,7 @@ slices:
   - slice_id: S04
     title: Deterministic Program Exit Projection and Final Verification
     depends_on: [S03]
-    state: pending
+    state: completed
     scope:
       read_refs:
         - verified:S03-Receipt
@@ -167,14 +167,19 @@ slices:
       - previous_slices_completed_and_receipts_readback_verified
       - no_cross_owner_or_host_mutation
     completion_receipt_pattern: docs/checkpoints/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-s04-completion-*.yaml
-    run_refs: []
+    run_refs:
+      - docs/execution/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-s04-run-001.yaml
+    completion_receipt_ref: docs/checkpoints/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-s04-completion-20261008.yaml
+    completion_receipt_sha: a00598934818440c451650e663deca0f6d297f55
+    final_verification_ref: docs/checkpoints/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-s04-final-verification-20261008.yaml
+    final_verification_sha: 8a3c99abd340b0025dbfb94b63f6c76c88c348d5
 
 current:
   slice_id: S04
-  state: pending
+  state: completed
 execution_summary:
-  completed_slices: [S01, S02, S03]
-  implementation_execution_complete: false
+  completed_slices: [S01, S02, S03, S04]
+  implementation_execution_complete: true
   owner_gates_closed_by_this_task: false
   mrs01_program_exit: HOLD
   mrs02_admitted: false
