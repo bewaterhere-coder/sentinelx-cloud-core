@@ -3,26 +3,26 @@ task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
 title: SentinelX DevForge Execution Workspace Materialization Bridge V1
 project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
-requirement_revision: 6
+requirement_revision: 7
 development:
-  stage: implementation
+  stage: plan_review
   gates:
     requirement_ready: true
-    plan_approved: true
+    plan_approved: false
     acceptance_approved: false
     completion_verified: false
-  plan_revision: 11
+  plan_revision: 12
   latest_plan_review: approved_round_11
   prior_plan_review: approved_round_6
   latest_plan_remediation: plan_r9_readonly_s03a_remediation
   prior_plan_remediation: plan_r2_remediation_r1
-  implementation_authorized: true
+  implementation_authorized: false
   blocking_findings:
     - CanonicalMainImplementationSurfaceMismatch
-    - HostMutationScopeCorruptRuntimeReadAuthorityRoots
     - MissingIndependentDevForgeExecutionRootBinding
-  current_slice: S05A
-  current_slice_state: completed_negative_readback
+    - DirectCodexContainmentUnproven
+  current_slice: null
+  current_slice_state: null
   completed_slices: [S01, S02, S03A, S04A, S05A]
   pending_slices: []
   implementation_execution_complete: false
@@ -50,8 +50,8 @@ development:
   bootstrap_override_state: expired_by_requirement_revision_3
   prior_bootstrap_override: docs/overrides/PR-014-devforge-execution-workspace-materialization-bridge-v1-bootstrap-execution-override.yaml
   latest_bootstrap_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-bootstrap-execution-override-r1-receipt.yaml
-  execution_disposition: s05a_completed_negative_decision_required
-  execution_blocker: CanonicalSourceOwnershipUnverifiedAndMutationScopeReadinessFailed
+  execution_disposition: r7_new_runtime_replanned_pending_review
+  execution_blocker: DirectCodexContainmentUnproven
   execution_failure_state: null
   execution_failure_reason: null
   latest_execution_run: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-run-001.yaml
@@ -60,9 +60,9 @@ development:
   latest_s02_reconciliation_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-r6-reconciliation-receipt.yaml
   prior_bootstrap_receipt: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-harness-bootstrap-blocked-20261008.yaml
   superseded_slice_set_status: invalidated_by_requirement_revision_4
-  planned_pending_delta_slice: S05A
-  next_expected_actor: architect
-  canonical_next_action: "#开发 PR-014-devforge-execution-workspace-materialization-bridge-v1 修订当前方案：优先确定 canonical main 的产品源码事实源及已安装 Runtime 的构建来源；在源码归属证实前不继续产品 mutation。"
+  planned_pending_delta_slice: null
+  next_expected_actor: reviewer
+  canonical_next_action: "#开发评审 PR-014-devforge-execution-workspace-materialization-bridge-v1"
   authorization:
     mode: legacy_command_scoped
 artifacts:
@@ -111,6 +111,21 @@ requirement_readiness:
 ---
 
 # Requirement
+
+## Requirement Revision 7 — Post-upgrade security re-admission (2026-10-08)
+
+R7 supersedes only the now-stale R6 assertion that the installed runtime cannot parse `runtime_read_authority_roots`; all R4-R6 no-mutation, source-ownership and protection invariants stay effective.
+
+Read-only Host Full Capabilities on Windows agent `0.24.1.dev791+g5d9286b22` verifies sandbox and pre-execution audit readiness **true** with all Windows AppContainer/ACL/Job/scope/audit self-checks passing. Do not replay/rewrite existing MutationScope durable records to 'fix' an error absent from this new check.
+
+**New P0:** `canonical_repository_mutation_firewall_v1` is **unavailable/unverified**; reason `local_api:direct_codex_containment_unproven`. New `devforge_direct_codex` projection cannot be invoked or granted canonical mutation authority until its containment has an explicit reviewed proof and firewall revalidation. The legacy `locations.devforge_workspace_root=D:\coco` still does not prove any independent execution-root admission. Version suffix `g5d9286b22` matches latest observed main prefix, but source/build provenance is not conclusively proven.
+
+New R7 decision gate: (1) read back current main exact ownership and installed package provenance; (2) read Direct Codex projection/Host containment evidence and firewall policy **without invoking mutations**; (3) read independent execution placement effective Host policy, retaining intact `D:\coco` protected root; (4) close at a deterministic `NoProductDelta`, `NarrowSecurityRepairCandidate`, or `DecisionRequired/Blocked` receipt. No source restore, new agent lifecycle, product mutation, Host settings edits, broad shell/git fallback, CI changes or historical slice replay.
+
+Evidence: `docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-r7-installed-runtime-readback-20261008.md`. S01/S02/S03A/S04A/S05A and candidate `45dc99d15a23c499b4c1500fab60ed5e76475aeb` remain historical only. PR #14 and same branch remain transport. Any future product fix requires an independently reviewed and concretely bound Plan.
+
+---
+
 
 ## Requirement Revision 6 — Source-owner-first security decision
 
