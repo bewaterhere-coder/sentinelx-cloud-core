@@ -1,0 +1,74 @@
+schema_version: "1.1"
+kind: devforge_execution_slice_set
+identity:
+  task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
+  slice_set_id: PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-r14
+plan:
+  ref: docs/plans/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan.md
+  revision: 14
+  blob_sha: d860b40805dd0cc0c96670fd84e7e4fea6deb487
+  requirement_revision: 8
+review:
+  ref: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r14.md
+  decision: Approved
+  implementation_scope: readonly_S07A_only
+repository_baseline:
+  canonical_main_sha: 2e5c69a112323867ee01783521554c43ebd731be
+  reviewed_task_head_before_review: 1dc1e8a649417fc59ee0cd641c955af155b9a687
+  original_pr: 14
+  original_branch: task/devforge-execution-workspace-materialization-bridge-v1
+slices:
+  - slice_id: S07A
+    objective: Read-only current-main source/PR transport, Direct Codex reachability, Host security and independent root consumer admission/decision
+    depends_on: []
+    state: pending
+    scope:
+      allowed_effects:
+        - github_current_main_and_original_pr14_exact_read
+        - sentinelx_structured_read_only_inspection
+        - original_pr14_task_scoped_docs_and_receipt_write
+      forbidden_effects:
+        - product_source_test_ci_mutation
+        - host_configuration_policy_runtime_mutation
+        - canonical_main_mutation
+        - direct_codex_invoke
+        - execute_scoped
+        - provision_scope
+        - materialize_workspace
+        - source_restore
+        - rebase
+        - cherry_pick
+        - force_push
+        - git_history_rewrite
+        - historical_slice_replay
+        - protected_root_acl_widening
+        - project_binding_change
+        - additional_slice_admission
+    verification:
+      required:
+        - exact_current_main_and_pr14_head_and_file_blob_reality_or_TransportBlocked
+        - current_main_source_and_tests_ownership_evidence_or_explicit_unverified
+        - no_loss_original_pr14_transport_mechanics_and_abort_proof_or_TransportBlocked
+        - structured_effective_direct_codex_reachability_and_containment_or_DecisionRequired_Blocked
+        - owner_authorized_containment_or_fail_closed_policy_disablement_path_or_DecisionRequired_Blocked
+        - real_short_scoped_consumer_and_execution_root_necessity_or_NoAdditionalProductDeltaNeededForPlacement
+        - deterministic_NoAdditionalProductDeltaNeeded_or_NarrowSecurityRepairCandidateRequiresSeparateReviewedPlan_or_TransportBlocked_or_DecisionRequired_Blocked
+        - existing_sandbox_audit_firewall_not_widened
+        - no_product_or_host_or_main_mutation
+        - bounded_run_finalization_checkpoint_and_receipt_readback
+    checkpoint:
+      required: true
+    run_refs: []
+    completion_receipt_ref: null
+execution_state:
+  current_slice: S07A
+  current_slice_state: pending
+  completed_current_plan_slices: []
+  pending_current_plan_slices: [S07A]
+  historical_slices: [S01, S02, S03A, S04A, S05A, S06A]
+  historical_replay: forbidden
+  no_next_product_slice: true
+acceptance_boundary:
+  requires_verified_S07A_readonly_decision_receipt: true
+  product_implementation_and_host_activation_not_authorized: true
+  mrs01_exit_not_implied: true
