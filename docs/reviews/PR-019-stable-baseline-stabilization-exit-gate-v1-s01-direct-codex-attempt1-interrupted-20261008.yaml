@@ -1,0 +1,75 @@
+schema_version: "1.0"
+kind: devforge_execution_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-019-stable-baseline-stabilization-exit-gate-v1
+slice_id: S01
+source_command: "#开发执行 PR-019-stable-baseline-stabilization-exit-gate-v1"
+observed_date: "2026-10-08"
+
+runtime:
+  devforge_version: "2.95.0"
+  devforge_revision: 162337cc2fffa710d49a9cd38ab4cc8643f09ffb
+
+transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 19
+  branch: task/stable-baseline-stabilization-exit-gate-v1
+  expected_remote_sha: 0c44aeb416a9026d043da5036e86c9f0f53f2a4a
+
+execution:
+  provider: direct
+  adapter: codex
+  endpoint: devforge_direct_codex
+  feature: development_host.direct_codex_v1
+  run_id: run-pr019-s01-20261008-001
+  attempt_id: attempt-001
+  slice_id: S01
+  invocation_disposition: interrupted
+  transport_call_result: local_api_timeout
+  hub_timeout_seconds: 60
+  provider_receipt_observed: false
+  automatic_retry_performed: false
+
+provider_evidence_after_timeout:
+  endpoint_reachable: true
+  feature_available: true
+  feature_verified: true
+  containment_proof_established_for_current_process: true
+  note: >-
+    Readiness changed from containment_unproven before execute_task to
+    available=true/verified=true after the timed-out invocation. This proves
+    provider-owned containment admission ran, but does not prove implementation
+    or publication completion.
+
+readback:
+  remote_head: 0c44aeb416a9026d043da5036e86c9f0f53f2a4a
+  remote_head_unchanged: true
+  product_commit_observed: false
+  publication_observed: false
+  provider_workspace_direct_readback:
+    attempted: true
+    result: path_not_allowed
+    permission_widening_performed: false
+  isolated_workspace_outcome: unresolved
+
+safety:
+  provider_fallback_used: false
+  github_connector_product_mutation_substitution_used: false
+  host_runtime_substitution_used: false
+  generic_shell_fallback_used: false
+  workspace_read_permission_widened: false
+  host_policy_mutated: false
+  installed_agent_mutated: false
+  canonical_main_mutated: false
+  verified_external_side_effect_replayed: false
+
+result:
+  state: INTERRUPTED
+  stage: implementation
+  current_slice: S01
+  current_slice_state: pending
+  completed_slices: []
+  slice_completion_claimed: false
+  task_completion_claimed: false
+  recovery_requirement: reconcile run-pr019-s01-20261008-001 / attempt-001 outcome before any retry or new Attempt
+  canonical_recovery_command: "#开发执行 PR-019-stable-baseline-stabilization-exit-gate-v1"

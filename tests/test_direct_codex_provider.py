@@ -5,6 +5,7 @@ import asyncio
 from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
@@ -14,14 +15,13 @@ from sentinelx_core.handlers import build_registry
 from sentinelx_core.handlers.basic import make_capabilities_handler
 from sentinelx_core.handlers.devforge_runtime import make_devforge_runtime_provider
 from sentinelx_core.handlers.direct_codex import (
+    _FORBIDDEN_FIELDS,
     CONTRACT_ID,
     ENDPOINT_NAME,
     EXECUTE_TASK_ACTION,
     FEATURE_ID,
-    _FORBIDDEN_FIELDS,
     make_devforge_direct_codex_provider,
 )
-from sentinelx_core.handlers.local_api import make_local_api_handler
 from sentinelx_core.operation_registry import (
     FirewallCoverage,
     RepositoryEffect,
@@ -239,6 +239,14 @@ def test_matching_bound_proof_is_reused_without_reproving(
     workspace = derive_workspace(provider._policy.direct_codex, repository, semantic)
     provider._containment_proof = {
         "verified": True,
+        "real_sandbox_setup": {"codex_workspace_write_setup": True},
+        "transport_context": {
+            "kind": "user_scoped_git_v1",
+            "probe_attempted": True,
+            "verified": True,
+            "non_interactive": True,
+            "credential_material_exposed": False,
+        },
         "binding": provider._proof_binding(repository, semantic, workspace),
     }
 
@@ -289,8 +297,20 @@ def test_proof_binding_rejects_identity_and_verification_mismatch(tmp_path: Path
     )
     # A proof without a binding block (legacy shape) never binds.
     assert provider._proof_is_bound_to({"verified": True}, **bound) is False
-    # The exact binding matches.
-    assert provider._proof_is_bound_to({"verified": True, "binding": binding}, **bound) is True
+    # The exact binding matches only with both mandatory physical proofs.
+    complete = {
+        "verified": True,
+        "binding": binding,
+        "real_sandbox_setup": {"codex_workspace_write_setup": True},
+        "transport_context": {
+            "kind": "user_scoped_git_v1",
+            "probe_attempted": True,
+            "verified": True,
+            "non_interactive": True,
+            "credential_material_exposed": False,
+        },
+    }
+    assert provider._proof_is_bound_to(complete, **bound) is True
 
 
 # ── effect / readiness projection ───────────────────────────────────────
@@ -322,6 +342,68 @@ def test_readiness_projection_is_false_until_live_prerequisites(tmp_path: Path) 
     assert projection["verified"] is False
     assert projection["contract_id"] == CONTRACT_ID
     assert projection["reason"] == "direct_codex_containment_unproven"
+    assert projection["proof"] == {
+        "attempted": False,
+        "disposition": "not_attempted",
+    }
+    assert projection["transport_context"] == {
+        "kind": "user_scoped_git_v1",
+        "probe_attempted": False,
+        "verified": False,
+        "non_interactive": True,
+        "credential_material_exposed": False,
+    }
+
+
+@pytest.mark.asyncio
+async def test_git_context_probe_uses_fixed_non_network_transport_argv(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    provider = make_devforge_direct_codex_provider(_admitted_policy(tmp_path))
+    calls: list[tuple[Path, tuple[str, ...], float]] = []
+
+    async def _transport(root: Path, *args: str, timeout: float):
+        calls.append((root, args, timeout))
+        return 0, b"git version fixture", b""
+
+    monkeypatch.setattr("sentinelx_core.direct_codex_transport.transport_git", _transport)
+    workspace = tmp_path / "devforge-workspaces" / "derived"
+    workspace.mkdir()
+    result = await provider._probe_transport_context(
+        SimpleNamespace(path=workspace), 300.0
+    )
+
+    assert calls == [(workspace, ("--version",), 30.0)]
+    assert result == {
+        "kind": "user_scoped_git_v1",
+        "probe_attempted": True,
+        "verified": True,
+        "non_interactive": True,
+        "credential_material_exposed": False,
+    }
+    assert str(workspace) not in repr(result)
+    assert "git version fixture" not in repr(result)
+
+
+@pytest.mark.asyncio
+async def test_git_context_probe_failure_is_sanitized_and_cause_aware(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    provider = make_devforge_direct_codex_provider(_admitted_policy(tmp_path))
+
+    async def _transport(root: Path, *args: str, timeout: float):
+        return 9, b"private stdout", b"private path and credential"
+
+    monkeypatch.setattr("sentinelx_core.direct_codex_transport.transport_git", _transport)
+    workspace = tmp_path / "devforge-workspaces" / "derived-failure"
+    workspace.mkdir()
+    result = await provider._probe_transport_context(SimpleNamespace(path=workspace), 10.0)
+
+    assert result["probe_attempted"] is True
+    assert result["verified"] is False
+    assert result["failure_class"] == "direct_codex_git_context_probe_failed"
+    assert "private" not in repr(result)
+    assert str(workspace) not in repr(result)
 
 
 def test_same_builtin_map_feeds_dispatch_and_firewall_projection(tmp_path: Path) -> None:

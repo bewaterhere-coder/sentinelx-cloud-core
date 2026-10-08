@@ -1,0 +1,81 @@
+schema_version: "1.0"
+kind: devforge_execution_preflight_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-019-stable-baseline-stabilization-exit-gate-v1
+slice_id: S01
+source_command: "#开发执行 PR-019-stable-baseline-stabilization-exit-gate-v1"
+observed_date: "2026-10-08"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  version: "2.95.0"
+  revision: 162337cc2fffa710d49a9cd38ab4cc8643f09ffb
+  workflow: project_development
+
+task_scope:
+  repository:
+    vcs: git
+    authority: github.com
+    path: bewaterhere-coder/sentinelx-cloud-core
+  stage: implementation
+  operation: first_implementation
+  transport:
+    type: github-pr
+    pr_number: 19
+    branch: task/stable-baseline-stabilization-exit-gate-v1
+  requirement_revision: 1
+  plan_revision: 2
+  slice_id: S01
+
+supersedes_observation:
+  ref: docs/reviews/PR-019-stable-baseline-stabilization-exit-gate-v1-s01-preflight-blocked-host-offline-20261008.yaml
+  reason: Host reconnected during the same explicit execute invocation and current direct/codex surface was re-read.
+
+admissions:
+  task_lineage:
+    state: Admitted
+  gate:
+    state: Admitted
+  authorization:
+    state: Admitted
+    evidence_refs:
+      - explicit_current_command:#开发执行
+  capability_compatibility:
+    state: Compatible
+    evidence_refs:
+      - live_sentinel_ping:agent_version:0.24.1.dev530+g7adfa7a74
+      - live_sentinel_local_api:devforge_direct_codex:execute_task
+      - live_sentinel_local_api:contract_revision:1
+    note: >-
+      Direct Codex readiness reports containment_unproven before execution.
+      That is not absence of the execute surface: the provider-owned execute_task
+      lifecycle establishes the physical containment proof before any repository
+      or Codex mutation. Preflight does not require execution-produced proof.
+
+provider_resolution:
+  provider: direct
+  adapter: codex
+  source: explicit_project_binding
+  endpoint: devforge_direct_codex
+  action: execute_task
+  fallback: forbidden
+
+preflight:
+  disposition: Passed
+  readback_disposition: PreflightPassed
+  exact_operation_scope: PR-019:S01:first_implementation
+  provider_proof_lifecycle_required_inside_execute_task: true
+
+effects:
+  run_allocated: false
+  attempt_allocated: false
+  product_files_mutated: false
+  tests_executed: false
+  execution_workspace_created: false
+  canonical_main_mutated: false
+
+result:
+  stage: implementation
+  current_slice: S01
+  current_slice_state: pending
+  eligible_for_current_execute_task: true

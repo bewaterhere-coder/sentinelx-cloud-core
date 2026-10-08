@@ -1,0 +1,62 @@
+schema_version: "1.0"
+kind: devforge_slice_dependency_blocker_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-019-stable-baseline-stabilization-exit-gate-v1
+slice_id: S01
+source_command: "#开发执行 PR-019-stable-baseline-stabilization-exit-gate-v1"
+
+runtime:
+  devforge_version: "2.97.0"
+  devforge_revision: 5efc2d2b1eabe209d599f08ba5f9574771851374
+  installed_agent_version: 0.24.1.dev541+g1028030b3
+  installed_source_revision: 1028030b33f0ea792a884491a431fffe566f6aa5
+
+candidate:
+  sha: 4ffb2dc312fac8d1030eb521641f6c61c33f11f0
+  published: true
+  focused_verification_pending: true
+
+preserved_scope:
+  scope_id: mss_AWbjOEbZ-KKm1ZfdLdetC-Bu
+  generation: 1
+  workspace_id: msw_XCpPG9ZG5jPO22F8mMxwaO88
+  state_before_runtime_upgrade: active
+  state_after_runtime_upgrade: unreadable
+  terminalization_attempt:
+    result: HostMutationScopeCorrupt
+    error: "invalid scope record: MutationScopeRecord.__init__() got an unexpected keyword argument 'runtime_read_authority_roots'"
+
+schema_reconciliation:
+  canonical_main:
+    revision: 1028030b33f0ea792a884491a431fffe566f6aa5
+    WindowsMutationSandbox_terminalize_present: true
+    MutationScopeRecord_runtime_read_authority_roots_present: false
+  pr017:
+    head: 3858c7d0e46295d5e0dc184bb21e76da7c963346
+    WindowsMutationSandbox_terminalize_present: true
+    MutationScopeRecord_runtime_read_authority_roots_present: true
+  conclusion: current canonical main is not backward-compatible with the preserved scope record written by the prior Host runtime
+
+classification:
+  kind: BlockedByDependency
+  reason_code: HostMutationScopeSchemaCompatibilityUnavailable
+  defect_proven: true
+  baseline_disposition: NotReady
+  residual_scope_authority_unresolved: true
+  blocks_new_mutating_window: true
+  blocks_s01_completion: true
+  blocks_s02_progression: true
+
+safety:
+  new_scope_provisioned_after_corrupt_readback: false
+  generic_shell_fallback_used: false
+  scope_record_manual_edit_used: false
+  permission_expansion_used: false
+  unmerged_pr017_activation_used: false
+  canonical_main_mutated: false
+
+recovery_requirement: >-
+  Activate a Host runtime that can read and terminalize the preserved scope
+  record without discarding runtime_read_authority_roots evidence, or first
+  integrate the required backward-compatible scope schema into canonical main.
+  PR-019 must not manually strip the field or create a new mutating window.

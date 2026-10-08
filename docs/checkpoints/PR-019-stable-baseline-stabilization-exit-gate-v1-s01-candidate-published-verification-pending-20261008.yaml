@@ -1,0 +1,89 @@
+schema_version: "1.0"
+kind: devforge_slice_execution_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-019-stable-baseline-stabilization-exit-gate-v1
+slice_id: S01
+source_command: "#开发执行 PR-019-stable-baseline-stabilization-exit-gate-v1"
+
+runtime:
+  devforge_version: "2.96.0"
+  devforge_revision: c44591899fb7c3312ca7a30cc816ca878e12b462
+
+lineage:
+  run_id: run-pr019-s01-20261008-001
+  successful_publish_attempt_id: attempt-002
+  prior_interrupted_attempt_id: attempt-001
+
+transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 19
+  branch: task/stable-baseline-stabilization-exit-gate-v1
+  admitted_remote_sha: 2662d0cd8ec0711fe0d4b3fe4e001fead1bf020b
+  published_candidate_sha: 4ffb2dc312fac8d1030eb521641f6c61c33f11f0
+  candidate_parent_matches_admitted_head: true
+  remote_readback_verified: true
+
+provider:
+  provider: direct
+  adapter: codex
+  commit_lineage_message_verified: true
+  containment_proof_observed_during_attempt: true
+  synchronous_hub_response_received: false
+  hub_response_timeout_seconds: 60
+  provider_execution_timeout_seconds: 1800
+
+candidate:
+  product_files:
+    - src/sentinelx_core/handlers/direct_codex.py
+    - src/sentinelx_core/stable_baseline.py
+    - tests/test_direct_codex_execution.py
+    - tests/test_direct_codex_provider.py
+    - tests/test_stable_baseline.py
+  scope_matches_s01: true
+
+post_publish_terminalization:
+  sentinelx_service_restart_after_publish: true
+  restart_method: taskkill_tree
+  new_session_id: sess_22e53721e192
+  new_session_connected_at: "2026-10-07T17:18:14.822086+00:00"
+  service_running_readback: true
+  ping_readback: true
+  old_execution_window_terminal: true
+
+verification:
+  github_ci:
+    workflow: ci
+    run_id: 37657918852
+    head_sha: 4ffb2dc312fac8d1030eb521641f6c61c33f11f0
+    test_job_conclusion: success
+    coverage: install_and_smoke_import_only
+  focused_tests:
+    required:
+      - tests/test_direct_codex_provider.py
+      - tests/test_direct_codex_execution.py
+      - tests/test_stable_baseline.py
+    executed_with_current_candidate: false
+    reason: >-
+      Existing canonical workflows do not run these files. The isolated local
+      container cannot reach GitHub, and generic Git/workspace materialization
+      is forbidden by the current DevForge Host contract. No bypass was used.
+  disposition: verification_required
+
+safety:
+  canonical_main_mutated: false
+  provider_fallback_used: false
+  generic_git_workspace_materialization_used: false
+  generic_shell_fallback_used: false
+  permission_expansion_used: false
+  host_policy_mutated: false
+  attempt_replay_used: false
+
+result:
+  stage: implementation
+  current_slice: S01
+  current_slice_state: pending
+  candidate_published: true
+  slice_completion_claimed: false
+  verification_required:
+    - focused S01 pytest evidence for exact candidate 4ffb2dc312fac8d1030eb521641f6c61c33f11f0
+  next_action: "#开发执行 PR-019-stable-baseline-stabilization-exit-gate-v1"

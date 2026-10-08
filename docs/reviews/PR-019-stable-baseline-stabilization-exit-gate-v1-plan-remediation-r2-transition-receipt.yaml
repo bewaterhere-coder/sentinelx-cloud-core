@@ -1,0 +1,67 @@
+schema_version: "1.0"
+kind: devforge_artifact_state_transition_receipt
+task_id: PR-019-stable-baseline-stabilization-exit-gate-v1
+from_stage: plan_review_rejected
+to_stage: plan_review
+transition_rule: revised_plan_verified_and_read_back
+source_command: "#开发计划修复 PR-019-stable-baseline-stabilization-exit-gate-v1"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  canonical_branch: main
+  version: "2.95.0"
+  revision: 162337cc2fffa710d49a9cd38ab4cc8643f09ffb
+
+evidence_refs:
+  - docs/reviews/PR-019-stable-baseline-stabilization-exit-gate-v1-plan-review-r1.md@7528a44a6ba350f10b18c83ffb48e8b49ac2fc0f
+  - docs/plans/PR-019-stable-baseline-stabilization-exit-gate-v1-plan.md@4aff64a35c00d3e854fc63046faf3045caddaf0b
+  - docs/checkpoints/PR-019-stable-baseline-stabilization-exit-gate-v1-plan-remediation-r2-20261007.yaml@4fea8d3f4691dbfefd3f1be7258867559b567142
+
+task_before_digest: 2cb32aff8a58637e553ba5556ec0e898995443e6
+task_after_digest: b0f28dc9bc6b553487eca04636e95b854e90927b
+semantic_after_state_digest: b0f28dc9bc6b553487eca04636e95b854e90927b
+semantic_after_digest_basis: canonical_task_blob_readback
+verified: true
+
+plan_remediation:
+  prior_plan_revision: 1
+  prior_plan_blob_sha: 9526340ce709108b53fd2336aa6ec623d5f3e721
+  revised_plan_revision: 2
+  revised_plan_blob_sha: 4aff64a35c00d3e854fc63046faf3045caddaf0b
+  rejected_review_blob_sha: 7528a44a6ba350f10b18c83ffb48e8b49ac2fc0f
+  remediation_checkpoint_blob_sha: 4fea8d3f4691dbfefd3f1be7258867559b567142
+  requirement_revision: 1
+  requirement_semantics_changed: false
+  addressed_findings:
+    - PR019ExactCandidateHostActivationMissing
+    - DirectCodexTransportGitReadinessAuthorityMismatch
+    - UnverifiedVsNotReadyClassificationCollapsed
+
+state_after:
+  stage: plan_review
+  requirement_ready: true
+  plan_revision: 2
+  plan_approved: false
+  implementation_authorized: false
+  acceptance_approved: false
+  completion_verified: false
+  next_expected_actor: reviewer
+
+slice_authority:
+  plan_r2_slice_set_compiled: false
+  compilation_allowed_only_after_plan_r2_approval: true
+
+safety:
+  canonical_main_mutated: false
+  product_implementation_mutated: false
+  host_policy_mutated: false
+  installed_agent_mutated: false
+  project_binding_mutated: false
+  permission_or_credential_expansion_used: false
+  self_approval_performed: false
+
+completion_guard:
+  revised_plan_read_back_verified: true
+  task_transition_read_back_verified: true
+  transition_receipt_required: true
+  canonical_next_action: "#开发评审 PR-019-stable-baseline-stabilization-exit-gate-v1"

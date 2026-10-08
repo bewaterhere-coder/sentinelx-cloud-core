@@ -782,6 +782,29 @@ def _patch_fixture_chain(
         "discover_codex_chain",
         lambda *args, **kwargs: _await_chain(chain),
     )
+    _patch_verified_git_context(monkeypatch)
+
+
+def _patch_verified_git_context(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep containment fixture tests independent from the WTS Git substrate."""
+    from sentinelx_core.handlers import direct_codex as provider_module
+
+    async def _verified(self: Any, workspace: Any, budget: float) -> dict[str, Any]:
+        result = {
+            "kind": "user_scoped_git_v1",
+            "probe_attempted": True,
+            "verified": True,
+            "non_interactive": True,
+            "credential_material_exposed": False,
+        }
+        self._transport_context = result
+        return result
+
+    monkeypatch.setattr(
+        provider_module.DevforgeDirectCodexProvider,
+        "_probe_transport_context",
+        _verified,
+    )
 
 
 def _remote_rev(bare: Path, ref: str) -> str:
@@ -875,6 +898,13 @@ async def test_execute_task_provider_persists_real_host_edits(
     )
     assert proof["binding"]["workspace_digest"]
     assert proof["real_sandbox_setup"]["codex_workspace_write_setup"] is True
+    assert proof["transport_context"] == {
+        "kind": "user_scoped_git_v1",
+        "probe_attempted": True,
+        "verified": True,
+        "non_interactive": True,
+        "credential_material_exposed": False,
+    }
     readiness = provider.readiness()
     assert readiness["available"] is True
     assert readiness["verified"] is True
@@ -1194,6 +1224,19 @@ def test_readiness_verified_requires_real_sandbox_setup(tmp_path: Path) -> None:
     provider._containment_proof = dict(
         provider._containment_proof,
         real_sandbox_setup={"codex_workspace_write_setup": True},
+    )
+    # Real sandbox setup alone is insufficient: the actual user-scoped Git
+    # transport primitive is an independent mandatory part of the proof.
+    assert provider.readiness()["verified"] is False
+    provider._containment_proof = dict(
+        provider._containment_proof,
+        transport_context={
+            "kind": "user_scoped_git_v1",
+            "probe_attempted": True,
+            "verified": True,
+            "non_interactive": True,
+            "credential_material_exposed": False,
+        },
     )
     assert provider.readiness()["verified"] is True
     assert provider.repository_effect("execute_task").coverage is FirewallCoverage.PROVEN

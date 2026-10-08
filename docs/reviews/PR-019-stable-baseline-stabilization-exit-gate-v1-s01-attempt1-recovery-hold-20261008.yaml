@@ -1,0 +1,95 @@
+schema_version: "1.0"
+kind: devforge_recovery_stabilization_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-019-stable-baseline-stabilization-exit-gate-v1
+slice_id: S01
+source_command: "#开发执行 PR-019-stable-baseline-stabilization-exit-gate-v1"
+
+runtime:
+  devforge_version: "2.96.0"
+  devforge_revision: c44591899fb7c3312ca7a30cc816ca878e12b462
+
+lineage:
+  run_id: run-pr019-s01-20261008-001
+  interrupted_attempt_id: attempt-001
+  same_run_required: true
+  new_attempt_allocated: false
+  replay_performed: false
+
+recovery_inputs:
+  run_state: INTERRUPTED
+  remote_transport_outcome: reconciled_no_product_publish
+  local_terminal_readback_verified: false
+  provider_persistence_journal_readback_verified: false
+  terminal_authority_closure_verified: false
+  external_side_effect_replay_risk:
+    canonical_remote_publish: false
+    local_workspace_or_process_state: unresolved
+
+live_host:
+  host_id: host_7f0e709ded71ab24
+  label: windows
+  agent_version: 0.24.1.dev530+g7adfa7a74
+  connected: true
+  direct_codex_endpoint_present: true
+  direct_codex_current_readiness: containment_unproven
+  exec_operation_available: false
+  script_run_process_observation:
+    attempted: true
+    result: execution_profile_required
+    execution_performed: false
+  service_status:
+    sentinelx: running
+  notifications:
+    completed_jobs_for_attempt: []
+    running_jobs_for_attempt: []
+    operation_id_available: false
+
+installed_runtime_evidence:
+  direct_codex_policy_timeout_seconds: 1800
+  provider_execution_budget_uses_policy_timeout_seconds: true
+  direct_codex_child_containment:
+    kill_on_job_close: true
+    no_breakaway: true
+    timeout_terminates_job: true
+    active_process_count_rechecked_before_result: true
+  websocket_reconnect_semantics:
+    executor_created_outside_reconnect_loop: true
+    reconnect_alone_does_not_recreate_executor: true
+  proof_reset_interpretation:
+    conclusive_terminal_evidence: false
+    reason: another provider proof attempt or Agent lifecycle change could also alter process-local readiness; no exact attempt-owned terminal receipt is exposed.
+
+diagnosis:
+  sentinel_diagnose_conclusion: inconclusive
+  sentinel_diagnose_should_report: true
+  report_filed_by_this_command: false
+
+r04:
+  stabilization_gate: Hold
+  capability_profile: RecoveryOnly
+  recovery_disposition: RecoveryBlocked
+  reason: exact attempt local/provider terminal outcome is not yet proven and replay/new Attempt would violate no-replay safety
+  mutation_authority_granted: false
+  provider_fallback_authorized: false
+  permission_expansion_authorized: false
+
+effects:
+  product_files_mutated: false
+  tests_executed: false
+  direct_codex_attempt_started: false
+  provider_fallback_used: false
+  file_allowlist_widened: false
+  host_policy_mutated: false
+  service_restart_performed: false
+  canonical_main_mutated: false
+
+result:
+  stage: implementation
+  current_slice: S01
+  current_slice_state: pending
+  completed_slices: []
+  slice_completion_claimed: false
+  retry_or_resume_allowed_now: false
+  reopen_condition: exact attempt terminal readback becomes provable, or the installed 1800-second provider execution bound has elapsed and fresh Host evidence confirms the prior invocation cannot still own an active execution window
+  canonical_next_action: "#开发执行 PR-019-stable-baseline-stabilization-exit-gate-v1"

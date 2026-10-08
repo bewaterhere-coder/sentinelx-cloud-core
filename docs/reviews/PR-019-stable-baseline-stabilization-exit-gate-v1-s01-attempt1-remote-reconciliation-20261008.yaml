@@ -1,0 +1,53 @@
+schema_version: "1.0"
+kind: devforge_execution_reconciliation_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-019-stable-baseline-stabilization-exit-gate-v1
+slice_id: S01
+run_id: run-pr019-s01-20261008-001
+attempt_id: attempt-001
+source_command: "#开发执行 PR-019-stable-baseline-stabilization-exit-gate-v1"
+
+transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 19
+  branch: task/stable-baseline-stabilization-exit-gate-v1
+  admitted_head: 0c44aeb416a9026d043da5036e86c9f0f53f2a4a
+  interruption_receipt_commit: 77921b9ed4599fb94f38d912625d5bd06dc22370
+  interruption_receipt_parent: 0c44aeb416a9026d043da5036e86c9f0f53f2a4a
+  parent_matches_admitted_head: true
+
+remote_reconciliation:
+  publication_before_interruption_checkpoint: false
+  proof: interruption receipt commit directly descends from the admitted head
+  publication_after_interruption_checkpoint_permitted: false
+  provider_rule:
+    - persistence re-reads canonical remote immediately before publication
+    - remote head must equal expected_remote_sha
+    - drift raises direct_codex_transport_drift and no push is permitted
+    - ordinary push cannot fast-forward a candidate whose parent is the old admitted head over the control checkpoint commit
+  canonical_product_publish_observed: false
+  canonical_remote_side_effect_status: reconciled_no_product_publish
+
+local_execution_reconciliation:
+  containment_proof_observed: verified
+  provider_workspace_readback: unavailable_by_file_allowlist
+  permission_widening_for_diagnosis: forbidden_and_not_performed
+  codex_process_terminal_outcome: unresolved
+  provider_persistence_journal_state: unresolved
+  terminal_authority_closure: unresolved
+
+safety:
+  attempt_replay_performed: false
+  new_attempt_started: false
+  provider_fallback_used: false
+  generic_shell_diagnostic_used: false
+  file_allowlist_widened: false
+  canonical_main_mutated: false
+
+result:
+  remote_transport_outcome: reconciled
+  local_attempt_outcome: unresolved
+  slice_state: pending
+  slice_completion_claimed: false
+  recovery_requirement: prove attempt-001 local/provider terminal outcome before retry or allocate a new Attempt
+  canonical_recovery_command: "#开发执行 PR-019-stable-baseline-stabilization-exit-gate-v1"

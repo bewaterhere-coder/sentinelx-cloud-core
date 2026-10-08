@@ -1,0 +1,70 @@
+schema_version: "1.1"
+kind: devforge_artifact_state_transition_receipt
+task_id: PR-019-stable-baseline-stabilization-exit-gate-v1
+from_stage: plan_review
+to_stage: plan_review_rejected
+transition_rule: plan_review_changes_requested
+source_command: "#开发评审 PR-019-stable-baseline-stabilization-exit-gate-v1"
+evidence_refs:
+  - docs/requirements/PR-019-stable-baseline-stabilization-exit-gate-v1.md@8c82674c992c993d4a5f3f2b09ec9ab3dabe34d3
+  - docs/plans/PR-019-stable-baseline-stabilization-exit-gate-v1-plan.md@9526340ce709108b53fd2336aa6ec623d5f3e721
+  - docs/reviews/PR-019-stable-baseline-stabilization-exit-gate-v1-plan-review-r1.md@7528a44a6ba350f10b18c83ffb48e8b49ac2fc0f
+task_before_digest: 8c82674c992c993d4a5f3f2b09ec9ab3dabe34d3
+task_after_digest: 2cb32aff8a58637e553ba5556ec0e898995443e6
+semantic_after_state_digest: sha256-unavailable
+verified: true
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  version: "2.94.0"
+  revision: 4bbd40c3ce9805b759595827444b7b36c0038708
+  workflow: project_development
+  review_contract_version: "1.3"
+  slicing_contract_version: "1.1"
+
+transition:
+  from_stage: plan_review
+  to_stage: plan_review_rejected
+  decision: changes_requested
+  next_expected_actor: planner
+
+lineage:
+  requirement_revision: 1
+  task_ref: docs/requirements/PR-019-stable-baseline-stabilization-exit-gate-v1.md
+  task_blob_sha_before: 8c82674c992c993d4a5f3f2b09ec9ab3dabe34d3
+  task_blob_sha_after: 2cb32aff8a58637e553ba5556ec0e898995443e6
+  plan_ref: docs/plans/PR-019-stable-baseline-stabilization-exit-gate-v1-plan.md
+  plan_revision: 1
+  plan_blob_sha: 9526340ce709108b53fd2336aa6ec623d5f3e721
+  review_ref: docs/reviews/PR-019-stable-baseline-stabilization-exit-gate-v1-plan-review-r1.md
+  review_blob_sha: 7528a44a6ba350f10b18c83ffb48e8b49ac2fc0f
+
+repository_reality:
+  canonical_main: 1028030b33f0ea792a884491a431fffe566f6aa5
+  reviewed_task_head: b437e204abf45c38bbda0975616f98e734fc14bc
+  transport_pr: 19
+  transport_branch: task/stable-baseline-stabilization-exit-gate-v1
+
+review_findings:
+  exact_candidate_host_activation: reject_plan_local
+  direct_codex_transport_git_readiness_authority: reject_plan_local
+  unverified_vs_notready_classification: reject_plan_local
+  solution_direction: pass
+  scope_control: pass
+  ux_contract: not_applicable
+  visual_fidelity: not_applicable
+
+postconditions:
+  requirement_ready: true
+  plan_approved: false
+  implementation_authorized: false
+  acceptance_approved: false
+  completion_verified: false
+  task_stage_read_back: plan_review_rejected
+  next_expected_actor_read_back: planner
+  current_slice_read_back: null
+  product_implementation_executed: false
+
+completion_guard:
+  status: satisfied_after_receipt_readback
+  canonical_next_action: "#开发计划修复 PR-019-stable-baseline-stabilization-exit-gate-v1"

@@ -1,0 +1,92 @@
+schema_version: "1.0"
+kind: devforge_development_start_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-019-stable-baseline-stabilization-exit-gate-v1
+source_command: "#开发 SentinelX Stable Baseline & Stabilization Exit Gate V1"
+generated_on: "2026-10-07"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  branch: main
+  version: "2.93.0"
+  revision: b49d1269afb139746ec372d27ae3fef64e096420
+  workflow_id: project_development
+
+transport:
+  type: github-pr
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 19
+  branch: task/stable-baseline-stabilization-exit-gate-v1
+  base_branch: main
+  base_sha_at_start: 1028030b33f0ea792a884491a431fffe566f6aa5
+  task_head_before_receipt: e6fde9f92afd6324a1b1c01ab05c6641ada5286d
+
+artifacts:
+  requirement:
+    ref: docs/requirements/PR-019-stable-baseline-stabilization-exit-gate-v1.md
+    revision: 1
+    blob_sha: 8c82674c992c993d4a5f3f2b09ec9ab3dabe34d3
+    read_back_verified: true
+  plan:
+    ref: docs/plans/PR-019-stable-baseline-stabilization-exit-gate-v1-plan.md
+    revision: 1
+    blob_sha: 9526340ce709108b53fd2336aa6ec623d5f3e721
+    read_back_verified: true
+  provisional_bootstrap:
+    ref: docs/checkpoints/stable-baseline-stabilization-exit-gate-v1-provisional-bootstrap.md
+
+requirement_refinement:
+  requirement_ready: true
+  ui_semantics: NotApplicable
+  visual_fidelity: NotApplicable
+  material_product_decision_pending: false
+
+planning:
+  plan_ready: true
+  plan_revision: 1
+  plan_approved: false
+  implementation_authorized: false
+  proposed_slice_count: 3
+
+stabilization_scope:
+  baseline_id: windows_dev_v1
+  mandatory_live_domains:
+    - git_user_scoped_transport
+    - scoped_mutation_runtime
+    - pre_execution_audit_lineage
+    - node_npm_scoped_verification
+    - canonical_repository_mutation_firewall
+    - direct_codex_development_host
+  acceptance_only_external_evidence:
+    - real_devforge_direct_codex_e2e_receipt
+    - unity_6000_6_headless_initialization
+  blocker_taxonomy:
+    - baseline_blocker
+    - verification_required
+    - backlog
+
+repository_reality:
+  canonical_main_at_start: 1028030b33f0ea792a884491a431fffe566f6aa5
+  pr015_integrated: true
+  pr019_product_implementation_mutated: false
+
+postconditions:
+  task_id_frozen: true
+  transport_resolved_and_verified: true
+  requirement_durable_and_readback_verified: true
+  plan_durable_and_readback_verified: true
+  development_stage: plan_review
+  requirement_ready: true
+  plan_approved: false
+  implementation_authorized: false
+  next_expected_actor: reviewer
+  product_implementation_mutated: false
+
+completion_guard:
+  status: satisfied
+  canonical_next_action: "#开发评审 PR-019-stable-baseline-stabilization-exit-gate-v1"
+
+notes:
+  - "#开发 completed orchestration-side Requirement refinement and Planning only."
+  - "No SentinelX product source, Host policy, installed Agent, or canonical main was modified by this command."
+  - "Ready means sufficient for the finite Windows baseline, not defect-free or universally compatible."
