@@ -1,0 +1,36 @@
+schema_version: "1.0"
+kind: devforge_execution_slice_set
+identity:
+  task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
+  slice_set_id: PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-r10
+plan:
+  ref: docs/plans/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan.md
+  revision: 10
+  blob_sha: 30a924013aebb736277265a3f469805ad6c6dca2
+review:
+  ref: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r10.md
+  decision: Approved
+slices:
+  - slice_id: S04A
+    objective: Read-only canonical source provenance, effective Host policy and actual bounded consumer confirmation
+    depends_on: []
+    scope:
+      refs:
+        - "bewaterhere-coder/sentinelx-cloud-core:main"
+        - "bewaterhere-coder/sentinelx-cloud-core:task/devforge-execution-workspace-materialization-bridge-v1"
+      allowed_effects: [repository.read, sentinelx_structured_read_only_api, documentation_only_receipt_write_on_existing_pr_branch]
+      forbidden_effects: [product_mutation, host_mutation, canonical_main_mutation, provision_scope, execute_scoped, materialize_workspace, git_rebase, git_cherry_pick, source_restore, s01_s02_replay, long_agent_lifecycle]
+    verification:
+      required:
+        - installed_agent_source_provenance_or_explicit_unverified
+        - effective_host_policy_roots_or_explicit_unverified
+        - bounded_short_mutation_consumer_or_explicit_unverified
+        - decision_with_evidence_and_receipt_commit_blob_readback
+    checkpoint:
+      required: true
+    state: pending
+    run_refs: []
+    completion_receipt_ref: null
+historical_completed_slices: [S01, S02, S03A]
+historical_s02_candidate: 45dc99d15a23c499b4c1500fab60ed5e76475aeb
+historical_slices_replay: forbidden
