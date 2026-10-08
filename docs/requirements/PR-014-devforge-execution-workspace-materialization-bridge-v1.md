@@ -3,26 +3,26 @@ task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
 title: SentinelX DevForge Execution Workspace Materialization Bridge V1
 project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
-requirement_revision: 7
+requirement_revision: 8
 development:
-  stage: implementation
+  stage: plan_review
   gates:
     requirement_ready: true
-    plan_approved: true
+    plan_approved: false
     acceptance_approved: false
     completion_verified: false
-  plan_revision: 12
-  latest_plan_review: approved_round_12
+  plan_revision: 13
+  latest_plan_review: pending_round_13
   prior_plan_review: approved_round_6
   latest_plan_remediation: plan_r9_readonly_s03a_remediation
   prior_plan_remediation: plan_r2_remediation_r1
-  implementation_authorized: true
+  implementation_authorized: false
   blocking_findings:
-    - CanonicalMainImplementationSurfaceMismatch
-    - MissingIndependentDevForgeExecutionRootBinding
-    - DirectCodexContainmentUnproven
-  current_slice: S06A
-  current_slice_state: completed_negative_readback
+    - CanonicalFirewallDirectCodexContainmentUnproven
+    - IndependentExecutionRootBindingUnverified
+    - HistoricalPR014TransportDivergence
+  current_slice: null
+  current_slice_state: no_pending_slice_before_plan_review_r13
   completed_slices: [S01, S02, S03A, S04A, S05A, S06A]
   pending_slices: []
   implementation_execution_complete: false
@@ -31,7 +31,7 @@ development:
   acceptance_blocker: null
   acceptance_blocker_detail: null
   material_architecture_decision_required: false
-  material_architecture_decision: accepted_dual_host_owned_source_and_execution_binding
+  material_architecture_decision: pr021_minimal_short_mutation_security_substrate_only
   secondary_acceptance_finding: planned_repair_in_requirement_r3
   exact_candidate_activation_required: false
   latest_acceptance_checkpoint: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-acceptance-r2-decision-required-20261008.yaml
@@ -60,16 +60,17 @@ development:
   latest_s02_reconciliation_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-r6-reconciliation-receipt.yaml
   prior_bootstrap_receipt: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-harness-bootstrap-blocked-20261008.yaml
   superseded_slice_set_status: invalidated_by_requirement_revision_4
-  planned_pending_delta_slice: S06A
-  next_expected_actor: architect
-  canonical_next_action: "#开发 PR-014-devforge-execution-workspace-materialization-bridge-v1 修订当前方案：将当前安全阻塞收敛到 Direct Codex containment 和 Host-owned 独立执行根；不再重复 Sandbox/Audit 或旧 MutationScope 修复，禁止产品 mutation。"
+  planned_pending_delta_slice: null
+  next_expected_actor: reviewer
+  canonical_next_action: "#开发评审 PR-014-devforge-execution-workspace-materialization-bridge-v1"
   authorization:
     mode: legacy_command_scoped
 artifacts:
   requirement_review: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-requirement-review-r1.md
-  requirement_change_impact: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-requirement-r3-change-impact.md
+  requirement_change_impact: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-requirement-r8-change-impact-20261008.md
   plan: docs/plans/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan.md
   latest_plan_review: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r12.md
+  pending_plan_review: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r13.md
   latest_plan_review_transition_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r7-transition-receipt.yaml
   prior_plan_review: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r6.md
   prior_plan_review_transition_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r6-transition-receipt.yaml
@@ -80,6 +81,7 @@ artifacts:
   latest_replan: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-replan-r7-20261008.yaml
   latest_replan_transition_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-replan-r7-transition-receipt.yaml
   execution_slice_set: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-r12-slices.yaml
+  execution_slice_set_status: historical_only_r13_pending_review
   superseded_execution_slice_set: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-r6-slices.yaml
   latest_execution_run: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-run-001.yaml
   latest_execution_checkpoint: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-completion-20261008.yaml
@@ -101,9 +103,10 @@ transport:
 requirement_readiness:
   result: Ready
   depth: deep
-  requirement_revision: 5
-  revision_reason: observed_host_consumer_canonical_source_unresolved
+  requirement_revision: 8
+  revision_reason: restored_main_dev791_live_firewall_and_pr021_boundary
   prior_plan_revalidation_required: true
+  pending_plan_review_revision: 13
   material_questions: []
   ui_semantics:
     applicability: NotApplicable
@@ -111,6 +114,32 @@ requirement_readiness:
 ---
 
 # Requirement
+
+## Requirement Revision 8 — Restored main / dev791 minimal-runtime security closure (2026-10-08)
+
+**R8 governs the next Gate; R1–R7 are preserved as historical evidence.** PR-021 Minimal Runtime Boundary remains the controlling architecture. No product, Host, CI, transport, canonical main, or execution mutation is authorized solely by this Revision.
+
+### Current facts
+
+1. **Current source owner is now visible.** GitHub `bewaterhere-coder/sentinelx-cloud-core` `main@5d9286b22f46ae8bdf6d983b6366da0da3f1323e` contains `src/sentinelx_core`, `pyproject.toml`, tests and current product implementation after PR #24 recovery. The former "canonical main contains no product source" blocker is obsolete. Historical PR #14 implementation remains materially divergent and is not automatically current-main code.
+2. **Deployed evidence.** Connected Windows Host runs `0.24.1.dev791+g5d9286b22` from the restored-main install attempt. Matching version prefix is credible provenance but not an independently verified reproducible wheel/source digest. No product identity is inferred from the older `45dc99d` candidate.
+3. **Security substrate works.** `host_mutation_sandbox_v1` and `pre_execution_audit_lineage_v1` both report `available=true, verified=true`; Windows AppContainer/ACL/Job/MutationScope/audit self-checks PASS. `runtime_read_authority_roots` parse failure is not observed on dev791. Do not mutate, reset or migrate durable scope records speculatively.
+4. **P0 security blocker remains.** `canonical_repository_mutation_firewall_v1` is `available=false, verified=false` for `local_api:direct_codex_containment_unproven`. `devforge_direct_codex` is registered/projected but lacks verified physical containment. Valid closure must prove any uncontained mutating action is genuinely **unreachable** under explicit Host policy (not just hidden from feature status), or prove its actual physical containment. Do not suppress firewall diagnostics, whitelist unsafe mutation, or claim verified while an uncontained endpoint remains callable.
+5. **Host placement not admitted.** Effective location only shows legacy `devforge_workspace_root=D:\\coco`; a separately Host-owned `devforge_execution_workspace_root` is absent. An existing directory at `D:\\SentinelX\\devforge-workspaces` is not itself authoritative binding. Protected `D:\\coco` may never be narrowed or bypassed; canonical source and execution placement must remain independent.
+6. **Legacy materializer is out of scope.** Current-main `devforge_runtime` contract revision 1 provides bounded lifecycle/`execute_scoped`, not `materialize_workspace`. The PR #14 revision-2 materializer is historical unmerged code. Under PR-021, long CodeBuddy/Codex Agent bootstrap, source checkout hydration, handoff and long development lifecycle belong to DevForge / guided CLI and are not R8 deliverables.
+
+### Required outcomes and explicit boundaries
+
+- **A: P0 Firewall integrity.** Repair only effective reachable-surface classification/admission if necessary, against exact current-main source and targeted tests. If Direct Codex is deprecated under PR-021, any disabling/retirement still requires independently authorized, fail-closed Host policy or product change and readback. No automatic removal or bypass.
+- **B: Independent short-mutation placement.** First prove an actual bounded synchronous consumer requires a separate root. Then require Host-owned, independently admitted source/execution bindings, protected-root non-overlap, sealed MutationScope, durable audit START, AppContainer/Job enforcement and exact readback. No generic checkout/materialization/long-Agent lifecycle. Configuration mutation requires separate authorization.
+- **C: No-loss PR #14 transport.** Keep the exact Task, PR, branch, history and S01–S06A evidence. The previous `45dc99d15a23c499b4c1500fab60ed5e76475aeb` is evidence only. No blind rebase/cherry-pick/force-push, broad old-code merge, replay or canonical main mutation. Any proposed implementation needs reviewed current-main path ownership and a transport strategy proving no unexpected deletion/replacement before code mutation.
+- **D: Verification.** Test real Firewall readiness and negative uncontained endpoint reachability; preserve Sandbox/Audit/MutationScope PASS and `main + clean`. Node/npm readiness is separately failing and must not be relabeled PASS without its own affected-scope proof. No completion claim before physical Host receipts.
+
+**Gate:** Requirement R8 Ready for proposed Plan R13 Review only; `plan_approved=false`, `implementation_authorized=false`, zero pending new slices. Review may reject if exact current-main transport, Host authority or required consumer cannot be proven.
+
+Next: `#开发评审 PR-014-devforge-execution-workspace-materialization-bridge-v1`.
+
+---
 
 ## Requirement Revision 7 — Post-upgrade security re-admission (2026-10-08)
 
