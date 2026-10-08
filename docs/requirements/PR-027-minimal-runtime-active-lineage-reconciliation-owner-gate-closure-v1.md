@@ -5,21 +5,24 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 1
 development:
-  stage: acceptance
+  stage: accepted
   gates:
     requirement_ready: true
     plan_approved: true
-    acceptance_approved: false
+    acceptance_approved: true
     completion_verified: false
   plan_revision: 1
   implementation_authorized: false
-  next_expected_actor: reviewer
-  canonical_next_action: "#开发验收 PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1"
+  next_expected_actor: integration
+  canonical_next_action: "#开发完成 PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1"
   current_slice: S04
   current_slice_state: completed
   completed_slices: [S01, S02, S03, S04]
   implementation_execution_complete: true
-  formal_acceptance_performed: false
+  formal_acceptance_performed: true
+  acceptance_result: Approved
+  accepted_coordination_only: true
+  accepted_program_exit: false
   blocking_findings: []
 transport:
   type: github-pr
@@ -53,6 +56,11 @@ artifacts:
     "19": docs/handoffs/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-pr19-owner-packet.md
     "20": docs/handoffs/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-pr20-owner-packet.md
   owner_handoffs_verified: true
+  latest_acceptance_review: docs/reviews/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-acceptance-r1.md
+  latest_acceptance_review_sha: 6bdf714ca1d09cf62df2b6088406f5799de34ae3
+  latest_acceptance_receipt: docs/reviews/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-acceptance-r1-receipt.yaml
+  latest_acceptance_receipt_sha: bec69e2bd61ff3860bffa9f4fdc8b72d0456c99a
+  acceptance_transition_receipt: docs/reviews/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-acceptance-r1-transition-receipt.yaml
   owner_pr_reconciliation:
     snapshot_sha: 91cdaea8bc77b919f42ea44c23d9b6b2d78ca164
     owner_prs: [13, 14, 19, 20]
@@ -179,8 +187,8 @@ This is **documentation/control-plane governance**. UX/visual/interaction gates:
 
 ## 7. Gate
 
-Current Gate: **Acceptance pending — Plan R1 Approved, S01/S02/S03/S04 completed; coordination AC1–AC16 PASS; MRS-01 HOLD**. Plan Review R1 and the exact four-Slice Plan R1 execution set have been persisted and independently read back. This approves only PR #27 evidence/documentation work; no Owner PR Gate is approved, no Owner PR mutation is authorized, and no MRS-01 exit receipt has been created. `MRS01=HOLD`, `MRS02=not admitted`. Canonical next action:
+Current Gate: **Accepted — PR #27 coordination AC1–AC16 PASS; MRS-01 remains HOLD and MRS-02 remains not admitted**. Plan Review R1 and the exact four-Slice Plan R1 execution set have been persisted and independently read back. This approves only PR #27 evidence/documentation work; no Owner PR Gate is approved, no Owner PR mutation is authorized, and no MRS-01 exit receipt has been created. `MRS01=HOLD`, `MRS02=not admitted`. Canonical next action:
 
 ```text
-#开发验收 PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1
+#开发完成 PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1
 ```
