@@ -5,7 +5,7 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 1
 development:
-  stage: planning
+  stage: plan_review
   gates:
     requirement_ready: true
     plan_approved: false
@@ -13,7 +13,7 @@ development:
     completion_verified: false
   plan_revision: 1
   implementation_authorized: false
-  next_expected_actor: planner
+  next_expected_actor: reviewer
   blocking_findings: []
   current_slice: null
   completed_slices: []
