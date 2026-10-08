@@ -1,66 +1,43 @@
-# PR-014 — Plan R9: Read-only Canonical Topology Reconciliation
+# PR-014 — Plan R10: Source Ownership & Actual Short-Mutation Consumer Readback
 
-## Binding
 ```yaml
 task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
-requirement_revision: 4
-plan_revision: 9
-status: ready_for_plan_review
+requirement_revision: 5
+plan_revision: 10
+stage: ready_for_plan_review
+plan_approved: false
 implementation_authorized: false
 canonical_pr: 14
 branch: task/devforge-execution-workspace-materialization-bridge-v1
-historical_s01_s02: evidence_only_no_replay
-candidate: 45dc99d15a23c499b4c1500fab60ed5e76475aeb
+prior_plan_r9_s03a: completed_negative_reconciliation
+historical_candidate: 45dc99d15a23c499b4c1500fab60ed5e76475aeb
 ```
 
-## Scope and decision
+## Scope
 
-This Plan remedies rejected R8 finding `IncompleteExecutableSliceAdmission`. It contains **one independently verifiable read-only slice, S03A only**. No conditional S03B/S03C implementation is approved, proposed as an executable slice, or silently inherited from R8. This is a governance/evidence investigation under Requirement R4 and canonical PR-021 Minimal Runtime Boundary V1. PR #14 branch and Task identity remain unchanged.
+One read-only evidence slice **S04A** only. This plan must not authorize product mutations, Git tree restoration, canonical main change, Host policy edits, materialization, agent lifecycle, CI workflows, or historical S01/S02 replay. It consumes prior S03A negative evidence and a new live Host readback: operational Windows agent `0.24.1.dev260+g45dc99d15` exposes `devforge_runtime` contract revision 2 including `execute_scoped` (API existence verified), but has not proven an actual bounded business consumer or source ownership.
 
-## Exact proposed slice S03A — Canonical topology and bounded-consumer evidence
+## S04A — Canonical product owner / effective policy / consumer admission
 
 ```yaml
-slice_id: S03A
-objective: Prove current canonical runtime source ownership, repository topology, and necessity of additional short-mutation workspace placement.
+slice_id: S04A
 depends_on: []
-allowed_effects: [repository.read, canonical_git_metadata_read, documentation_only_receipt_write_on_existing_pr_branch]
-forbidden_effects: [product_mutation, host_mutation, main_mutation, rebase, cherry_pick, source_restoration, shell_fallback, source_capsule, materialize_workspace, direct_agent_bootstrap, s01_s02_replay]
+effects: [github_repository_read, sentinelx_structured_read_only_api, documentation_only_receipt_write_to_existing_pr14]
+forbidden_effects: [product_code_mutation, host_mutation, canonical_main_mutation, scope_provision, scoped_execution, materialize_workspace, git_rebase, git_cherry_pick, source_restore, s01_s02_replay, long_agent_invocation]
 outputs:
-  - current-main-implementation-topology-readback
-  - short-mutation-consumer-necessity-matrix
-  - branch-main-integration-disposition
-  - durable-s03a-decision-and-evidence-receipt
+  - installed_agent_source_provenance_and_canonical_main_topology_matrix
+  - effective_host_policy_roots_readback_or_explicit_unverified
+  - execute_scoped_actual_consumer_and_gap_matrix
+  - no_delta_or_product_delta_decision_with_receipt
 checkpoint_required: true
 ```
 
-### Deterministic procedure
+Read canonical main tree and GitHub historical file-change evidence to determine **whether and why** source paths moved/disappeared; pair with read-only installed package/runtime identity without assuming the installed version identifies canonical main. Inspect closed `devforge_runtime` projection and effective Host source/protected/execution placement policy via structured read-only endpoints only. Find an actual short `execute_scoped` consumer and distinguish its current capability from missing workspace placement needs. Explicitly mark unverifiable facts as `unverified`.
 
-1. Read exact current GitHub `main` SHA, tree, build/package entrypoints, source directories and PR-021 Architecture; compare PR #14 branch lineage and mergeability. Record source absence/movement without guessing deletion rationale.
-2. Find the **actual authoritative installed/canonical product implementation location** and how current Host policy, MutationScope, AppContainer/Job, audit and canonical mutation firewall map to it. Distinguish evidence, historical branch code, active installed runtime and current `main`. Do not infer one from another. If unavailable, record `CanonicalMainImplementationSurfaceMismatch` as unresolved.
-3. Identify an actual bounded synchronous short-mutation consumer, with source/capability contract and why existing policy/runtime cannot serve it; distinguish necessary dedicated DevForge execution placement from obsolete user-level Development Host handoff.
-4. Produce one evidence table listing exact current refs, missing paths, dependency ownership, protected-root policy constraints, and whether separate Host-owned source and execution placement are necessary. Evaluate MutationScope known additive field `runtime_read_authority_roots` compatibility as research only.
-5. Persist evidence/decision receipt to this PR branch, then read back exact blob/commit. Outcome must be one of `TopologyAndConsumerProven`, `NoAdditionalProductDeltaNeeded`, or `DecisionRequired/Blocked`, with justification and explicit safe integration/disposition. If unresolved, stop; **no product mutation**.
-6. S03A completion denotes completion of **this reconnaissance Plan only**, not overall Task completion or acceptance of the original materialization bridge. Any subsequent source mutation requires a separately revised Plan, Review, compiled Slice Set, and explicit implementation authority on a verified canonical source surface.
+Decision must be `NoAdditionalProductDeltaNeeded`, `ProductDeltaCandidateRequiresNewReviewedPlan`, or `DecisionRequired/Blocked`. A positive product-delta decision is **not implementation authority**; it only supports a separate exact-path, exact-test Plan Review. A negative result is valid S04A evidence and prevents blind development. Write evidence/receipt to PR #14, verify exact remote readback and preserve Task/branch identity.
 
-### Verification
+## Gate and acceptance
 
-- Exact GitHub current-main SHA and relevant tree/file/commit references read back; exact PR head and divergence evidence.
-- Consumer evidence must identify actual bounded API/call site or explicitly fail; negative findings are permitted as valid read-only results.
-- Every claimed Host effective policy fact is backed by current authoritative policy readback; otherwise mark `unverified`.
-- Receipt includes identity, current source refs, observed topology, decision, unknowns, no mutation declaration and transport commit/blob readback.
-- Cross-check historical S01/S02 artifacts and `45dc99d15a23c499b4c1500fab60ed5e76475aeb` as provenance only.
-- No edits to product source, current main, Host configuration, CI workflows or permissions.
+Plan R10 review may admit a **single executable read-only S04A** only. The approved Plan R9 S03A completed checkpoint remains immutable. R10 cannot compile future product slices. Security invariants from Requirement R5/R4 and merged PR-021 stay frozen for future gates. PR mergeability unresolved and no automatic rebase or restore is authorized.
 
-## R8 finding closure
-
-`IncompleteExecutableSliceAdmission` is addressed at **Plan-local** level by removing conditional S03B/S03C from the active slice scope. The Review may compile a one-slice S03A Slice Set with no unproven product-path dependencies. The unresolved real-world topology remains the subject of S03A, not an excuse to preapprove product mutation.
-
-## Preserved invariants
-
-Host-owned canonical source vs independent DevForge placement, no weakening `D:\coco` protected root, no carve-outs or caller paths, exact mutation scope and durable schema migration semantics, audit START, AppContainer/Job and firewall remain Requirement R4 obligations **for any future mutation**, but are not implemented in S03A. Historical R8 rejection, prior plans, receipts and candidates remain immutable.
-
-## Next action
-
-```text
-#开发评审 PR-014-devforge-execution-workspace-materialization-bridge-v1
-```
+Next: `#开发评审 PR-014-devforge-execution-workspace-materialization-bridge-v1`.
