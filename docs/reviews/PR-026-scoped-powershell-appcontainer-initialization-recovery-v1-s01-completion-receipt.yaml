@@ -1,0 +1,61 @@
+﻿schema_version: "1.1"
+kind: devforge_slice_completion_receipt
+task_id: PR-026-scoped-powershell-appcontainer-initialization-recovery-v1
+slice: S01
+result: completed_evidence_recorded
+one_execute_one_slice: true
+
+revisions:
+  task_head_before_slice: 8b3dc01fdfa80fd94edb63cb8a698f980100a4e3
+  canonical_main: 2e5c69a112323867ee01783521554c43ebd731be
+  devforge_runtime: 2.103.0 @ ebc25425160790950bd4d4500186652d3bf52416
+  installed_host: 0.24.1.dev791+g5d9286b22
+  installed_host_blob_parity_vs_main: pass
+
+artifacts:
+  run_record: docs/execution/PR-026-scoped-powershell-appcontainer-initialization-recovery-v1-s01-run-001.yaml
+  run_record_blob: 2684aa244e67d51cb1cc66f3a969e822310ef278
+  checkpoint: docs/checkpoints/PR-026-scoped-powershell-appcontainer-initialization-recovery-v1-s01-completion-20261008.yaml
+  checkpoint_blob: 2dfa5d58b1cc353455f4c951491608ebdf4f1a2c
+  probe_evidence: docs/execution/s01-evidence/s01-probe-evidence.json
+  probe_evidence_blob: 76d3aee0c065482e92cd766684eeb0fafff04382
+  probe_driver: docs/execution/s01-evidence/s01-probe-driver.py
+  probe_driver_blob: 69cc70d548a0936ffff3be66b0a52ceb474fc805
+
+source_change_blobs:
+  src/sentinelx_core/winspawn.py: 22760ecaf33d02e73df2ce0e7eba81723773ec32
+  src/sentinelx_core/handlers/scoped_script.py: 91c695c8317e3867ee086fe924be899bc663dbbd
+  tests/test_scoped_script_execution.py: 90e4d0150e5d4ce34807288969db8aa26dbd373c
+
+test_evidence:
+  unpatched_baseline: 7 failed / 7 passed / 1 skipped
+  patched: 8 failed / 8 passed / 1 skipped
+  delta: new S01 diagnostic test only; all failures are the documented
+    pre-existing non-admin ancestor-DACL limitation, reproduced on the
+    unpatched tree in the same session
+  regression_attributable_to_slice: none
+
+key_findings:
+  - raw child exit status is now durably captured before scope terminalization
+    (decimal + 0x%08X) and persisted in the FINISH audit event
+  - PowerShell 5.1 initialized and executed inside a real AppContainer in an
+    interactive user session with raw exit 0 (patched-primitive A/B probe)
+  - interpreter-image/dependency/CLR init class DISCONFIRMED for the
+    interactive-session environment
+  - prime remaining suspect is the Session-0 LocalSystem service execution
+    context; discriminating it requires one patched service-context run,
+    outside the S01 grant
+  - no PowerShell compatibility fix was implemented or claimed
+
+safety:
+  canonical_main_mutated: false
+  canonical_checkout: main + clean
+  unrestricted_fallback_used: false
+  protected_root_or_acl_expansion: none
+  pr018_replay: none
+  config_modifications: none
+  probe_appcontainer_profiles_deleted: true
+
+readback:
+  receipt_hashes_self_verified: true
+  push_cas_required: true

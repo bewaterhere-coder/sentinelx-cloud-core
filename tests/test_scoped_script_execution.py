@@ -574,3 +574,74 @@ def test_activation_residual_runtime_authority_never_false_terminal(
     events = MutationAuditJournal(store.root.parent, evidence_retention_days=7).read_events()
     assert [event["event"] for event in events] == [EVENT_STARTED]
     assert EVENT_FINISHED not in [event["event"] for event in events]
+
+
+def test_scoped_powershell_startup_failure_preserves_raw_child_exit_status(
+    tmp_path: Path,
+) -> None:
+    """PR-026 S01: the startup-failure branch must retain the raw child status."""
+    handler, context, store, record, mutation, lineage, repo = _fixture(
+        tmp_path, attempt_id="ps-raw-exit", interpreter="powershell"
+    )
+    try:
+        result = _run(
+            handler,
+            context,
+            {
+                "interpreter": "powershell",
+                "content": "Write-Output 'SCOPED_PS_OK'",
+                "timeout": 30,
+                "mutation": mutation,
+                "lineage": lineage,
+                "repository": repo,
+            },
+        )
+    except HandlerError as exc:
+        assert exc.code == "HostMutationSandboxUnavailable"
+        message = str(exc)
+        assert "required AppContainer" in message
+        # Explicit decimal-plus-hex raw status, or an explicit negative
+        # readback.  Never a synthetic script-level return code.
+        assert (
+            "raw child exit status" in message
+            and ("unavailable" in message or "/ 0x" in message)
+        )
+        assert store.read_scope(record.scope_id).state == "terminal"
+        events = MutationAuditJournal(
+            store.root.parent, evidence_retention_days=7
+        ).read_events()
+        finished = [event for event in events if event["event"] == EVENT_FINISHED]
+        assert finished and finished[-1]["error_code"] == "HostMutationSandboxUnavailable"
+        raw = finished[-1].get("returncode")
+        assert raw is None or (isinstance(raw, int) and raw >= 0)
+        assert finished[-1]["closure"]["process_tree_quiescent"] is True
+        return
+    assert result["ok"] is True
+    assert "SCOPED_PS_OK" in result["output"]
+
+
+def test_suspended_job_process_exit_code_snapshot_survives_close() -> None:
+    """PR-026 S01: exit_code stays readable after the handles are closed."""
+    from sentinelx_core.winspawn import SuspendedJobProcess
+
+    closed_with_status = SuspendedJobProcess(
+        pid=0,
+        job_ref="sxjob_test",
+        _process=0,
+        _thread=0,
+        _job=0,
+        _closed=True,
+        _last_exit_code=3221225781,
+    )
+    assert closed_with_status.exit_code == 3221225781
+
+    closed_unavailable = SuspendedJobProcess(
+        pid=0,
+        job_ref="sxjob_test",
+        _process=0,
+        _thread=0,
+        _job=0,
+        _closed=True,
+        _last_exit_code=None,
+    )
+    assert closed_unavailable.exit_code is None

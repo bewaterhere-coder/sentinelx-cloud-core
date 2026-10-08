@@ -591,16 +591,29 @@ async def _run_scoped(
             # the trusted runner (observed with Windows PowerShell 5.1 under
             # AppContainer on some hosts).  This is availability, never a reason
             # to retry through unrestricted execution.
+            # PR-026 S01: sample the raw child exit status BEFORE scope
+            # terminalization closes the process handles.  The value is the
+            # unsigned NTSTATUS/exit DWORD when observed, or an explicit
+            # negative readback when unavailable; it is never replaced by a
+            # synthetic script-level return code.
+            raw_exit = process.exit_code
             terminal = sandbox.terminalize(scope_id, generation)
             terminalized = True
+            if raw_exit is not None:
+                status_suffix = (
+                    f" (raw child exit status: {raw_exit} / 0x{raw_exit & 0xFFFFFFFF:08X})"
+                )
+            else:
+                status_suffix = " (raw child exit status: unavailable)"
             audit.finish(
                 start, status="failed", closure=_finish_closure(terminal, process),
-                error_code="HostMutationSandboxUnavailable",
+                returncode=raw_exit, error_code="HostMutationSandboxUnavailable",
             )
             finished = True
             raise HandlerError(
                 "HostMutationSandboxUnavailable",
-                f"{prepared.interpreter} could not initialize inside the required AppContainer",
+                f"{prepared.interpreter} could not initialize inside the required "
+                f"AppContainer{status_suffix}",
             )
         try:
             returncode = int(result_path.read_text(encoding="ascii").strip())

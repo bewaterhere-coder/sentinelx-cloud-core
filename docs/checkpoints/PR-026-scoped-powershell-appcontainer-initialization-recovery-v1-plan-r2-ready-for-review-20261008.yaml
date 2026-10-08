@@ -1,0 +1,42 @@
+﻿schema_version: "1.1"
+kind: devforge_plan_revision_ready_for_review_checkpoint
+task_id: PR-026-scoped-powershell-appcontainer-initialization-recovery-v1
+checkpoint_date: 20261008
+
+basis:
+  s01_receipt: docs/reviews/PR-026-scoped-powershell-appcontainer-initialization-recovery-v1-s01-completion-receipt.yaml
+  s01_commit: c4a40288096e25bc1ba82a50f35be27a6a3bdd71
+  prior_plan: R1 approved (S01 only); S01 completed and immutable
+
+plan_revision: 2
+plan_ref: docs/plans/PR-026-scoped-powershell-appcontainer-initialization-recovery-v1-plan.md
+plan_blob: d3640c624f2890b54d7266b059aa4a0fd73a96d7
+requirement_blob_after_state_update: 6a0a6319fe0a82dd21812dafd07bdb4a99f25a3c
+
+r2_scope:
+  - S02 only: discriminate Session-0/LocalSystem service context vs the
+    already-proven interactive-session AppContainer behavior
+  - raw exit code, exact workspace/lineage and permission/audit evidence
+    MUST be obtained before any compatibility repair decision
+  - least-authority service overlay (two patched blobs) with byte read-back
+    and mandatory rollback-by-default, one production probe, read-only
+    journal extraction
+  - compatibility repair NOT authorized by R2; requires further
+    evidence-proven revision and review
+
+forbidden_unchanged:
+  - S01 replay
+  - ACL/protected-root expansion
+  - PR-018 replay
+  - unrestricted fallback
+  - canonical main mutation
+
+state_after:
+  stage: plan_review
+  plan_revision: 2
+  plan_state: proposed
+  plan_approved: false
+  implementation_authorized: false
+  next_expected_actor: reviewer
+
+canonical_next_action: "#寮€鍙戣瘎瀹?PR-026-scoped-powershell-appcontainer-initialization-recovery-v1"

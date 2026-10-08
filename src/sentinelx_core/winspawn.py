@@ -239,6 +239,7 @@ class SuspendedJobProcess:
     _job: int
     _resumed: bool = False
     _closed: bool = False
+    _last_exit_code: int | None = None
 
     @property
     def contained(self) -> bool:
@@ -304,7 +305,9 @@ class SuspendedJobProcess:
     @property
     def exit_code(self) -> int | None:
         if self._closed:
-            return None
+            # Fail-closed diagnostic readback: the raw child status sampled
+            # while the process handle was still open (PR-026 S01).
+            return self._last_exit_code
         k32 = _windows_only()
         code = wintypes.DWORD()
         if not k32.GetExitCodeProcess(self._process, ctypes.byref(code)):
@@ -335,6 +338,13 @@ class SuspendedJobProcess:
             if self.active_process_count:
                 self.terminate()
         finally:
+            # Sample the raw child exit status while the process handle is
+            # still open, so startup-failure diagnostics survive handle
+            # closure (PR-026 S01). Unavailable status stays explicitly None.
+            try:
+                self._last_exit_code = self.exit_code
+            except Exception:
+                self._last_exit_code = None
             for handle in (self._thread, self._process, self._job):
                 if handle:
                     k32.CloseHandle(handle)

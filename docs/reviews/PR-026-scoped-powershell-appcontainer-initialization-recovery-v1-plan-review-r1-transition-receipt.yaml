@@ -1,0 +1,103 @@
+﻿schema_version: "1.1"
+kind: devforge_artifact_state_transition_receipt
+task_id: PR-026-scoped-powershell-appcontainer-initialization-recovery-v1
+from_stage: plan_review
+to_stage: implementation
+transition_rule: plan_review_approved_s01_diagnostic_only_s02_s03_hold
+source_command: "#寮€鍙戣瘎瀹?PR-026-scoped-powershell-appcontainer-initialization-recovery-v1"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  canonical_branch: main
+  version: "2.103.0"
+  revision: ebc25425160790950bd4d4500186652d3bf52416
+  command_registry_blob: 957da84ad11e8f37ee7b9f0492674a81b020c346
+
+evidence_refs:
+  - docs/requirements/PR-026-scoped-powershell-appcontainer-initialization-recovery-v1.md@c0dbb0f886173b6ace6d65a06d43e27cbce9fe95
+  - docs/plans/PR-026-scoped-powershell-appcontainer-initialization-recovery-v1-plan.md@3157b999849a30c3474f3a5e7a4ca91e0b047f39
+  - docs/reviews/PR-026-scoped-powershell-appcontainer-initialization-recovery-v1-plan-review-r1.md@df73f142513c6a2a65bd916e121760487b48686b
+  - docs/execution/PR-026-scoped-powershell-appcontainer-initialization-recovery-v1-slices.yaml@71f2e3b2fc3298fdd1db5cf27338213ce19c32fd
+
+review_decision:
+  result: Approved
+  approved_scope: S01_diagnostic_only
+  held_scope: [S02, S03]
+  hold_reason: S02/S03 require evidence-proven root cause and a separate Plan Revision R2 passing #寮€鍙戣瘎瀹?before any product mutation
+
+task_before_digest: 2b50d5ea66e0d6719880c03180658556b21a31ca
+task_after_digest: c0dbb0f886173b6ace6d65a06d43e27cbce9fe95
+semantic_after_state_digest: c0dbb0f886173b6ace6d65a06d43e27cbce9fe95
+semantic_after_digest_basis: canonical_task_blob_readback
+verified: true
+
+transition:
+  from_stage: plan_review
+  to_stage: implementation
+  decision: approved
+  next_expected_actor: implementer
+
+lineage:
+  requirement_revision: 1
+  task_ref: docs/requirements/PR-026-scoped-powershell-appcontainer-initialization-recovery-v1.md
+  task_blob_sha_before: 2b50d5ea66e0d6719880c03180658556b21a31ca
+  task_blob_sha_after: c0dbb0f886173b6ace6d65a06d43e27cbce9fe95
+  plan_ref: docs/plans/PR-026-scoped-powershell-appcontainer-initialization-recovery-v1-plan.md
+  plan_revision: 1
+  plan_blob_sha_before: e3288e6db607ba4365f3056719e41a17e34cc6b9
+  plan_blob_sha_after: 3157b999849a30c3474f3a5e7a4ca91e0b047f39
+  review_ref: docs/reviews/PR-026-scoped-powershell-appcontainer-initialization-recovery-v1-plan-review-r1.md
+  review_blob_sha: df73f142513c6a2a65bd916e121760487b48686b
+  slice_set_ref: docs/execution/PR-026-scoped-powershell-appcontainer-initialization-recovery-v1-slices.yaml
+  slice_set_blob_sha: 71f2e3b2fc3298fdd1db5cf27338213ce19c32fd
+
+repository_reality:
+  canonical_main: 2e5c69a112323867ee01783521554c43ebd731be
+  reviewed_task_head_before_review_artifacts: 4fa5f4f481f226425719a8eb8a913ef89541f1ad
+  transport_pr: 26
+  transport_branch: task/scoped-powershell-appcontainer-initialization-recovery-v1
+  execution_workspace: pr026-s01-a1 (independent clone; canonical checkout main+clean untouched)
+
+state_after:
+  stage: implementation
+  requirement_ready: true
+  plan_revision: 1
+  plan_approved: true
+  implementation_authorized: true
+  implementation_scope: s01_diagnostic_only
+  acceptance_approved: false
+  completion_verified: false
+  next_expected_actor: implementer
+  current_slice: S01
+  current_slice_state: pending
+
+slice_authority:
+  slice_set_id: PR-026-scoped-powershell-appcontainer-initialization-recovery-v1-plan-r1
+  current_slice: S01
+  dependencies_verified: true
+  one_execute_one_slice: true
+  s02_depends_on: S01_plus_plan_r2_review
+  s03_depends_on: S02
+
+execution_entry:
+  bootstrap_required: false
+  guided_cli_required_for_current_slice: false
+  rationale: S01 is bounded diagnostic evidence acquisition plus conditional fail-closed observability repair within the execution workspace
+  execution_performed: false
+
+safety:
+  product_implementation_executed: false
+  product_source_mutated: false
+  tests_mutated: false
+  canonical_main_mutated: false
+  production_hub_mutated: false
+  project_binding_mutated: false
+  active_related_pr_mutated: false
+  provider_disabled_or_deleted: false
+  permission_or_credential_expansion_used: false
+
+completion_guard:
+  approved_review_read_back_verified: true
+  exact_plan_slice_set_read_back_verified: true
+  task_transition_read_back_verified: true
+  canonical_next_action: "#寮€鍙戞墽琛?PR-026-scoped-powershell-appcontainer-initialization-recovery-v1"
