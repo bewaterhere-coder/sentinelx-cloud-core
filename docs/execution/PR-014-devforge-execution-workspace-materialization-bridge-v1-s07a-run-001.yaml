@@ -22,8 +22,8 @@ executor:
   adapter: github_sentinelx_structured_readonly
   provider: orchestration_manual_thin_evidence
 runtime:
-  state: VERIFYING
-  reason_code: owner_gate_DecisionRequired_Blocked_not_run_failure
+  state: COMPLETED
+  reason_code: readonly_evidence_completed_owner_gate_still_blocked
   current_attempt: ATTEMPT-001
 ledger_ref: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-s07a-run-001-ledger.yaml
 artifacts:
@@ -36,4 +36,4 @@ verification:
     - original_pr_transport_retained
     - no_product_or_host_or_main_mutation
     - finalization_and_slice_checkpoint_readback
-finalization_ref: null
+finalization_ref: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-s07a-run-001-finalization.yaml
