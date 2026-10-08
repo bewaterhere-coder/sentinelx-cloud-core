@@ -1,0 +1,49 @@
+schema_version: "1.1"
+kind: devforge_artifact_state_transition_receipt
+task_id: PR-029-direct-codex-host-owned-disablement-negative-reachability-v1
+project_id: sentinelx-cloud-core
+source_command: "#开发评审 PR-029-direct-codex-host-owned-disablement-negative-reachability-v1"
+transition:
+  from_stage: plan_review
+  to_stage: plan_review_rejected
+  transition_rule: plan_review_changes_requested
+  review_decision: Rejected
+  verified: true
+review:
+  ref: docs/reviews/PR-029-direct-codex-host-owned-disablement-negative-reachability-v1-plan-review-r1.md
+  blob_sha: 4e0663bc1288487699d2eb590e427f7eb78acf89
+  findings: [R1-F01, R1-F02, R1-F03, R1-F04]
+  finding_classification:
+    R1-F01: plan_local_with_external_owner_gate_precondition
+    R1-F02: plan_local
+    R1-F03: plan_local
+    R1-F04: plan_local
+source:
+  requirement_revision: 1
+  task_before_blob_sha: 0f7359ce1d71d59fd07f6a97af566aa7814927c4
+  task_after_blob_sha: 385129f8668002a8786023ecb43bb6a4122b78f3
+  reviewed_plan_revision: 1
+  reviewed_plan_blob_sha: 17c3846423bc40b9e836f8713e5ffa2f20a55376
+transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr: 29
+  branch: task/direct-codex-host-owned-disablement-negative-reachability-v1
+  branch_head_at_review: 5eba81ab1c6eb8e812b3f95ddc94e83e9cae8f8c
+  main_at_review: 2e5c69a112323867ee01783521554c43ebd731be
+  devforge_main: 047df4f1c45ce9099ec112017063751243c78d7b
+state_after:
+  stage: plan_review_rejected
+  plan_approved: false
+  implementation_authorized: false
+  host_policy_mutation_authorized: false
+  direct_codex_execution_authorized: false
+  safety_negative_call_authorized: false
+  next_expected_actor: planner
+  canonical_next_action: "#开发计划修复 PR-029-direct-codex-host-owned-disablement-negative-reachability-v1"
+safety:
+  current_plan_slices_compiled: false
+  host_mutation_performed: false
+  local_api_call_performed: false
+  source_or_main_mutation_performed: false
+  historical_pr14_mutation_performed: false
+  mrs01: HOLD
