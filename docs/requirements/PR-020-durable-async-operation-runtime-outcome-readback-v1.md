@@ -49,6 +49,14 @@ artifacts:
   minimal_runtime_adr_sha: 36e0290de039336a8e4ce8561c22c731f12e9602
   owner_gate_matrix_sha: 7507dff0032f29a99387c25f648508c48a03b6e9
   owner_handoff_sha: 3b5ef4d066293250ebc8ebbcf549d9b5f14f94cc
+  current_plan_r5_sha: 7bf279fd97f07db670e791fe9d886a2370ad4f24
+  historical_slice_set_suspended_sha: efe2bc0467e7efc1d57e8aa56758b1b075a36356
+  bootstrap_override_revoked_sha: b80ca8ea9ebc8755255c2d51f63874df4b9791d2
+  bootstrap_revocation_receipt_sha: 2c46f90aad5669c12c6a6147e0940164c6d9c643
+  requirement_r2_plan_r5_impact_ref: docs/reviews/PR-020-durable-async-operation-runtime-outcome-readback-v1-requirement-r2-plan-r5-hold-change-impact-20261008.md
+  requirement_r2_plan_r5_impact_sha: a875c84707e2700a08c37eefefde5efb331ff2ec
+  hold_review_readiness_ref: docs/checkpoints/PR-020-durable-async-operation-runtime-outcome-readback-v1-r2-r5-hold-review-ready-20261008.yaml
+  hold_review_readiness_sha: 774daa80c598be2627fbbd2c5cf9a60016563ece
 requirement_readiness:
   result: ReadyForHoldPlanReview
   ui_semantics: NotApplicable
