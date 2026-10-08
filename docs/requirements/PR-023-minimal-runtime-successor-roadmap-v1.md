@@ -5,12 +5,12 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 1
 development:
-  stage: accepted
+  stage: done
   gates:
     requirement_ready: true
     plan_approved: true
     acceptance_approved: true
-    completion_verified: false
+    completion_verified: true
   plan_revision: 2
   prior_approved_plan_revision: 1
   prior_approved_plan_blob_sha: 5bdb8e70887a7b78f12d01f81477273d0b0df29b
@@ -38,8 +38,8 @@ development:
     passed_count: 15
     failed_count: 1
     scope_repair_required: true
-  next_expected_actor: integration
-  canonical_next_action: "#开发完成 PR-023-minimal-runtime-successor-roadmap-v1"
+  next_expected_actor: null
+  canonical_next_action: null
   current_slice: S05R
   current_slice_state: completed
   completed_slices: [S05R]
@@ -55,21 +55,30 @@ development:
   r1_replay_authorized: false
   implementation_execution_complete: true
   finalization:
-    ready_for_merge: true
+    ready_for_merge: false
     canonical_state_verified: true
     plan_execution_state_verified: true
     evidence_verified: true
     transport_preconditions_verified: true
     acceptance_approved: true
-    integration_verified: false
-    merge_pending: true
-    reconciliation_required_after_merge: true
+    integration_verified: true
+    merge_pending: false
+    reconciliation_required_after_merge: false
+    reconciliation_authoritative_after_main_readback: true
+    original_merge_commit_sha: 31fb0c874a1a7400257eba761820a30581a5cb0d
+    reconciliation_pr_number: 25
+    reconciliation_branch: reconcile/pr-023-minimal-runtime-successor-roadmap-v1-completion
+    reconciliation_receipt: docs/reviews/PR-023-minimal-runtime-successor-roadmap-v1-integration-receipt-r1.yaml
     transport_base_revalidated_sha: 5d9286b22f46ae8bdf6d983b6366da0da3f1323e
     plan_r2_pre_finalization_blob_sha: 9e56b512951b8dcaa4b7d6789d3bc350a5f24dce
     plan_r2_finalization_blob_sha: e3221237fa03073e451d5091970c1428cf028f17
+    plan_r2_completed_blob_sha: 14a47867735489366e0b01acab454021d17239ec
     finalization_receipt: docs/checkpoints/PR-023-minimal-runtime-successor-roadmap-v1-premerge-finalization-r1-receipt.yaml
     integration_receipt: docs/reviews/PR-023-minimal-runtime-successor-roadmap-v1-integration-receipt-r1.yaml
     completion_transition_receipt: docs/checkpoints/PR-023-minimal-runtime-successor-roadmap-v1-accepted-to-done-transition-receipt.yaml
+    completion_review: docs/reviews/PR-023-minimal-runtime-successor-roadmap-v1-completion-r1.md
+    completion_review_blob_sha: ecdcb9289db52d9e18fb7108bc9a5df9e81580b3
+    integration_receipt_blob_sha: 2120b132aaa393e241487578f5778cc56f06e9d0
   formal_acceptance_performed: true
   latest_acceptance_review: docs/reviews/PR-023-minimal-runtime-successor-roadmap-v1-acceptance-r1.md
   latest_acceptance_review_sha: a2ec4fd0d1da224808beede6c5751b8a3c926009
