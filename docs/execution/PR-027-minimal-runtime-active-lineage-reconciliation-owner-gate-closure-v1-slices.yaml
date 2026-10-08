@@ -1,0 +1,172 @@
+schema_version: "1.0"
+kind: devforge_execution_slice_set
+identity:
+  task_id: PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1
+  slice_set_id: PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-plan-r1
+
+plan:
+  ref: docs/plans/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-plan.md
+  revision: 1
+  reviewed_blob_sha: 3d8b5b56e4235cdb22880ec01c45885e7fced8f6
+  review_ref: docs/reviews/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-plan-review-r1.md
+  review_blob_sha: 89d727f54f5d334a7db9b4d572e25cf40808659e
+  review_result: Approved
+requirement:
+  ref: docs/requirements/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1.md
+  revision: 1
+  reviewed_blob_sha: 237db269f9cd965a7a2c25d938e679865e3cc102
+
+transport:
+  type: github-pr
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 27
+  branch: task/minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1
+  base_branch: main
+  initial_main_sha: 8d2bafba87b529fb458faaa7fbdce39fe225361f
+
+execution_policy:
+  one_execute_one_slice: true
+  current_plan_bound: true
+  docs_only: true
+  user_scoped_approval_per_execution: required
+  remote_source_readback_before_every_slice: required
+  fresh_owner_gate_and_receipt_readback_before_classification: required
+  missing_owner_receipt_disposition: HOLD
+  host_mutation: forbidden
+  product_code_mutation: forbidden
+  tests_and_ci_mutation: forbidden
+  canonical_main_mutation: forbidden
+  other_pr_branch_or_gate_mutation: forbidden
+  devforge_repository_or_binding_mutation: forbidden
+  read_write_permission_expansion: forbidden
+  protected_root_carveout: forbidden
+  owner_slice_replay: forbidden
+  unapproved_plan_reuse: forbidden
+  MRS02_unlock_by_this_task: forbidden
+
+baseline:
+  required_authorities:
+    - docs/architecture/sentinelx-minimal-runtime-boundary-v1.md
+    - docs/architecture/sentinelx-capability-disposition-matrix-v1.md
+    - docs/architecture/sentinelx-minimal-runtime-successor-roadmap-v1.md
+  owner_prs: [13, 14, 19, 20]
+  owner_mutation_authority: false
+  independent_prs: [16, 26]
+  MRS01_preliminary_disposition: HOLD
+
+slices:
+  - slice_id: S01
+    title: Canonical Reality and Owner-Drift Snapshot
+    depends_on: []
+    state: pending
+    scope:
+      read_refs:
+        - github:main
+        - github:PR-021-completion
+        - github:PR-023-completion
+        - github:PR-013-Task-Plan-Run-Receipts
+        - github:PR-014-Task-Plan-Review-Receipts
+        - github:PR-019-Task-Plan-Run-Receipts
+        - github:PR-020-Task-Plan-Run-Receipts
+        - devforge:project-registry
+      write_refs:
+        - docs/checkpoints/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-s01-owner-reality-*.yaml
+        - docs/checkpoints/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-s01-completion-*.yaml
+        - docs/execution/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-s01-run-*.yaml
+        - docs/requirements/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1.md
+        - docs/execution/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-slices.yaml
+    verification:
+      - all_four_owner_pr_identities_read_back
+      - old_pr_description_vs_current_task_classified
+      - main_and_architecture_authority_current
+      - exact_nonmigrated_pr27_transport_verified
+      - no_other_pr_write_or_host_operation
+      - missing_evidence_marked_unverified_not_pass
+    completion_receipt_pattern: docs/checkpoints/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-s01-completion-*.yaml
+    run_refs: []
+  - slice_id: S02
+    title: Minimal Runtime Disposition and Owner-Gate Matrix
+    depends_on: [S01]
+    state: pending
+    scope:
+      read_refs:
+        - verified:S01-Receipt
+        - github:current-main-and-owner-PRs
+      write_refs:
+        - docs/architecture/sentinelx-minimal-runtime-active-lineage-owner-gate-matrix-v1.md
+        - docs/checkpoints/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-s02-completion-*.yaml
+        - docs/execution/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-s02-run-*.yaml
+        - docs/requirements/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1.md
+        - docs/execution/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-slices.yaml
+    verification:
+      - four_owner_dispositions_and_missing_receipt_matrix
+      - PR13_scoped_transaction_only
+      - PR14_R8_R14_readonly_gate
+      - PR19_real_host_revalidation_requirement
+      - PR20_HOLD_owner_conflict_recorded
+      - mrs01_HOLD_unless_all_owner_exit_receipts_verified
+      - no_mrs02_or_binding_change
+    completion_receipt_pattern: docs/checkpoints/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-s02-completion-*.yaml
+    run_refs: []
+  - slice_id: S03
+    title: Four Owner-Scoped Decision and Handoff Packets
+    depends_on: [S02]
+    state: pending
+    scope:
+      read_refs:
+        - verified:S02-Receipt
+        - github:current-main-and-owner-PRs
+      write_refs:
+        - docs/handoffs/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-pr13-owner-packet.md
+        - docs/handoffs/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-pr14-owner-packet.md
+        - docs/handoffs/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-pr19-owner-packet.md
+        - docs/handoffs/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-pr20-owner-packet.md
+        - docs/checkpoints/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-s03-completion-*.yaml
+        - docs/execution/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-s03-run-*.yaml
+        - docs/requirements/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1.md
+        - docs/execution/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-slices.yaml
+    verification:
+      - four_distinct_owner_packets
+      - each_packet_exact_live_task_head_plan_and_gate
+      - allowed_and_forbidden_owner_scope
+      - exact_owner_only_command_and_receipt_obligation
+      - no_owner_PR_or_Task_mutation
+      - historical_completed_slices_preserved
+    completion_receipt_pattern: docs/checkpoints/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-s03-completion-*.yaml
+    run_refs: []
+  - slice_id: S04
+    title: Deterministic Program Exit Projection and Final Verification
+    depends_on: [S03]
+    state: pending
+    scope:
+      read_refs:
+        - verified:S03-Receipt
+        - github:current-main-and-owner-PRs
+        - github:PR027-current-diff
+      write_refs:
+        - docs/checkpoints/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-s04-final-verification-*.yaml
+        - docs/checkpoints/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-s04-completion-*.yaml
+        - docs/execution/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-s04-run-*.yaml
+        - docs/requirements/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1.md
+        - docs/execution/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-slices.yaml
+    verification:
+      - AC1_through_AC16_independently_evaluated
+      - separate_coordination_package_and_program_exit_verdicts
+      - mrs01_ACCEPTED_ONLY_with_four_verified_owner_exit_receipts
+      - if_mrs01_HOLD_then_mrs02_admitted_false
+      - all_changed_files_task_owned_docs_only
+      - previous_slices_completed_and_receipts_readback_verified
+      - no_cross_owner_or_host_mutation
+    completion_receipt_pattern: docs/checkpoints/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-s04-completion-*.yaml
+    run_refs: []
+
+current:
+  slice_id: S01
+  state: pending
+execution_summary:
+  completed_slices: []
+  implementation_execution_complete: false
+  owner_gates_closed_by_this_task: false
+  mrs01_program_exit: HOLD
+  mrs02_admitted: false
+  acceptance_performed: false
