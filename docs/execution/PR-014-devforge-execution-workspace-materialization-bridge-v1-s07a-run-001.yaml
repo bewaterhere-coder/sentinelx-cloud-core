@@ -1,0 +1,39 @@
+schema_version: "0.1"
+kind: devforge_execution_run
+identity:
+  task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
+  run_id: RUN-PR014-S07A-001
+  slice_id: S07A
+stage:
+  development_stage: implementation
+source:
+  requirement_ref: docs/requirements/PR-014-devforge-execution-workspace-materialization-bridge-v1.md
+  plan_ref: docs/plans/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan.md
+  plan_revision: 14
+  slice_ref: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-r14-slices.yaml
+  slice_id: S07A
+transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  canonical_pr: 14
+  canonical_branch: task/devforge-execution-workspace-materialization-bridge-v1
+  lock: true
+executor:
+  harness: null
+  adapter: github_sentinelx_structured_readonly
+  provider: orchestration_manual_thin_evidence
+runtime:
+  state: VERIFYING
+  reason_code: owner_gate_DecisionRequired_Blocked_not_run_failure
+  current_attempt: ATTEMPT-001
+ledger_ref: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-s07a-run-001-ledger.yaml
+artifacts:
+  refs:
+    - docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-s07a-decision-20261008.md
+    - docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-s07a-attempt-001-receipt.yaml
+verification:
+  required:
+    - readonly_evidence_committed_and_readback
+    - original_pr_transport_retained
+    - no_product_or_host_or_main_mutation
+    - finalization_and_slice_checkpoint_readback
+finalization_ref: null
