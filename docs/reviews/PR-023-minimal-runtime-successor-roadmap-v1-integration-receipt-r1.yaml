@@ -51,4 +51,9 @@ reconciliation:
   product_code_modified: false
   host_or_deployment_mutated: false
   authoritative_done_requires_reconciliation_merge_and_main_readback: true
-  status: pending
+  reconciliation_pr_number: 25
+  reconciliation_transport: github-pr
+  reconciliation_base: main
+  reconciliation_branch: reconcile/pr-023-minimal-runtime-successor-roadmap-v1-completion
+  status: prepared_for_reconciliation_merge
+  final_done_only_after_main_readback: true
