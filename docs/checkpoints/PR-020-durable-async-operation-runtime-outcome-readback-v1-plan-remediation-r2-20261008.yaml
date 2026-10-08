@@ -1,0 +1,70 @@
+schema_version: "1.0"
+kind: devforge_plan_remediation_checkpoint
+task_id: PR-020-durable-async-operation-runtime-outcome-readback-v1
+source_command: "#开发计划修复 PR-020-durable-async-operation-runtime-outcome-readback-v1"
+
+runtime:
+  devforge_version: "2.95.0"
+  devforge_revision: a693dde368c5c3b43ea577581190cac16c5b81ff
+  sentinelx_canonical_main: 1028030b33f0ea792a884491a431fffe566f6aa5
+
+input:
+  requirement_revision: 1
+  rejected_plan_revision: 1
+  rejected_plan_blob_sha: 4d5e7d0883f3fd597755eb40227233b7b0c91cf7
+  rejected_review_ref: docs/reviews/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan-review-r1.md
+  rejected_review_blob_sha: dfc94d92218729c2adc45622dd5db2902d7aac74
+
+output:
+  revised_plan_revision: 2
+  revised_plan_ref: docs/plans/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan.md
+  revised_plan_blob_sha: e553a058e3feee880130cc68e5a1698505005402
+  requirement_semantics_changed: false
+  transport_changed: false
+  project_binding_changed: false
+  implementation_started: false
+
+addressed_findings:
+  - id: DurableIdentityAdmissionNotAtomic
+    resolution: "Plan R2 freezes process-local per-identity locking plus a durable Windows create-if-absent semantic identity claim before ADMITTED persistence and provider callback start; concurrent duplicate verification requires callback count exactly one."
+  - id: DurableRuntimeAgentLifecycleOwnerUndefined
+    resolution: "Plan R2 freezes one Executor-owned DurableOperationRuntime/Store/Registry for the Agent process, injected into local_api/providers/background compatibility, with startup reconciliation once before material admission."
+  - id: DurableStatePlacementCrashConsistencyUndefined
+    resolution: "Plan R2 freezes config_path.parent/state/durable-operations as Agent-private V1 Windows storage, protected from generic file surfaces, and defines claim/ADMITTED/callback/receipt/SUCCEEDED persistence and crash-repair ordering."
+  - id: SelfHostBootstrapDependsOnMissingAsyncBoundary
+    resolution: "Plan R2 forbids synchronous direct/codex S01 mutation and requires an explicit task-scoped direct:codebuddy bootstrap admission after Plan approval/Slice Set and before the first product mutation; unavailable bootstrap blocks before mutation."
+
+frozen_plan_r2:
+  atomic_identity_claim: true
+  claim_creation: windows_create_if_absent
+  same_identity_same_request: reuse_existing_operation
+  same_identity_changed_request: conflict_before_callback
+  runtime_owner: one_executor_owned_agent_runtime
+  startup_reconciliation_before_material_admission: true
+  state_root: config_path_parent_state_durable_operations
+  upload_base_as_operation_truth: forbidden
+  generic_file_surface_access_to_state_root: forbidden
+  terminal_receipt_before_succeeded: true
+  bootstrap_target_for_s01: direct_codebuddy
+  bootstrap_requires_explicit_command: true
+  canonical_project_binding_changed: false
+  synchronous_direct_codex_timeout_gamble_for_s01: forbidden
+  provider_fallback: forbidden
+
+safety:
+  canonical_main_mutated: false
+  product_code_mutated: false
+  host_policy_mutated: false
+  installed_agent_mutated: false
+  production_hub_mutated: false
+  project_binding_mutated: false
+  permission_expansion_used: false
+  credential_mutation_used: false
+  self_approval_performed: false
+
+next_state:
+  stage: plan_review
+  plan_revision: 2
+  plan_approved: false
+  implementation_authorized: false
+  next_expected_actor: reviewer

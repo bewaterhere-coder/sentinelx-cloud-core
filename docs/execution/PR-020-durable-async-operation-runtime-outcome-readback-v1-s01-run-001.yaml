@@ -1,0 +1,103 @@
+schema_version: "0.1"
+kind: devforge_execution_run
+identity:
+  task_id: PR-020-durable-async-operation-runtime-outcome-readback-v1
+  run_id: RUN-PR020-S01-001
+stage:
+  development_stage: implementation
+source:
+  requirement_ref: docs/requirements/PR-020-durable-async-operation-runtime-outcome-readback-v1.md
+  requirement_revision: 1
+  plan_ref: docs/plans/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan.md
+  plan_revision: 4
+  plan_blob_sha: 304cbf2ab58b4fa3835c35b343bd1214565c2920
+  slice_ref: docs/execution/PR-020-durable-async-operation-runtime-outcome-readback-v1-slices.yaml
+  slice_set_blob_sha: 106eedfa8a6f1047e486c4b57369d1e279915cff
+  slice_id: S01
+transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  canonical_pr: 20
+  canonical_branch: task/durable-async-operation-runtime-outcome-readback-v1
+  lock: true
+executor:
+  provider: direct
+  adapter: codebuddy
+  bootstrap_override_ref: docs/checkpoints/PR-020-durable-async-operation-runtime-outcome-readback-v1-bootstrap-execution-override.yaml
+  bootstrap_override_digest: 3cd9ee272c25db4b3e662c92772b68196f3617594cb3e257f71570933d8db5bd
+runtime:
+  state: BLOCKED
+  reason_code: WorkspaceMaterializationProviderUnavailable
+  current_attempt: ATTEMPT-001
+  devforge_revision: 99d7becdf15ca7631867ea2a39dd213750600ef6
+  started_at: null
+  finished_at: null
+attempt:
+  attempt_id: ATTEMPT-001
+  material_side_effect_started: false
+  provider_process_started: false
+  codebuddy_invoked: false
+pre_mutation_evidence:
+  exact_task_readback: true
+  exact_plan_readback: true
+  exact_slice_set_readback: true
+  bootstrap_override_active: true
+  bootstrap_target_registered: true
+  bootstrap_target_live_available: true
+  project_binding_unchanged: true
+  live_agent:
+    host_id: host_7f0e709ded71ab24
+    version: 0.24.1.dev530+g7adfa7a74
+    host_mutation_sandbox_v1: verified
+    pre_execution_audit_lineage_v1: verified
+    local_api_endpoints:
+      - devforge_runtime
+      - devforge_direct_codex
+    devforge_runtime_actions:
+      - provision_scope
+      - revalidate_scope
+      - inspect_scope
+      - terminalize_scope
+      - execute_scoped
+    materialize_workspace_action_present: false
+  workspace:
+    exact_pr020_execution_workspace_preexisting: false
+    generic_git_worktree_or_clone_fallback_forbidden: true
+    source_checkout_mutation_forbidden: true
+    provider_hash_placement_is_not_current_devforge_materialization_contract: true
+blocking_dependency:
+  pr014:
+    task_id: PR-014-devforge-execution-workspace-materialization-bridge-v1
+    stage: implementation
+    current_slice: S02
+    current_slice_state: pending
+    s01_completed: true
+    s02_objective: expose bounded path-free materialize_workspace over canonical repository transaction/materializer capability
+    s02_dependency_gate: pr013_canonical_transaction_capability
+  pr013:
+    task_id: PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1
+    stage: implementation
+    current_slice: S03
+    current_slice_state: pending
+    completed_slices: [S01, S02]
+    merged_to_main: false
+    acceptance_approved: false
+    completion_verified: false
+decision_boundary:
+  detected: true
+  class: architecture
+  reason: "Current Approved Plan R4 requires direct:codebuddy bootstrap, but a new compliant Host-local CodeBuddy execution workspace cannot be materialized until PR-014 S02 exists; PR-014 S02 is gated on PR-013 canonical completion. No allowed fallback can create the workspace."
+  forbidden_resolutions:
+    - blind PR-013 S03 replay
+    - generic git worktree or clone
+    - source checkout mutation
+    - direct/codex fallback
+    - permission or Host-policy expansion
+    - caller-selected workspace path
+artifacts:
+  refs:
+    - docs/checkpoints/PR-020-durable-async-operation-runtime-outcome-readback-v1-bootstrap-execution-override-receipt.yaml
+verification:
+  required:
+    - no product mutation before compliant workspace admission
+    - no provider fallback
+finalization_ref: docs/checkpoints/PR-020-durable-async-operation-runtime-outcome-readback-v1-s01-blocked-20261008.yaml

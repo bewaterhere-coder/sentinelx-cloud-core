@@ -1,0 +1,72 @@
+schema_version: "1.0"
+kind: devforge_artifact_state_transition_receipt
+task_id: PR-020-durable-async-operation-runtime-outcome-readback-v1
+from_stage: plan_review_rejected
+to_stage: plan_review
+transition_rule: revised_plan_verified_and_read_back
+source_command: "#开发计划修复 PR-020-durable-async-operation-runtime-outcome-readback-v1"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  canonical_branch: main
+  version: "2.95.0"
+  revision: c44591899fb7c3312ca7a30cc816ca878e12b462
+
+evidence_refs:
+  - "https://github.com/bewaterhere-coder/sentinelx-cloud-core/pull/20#issuecomment-6042688379"
+  - docs/plans/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan.md@304cbf2ab58b4fa3835c35b343bd1214565c2920
+  - docs/checkpoints/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan-remediation-r4-20261008.yaml@53dac9156f9f6f1ec9b760fe57f864ced17cda39
+
+task_before_digest: 96e972a75df1e75e9e62cc51db6afc9f3529dad1
+task_after_digest: f0374d11ff0bd5213e9486b4a1ec59fc090deb55
+semantic_after_state_digest: f0374d11ff0bd5213e9486b4a1ec59fc090deb55
+semantic_after_digest_basis: canonical_task_blob_readback
+verified: true
+
+plan_remediation:
+  prior_plan_revision: 3
+  prior_plan_blob_sha: 2f0de7f19ac29bf77c8c85f452b53ad47ccebc51
+  revised_plan_revision: 4
+  revised_plan_blob_sha: 304cbf2ab58b4fa3835c35b343bd1214565c2920
+  rejected_review_ref: "https://github.com/bewaterhere-coder/sentinelx-cloud-core/pull/20#issuecomment-6042688379"
+  remediation_checkpoint_blob_sha: 53dac9156f9f6f1ec9b760fe57f864ced17cda39
+  requirement_revision: 1
+  requirement_semantics_changed: false
+  addressed_findings:
+    - ExecutionEntryStalePlanRevisionBinding
+
+state_after:
+  stage: plan_review
+  requirement_ready: true
+  plan_revision: 4
+  plan_approved: false
+  implementation_authorized: false
+  acceptance_approved: false
+  completion_verified: false
+  next_expected_actor: reviewer
+
+slice_authority:
+  plan_r4_slice_set_compiled: false
+  compilation_allowed_only_after_plan_r4_approval: true
+
+exact_plan_binding:
+  current_plan_revision: 4
+  current_plan_blob_sha: 304cbf2ab58b4fa3835c35b343bd1214565c2920
+  stale_prior_revision_execution_binding: forbidden
+  bootstrap_must_bind_exact_current_approved_plan: true
+  slice_set_must_bind_exact_current_approved_plan: true
+
+safety:
+  canonical_main_mutated: false
+  product_implementation_mutated: false
+  host_policy_mutated: false
+  installed_agent_mutated: false
+  project_binding_mutated: false
+  permission_or_credential_expansion_used: false
+  self_approval_performed: false
+
+completion_guard:
+  revised_plan_read_back_verified: true
+  task_transition_read_back_verified: true
+  transition_receipt_required: true
+  canonical_next_action: "#开发评审 PR-020-durable-async-operation-runtime-outcome-readback-v1"

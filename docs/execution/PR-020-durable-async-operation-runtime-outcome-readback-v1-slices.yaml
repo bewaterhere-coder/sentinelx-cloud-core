@@ -1,0 +1,289 @@
+schema_version: "1.1"
+kind: devforge_execution_slice_set
+identity:
+  task_id: PR-020-durable-async-operation-runtime-outcome-readback-v1
+  slice_set_id: PR-020-durable-async-operation-runtime-outcome-readback-v1-plan-r4
+plan:
+  ref: docs/plans/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan.md
+  revision: 4
+  blob_sha: 304cbf2ab58b4fa3835c35b343bd1214565c2920
+  requirement_revision: 1
+review:
+  ref: docs/reviews/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan-review-r4.md
+  blob_sha: 2082e376c8bda337f5d82eb34785a499d6295a5c
+  decision: Approved
+repository_baseline:
+  main_sha: 1028030b33f0ea792a884491a431fffe566f6aa5
+  reviewed_task_head: aa5ba8a23e6673d165ce6c803725caa32a9daea3
+runtime_provenance:
+  devforge_version: "2.95.0"
+  devforge_main_sha: c44591899fb7c3312ca7a30cc816ca878e12b462
+
+implementation_entry_guard:
+  required_before_each_slice: true
+  admission_state: revoked
+  implementation_authorized: false
+  reason_code: PR021_MinimalRuntime_Supersedes_TimeoutDriven_DurableAsync
+  R4_plan_approval_historical_only: true
+  current_owner_requirement_revision: 2
+  proposed_owner_plan_revision: 5
+  no_slice_execution_or_bootstrap: true
+  s01_bootstrap_required: false
+  s01_bootstrap_target: null
+  s01_bootstrap_command: null
+  rules:
+    - re-read current Task, exact Approved Plan R4 blob, this Slice Set, canonical main and PR #20 head before mutation
+    - preserve PR #20 Task/branch/PR transport identity
+    - fail closed on Requirement, Plan, Slice Set, transport or security-boundary drift
+    - S01 must not mutate product code until the explicit task-scoped direct:codebuddy bootstrap override is admitted and read back
+    - project direct/codex binding remains unchanged
+    - no fallback to synchronous direct/codex while durable async operation readback is not live-verified
+    - no replacement branch or PR
+    - no permission credential Host-policy or write-scope expansion
+    - one explicit #开发执行 invocation completes at most one Slice
+    - completed Slice side effects are never replayed
+    - PR-013 uncertain S03 is evidence only and must never be blindly replayed
+
+slices:
+  - slice_id: S01
+    objective: Implement the provider-neutral core DurableOperationRuntime, atomic semantic-identity admission, Agent-private protected store, lifecycle, restart reconciliation, bounded retention and tombstones, without production provider adoption.
+    depends_on: []
+    state: suspended
+    scope:
+      refs:
+        - src/sentinelx_core/durable_operations.py
+        - src/sentinelx_core/executor.py
+        - src/sentinelx_core/client.py
+        - src/sentinelx_core/handlers/__init__.py
+        - src/sentinelx_core/handlers/fileops.py
+        - src/sentinelx_core/handlers/edit.py
+        - src/sentinelx_core/handlers/fsmutate.py
+        - tests/test_durable_operations.py
+        - tests/test_durable_operation_lifecycle.py
+      authorized_changes:
+        - one Executor-owned DurableOperationRuntime Store and Registry
+        - deterministic provider/action/semantic-identity claim with Windows create-if-absent semantics
+        - durable ADMITTED-before-callback ordering
+        - canonical lifecycle and receipt-before-SUCCEEDED enforcement
+        - startup reconciliation once before material admission
+        - config_path.parent/state/durable-operations internal protected root
+        - 7-day full terminal evidence and 30-day total tombstone lifecycle
+        - tombstone-first terminal cleanup and expired-evidence projection
+        - descriptor-level post-retention semantic-freshness contract
+        - bounded audit metadata with no secrets
+      forbidden:
+        - provider-specific Codex CodeBuddy Unity game or model lifecycle logic in core
+        - upload_base as canonical operation truth
+        - caller-selected state retention cleanup identity keys executable path credentials or permissions
+        - provider callback during startup reconciliation or GC
+        - generic cancellation authority
+        - production Hub changes
+    verification:
+      required:
+        - concurrent identical starts produce one claim one operation_id and exactly one callback
+        - concurrent conflicting request invokes no second callback
+        - Windows exclusive claim create is atomic
+        - claim and ADMITTED are durable before callback
+        - claim-only crash becomes INTERRUPTED without replay when no tombstone exists
+        - receipt is durable before SUCCEEDED
+        - receipt/state split repairs without replay
+        - malformed or tampered state fails closed
+        - one Executor owns one runtime/store and no mutable module-global runtime exists
+        - startup reconciliation completes once before material admission
+        - protected state root cannot be read or mutated through generic file APIs even under a broader configured ancestor
+        - terminal full evidence is not GC eligible before 7 days
+        - nonterminal OUTCOME_UNKNOWN and quarantined evidence is not terminal-GC eligible
+        - tombstone is durable and read back before claim record receipt cleanup
+        - partial cleanup preserves tombstone authority
+        - tombstone-phase duplicate executes zero provider callbacks
+        - tombstone expiry alone cannot admit material work
+        - semantic freshness unproven executes zero provider callbacks
+        - retention clock is injectable in tests and caller cannot select retention
+    checkpoint:
+      required: true
+    run_refs:
+      - docs/execution/PR-020-durable-async-operation-runtime-outcome-readback-v1-s01-run-001.yaml
+    latest_execution_checkpoint_ref: docs/checkpoints/PR-020-durable-async-operation-runtime-outcome-readback-v1-s01-blocked-20261008.yaml
+    completion_receipt_ref: null
+
+  - slice_id: S02
+    objective: Expose the bounded sentinel_operations builtin start/status/receipt surface through the existing local_api envelope using the same core runtime.
+    depends_on: [S01]
+    state: suspended
+    scope:
+      refs:
+        - src/sentinelx_core/handlers/durable_operations.py
+        - src/sentinelx_core/handlers/local_api.py
+        - src/sentinelx_core/handlers/__init__.py
+        - tests/test_durable_operations_local_api.py
+        - tests/test_local_api.py
+      authorized_changes:
+        - registered sentinel_operations builtin
+        - start target validation and prompt operation_id acknowledgement
+        - read-only status and receipt projection
+        - tombstone expired-evidence status and receipt semantics
+        - explicit async eligibility registry
+      forbidden:
+        - arbitrary local_api forwarding
+        - external configured endpoint tunneling
+        - caller descriptor registration
+        - list-all cancel executable path credential permission or Host-policy controls
+        - second operation-state truth
+    verification:
+      required:
+        - endpoint is discoverable only when registered
+        - unregistered target fails closed
+        - provider request validation and semantic freshness admission occur before claim/callback
+        - start returns promptly with stable operation_id
+        - same request returns same operation while evidence is retained
+        - conflicting authority-bearing request fails before callback
+        - tombstone-phase duplicate is replay-forbidden
+        - status and receipt are read-only
+        - receipt_expired and evidence_expired projections are deterministic
+        - external configured local_api cannot be tunneled
+        - no path executable credential cancel or list-all authority is exposed
+    checkpoint:
+      required: true
+    run_refs: []
+    completion_receipt_ref: null
+
+  - slice_id: S03
+    objective: Adapt Direct Codex and one Host Runtime long action to the shared DurableOperationRuntime and compose current background job/pending-results delivery compatibility.
+    depends_on: [S02]
+    state: suspended
+    scope:
+      refs:
+        - src/sentinelx_core/handlers/direct_codex.py
+        - src/sentinelx_core/handlers/devforge_runtime.py
+        - src/sentinelx_core/client.py
+        - src/sentinelx_core/jobs.py
+        - src/sentinelx_core/pending_results.py
+        - tests/test_direct_codex_execution.py
+        - tests/test_devforge_runtime_local_api.py
+        - tests/test_jobs.py
+        - tests/test_pending_results.py
+      authorized_changes:
+        - Direct Codex durable-operation descriptor adapter
+        - Direct Codex provider-owned semantic identity and semantic-freshness resolver
+        - Host Runtime durable-operation descriptor adapter for at least one current long builtin action
+        - Host Runtime provider-owned semantic freshness check appropriate to its current authority contract
+        - read-back-first provider reconciler integration
+        - job_id to operation_id compatibility binding
+        - terminal job_completed derivation from persisted terminal truth where migrated
+        - pending_results delivery replay compatibility
+      forbidden:
+        - private Direct Codex or Host Runtime async lifecycle
+        - replay to discover uncertain Git publication outcome
+        - generic core interpretation of DevForge Task Run Attempt Slice semantics
+        - provider permission workspace credential transport or mutation-scope widening
+        - Hub schema change
+        - pending_results becoming operation truth
+    verification:
+      required:
+        - Direct Codex has no private async lifecycle
+        - Host Runtime uses the same core runtime/store
+        - both material provider families fail closed when semantic freshness is unproven
+        - Direct Codex stale expected_remote_sha fails freshness without callback
+        - existing provider security semantics remain unchanged
+        - uncertain Git publication performs read-back before replay consideration
+        - duplicate same DevForge semantic attempt returns same operation while retained
+        - changed expected head or authority-bearing request conflicts
+        - local_api and background compatibility share one runtime/store
+        - job_completed uses persisted terminal outcome where migrated
+        - pending_results remains delivery-only
+        - existing background exec/script behavior remains compatible
+        - production Hub source/schema remains unchanged
+    checkpoint:
+      required: true
+    run_refs: []
+    completion_receipt_ref: null
+
+  - slice_id: S04
+    objective: Produce Windows physical E2E and blocker-closure evidence for long Direct Codex, lost delivery, restart recovery, duplicate suppression, retention/GC and security preservation.
+    depends_on: [S03]
+    state: suspended
+    scope:
+      refs:
+        - exact PR-020 candidate commit and remote branch readback
+        - Windows Agent exact-candidate activation through the existing admitted install/restart workflow
+        - sentinel_operations live start/status/receipt surface
+        - Direct Codex provider receipt and canonical remote readback
+        - Host Runtime durable-operation fixture
+        - docs/checkpoints/PR-020-durable-async-operation-runtime-outcome-readback-v1-s04-*.yaml
+        - docs/reviews/PR-020-durable-async-operation-runtime-outcome-readback-v1-s04-*.yaml
+      authorized_changes:
+        - evidence checkpoint and receipt persistence only beyond approved implementation code
+        - exact-candidate activation through existing separately admitted Host/operator workflow
+        - focused verification fixtures and deterministic fault injection
+      forbidden:
+        - PR-013 S03 replay
+        - Host-policy widening
+        - arbitrary process cancellation
+        - connector-side mutation being treated as Direct Codex E2E proof
+        - generic shell fallback operator_unrestricted AppContainer escape or Job breakaway
+        - production Hub source/schema mutation
+    verification:
+      required:
+        - long Direct Codex start returns operation_id before work completes
+        - status remains readable and terminal verified receipt is later readable
+        - lost completion delivery still permits later same receipt readback with execution count one
+        - Agent restart reconciles nonterminal state before new material admission and never replays side effects
+        - simultaneous identical starts execute exactly once
+        - authority-changing duplicate conflicts before callback
+        - protected state root remains inaccessible to generic file surfaces
+        - full terminal evidence survives before 7 days
+        - tombstone is committed before cleanup at retention boundary
+        - partial GC restart preserves tombstone authority
+        - tombstone status is terminal plus evidence_expired and receipt returns receipt_expired
+        - tombstone-window duplicate executes zero callbacks
+        - post-tombstone material request requires provider semantic freshness
+        - stale Direct Codex expected remote head fails freshness
+        - OUTCOME_UNKNOWN and quarantined evidence are not GC eligible
+        - caller cannot select retention or force cleanup
+        - Host Runtime and Direct Codex both demonstrate the same generic runtime contract
+        - canonical repository firewall AppContainer Job mutation-scope audit and scoped-execution regressions pass
+        - canonical transport readback matches provider receipt
+        - PR-013 uncertain attempt is not used as successful acceptance proof
+    external_availability_rule: exact-candidate Windows activation may pause S04 without replaying completed S01-S03 and without fallback
+    checkpoint:
+      required: true
+    run_refs: []
+    completion_receipt_ref: null
+
+execution_state:
+  current_slice: null
+  current_slice_state: suspended
+  completed_slices: []
+  pending_slices: []
+  suspended_historical_slices: [S01, S02, S03, S04]
+  all_slices_completed: false
+  bootstrap_required_before_current_slice: false
+  bootstrap_target: null
+
+acceptance_boundary:
+  all_current_plan_slices_must_be_completed: true
+  acceptance_command: "#开发验收 PR-020-durable-async-operation-runtime-outcome-readback-v1"
+  acceptance_requires:
+    - AC1 through AC24 verified
+    - Windows long-running Direct Codex physical fixture
+    - lost-response readback
+    - restart no-replay reconciliation
+    - Direct Codex and Host Runtime generic-runtime adoption
+    - security and authority regressions
+
+owner_hold_supersession:
+  current_requirement_revision: 2
+  plan_r5_review_pending: true
+  historical_approved_plan_r4_blob_sha: 304cbf2ab58b4fa3835c35b343bd1214565c2920
+  original_slice_set_blob_sha: f461220e206af7935619640b96288a3880381224
+  old_r4_approval_is_not_current_implementation_authority: true
+  s01_blocked_run_unchanged: docs/execution/PR-020-durable-async-operation-runtime-outcome-readback-v1-s01-run-001.yaml
+  s01_blocker_unchanged: docs/checkpoints/PR-020-durable-async-operation-runtime-outcome-readback-v1-s01-blocked-20261008.yaml
+  all_execution_authority_suspended: true
+  historical_bootstrap_target: direct:codebuddy
+  historical_bootstrap_command_not_executable: true
+  bootstrap_override_state: revoked
+  direct_codebuddy_bootstrap_allowed: false
+  mrs01_program_exit: HOLD
+  mrs02_admitted: false
+  product_mutation_allowed: false

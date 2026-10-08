@@ -1,0 +1,76 @@
+schema_version: "1.0"
+kind: devforge_artifact_state_transition_receipt
+task_id: PR-020-durable-async-operation-runtime-outcome-readback-v1
+from_stage: plan_review_rejected
+to_stage: plan_review
+transition_rule: revised_plan_verified_and_read_back
+source_command: "#开发计划修复 PR-020-durable-async-operation-runtime-outcome-readback-v1"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  canonical_branch: main
+  version: "2.95.0"
+  revision: a693dde368c5c3b43ea577581190cac16c5b81ff
+
+evidence_refs:
+  - docs/reviews/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan-review-r1.md@dfc94d92218729c2adc45622dd5db2902d7aac74
+  - docs/plans/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan.md@e553a058e3feee880130cc68e5a1698505005402
+  - docs/checkpoints/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan-remediation-r2-20261008.yaml@3d37cef13161042ed673d723048ddbe864f37c3b
+
+task_before_digest: f236bc42d0c22542191a30de312f2a345ade9d5e
+task_after_digest: 60e12a84a5b6bfbc08fbc2bbf73043a8f8629b25
+semantic_after_state_digest: 60e12a84a5b6bfbc08fbc2bbf73043a8f8629b25
+semantic_after_digest_basis: canonical_task_blob_readback
+verified: true
+
+plan_remediation:
+  prior_plan_revision: 1
+  prior_plan_blob_sha: 4d5e7d0883f3fd597755eb40227233b7b0c91cf7
+  revised_plan_revision: 2
+  revised_plan_blob_sha: e553a058e3feee880130cc68e5a1698505005402
+  rejected_review_blob_sha: dfc94d92218729c2adc45622dd5db2902d7aac74
+  remediation_checkpoint_blob_sha: 3d37cef13161042ed673d723048ddbe864f37c3b
+  requirement_revision: 1
+  requirement_semantics_changed: false
+  addressed_findings:
+    - DurableIdentityAdmissionNotAtomic
+    - DurableRuntimeAgentLifecycleOwnerUndefined
+    - DurableStatePlacementCrashConsistencyUndefined
+    - SelfHostBootstrapDependsOnMissingAsyncBoundary
+
+state_after:
+  stage: plan_review
+  requirement_ready: true
+  plan_revision: 2
+  plan_approved: false
+  implementation_authorized: false
+  acceptance_approved: false
+  completion_verified: false
+  next_expected_actor: reviewer
+
+slice_authority:
+  plan_r2_slice_set_compiled: false
+  compilation_allowed_only_after_plan_r2_approval: true
+
+bootstrap:
+  first_product_slice_requires_task_scoped_bootstrap: true
+  target: direct:codebuddy
+  explicit_command_required: true
+  bootstrap_execution_performed: false
+  project_binding_changed: false
+  fallback: forbidden
+
+safety:
+  canonical_main_mutated: false
+  product_implementation_mutated: false
+  host_policy_mutated: false
+  installed_agent_mutated: false
+  project_binding_mutated: false
+  permission_or_credential_expansion_used: false
+  self_approval_performed: false
+
+completion_guard:
+  revised_plan_read_back_verified: true
+  task_transition_read_back_verified: true
+  transition_receipt_required: true
+  canonical_next_action: "#开发评审 PR-020-durable-async-operation-runtime-outcome-readback-v1"

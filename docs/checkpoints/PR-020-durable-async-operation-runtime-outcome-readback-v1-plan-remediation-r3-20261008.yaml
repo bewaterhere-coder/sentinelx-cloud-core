@@ -1,0 +1,66 @@
+schema_version: "1.0"
+kind: devforge_plan_remediation_checkpoint
+task_id: PR-020-durable-async-operation-runtime-outcome-readback-v1
+source_command: "#开发计划修复 PR-020-durable-async-operation-runtime-outcome-readback-v1"
+
+runtime:
+  devforge_version: "2.95.0"
+  devforge_revision: c44591899fb7c3312ca7a30cc816ca878e12b462
+  sentinelx_canonical_main: 1028030b33f0ea792a884491a431fffe566f6aa5
+
+input:
+  requirement_revision: 1
+  rejected_plan_revision: 2
+  rejected_plan_blob_sha: e553a058e3feee880130cc68e5a1698505005402
+  rejected_review_ref: docs/reviews/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan-review-r2.md
+  rejected_review_blob_sha: 939f2f47c2605b97ffa01389c720d007362fb3ef
+
+output:
+  revised_plan_revision: 3
+  revised_plan_ref: docs/plans/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan.md
+  revised_plan_blob_sha: 2f0de7f19ac29bf77c8c85f452b53ad47ccebc51
+  requirement_semantics_changed: false
+  transport_changed: false
+  project_binding_changed: false
+  implementation_started: false
+
+addressed_findings:
+  - id: TerminalRetentionIdentityClaimLifecycleUndefined
+    resolution: "Plan R3 defines a coherent bounded terminal lifecycle: 7-day full evidence, 30-day total compact tombstone horizon, tombstone-first GC commit ordering, explicit expired read-back semantics, and provider-owned semantic-freshness validation before any material admission after local evidence expiry."
+
+frozen_plan_r3:
+  terminal_full_evidence_retention: 7d
+  terminal_tombstone_retention_total: 30d
+  caller_retention_override: forbidden
+  tombstone_authoritative_before_full_artifact_cleanup: true
+  tombstone_status_projection: terminal_state_plus_evidence_expired
+  tombstone_receipt_projection: receipt_expired
+  nonterminal_gc_eligible: false
+  outcome_unknown_gc_eligible: false
+  quarantine_gc_eligible: false
+  post_retention_material_admission_requires_provider_semantic_freshness: true
+  semantic_freshness_unproven: fail_closed
+  gc_invokes_provider_callback: false
+  stale_devforge_identity_after_retention: fail_closed
+  prior_r2_atomic_admission_preserved: true
+  prior_r2_single_runtime_owner_preserved: true
+  prior_r2_private_state_crash_consistency_preserved: true
+  prior_r2_codebuddy_bootstrap_preserved: true
+
+safety:
+  canonical_main_mutated: false
+  product_code_mutated: false
+  host_policy_mutated: false
+  installed_agent_mutated: false
+  production_hub_mutated: false
+  project_binding_mutated: false
+  permission_expansion_used: false
+  credential_mutation_used: false
+  self_approval_performed: false
+
+next_state:
+  stage: plan_review
+  plan_revision: 3
+  plan_approved: false
+  implementation_authorized: false
+  next_expected_actor: reviewer

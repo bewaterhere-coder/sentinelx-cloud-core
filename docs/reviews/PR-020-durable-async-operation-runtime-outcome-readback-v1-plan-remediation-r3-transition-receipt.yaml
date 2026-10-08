@@ -1,0 +1,73 @@
+schema_version: "1.0"
+kind: devforge_artifact_state_transition_receipt
+task_id: PR-020-durable-async-operation-runtime-outcome-readback-v1
+from_stage: plan_review_rejected
+to_stage: plan_review
+transition_rule: revised_plan_verified_and_read_back
+source_command: "#开发计划修复 PR-020-durable-async-operation-runtime-outcome-readback-v1"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  canonical_branch: main
+  version: "2.95.0"
+  revision: c44591899fb7c3312ca7a30cc816ca878e12b462
+
+evidence_refs:
+  - docs/reviews/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan-review-r2.md@939f2f47c2605b97ffa01389c720d007362fb3ef
+  - docs/plans/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan.md@2f0de7f19ac29bf77c8c85f452b53ad47ccebc51
+  - docs/checkpoints/PR-020-durable-async-operation-runtime-outcome-readback-v1-plan-remediation-r3-20261008.yaml@1e5152c6e04547567f9c08c4bc716803adaef313
+
+task_before_digest: aee75cc081facee60853da11e8d141fc5a44032c
+task_after_digest: 20cceef9532185a8130fb3197fe57094bf22b660
+semantic_after_state_digest: 20cceef9532185a8130fb3197fe57094bf22b660
+semantic_after_digest_basis: canonical_task_blob_readback
+verified: true
+
+plan_remediation:
+  prior_plan_revision: 2
+  prior_plan_blob_sha: e553a058e3feee880130cc68e5a1698505005402
+  revised_plan_revision: 3
+  revised_plan_blob_sha: 2f0de7f19ac29bf77c8c85f452b53ad47ccebc51
+  rejected_review_blob_sha: 939f2f47c2605b97ffa01389c720d007362fb3ef
+  remediation_checkpoint_blob_sha: 1e5152c6e04547567f9c08c4bc716803adaef313
+  requirement_revision: 1
+  requirement_semantics_changed: false
+  addressed_findings:
+    - TerminalRetentionIdentityClaimLifecycleUndefined
+
+state_after:
+  stage: plan_review
+  requirement_ready: true
+  plan_revision: 3
+  plan_approved: false
+  implementation_authorized: false
+  acceptance_approved: false
+  completion_verified: false
+  next_expected_actor: reviewer
+
+slice_authority:
+  plan_r3_slice_set_compiled: false
+  compilation_allowed_only_after_plan_r3_approval: true
+
+retention_resolution:
+  terminal_full_evidence_retention: 7d
+  terminal_tombstone_retention_total: 30d
+  tombstone_first_gc_commit: true
+  semantic_freshness_required_after_local_evidence_expiry_for_material_actions: true
+  caller_retention_override: forbidden
+  blind_replay_after_gc: forbidden
+
+safety:
+  canonical_main_mutated: false
+  product_implementation_mutated: false
+  host_policy_mutated: false
+  installed_agent_mutated: false
+  project_binding_mutated: false
+  permission_or_credential_expansion_used: false
+  self_approval_performed: false
+
+completion_guard:
+  revised_plan_read_back_verified: true
+  task_transition_read_back_verified: true
+  transition_receipt_required: true
+  canonical_next_action: "#开发评审 PR-020-durable-async-operation-runtime-outcome-readback-v1"
