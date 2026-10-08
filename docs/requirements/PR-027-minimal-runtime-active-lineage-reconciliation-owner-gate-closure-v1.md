@@ -23,6 +23,29 @@ development:
   acceptance_result: Approved
   accepted_coordination_only: true
   accepted_program_exit: false
+  finalization:
+    status: ready_for_merge
+    ready_for_merge: true
+    canonical_state_verified: true
+    plan_execution_state_verified: true
+    evidence_verified: true
+    transport_preconditions_verified: true
+    integration_verified: false
+    original_pr_number: 27
+    original_branch: task/minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1
+    canonical_main_at_premerge: 8d2bafba87b529fb458faaa7fbdce39fe225361f
+    accepted_plan_r1_semantic_sha: 3d8b5b56e4235cdb22880ec01c45885e7fced8f6
+    plan_r1_finalization_sha: 3091f162732a6bece9a12138e379b0feaecbc2d6
+    completed_current_slices: [S01, S02, S03, S04]
+    acceptance_receipt_sha: bec69e2bd61ff3860bffa9f4fdc8b72d0456c99a
+    acceptance_transition_receipt_sha: a1ba18aa773ac85b8740e95dab53a687b3134fc9
+    premerge_receipt: docs/checkpoints/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-premerge-finalization-r1-receipt.yaml
+    integration_receipt: docs/reviews/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-integration-receipt-r1.yaml
+    completion_transition_receipt: docs/checkpoints/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-accepted-to-done-transition-receipt.yaml
+    mrs01_program_exit: HOLD
+    mrs02_admitted: false
+    owner_gate_receipts_all_verified: false
+    coordination_task_can_be_completed_with_program_hold: true
   blocking_findings: []
 transport:
   type: github-pr
