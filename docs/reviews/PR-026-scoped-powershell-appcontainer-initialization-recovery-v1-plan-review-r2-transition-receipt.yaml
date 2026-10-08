@@ -1,0 +1,103 @@
+﻿schema_version: "1.1"
+kind: devforge_artifact_state_transition_receipt
+task_id: PR-026-scoped-powershell-appcontainer-initialization-recovery-v1
+from_stage: plan_review
+to_stage: implementation
+transition_rule: plan_review_r2_approved_s02_diagnostic_only_owner_authorization_gate
+source_command: "#寮€鍙戣瘎瀹?PR-026-scoped-powershell-appcontainer-initialization-recovery-v1"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  canonical_branch: main
+  version: "2.103.0"
+  revision: ebc25425160790950bd4d4500186652d3bf52416
+
+evidence_refs:
+  - docs/requirements/PR-026-scoped-powershell-appcontainer-initialization-recovery-v1.md@6a0a6319fe0a82dd21812dafd07bdb4a99f25a3c
+  - docs/plans/PR-026-scoped-powershell-appcontainer-initialization-recovery-v1-plan.md@d3640c624f2890b54d7266b059aa4a0fd73a96d7
+  - docs/reviews/PR-026-scoped-powershell-appcontainer-initialization-recovery-v1-plan-review-r2.md@5ab1c52c355e119aa18c5c98e41eac0528c34172
+  - docs/reviews/PR-026-scoped-powershell-appcontainer-initialization-recovery-v1-s01-completion-receipt.yaml@6803d09777534d160cb5ee7a618d8132ee9defbc
+
+review_decision:
+  result: Approved
+  approved_scope: S02_session0_discrimination_diagnostic_only
+  owner_authorization_gate: [service_overlay, service_restart, production_probe]
+  gate_effect: overlay/restart/probe each require separate explicit owner authorization at execution time; plan approval alone authorizes none of them
+  repair_authority: none
+  hold_reason: any compatibility repair requires further evidence-proven plan revision and its own review
+  s01_replay: forbidden
+  s01_evidence: immutable, referenced read-only as comparator baseline
+
+verified_this_round_forbidden:
+  - modify installed SentinelX
+  - restart SentinelX service
+  - execute production probe
+  - modify canonical main
+  - expand ACL or protected_root
+
+task_before_digest: 6a0a6319fe0a82dd21812dafd07bdb4a99f25a3c
+task_after_digest: 754dd8e10efa3c3a40a4ff661857b18167cee7d7
+semantic_after_state_digest: 754dd8e10efa3c3a40a4ff661857b18167cee7d7
+semantic_after_digest_basis: canonical_task_blob_readback
+verified: true
+
+transition:
+  from_stage: plan_review
+  to_stage: implementation
+  decision: approved
+  next_expected_actor: implementer
+
+lineage:
+  requirement_revision: 1
+  task_ref: docs/requirements/PR-026-scoped-powershell-appcontainer-initialization-recovery-v1.md
+  task_blob_sha_before: 6a0a6319fe0a82dd21812dafd07bdb4a99f25a3c
+  task_blob_sha_after: 754dd8e10efa3c3a40a4ff661857b18167cee7d7
+  plan_ref: docs/plans/PR-026-scoped-powershell-appcontainer-initialization-recovery-v1-plan.md
+  plan_revision: 2
+  plan_blob_sha_before: d3640c624f2890b54d7266b059aa4a0fd73a96d7
+  plan_blob_sha_after: 1923b7d705d7814e8a55092f76d8bb14156a9599
+  review_ref: docs/reviews/PR-026-scoped-powershell-appcontainer-initialization-recovery-v1-plan-review-r2.md
+  review_blob_sha: 5ab1c52c355e119aa18c5c98e41eac0528c34172
+  s01_receipt_ref: docs/reviews/PR-026-scoped-powershell-appcontainer-initialization-recovery-v1-s01-completion-receipt.yaml
+
+repository_reality:
+  canonical_main: 2e5c69a112323867ee01783521554c43ebd731be
+  reviewed_task_head_before_review_artifacts: d2db1d20b41d33b4a80ba9a01b9e181e9f6c1801
+  transport_pr: 26
+  transport_branch: task/scoped-powershell-appcontainer-initialization-recovery-v1
+  execution_workspace: pr026-s01-a1 (independent clone; canonical checkout main+clean untouched)
+
+state_after:
+  stage: implementation
+  requirement_ready: true
+  plan_revision: 2
+  plan_approved: true
+  implementation_authorized: true
+  implementation_scope: s02_session0_discrimination_diagnostic_only
+  owner_authorization_gate: [service_overlay, service_restart, production_probe]
+  acceptance_approved: false
+  completion_verified: false
+  next_expected_actor: implementer
+  current_slice: S02
+  current_slice_state: read_only_preparation_admitted_state_changing_steps_gated
+
+slice_authority:
+  current_slice: S02
+  read_only_now_admitted: s02_a1_preparation_snapshot_only
+  gated_on_owner_authorization: [service_overlay, service_restart, production_probe]
+  one_execute_one_slice: true
+  s03_depends_on: S02_evidence_plus_further_plan_revision
+
+safety:
+  installed_sentinelx_modified: false
+  sentinelx_service_restarted: false
+  production_probe_executed: false
+  canonical_main_mutated: false
+  acl_or_protected_root_expansion: false
+  pr018_replay: false
+  unrestricted_fallback: false
+
+completion_guard:
+  approved_review_read_back_verified: true
+  task_transition_read_back_verified: true
+  canonical_next_action: "#寮€鍙戞墽琛?PR-026-scoped-powershell-appcontainer-initialization-recovery-v1"

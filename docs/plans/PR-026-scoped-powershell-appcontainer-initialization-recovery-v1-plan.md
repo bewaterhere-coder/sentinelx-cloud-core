@@ -2,7 +2,7 @@
 task_id: PR-026-scoped-powershell-appcontainer-initialization-recovery-v1
 title: SentinelX Scoped PowerShell AppContainer Initialization Recovery V1 — Plan R2
 plan_revision: 2
-plan_state: proposed
+plan_state: approved
 requirement_revision: 1
 project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
@@ -12,11 +12,13 @@ transport:
   branch: task/scoped-powershell-appcontainer-initialization-recovery-v1
   base_branch: main
 review:
-  status: pending
-  review_ref: docs/reviews/PR-026-scoped-powershell-appcontainer-initialization-recovery-v1-plan-review-r1.md
-  next_command: "#开发评审 PR-026-scoped-powershell-appcontainer-initialization-recovery-v1"
-implementation_authorized: false
-implementation_scope: s02_session0_discrimination_only_pending_review
+  status: approved
+  review_ref: docs/reviews/PR-026-scoped-powershell-appcontainer-initialization-recovery-v1-plan-review-r2.md
+  next_command: "#开发执行 PR-026-scoped-powershell-appcontainer-initialization-recovery-v1"
+implementation_authorized: true
+implementation_scope: s02_session0_discrimination_diagnostic_only
+owner_authorization_gate: [service_overlay, service_restart, production_probe]
+repair_authority: none
 s01_state: completed_evidence_recorded_c4a4028
 ---
 

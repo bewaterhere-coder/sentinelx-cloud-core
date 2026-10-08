@@ -5,18 +5,20 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 1
 development:
-  stage: plan_review
+  stage: implementation
   gates:
     requirement_ready: true
-    plan_approved: false
+    plan_approved: true
     acceptance_approved: false
     completion_verified: false
   plan_revision: 2
-  implementation_authorized: false
-  implementation_scope: s02_session0_discrimination_only_pending_review
-  next_expected_actor: reviewer
+  implementation_authorized: true
+  implementation_scope: s02_session0_discrimination_diagnostic_only
+  owner_authorization_gate: [service_overlay, service_restart, production_probe]
+  repair_authority: none
+  next_expected_actor: implementer
   blocking_findings: []
-  current_slice: null
+  current_slice: S02
   completed_slices: [S01]
   authorization:
     mode: legacy_command_scoped
