@@ -20,6 +20,7 @@ development:
   blocking_findings:
     - RoadmapPredecessorCompletionEvidenceReferenceMissing
   latest_plan_change_impact: docs/reviews/PR-023-minimal-runtime-successor-roadmap-v1-s05-ac2-plan-change-impact-r1.md
+  latest_plan_revision_checkpoint: docs/checkpoints/PR-023-minimal-runtime-successor-roadmap-v1-s05-ac2-plan-r2-ready-for-review-20261008.yaml
   plan_r2_proposal_blob_sha: 9e56b512951b8dcaa4b7d6789d3bc350a5f24dce
   r2_scope_change: roadmap_architecture_authority_two_predecessor_completion_receipt_citations
   latest_execution_run: docs/execution/PR-023-minimal-runtime-successor-roadmap-v1-s05-run-001.yaml
