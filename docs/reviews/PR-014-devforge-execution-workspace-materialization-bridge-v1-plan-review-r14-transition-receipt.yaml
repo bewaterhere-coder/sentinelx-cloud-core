@@ -30,8 +30,8 @@ lineage:
   plan_blob_sha: d860b40805dd0cc0c96670fd84e7e4fea6deb487
   task_ref: docs/requirements/PR-014-devforge-execution-workspace-materialization-bridge-v1.md
   task_before_digest: cbcf65d391b3aa0f89b8366b870241d5e1cc4a64
-  task_after_digest: cdf9ae94091ce9a1172b52f0f362ff9865568122
-  semantic_after_state_digest: cdf9ae94091ce9a1172b52f0f362ff9865568122
+  task_after_digest: 2bafcaca321fa47a56dda5b7225716c51c8b3463
+  semantic_after_state_digest: 2bafcaca321fa47a56dda5b7225716c51c8b3463
   review_ref: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-review-r14.md
   review_blob_sha: 14267d1c718ef9eed71372199caa5eab996328d7
   slice_set_ref: docs/execution/PR-014-devforge-execution-workspace-materialization-bridge-v1-plan-r14-slices.yaml

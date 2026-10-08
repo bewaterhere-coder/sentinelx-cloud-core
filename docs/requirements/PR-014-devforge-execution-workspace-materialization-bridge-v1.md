@@ -5,7 +5,7 @@ project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 requirement_revision: 8
 development:
-  stage: plan_review
+  stage: implementation
   gates:
     requirement_ready: true
     plan_approved: true
@@ -22,6 +22,7 @@ development:
   host_mutation_authorized: false
   direct_codex_invocation_authorized: false
   historical_slice_replay_authorized: false
+  blocking_findings_scope: product_and_Host_mutation_only_not_readonly_S07A
   blocking_findings:
     - CanonicalFirewallDirectCodexContainmentUnproven
     - IndependentExecutionRootBindingUnverified
@@ -51,7 +52,7 @@ development:
   bootstrap_required_before_current_slice: false
   bootstrap_target: null
   bootstrap_command: null
-  bootstrap_admission_status: not_required_no_pending_slice
+  bootstrap_admission_status: not_required_readonly_S07A
   bootstrap_override_state: expired_by_requirement_revision_3
   prior_bootstrap_override: docs/overrides/PR-014-devforge-execution-workspace-materialization-bridge-v1-bootstrap-execution-override.yaml
   latest_bootstrap_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-bootstrap-execution-override-r1-receipt.yaml
@@ -65,7 +66,7 @@ development:
   latest_s02_reconciliation_receipt: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-s02-r6-reconciliation-receipt.yaml
   prior_bootstrap_receipt: docs/checkpoints/PR-014-devforge-execution-workspace-materialization-bridge-v1-harness-bootstrap-blocked-20261008.yaml
   superseded_slice_set_status: invalidated_by_requirement_revision_4
-  planned_pending_delta_slice: null
+  planned_pending_delta_slice: S07A_readonly_evidence_only
   next_expected_actor: implementer
   canonical_next_action: "#开发执行 PR-014-devforge-execution-workspace-materialization-bridge-v1"
   authorization:
