@@ -1,0 +1,65 @@
+schema_version: "1.0"
+kind: devforge_execution_slice_impact
+project_id: sentinelx-cloud-core
+task_id: PR-015-direct-codex-development-host-invocation-bridge-v1
+source_command: "#开发 PR-015-direct-codex-development-host-invocation-bridge-v1 修订当前方案：采用 provider-owned deterministic commit-on-publish ..."
+requirement_revision: 2
+plan_revision: 3
+prior_slice_set:
+  ref: docs/execution/PR-015-direct-codex-development-host-invocation-bridge-v1-slices.yaml
+  plan_revision: 2
+  state_as_current_authority: invalidated
+  historical_evidence_retained: true
+retained_completed_evidence:
+  - slice_id: S01
+    disposition: retained_historical_prerequisite
+    replay_required: false
+    reason: provider schema/policy/readiness/firewall composition semantics unchanged
+  - slice_id: S02
+    disposition: retained_historical_prerequisite
+    replay_required: false
+    reason: isolated workspace, active-user execution, fixed Codex identity and MIC containment semantics unchanged
+  - slice_id: S03
+    disposition: retained_historical_prerequisite_with_material_finding
+    replay_required: false
+    reason: identity/receipt/drift validation remains valid; real-host non-persistence finding motivates R2
+invalidated_current_evidence:
+  - plan_r2_slice_set_as_executable_authority
+  - s03_completion_as_final_persistence_closure
+  - acceptance_r1_as_current_acceptance_disposition
+proposed_plan_r3_delta:
+  - slice_id: S04
+    title: Provider-Owned Deterministic Persistence & Canonical Publish Closure
+    state: proposed_pending_plan_review
+    depends_on_historical_evidence: [S01, S02, S03]
+    objective: >-
+      Persist the real Codex host's eligible isolated-checkout changes through
+      one provider-owned deterministic commit, ordinary fast-forward publish to
+      the exact canonical PR branch, independent remote readback, and a
+      persisted direct/codex receipt.
+    scope:
+      expected_refs:
+        - src/sentinelx_core/direct_codex_persistence.py
+        - src/sentinelx_core/handlers/direct_codex.py
+        - src/sentinelx_core/direct_codex_result.py
+        - src/sentinelx_core/direct_codex_transport.py
+        - src/sentinelx_core/user_git.py
+        - focused direct-Codex persistence tests
+      forbidden:
+        - generic_git_surface
+        - generic_shell_or_exec
+        - caller_git_argv_or_pathspec
+        - replacement_branch_or_pr
+        - force_push
+        - canonical_checkout_mutation
+        - permission_or_credential_expansion
+        - provider_rebinding
+        - hub_mutation
+formal_slice_set:
+  current_executable_slice_set: null
+  compile_only_after_plan_review_approval: true
+  review_must_bind_exact_plan_blob: 6552329d7fc07526569956db8ebee477fcd08af3
+workflow:
+  current_stage_target: plan_review
+  implementation_authorized: false
+  next_command: "#开发评审 PR-015-direct-codex-development-host-invocation-bridge-v1"

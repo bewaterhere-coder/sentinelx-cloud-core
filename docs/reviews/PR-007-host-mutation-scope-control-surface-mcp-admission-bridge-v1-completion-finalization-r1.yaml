@@ -1,0 +1,51 @@
+schema_version: "1.0"
+kind: devforge_merge_finalization
+project_id: sentinelx-cloud-core
+task_id: PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1
+source_command: "#开发完成 PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1"
+lineage:
+  requirement_revision: 2
+  plan_revision: 4
+  acceptance_revision: 3
+  acceptance_ref: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-acceptance-r3.md
+  acceptance_transition_receipt: docs/reviews/PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1-acceptance-r3-transition-receipt.yaml
+transport:
+  type: github-pr
+  pr_number: 7
+  branch: task/host-mutation-scope-control-surface-mcp-admission-bridge-v1
+  base_branch: main
+  accepted_head: 0e6044de87b6dd48a6a190b88499b41162b22826
+  expected_base_head: f7e878f3497582547e5d52cd33b060cae18d2e84
+  draft: false
+  mergeable: true
+  unresolved_review_threads: 0
+verification:
+  acceptance_approved: true
+  accepted_head_ci_run_id: 37049877039
+  accepted_head_ci_result: success
+  accepted_head_macos_run_id: 37049876978
+  accepted_head_macos_result: success
+  canonical_state_verified: true
+  plan_execution_state_verified: true
+  evidence_verified: true
+  transport_preconditions_verified: true
+finalization:
+  ready_for_merge: true
+  stage: accepted
+  completion_verified: false
+  merge_pending: true
+  next_expected_actor: integration
+safety:
+  hub_modified: false
+  host_policy_widened: false
+  implementation_replayed: false
+  product_implementation_changed_by_finalization: false
+  done_claimed_before_integration: false
+post_merge_requirement:
+  integration_receipt_required: true
+  authoritative_done_requires_main_readback: true
+  transition: accepted_to_done_only_after_verified_merge
+freshness:
+  generated_date: "2026-10-03"
+  devforge_main: e0fe219252b160ec35d7349bb1dc27c16227229a
+  merge_finalization_contract: v1.0

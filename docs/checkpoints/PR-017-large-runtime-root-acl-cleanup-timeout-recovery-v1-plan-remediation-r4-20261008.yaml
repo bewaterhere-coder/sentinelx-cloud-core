@@ -1,0 +1,73 @@
+schema_version: "1.0"
+kind: devforge_plan_remediation_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
+source_command: "#开发计划修复 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1"
+
+input:
+  requirement_revision: 1
+  rejected_plan_revision: 3
+  rejected_plan_blob_sha: "4c73e1b33489c5965ff2fd42156e680b74a6887e"
+  rejected_review_ref: docs/reviews/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan-review-r3.md
+  rejected_review_blob_sha: "749f94c02c8ddf0adedfaaa066068cbea081cca3"
+  rejected_findings:
+    - StalePlanR2AuthorityReferences
+
+output:
+  revised_plan_revision: 4
+  revised_plan_ref: docs/plans/PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1-plan.md
+  revised_plan_blob_sha: "7191bfdf51153bb07bac1e912ec83f4699fcbee5"
+  requirement_semantics_changed: false
+  transport_changed: false
+  implementation_started: false
+  slice_set_recompiled: false
+
+finding_resolution:
+  StalePlanR2AuthorityReferences:
+    status: addressed
+    corrections:
+      - "After Plan R2 approval -> After Plan R4 approval"
+      - "record Plan R2 lineage -> record Plan R4 lineage"
+      - "after Plan R2 approval may complete -> after Plan R4 approval may complete"
+      - "until Plan Review approves Plan R2 -> until Plan Review approves Plan R4"
+      - "Does Plan R2 avoid -> Does Plan R4 avoid"
+    stale_plan_r2_refs_after_remediation: 0
+
+technical_semantics_unchanged:
+  production_subset_manifest_version: pr017-pr018-production-subset-v1
+  projected_file_count: 11
+  derived_windows_sandbox_blob: "1e662eba2dbc61825bc874e102a735e7a9d9a179"
+  derived_windows_test_blob: "926900b91055707528a6cfdd5fb131d11abdfc89"
+  scoped_script_preserved_blob: "4580475ba9bd8ba5301b579ee11a584abbd75d4b"
+  s03_verification_scope_changed: false
+  requirement_r8_3_changed: false
+
+preserved_evidence:
+  s01:
+    state: completed
+    replay: forbidden
+  s02:
+    state: completed
+    replay: forbidden
+  s03:
+    current_r1_state: blocked_historical
+    r4_recompile_pending: true
+
+safety:
+  canonical_main_mutated: false
+  product_code_mutated: false
+  tests_mutated: false
+  host_policy_mutated: false
+  slice_set_mutated: false
+  pr017_s01_replayed: false
+  pr017_s02_replayed: false
+  pr018_task_state_mutated: false
+  self_approval_performed: false
+
+next_state:
+  stage: plan_review
+  plan_revision: 4
+  plan_approved: false
+  implementation_authorized: false
+  next_expected_actor: reviewer
+  canonical_next_action: "#开发评审 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1"

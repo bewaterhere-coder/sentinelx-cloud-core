@@ -1,0 +1,58 @@
+schema_version: "1.0"
+kind: devforge_completion_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1
+source_command: "#开发完成 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
+
+lineage:
+  requirement_revision: 2
+  plan_revision: 6
+  acceptance_revision: 2
+  completion_revision: 1
+  acceptance_ref: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-acceptance-r2.md
+  finalization_ref: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-completion-finalization-r1.yaml
+  integration_receipt_ref: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-integration-receipt-r1.yaml
+  integration_receipt_blob_sha: 3421ebd4c3e6516ba1c1ec4b02a5069c5cbf68fe
+  completion_review_ref: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-completion-r1.md
+
+transport:
+  type: github-pr
+  pr_number: 11
+  branch: task/scoped-verification-toolchain-dependency-capsule-v1
+  finalized_head: 4d696247a72bdba40b036d35398180da33fd08fa
+  base_before_merge: e7064c9bf4fcd15bdb6f5a2678414210c01d1c00
+  merge_commit: 1ca5f2762928916293385640d751568a721d6aa8
+
+integration:
+  pr_merged: true
+  pr_state: closed
+  main_merge_readback_verified: true
+  merge_tree_equals_finalized_head: true
+  integration_receipt_read_back_verified: true
+
+verification:
+  macos_evidence_used: false
+  acceptance_r2_approved: true
+  repaired_s04_windows: success
+  generic_ci: success
+  s04_real_host_system_gate: success
+  s05_live_profiled_execution: success
+  s05_live_terminal_readback: true
+  no_product_code_change_after_verified_repair_head: true
+
+safety:
+  hub_modified: false
+  canonical_local_checkout_mutated: false
+  permission_or_allowlist_expansion_used: false
+  operator_unrestricted_used: false
+  unrestricted_fallback_used: false
+  implementation_replayed: false
+  replacement_development_pr_created: false
+
+postconditions:
+  stage: done
+  acceptance_approved: true
+  integration_verified: true
+  completion_verified: true
+  next_expected_actor: none
+  no_receipt_no_completion_claim: satisfied

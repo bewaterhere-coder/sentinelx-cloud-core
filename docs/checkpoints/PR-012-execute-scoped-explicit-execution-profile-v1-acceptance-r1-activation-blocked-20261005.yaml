@@ -1,0 +1,66 @@
+schema_version: "1.0"
+kind: devforge_acceptance_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-012-execute-scoped-explicit-execution-profile-v1
+acceptance_revision: 1
+source_command: "#开发验收 PR-012-execute-scoped-explicit-execution-profile-v1"
+runtime:
+  repository: bewaterhere-coder/DevForge
+  version: 2.40.0
+  revision: 1dc76ed0bcc1a70a2c5a860cd7a99aedd5d7820a
+  acceptance_contract: "1.5"
+transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 12
+  branch: task/execute-scoped-explicit-execution-profile-v1
+  evaluated_head_before_checkpoint: 3847dc6ac712c8a4e8c3592b54923e753c4a7df2
+  canonical_main: dbf4bfc9ebcdbde2374d41e6825b613d46aa87f2
+implementation:
+  verified_candidate: 1e4012d7d6bfe4fa1bff70f364f3199d67626104
+  slice: S01
+  slice_state: completed
+  focused_tests:
+    python: "3.12.13"
+    passed: 47
+    failed: 0
+    errors: 0
+    exit_code: 0
+live_pre_activation:
+  host: Cherie_li
+  service_status: Running
+  running_agent_version: 0.24.1.dev155+gdbf4bfc9e
+  recovery_source_commit: dbf4bfc9ebcdbde2374d41e6825b613d46aa87f2
+  devforge_runtime_describe:
+    endpoint_available: true
+    execute_scoped_available: true
+    execution_profile_advertised: false
+    execution_profile_required: false
+    observation: currently running Agent is the pre-PR-012 build and therefore does not satisfy AC6
+activation_attempt:
+  interface: SentinelX update_sentinelx_code playbook via sentinel_script_run
+  target_commit: 1e4012d7d6bfe4fa1bff70f364f3199d67626104
+  result: blocked_before_install
+  error: execution_profile_required
+  message: configured mutation_execution requires an explicit execution_profile
+  install_mutation_observed: false
+  service_restart_performed: false
+acceptance:
+  disposition: blocked
+  finding_classification: external_blocker
+  blocking_criterion: AC6
+  reason: current model-facing SentinelX script_run installation path cannot carry the required explicit execution_profile, while the currently running devforge_runtime interface is the pre-fix interface and cannot self-bootstrap the new profile contract
+  ac1_to_ac5: supported_by_completed_implementation_and_verification_evidence
+  ac6: blocked_pending_exact_candidate_activation
+safety:
+  canonical_checkout_mutated: false
+  canonical_main_mutated: false
+  hub_modified: false
+  permission_expansion_used: false
+  operator_unrestricted_used: false
+  service_restart_performed: false
+  live_scoped_marker_executed: false
+resume:
+  replay_product_implementation: forbidden
+  required_operator_step: install exact candidate 1e4012d7d6bfe4fa1bff70f364f3199d67626104 into C:\ProgramData\SentinelX\.venv using the existing local operator workflow
+  after_operator_install: restart SentinelX, verify running candidate identity, re-read local_api.describe, run AC6 scoped marker, read audit identity and terminal scope state, then finish Acceptance
+  canonical_resume_command: "#开发验收 PR-012-execute-scoped-explicit-execution-profile-v1"

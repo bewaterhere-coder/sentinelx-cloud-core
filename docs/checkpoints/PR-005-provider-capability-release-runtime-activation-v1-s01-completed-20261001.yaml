@@ -1,0 +1,63 @@
+schema_version: "1.0"
+kind: devforge_continuation_checkpoint
+checkpoint_id: PR-005-S01-56ef6d8-completed
+subject:
+  repository: github.com/bewaterhere-coder/sentinelx-cloud-core
+  task_id: PR-005-provider-capability-release-runtime-activation-v1
+lineage:
+  requirement_ref: docs/requirements/PR-005-provider-capability-release-runtime-activation-v1.md
+  plan_ref: docs/plans/PR-005-provider-capability-release-runtime-activation-v1-plan.md
+  plan_revision: 1
+  slice_set_ref: docs/execution/PR-005-provider-capability-release-runtime-activation-v1-execution-slice-set.yaml
+execution:
+  stage: implementation
+  source_command: "#开发执行 PR-005-provider-capability-release-runtime-activation-v1"
+  completed_slice_id: S01
+  implementation_head: 56ef6d86f7e6
+transport:
+  repository: github.com/bewaterhere-coder/sentinelx-cloud-core
+  transport_ref: github-pr:5@task/provider-capability-release-runtime-activation-v1
+boundary:
+  disposition: completed
+  reason: S01RequiredVerificationPassed
+continuation:
+  mode: next_slice
+  next_slice_id: S02
+  next_action_hint: "#开发执行 PR-005-provider-capability-release-runtime-activation-v1"
+evidence:
+  implementation_refs:
+    - github-commit:370c1e7
+    - github-commit:076c559
+    - github-commit:56ef6d8
+  static_validation:
+    python_compile:
+      - tools/release.py
+      - tests/test_release.py
+      - tests/test_release_install.py
+    toml_parse:
+      - pyproject.toml
+    git_diff_check: passed
+  dynamic_verification_history:
+    - attempt: 1
+      result: environment_blocked
+      evidence: pytest tmp_path failed under user TEMP ACL
+    - attempt: 2
+      result: repair_required
+      summary: "5 passed, 1 failed"
+      failure: "pip rejected randomly renamed staged wheel as Invalid wheel filename"
+      repair: "Preserve the original valid wheel filename inside an isolated temporary directory"
+      repair_commit: 56ef6d8
+    - attempt: 3
+      result: passed
+      command: pytest -q --basetemp <workspace-temp> tests/test_release.py tests/test_release_install.py
+      summary: "6 passed, 1 warning in 28.90s"
+      warning: "PytestConfigWarning: Unknown config option asyncio_mode; unrelated to the focused release tests"
+  required_claims:
+    tag_version_ref_mismatch_fails_closed: passed
+    wheel_metadata_reports_requested_release_version: passed
+    isolated_install_reads_matching_agent_version: passed
+    manifest_binds_exact_source_revision_and_sha256: passed
+freshness:
+  verified_date: "2026-10-01"
+  implementation_head: 56ef6d86f7e6
+supersedes: PR-005-S01-56ef6d8-verification-rerun

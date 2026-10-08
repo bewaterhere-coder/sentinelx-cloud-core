@@ -1,0 +1,165 @@
+schema_version: "1.0"
+kind: devforge_execution_slice_set
+
+identity:
+  task_id: SX-HMSA-001
+  slice_set_id: SX-HMSA-001-plan-r3-4445407a46dce415
+
+plan:
+  ref: docs/plans/SX-HMSA-001-host-mutation-sandbox-pre-execution-audit-lineage-provider-v1-plan.md
+  revision: 3
+  blob: 4445407a46dce415b5b81b39e49202a011879048
+  reviewed_head: e0acae46662ee9792eafd91a30b25db8d7488919
+
+slices:
+  - slice_id: S01
+    objective: Establish authoritative RequestContext, policy migration, provider-owned placement authority and truthful capability readiness.
+    depends_on: []
+    scope:
+      refs:
+        - src/sentinelx_core/executor.py
+        - src/sentinelx_core/handlers/__init__.py
+        - src/sentinelx_core/handlers/basic.py
+        - src/sentinelx_core/policy.py
+        - src/sentinelx_core/request_context.py
+        - src/sentinelx_core/mutation_placement.py
+    verification:
+      required:
+        - RequestMessage-derived request_id and opaque_ref cannot be spoofed by payload fields.
+        - Old/new mutation_execution configuration migration matrix preserves legacy compatibility without advertising scoped mutation.
+        - Caller cwd/workspace_root/file_ops rw roots cannot select mutation placement.
+        - Placement is deterministic and policy/generation drift fails closed.
+        - Unsupported or unhealthy hosts do not advertise host_mutation_sandbox_v1 or pre_execution_audit_lineage_v1.
+    checkpoint:
+      required: true
+    state: completed
+    run_refs:
+      - github-commit:75891c06b821be5f0d0ad3332db6123688cac7ed
+      - github-pr-comment:5887877762
+    completion_receipt_ref: github-pr-comment:5887877762
+
+  - slice_id: S02
+    objective: Implement the durable unique mutation-scope lease lifecycle and exact workspace authority indexes.
+    depends_on: [S01]
+    scope:
+      refs:
+        - src/sentinelx_core/mutation_scope.py
+        - src/sentinelx_core/mutation_placement.py
+        - src/sentinelx_core/policy.py
+    verification:
+      required:
+        - provision_scope is atomic and idempotent for same-Attempt retry/resume.
+        - Concurrent duplicate provisioning cannot mint a second active scope.
+        - Caller-minted, stale, cross-Run/Attempt/Slice, wrong-workspace, expired, revoked and terminal scope references fail closed.
+        - Exact-workspace reverse index detects conflicting lease/path/digest bindings.
+        - Terminal/revoked/expired authority cannot be caller-reactivated.
+        - Terminalization state model forbids success while a competing non-terminal lease remains.
+    checkpoint:
+      required: true
+    state: completed
+    run_refs:
+      - github-commit:a0ffef8d62ed597c17c38cbc5b0c4dfb2ed87b58
+      - github-pr-comment:5888393829
+    completion_receipt_ref: github-pr-comment:5888393829
+
+  - slice_id: S03
+    objective: Implement durable mutation START/SPAWN/FINISH audit lineage and retained forensic script evidence.
+    depends_on: [S02]
+    scope:
+      refs:
+        - src/sentinelx_core/mutation_audit.py
+        - src/sentinelx_core/request_context.py
+        - src/sentinelx_core/jobs.py
+        - src/sentinelx_core/handlers/script.py
+    verification:
+      required:
+        - OPERATION_STARTED durability failure prevents workspace materialization and spawn.
+        - Script SHA-256 plus restricted retained artifact exists before START and survives cleanup=true.
+        - Request, scope and semantic lineage identity remains stable across background job lifecycle.
+        - PROCESS_SPAWNED audit failure while suspended terminates the process/Job and never resumes it.
+        - Crash/interruption may leave START without a false successful FINISH.
+    checkpoint:
+      required: true
+    state: completed
+    run_refs:
+      - github-commit:8fc6949c4584e31a18174071dd00c9e671a65b5d
+      - github-pr-comment:5888953180
+    completion_receipt_ref: github-pr-comment:5888953180
+
+  - slice_id: S04
+    objective: Implement Windows AppContainer, exact ACL, reparse-safe workspace validation and suspended Job containment.
+    depends_on: [S03]
+    scope:
+      refs:
+        - src/sentinelx_core/mutation_sandbox.py
+        - src/sentinelx_core/windows_mutation_sandbox.py
+        - src/sentinelx_core/winspawn.py
+        - src/sentinelx_core/mutation_scope.py
+    verification:
+      required:
+        - Real Windows AppContainer identity can mutate only the exact admitted workspace.
+        - Parent, sibling and provider-protected fixture roots remain non-writable and non-deletable.
+        - Workspace DACL cannot accumulate write ACEs from a second active mutation SID.
+        - Process is created suspended, assigned to no-breakaway kill-on-close Job, spawn evidence is recorded, then and only then resumed.
+        - Reparse/junction/final-path redirection attempts fail closed.
+        - Timeout/cancel and terminalization prove no residual Job/process or SID write authority remains.
+    checkpoint:
+      required: true
+    state: completed
+    run_refs:
+      - github-commit:3d8aeb10373c580c604cd7e437570c2b6e2aec3f
+      - github-pr-comment:5889972254
+    completion_receipt_ref: github-pr-comment:5889972254
+
+  - slice_id: S05
+    objective: Integrate scoped mutation into script execution while preserving legacy behavior and credential boundaries.
+    depends_on: [S04]
+    scope:
+      refs:
+        - src/sentinelx_core/handlers/script.py
+        - src/sentinelx_core/handlers/__init__.py
+        - src/sentinelx_core/executor.py
+        - src/sentinelx_core/policy.py
+    verification:
+      required:
+        - PowerShell, pwsh and Python scoped paths preserve required Unicode/output/cwd behavior when the sandbox is available.
+        - Scoped cwd is provider-derived within the exact workspace and elevation is forbidden.
+        - Environment cannot override scope, placement, audit/evidence path, SID, Job or credential authority.
+        - Normal-user Git credentials are not inherited by the mutation sandbox.
+        - Scoped mutation failure never falls back to operator_unrestricted or legacy_unrestricted_compat.
+    checkpoint:
+      required: true
+    state: completed
+    run_refs:
+      - github-commit:be3e0050c544ecf4661aae6334bf6334aa85e5ef
+      - github-pr-comment:5892342757
+    completion_receipt_ref: github-pr-comment:5892342757
+
+  - slice_id: S06
+    objective: Run the canonical destructive-escape regression, complete documentation/config semantics and produce release-readiness evidence.
+    depends_on: [S05]
+    scope:
+      refs:
+        - tests/
+        - README.md
+        - SECURITY.md
+        - THREAT_MODEL.md
+        - config.example.yaml
+        - config.example.windows.yaml
+        - config.example.macos.yaml
+        - CHANGELOG.md
+    verification:
+      required:
+        - INCIDENT-20260927-D-ROOT-RECURSIVE-DELETE runs only against disposable fixture-owned roots.
+        - PowerShell, cmd, Python, .NET/Win32, child/detached, reparse, move/rename and git-clean escape attempts cannot mutate protected fixtures.
+        - All protected sentinel hashes/existence remain unchanged.
+        - Provider capability advertisement is backed by real prerequisite self-check evidence.
+        - Relevant SentinelX regressions pass or platform-inapplicable results are explicitly classified.
+        - Documentation explains scoped mutation, explicit unrestricted opt-in, audit evidence and V1 platform availability.
+    checkpoint:
+      required: true
+    state: completed
+    run_refs:
+      - github-commit:1234b99ade8434f305915769fc8f7dc609a27895
+      - github-pr-comment:5894603911
+    completion_receipt_ref: github-pr-comment:5894603911

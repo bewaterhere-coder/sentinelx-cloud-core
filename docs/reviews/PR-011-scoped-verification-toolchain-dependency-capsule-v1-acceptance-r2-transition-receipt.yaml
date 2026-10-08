@@ -1,0 +1,74 @@
+schema_version: "1.0"
+kind: devforge_acceptance_transition_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1
+source_command: "#开发验收 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  main_sha: af6cfb5153b5c982d9039e4c9f74fe44940ddbfb
+  latest_release_observed: v2.67.0
+  acceptance_contract:
+    path: contracts/development/acceptance-contract.md
+    version: "1.5"
+    blob_sha: 1c5e96a20d665e68b1f68e18b7d294945e501ec2
+
+lineage:
+  requirement_revision: 2
+  plan_revision: 6
+  acceptance_revision: 2
+  acceptance_ref: docs/reviews/PR-011-scoped-verification-toolchain-dependency-capsule-v1-acceptance-r2.md
+  acceptance_blob_sha: ed6077f71b8af84444b342ff7749abaa5d8d3e6b
+  acceptance_checkpoint_ref: docs/checkpoints/PR-011-scoped-verification-toolchain-dependency-capsule-v1-acceptance-r2-approved-20261006.yaml
+  acceptance_checkpoint_blob_sha: fe1ea34355e1c69e0968149d5571516894466e7c
+  task_blob_sha_after: de4a6be618da4ddc2f13dee3bafc8bb10e42d309
+  state_transition_commit: ff8e92231af6bede2e641aba36e044f9714ef7fb
+
+transport:
+  type: github-pr
+  pr_number: 11
+  branch: task/scoped-verification-toolchain-dependency-capsule-v1
+  evaluated_head_before_acceptance_artifacts: bff1edb8511d8ba47ccf476cd52b5cc631f875dd
+  verified_acceptance_repair_head: e02ae617860d8181ec9946ecae41c9ac81d3d2dc
+  verified_runtime_candidate: 9948eb4d481ca773b2ea14cf2571e0cf6342f213
+  canonical_main: e7064c9bf4fcd15bdb6f5a2678414210c01d1c00
+  transport_drift: false
+
+verification:
+  macos_evidence_used: false
+  repaired_s04_windows_run_id: 37467396706
+  repaired_s04_windows_result: success
+  repaired_s04_windows_tests_passed: 53
+  generic_ci_run_id: 37467396768
+  generic_ci_result: success
+  pr011_s01_result: success
+  pr011_s02_result: success
+  pr011_s03_result: success
+  pr011_s05_result: success
+  pr010_regressions_s01_s05: success
+  s04_real_host_system_gate: success
+  s04_real_host_tests_passed: 35
+  s04_tamper_gate: success
+  s05_live_profiled_execution: success
+  s05_live_terminal_readback: true
+  current_live_agent_version: "0.24.1.dev403+g9948eb4d4"
+  current_describe_verification_selector_present: true
+  current_post_restore_verification_profile_present: false
+
+decision:
+  result: Approved
+  from_stage: acceptance
+  to_stage: accepted
+  acceptance_approved: true
+  completion_verified: false
+
+safety:
+  hub_modified: false
+  canonical_checkout_mutated_by_acceptance: false
+  canonical_main_mutated_by_acceptance: false
+  permission_or_allowlist_expansion_used: false
+  operator_unrestricted_used: false
+  unrestricted_fallback_used: false
+
+postconditions:
+  canonical_next_action: "#开发完成 PR-011-scoped-verification-toolchain-dependency-capsule-v1"

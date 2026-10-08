@@ -1,0 +1,68 @@
+schema_version: "1.0"
+kind: devforge_slice_completion_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-015-direct-codex-development-host-invocation-bridge-v1
+slice_id: S03
+source_command: "#开发执行 PR-015-direct-codex-development-host-invocation-bridge-v1"
+created_at: "2026-10-07"
+
+authority:
+  durable_authorization: AUTH-PR-015-DIRECT-CODEX-BRIDGE-V1
+  authorization_state: active
+  authorization_revision: 2
+  bootstrap_override: active (expires when all bound plan slices complete)
+  effective_target: direct:codebuddy
+  persistent_project_binding: direct/codex
+  plan_revision: 2
+  plan_blob_sha: b1414f58e31e69fd5718479d04eb6b7e9e8475bd
+
+result:
+  slice_state: completed
+  implementation_landed: true
+  product_candidate_sha: a84db15a8770599718a665fd9c201c7b82b3dd91
+  completed_slice_count: 3
+  one_execute_one_slice_preserved: true
+  verified_side_effect_replay: none
+
+transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  canonical_pr: 15
+  canonical_branch: task/direct-codex-development-host-invocation-bridge-v1
+  pr_head_before_mutation: 7ae171039e08f6f5ac86cc6a455231de07250122
+  canonical_main_at_execution: 018b78ca20984176d53fbe90039dc795a7f2742f
+  replacement_transport_created: false
+  remote_readback_required_before_completion_claim: true
+
+verification_evidence:
+  focused_suite: tests/test_direct_codex_execution.py + tests/test_user_process.py
+  focused_result: 33 passed (test_direct_codex_execution 29, test_user_process 4)
+  regression_subset: tests/test_policy.py + tests/test_user_scoped_git.py + tests/test_direct_codex_provider.py: 82 passed; only the documented symlink-privilege test failed (pre-existing host limitation, not a regression)
+  regression_subset_passed: true
+  exact_candidate_physical_proof: 3 complete end-to-end runs of the delivered bridge with the REAL @openai/codex 0.154.0 host against a local bare fixture origin seeded from the exact task-branch head (7ae1710); canonical GitHub transport untouched
+  physical_proof_proven: MIC containment (EPERM on protected sibling), independent checkout at exact CAS head, bounded active-user execution with job containment, exact Task/Run/Attempt/Slice + PR/repo/branch echo, remote readback consistency, local-only-run-never-success (3x real host)
+  material_finding: >-
+    real-host persistence gap — the real Codex host performs slice work but never
+    commits under its own sandbox, so no persisted success receipt can be produced
+    by a real host under the current plan; provider-owned commit-on-publish is not
+    in S03 authorized scope and was not implemented; the decision is returned to
+    the plan/acceptance boundary (see S03 checkpoint
+    material_finding_real_host_persistence_gap)
+  deployed_live_activation_proof_owner: acceptance
+
+guard:
+  acceptance_claim: false
+  completion_claim: false
+  gate_transition: none
+  requirement_change: false
+  plan_change: false
+  permission_expansion: false
+  write_scope_expansion: false
+  provider_fallback: false
+  no_receipt_no_completion_claim: honored
+
+next_action:
+  canonical_command: "#开发验收 PR-015-direct-codex-development-host-invocation-bridge-v1"
+  note: >-
+    All bound plan slices are complete and the bootstrap override expires.
+    The operator should resolve the recorded real-host persistence finding
+    before or during acceptance; acceptance owns the deployed live-Agent proof.

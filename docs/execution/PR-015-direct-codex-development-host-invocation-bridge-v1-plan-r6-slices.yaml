@@ -1,0 +1,162 @@
+schema_version: "1.0"
+kind: devforge_execution_slice_set
+identity:
+  task_id: PR-015-direct-codex-development-host-invocation-bridge-v1
+  slice_set_id: PR-015-direct-codex-development-host-invocation-bridge-v1-plan-r6
+plan:
+  ref: docs/plans/PR-015-direct-codex-development-host-invocation-bridge-v1-plan.md
+  revision: 6
+  blob_sha: 2bcea2a44f88e51c8b9378ba6297b61897e638da
+  requirement_revision: 2
+review:
+  ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r6.md
+  blob_sha: 5e6ff106b7d5befcae4fccc77d83ddae3c674764
+  decision: Approved
+repository_baseline:
+  main_sha: 018b78ca20984176d53fbe90039dc795a7f2742f
+  reviewed_task_head: 3f7decad66dbb9daf24387eb0cc25dd76d3d539e
+runtime_provenance:
+  devforge_version: "2.82.0"
+  devforge_main_sha: e16948004601829813f19dbef4cf3cc018606ff9
+
+historical_prerequisites:
+  - slice_id: S01
+    source_plan_revision: 2
+    disposition: retained_verified_evidence_only
+    replay_authorized: false
+    checkpoint_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-s01-completion-20261006.yaml
+    completion_receipt_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-s01-completion-receipt.yaml
+  - slice_id: S02
+    source_plan_revision: 2
+    disposition: retained_verified_evidence_only
+    replay_authorized: false
+    checkpoint_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-s02-completion-20261007.yaml
+    completion_receipt_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-s02-completion-receipt.yaml
+  - slice_id: S03
+    source_plan_revision: 2
+    disposition: retained_verified_evidence_with_material_finding
+    replay_authorized: false
+    checkpoint_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-s03-completion-20261007.yaml
+    completion_receipt_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-s03-completion-receipt.yaml
+    finding_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r1.md
+
+bootstrap_entry:
+  required_before_s04_execution: true
+  intended_target:
+    provider: direct
+    adapter: codebuddy
+  explicit_command: "#开发引导执行 PR-015-direct-codex-development-host-invocation-bridge-v1 direct:codebuddy"
+  prior_override_reuse: forbidden
+  project_binding_mutation: forbidden
+  fallback: forbidden
+  active_override_required_for_slice_execution: true
+
+implementation_entry_guard:
+  required_before_s04: true
+  rules:
+    - re-read current canonical Task, Requirement R2, Approved Plan R6, this exact Slice Set and active bootstrap override before product mutation
+    - require exact canonical repository bewaterhere-coder/sentinelx-cloud-core, PR #15 and branch task/direct-codex-development-host-invocation-bridge-v1
+    - require bootstrap override bound to exact Plan R6 blob and this Slice Set
+    - preserve persistent project binding direct/codex
+    - preserve canonical checkout main + clean and never use it as implementation cwd
+    - fail closed on Requirement, Plan, Slice Set, transport, bootstrap override, canonicalization snapshot or security-boundary drift
+    - do not use generic exec, generic Git surface, shell wrapper, operator_unrestricted, arbitrary run-as-user, permission widening or provider fallback
+    - no replacement branch or PR
+    - no force or force-with-lease
+    - one explicit #开发执行 completes at most one Slice
+
+slices:
+  - slice_id: S04
+    title: Provider-Owned Deterministic Persistence & Canonical Publish Closure
+    objective: >-
+      Extend direct-Codex bootstrap with one provider-owned pre-checkout
+      canonicalization authority snapshot, materialize the isolated Codex
+      worktree under that exact snapshot, reuse the snapshot for provider-owned
+      temporary-index canonical clean staging, create one deterministic
+      recovery-safe candidate commit, ordinary fast-forward publish it to the
+      exact canonical PR branch, independently read back the remote, and emit a
+      persisted direct/codex receipt.
+    depends_on: []
+    historical_prerequisite_evidence: [S01, S02, S03]
+    state: completed
+    scope:
+      refs:
+        - src/sentinelx_core/direct_codex_transport.py
+        - src/sentinelx_core/direct_codex_persistence.py
+        - src/sentinelx_core/direct_codex_result.py
+        - src/sentinelx_core/handlers/direct_codex.py
+        - src/sentinelx_core/user_git.py
+        - focused direct-Codex transport/persistence tests
+        - focused Windows canonicalization/filter/recovery fixtures
+      authorized_changes:
+        - separate authenticated object acquisition from first worktree materialization
+        - capture and durably bind safe normalization snapshot before checkout
+        - inspect expected-tree attributes before checkout and reject any effective custom filter across tracked paths
+        - neutralize system/global attribute authority and require git info attributes absent or empty
+        - perform provider-clamped checkout with no hooks, fsmonitor, submodule recursion, editor, pager, prompt or arbitrary materialization config authority
+        - reject versioned .gitattributes mutation in V1
+        - build candidate through provider-owned temporary index seeded from expected_remote_sha
+        - reuse exact pre-checkout snapshot for canonical clean staging
+        - preserve builtin text/eol, binary, ident and supported working-tree-encoding semantics
+        - persist recovery journal outside candidate set
+        - freeze all commit-SHA inputs before candidate creation
+        - reconstruct bit-identical candidate on same-attempt recovery
+        - persist publish_intent before first push
+        - ordinary fast-forward publish exact candidate to exact canonical branch
+        - independent remote readback and persistence receipt extension
+      forbidden:
+        - trusting Codex-owned index as candidate authority
+        - custom or external filter execution at checkout or persistence
+        - versioned .gitattributes mutation through V1 persistence path
+        - generic Git or shell surface
+        - caller Git argv, pathspec, commit metadata, remote or branch override
+        - force or force-with-lease
+        - replacement branch or PR
+        - canonical checkout mutation
+        - permission or credential expansion
+        - provider rebinding
+        - production Hub mutation
+    verification:
+      required:
+        - clone/fetch obtains exact admitted commit without worktree materialization
+        - safe canonicalization snapshot is persisted and read back before checkout
+        - custom filter assignment on any tracked expected-tree path fails before checkout and marker process never runs
+        - system/global attributes are neutralized and non-empty .git/info/attributes blocks checkout
+        - provider-clamped checkout uses the exact frozen snapshot
+        - Windows CRLF worktree for parent LF blob re-canonicalizes to exact parent blob when unchanged
+        - one-line semantic edit does not create whole-file EOL churn
+        - binary bytes remain exact and supported working-tree-encoding round-trips deterministically
+        - Codex add/delete/modify of versioned .gitattributes fails before candidate creation
+        - pre-staged excluded Codex-index entry cannot enter provider candidate tree
+        - temporary candidate index is seeded from exact admitted parent and contains only validated canonical eligible delta
+        - hooks/signing/fsmonitor/editor/pager/prompt/submodule recursion cannot execute through local materialization/persistence path
+        - unmerged state, unsupported gitlink/submodule mutation and path escape fail closed
+        - same attempt reconstructs bit-identical candidate across prepared/tree_ready/candidate_ready/local-ref-ready interruptions
+        - publish_intent recovery performs readback only and never automatic second push
+        - remote drift before publish fails without push
+        - ordinary push targets only exact canonical branch and remote readback must equal candidate
+        - no eligible changes does not manufacture empty implementation commit
+        - malformed or local-only persistence receipt cannot be success
+        - canonical checkout branch/head/index/worktree remain unchanged
+        - existing S01-S03 direct-Codex/firewall/scoped-verification/user-scoped-Git regressions remain green
+        - real Windows @openai/codex physical fixture proves edit -> provider commit -> ordinary fixture-branch push -> remote readback -> persisted direct/codex receipt
+    external_availability_rule: >-
+      real Windows physical checkout/filter/canonicalization/direct-Codex
+      persistence proof is required for Slice completion
+    checkpoint:
+      required: true
+
+execution_state:
+  current_slice: S04
+  current_slice_state: completed
+  completed_slices: [S04]
+  pending_slices: []
+  all_slices_completed: true
+
+acceptance_boundary:
+  all_current_plan_slices_must_be_completed: true
+  historical_s01_s03_are_prerequisite_evidence_not_current_slices: true
+  live_agent_activation:
+    implementation_slice: false
+    verifier_owned: true
+  acceptance_command: "#开发验收 PR-015-direct-codex-development-host-invocation-bridge-v1"

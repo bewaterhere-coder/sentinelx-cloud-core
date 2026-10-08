@@ -1,0 +1,260 @@
+schema_version: "1.0"
+kind: devforge_execution_slice_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-015-direct-codex-development-host-invocation-bridge-v1
+slice_id: S04
+source_command: "#开发引导执行 PR-015-direct-codex-development-host-invocation-bridge-v1 direct:codebuddy"
+
+runtime:
+  devforge_version: "2.84.0"
+  devforge_revision: ae5ff139ed8cb762588bb432dc83fed5ef464a12
+  runtime_revision_note: >-
+    Standard main revision locked at execution time via authenticated GitHub read
+    (bewaterhere-coder/DevForge@main). The bootstrap override was admitted at
+    DevForge 2.82.0 and the slice set records 2.82.0 provenance; revision drift
+    across this Task's slices is pre-existing (bootstrap 2.69.0, S01 2.70.0, S02
+    2.75.0, S03 2.79.0). The bound Plan R6 and Slice Set digests are unchanged.
+
+state:
+  task_stage: implementation
+  slice_state: completed
+  execution_disposition: Completed
+  implementation_landed: true
+  completion_receipt_created: true
+  one_execute_one_slice_preserved: true
+
+lineage:
+  plan_revision: 6
+  plan_blob_sha: 2bcea2a44f88e51c8b9378ba6297b61897e638da
+  plan_review_blob_sha: 5e6ff106b7d5befcae4fccc77d83ddae3c674764
+  slice_set_blob_sha_before: 192e5446036423297cbcece01a27492ae9aae390
+  bootstrap_override_blob_sha: 91b527f4c31d422e25ea7e00cc3d317e7a184fd4
+  requirement_revision: 2
+  requirement_blob_sha_current: 4aadf6507504d151c7f59b4307d7a0f73892c7b4
+  requirement_blob_sha_override: 0c3a00074d24e440cc347d69730770b74c660637
+  requirement_drift_assessment: >-
+    Non-semantic bookkeeping drift only. The override bound Requirement Revision 2
+    (still current) and the current Plan R6 / Slice Set digests both match the
+    override. Since the override was written, the requirement file's front-matter
+    was updated by this Task's own S03/R6 state commits (artifact refs, plan
+    revision 6, review refs); the Requirement body (Problem/Goal/Scope/R1-R16/
+    Acceptance criteria/Non-goals) is byte-identical to the override-time
+    revision. No requirement-semantic change; Plan/Slice-Set/transport/
+    bootstrap-override bindings verified unchanged.
+
+authority:
+  durable_authorization_ref: docs/authorizations/PR-015-direct-codex-development-host-invocation-bridge-v1-development-authorization.yaml
+  bootstrap_override_state: active (expires when all bound plan slices complete)
+  effective_provider: direct
+  effective_adapter: codebuddy
+  intended_target: direct:codebuddy
+  persistent_project_binding: direct/codex
+  project_binding_mutated: false
+  provider_fallback_used: false
+
+admission:
+  canonical_main_before: 018b78ca20984176d53fbe90039dc795a7f2742f
+  pr_head_before_mutation: d36cf27b1b0518d116bbd15aec0955031442c8ed
+  plan_blob_sha_matched: true
+  slice_set_blob_sha_matched: true
+  bootstrap_override_blob_sha_matched: true
+  requirement_revision_matched: true
+  canonical_transport_locked: true
+  canonical_checkout_clean_before_mutation: true
+  canonical_checkout_used_as_implementation_cwd: false
+  execution_workspace: D:\coco\workspaces\bewaterhere-coder\sentinelx-cloud-core\pr015-s04-a1
+  fresh_read_before_mutation: true
+  replacement_branch_or_pr_created: false
+  force_or_force_with_lease_used: false
+  permission_or_credential_expansion: false
+  generic_shell_or_git_surface_used: false
+  hub_mutation: false
+
+implementation:
+  summary: >-
+    S04 delivers the provider-owned deterministic persistence and canonical publish
+    closure that Requirement Revision 2 requires and that Acceptance R1's real-host
+    finding identified as missing. The direct/Codex transport now separates
+    authenticated object acquisition from first worktree materialization, freezes a
+    provider-owned pre-checkout canonicalization snapshot (allowlisted safe
+    normalization scalars, provider inspection index seeded from the exact admitted
+    parent, effective custom-filter rejection, system/global attribute
+    neutralization, .git/info/attributes emptiness), materializes the worktree under
+    provider-owned clamps, and re-proves the same frozen authority after the direct
+    host ran. A new bounded persistence broker derives the eligible delta from the
+    worktree (never from the Codex-owned index), builds the candidate in a
+    provider-owned temporary index seeded from the exact admitted parent, verifies
+    the candidate tree equals parent + exactly the validated delta, creates one
+    deterministic provenance-bound commit with frozen identity/timestamp, moves a
+    provider-local candidate ref under CAS, persists publish_intent, performs an
+    ordinary fast-forward push to the exact canonical branch and independently reads
+    the remote back. The same-attempt recovery journal is stored outside the
+    candidate set and reconstructs a bit-identical candidate across prepared/
+    tree_ready/candidate_ready/local_ref_ready interruptions, and a publish_intent
+    recovery performs readback only and never issues a hidden second push. A
+    verified no-change outcome is reported distinctly and never fabricates an empty
+    implementation commit. The structured receipt gains a bounded persistence block
+    and validate_receipt now requires candidate commit, ordinary publish and remote
+    readback equality for a valid persisted success.
+  changes:
+    - "src/sentinelx_core/direct_codex_transport.py: Phase A/B/C/D split (object
+      acquisition vs first worktree materialization), CanonicalizationSnapshot,
+      provider-owned execution state, inspection index, effective attribute
+      inspection with custom-filter rejection, materialization clamps/env,
+      provider-clamped checkout and post-run revalidation"
+    - "src/sentinelx_core/direct_codex_persistence.py (new): provider-owned
+      persistence broker — worktree inventory, mode/gitlink/path validation,
+      temporary-index candidate tree + verification, deterministic commit with
+      frozen identity, recovery journal/state machine, CAS local ref, ordinary
+      fast-forward publish, independent readback, publish_intent readback-only
+      recovery"
+    - "src/sentinelx_core/direct_codex_result.py: persistence block in the result,
+      receipt version 2, persistence/readback/candidate/base-head validation"
+    - "src/sentinelx_core/handlers/direct_codex.py: execute_task calls the
+      persistence broker after the bounded Codex run and passes the outcome into
+      result normalization; the previous provider push helper is replaced"
+    - "src/sentinelx_core/user_git.py: provider-owned closed Git environment
+      allowlist (GIT_INDEX_FILE, frozen ident/date, config/attribute
+      neutralization, literal pathspecs) on the fixed Git primitive"
+    - "tests/test_direct_codex_execution.py: receipt-contract update for the new
+      persistence requirement plus real-host edit/no-change end-to-end fixtures"
+    - "tests/test_direct_codex_persistence.py (new): 30 focused canonicalization/
+      filter/CRLF/binary/working-tree-encoding/candidate/index-authority/recovery/
+      publication/drift/canonical-isolation tests"
+  product_candidate_sha: 02eb3de2ec9c137b3285398e555f1e037b574965
+
+verification:
+  required:
+    - clone/fetch obtains the exact admitted commit without materializing the worktree
+    - safe canonicalization snapshot is persisted and read back before checkout
+    - any effective custom filter on a tracked expected-tree path fails before
+      checkout and its marker process never runs
+    - system/global attributes are neutralized and non-empty .git/info/attributes
+      blocks checkout
+    - provider-clamped checkout uses the exact frozen snapshot
+    - a Windows CRLF worktree for an LF parent blob re-canonicalizes to the exact
+      parent blob when unchanged
+    - a one-line semantic edit does not create whole-file EOL churn
+    - binary bytes remain exact and supported working-tree-encoding round-trips
+      deterministically
+    - Codex add/delete/modify of a versioned .gitattributes fails before candidate
+      creation
+    - a pre-staged excluded Codex-index entry cannot enter the provider candidate tree
+    - the temporary candidate index is seeded from the exact admitted parent and
+      contains only the validated canonical eligible delta
+    - hooks/signing/fsmonitor/pager/prompt/submodule recursion cannot execute through
+      local materialization/persistence
+    - unmerged state, unsupported gitlink/submodule mutation and path escape fail closed
+    - the same attempt reconstructs a bit-identical candidate across
+      prepared/tree_ready/candidate_ready/local-ref-ready interruptions
+    - publish_intent recovery performs readback only and never an automatic second push
+    - remote drift before publish fails without push
+    - an ordinary push targets only the exact canonical branch and the remote readback
+      must equal the candidate
+    - no eligible changes does not manufacture an empty implementation commit
+    - a malformed or local-only persistence receipt cannot be success
+    - canonical checkout branch/head/index/worktree remain unchanged
+    - existing S01-S03 direct-Codex/firewall/scoped-verification/user-scoped-Git
+      regressions remain green
+    - real Windows @openai/codex physical fixture proves edit -> provider commit ->
+      ordinary fixture-branch push -> remote readback -> persisted direct/codex receipt
+  evidence:
+    focused_suite: tests/test_direct_codex_execution.py + tests/test_direct_codex_persistence.py + tests/test_direct_codex_provider.py + tests/test_user_process.py
+    focused_result: 113 passed (execution 32, persistence 30, provider + user_process 49, plus the shared harness cases)
+    focused_result_note: >-
+      test_direct_codex_execution.py and test_direct_codex_persistence.py alone are
+      64 passed; the wider focused set including the S01/S02 provider and active-user
+      process suites is 113 passed.
+    regression_subset_1:
+      files: tests/test_policy.py + tests/test_user_scoped_git.py + tests/test_windows_mutation_sandbox.py + tests/test_direct_codex_provider.py
+      result: 85 passed, 5 failed
+      failures: the documented host-privilege set — test_policy.py::test_file_ops_symlink_escape_is_defeated (symlink privilege WinError 1314) and four test_windows_mutation_sandbox.py tests (SetNamedSecurityInfoW WinError 5 on D:\coco\workspaces)
+      regression: none
+    regression_subset_2:
+      files: tests/test_scoped_script_execution.py + tests/test_verification_scoped_execution.py + tests/test_canonical_repository_firewall.py + tests/test_operation_effect_registry.py + tests/test_git_network.py + tests/test_local_api.py + tests/test_handlers.py
+      result: 102 passed, 7 failed, 2 skipped
+      failures: the same documented SetNamedSecurityInfoW WinError 5 AppContainer host limitation
+      baseline_confirmation: >-
+        The two representative failures were reproduced on the UNMODIFIED S03
+        workspace (pr015-s03-a1) with the identical WinError 5, proving pre-existing
+        host-privilege failures rather than S04 regressions.
+      regression: none
+    physical_proof:
+      driver: D:\coco\workspaces\bewaterhere-coder\sentinelx-cloud-core\pr015-s04-proof\driver.py
+      evidence_files:
+        - proof-result.json
+        - proof-receipt.json
+        - driver.log
+        - git-trace.log
+      product_under_test: >-
+        The delivered devforge_direct_codex bridge at the exact S04 candidate
+        02eb3de2ec9c137b3285398e555f1e037b574965 in the S04 workspace with the REAL
+        installed Codex Development Host (@openai/codex, node v24.19.0, ChatGPT
+        session), the real Windows MIC containment proof and the real active-user
+        process substrate.
+      fixtures: >-
+        Bounded local bare fixture origins (filter/crlf/attributes/drift/codex) so the
+        canonical GitHub transport was never touched. Exact canonical identity echoed:
+        repository git://github.com/bewaterhere-coder/sentinelx-cloud-core, PR 15,
+        branch task/direct-codex-development-host-invocation-bridge-v1.
+      verdict: PASSED
+      physically_proven:
+        - real Codex (exit_disposition completed, returncode 0) edited the isolated
+          checkout and did not commit; the provider derived the single eligible delta
+          (src/calc.py), created candidate bee3db7d9099df9190f4875d523d8e4cea3a9c07
+          whose parent is the admitted head 3ae20ac43a5ac4a933475bda540aa71abbe1eba4,
+          ordinary-pushed it to the exact fixture canonical branch, independently read
+          the remote back and returned a valid persisted direct/codex receipt
+        - exactly one new commit on the fixture branch; no replacement branch/tag; no
+          force/force-with-lease path
+        - "MIC containment: a low-integrity child wrote inside the workspace and was
+          refused (EPERM) on the protected workspace-root sibling; no contamination"
+        - a custom `filter` attribute on a tracked path was rejected before checkout
+          and its marker process never ran; no worktree was materialized
+        - a tracked text fixture with an LF parent blob materialized as Windows CRLF
+          under the frozen snapshot and re-canonicalized to the exact parent blob when
+          unchanged (verified no-change outcome, no commit, no publish)
+        - a one-line real edit in that CRLF worktree produced canonical LF content with
+          exactly one eligible change (no whole-file EOL churn) and published it
+        - a versioned .gitattributes change failed closed before persistence
+        - a remote-drift negative failed without push and created no replacement
+          transport
+        - canonical-like checkout unmutated; process tree contained; no acceptance or
+          completion claim
+      host_findings:
+        - >-
+          user-scoped Git (WTSQueryUserToken) remains unavailable from a normal user
+          shell on this host (WinError 1314, pre-existing constraint); the proof driver
+          records the substitution and uses the SAME fixed Git argv through a direct
+          subprocess (no shell) for transport Git only; process execution stayed on the
+          real user-scoped substrate
+        - >-
+          the host's ~/.codex default model was temporarily switched to the
+          account-accepted model for the physical run and restored from backup
+          immediately afterwards; the bridge itself never selects or overrides a model
+
+claims:
+  caller_never_supplies_workspace_executable_argv_pathspec_or_commit_metadata: true
+  canonical_transport_preserved: true
+  canonical_checkout_unmutated: true
+  no_provider_fallback: true
+  no_permission_or_write_scope_expansion: true
+  no_credential_or_environment_disclosure: true
+  no_generic_git_or_shell_surface_added: true
+  no_force_or_replacement_transport: true
+  process_tree_contained: true
+  local_only_or_no_change_run_is_not_success: true
+  acceptance_or_completion_claim: false
+  verified_side_effect_replay: none
+
+continuation:
+  next_expected_actor: operator (acceptance boundary)
+  canonical_next_command: "#开发验收 PR-015-direct-codex-development-host-invocation-bridge-v1"
+  note: >-
+    All bound plan slices (S04 is the only current Plan R6 slice) are complete, so the
+    task-scoped bootstrap override expires per its own expiry rule. The S03 real-host
+    persistence finding is now resolved by S04: a real Codex host edit is persisted by
+    the provider and published to the exact canonical branch with an independent
+    readback. Acceptance owns the deployed live-Agent activation proof and the PR-013
+    direct/Codex provider-admission recovery proof, and must evaluate Requirement
+    Revision 2 against the exact S04 product candidate.

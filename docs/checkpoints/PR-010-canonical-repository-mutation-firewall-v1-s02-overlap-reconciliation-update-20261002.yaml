@@ -1,0 +1,48 @@
+schema: devforge.slice-entry-reconciliation-update.v1
+project_id: sentinelx-cloud-core
+task_id: PR-010-canonical-repository-mutation-firewall-v1
+requirement_revision: 2
+plan_revision: 4
+slice_id: S02
+source_command: "#开发执行 PR-010-canonical-repository-mutation-firewall-v1"
+prior_entry_checkpoint: docs/checkpoints/PR-010-canonical-repository-mutation-firewall-v1-s02-entry-reconciliation-20261002.yaml
+reason: dependency_advanced_during_slice_execution
+observed_dependencies:
+  pr007:
+    prior_head: 6d7a3847025b06ef2e5e537c34b943db80280434
+    current_head: d1c14d7ed14e63b895a8fcb7348214611ccb53d8
+    stage: implementation
+    current_state: S06_completed_S07_pending
+    material_overlap:
+      - src/sentinelx_core/handlers/__init__.py
+    observed_change:
+      - execute_scoped adapter is now wired through PR-007-owned registry composition
+      - local_api builtin lifecycle and RequestContext composition remain PR-007 authority
+  pr008:
+    current_head: f7594c468d764ad85c0dc508ad47f009c89793c1
+    stage: acceptance
+    direct_s02_product_overlap: false
+decision_boundary:
+  reached: true
+  resolution: no_loss_replan_without_shared_registry_mutation
+  rules:
+    - restore src/sentinelx_core/handlers/__init__.py to PR-010 task head before commit
+    - do not transplant or overwrite PR-007 registry/local_api/scoped-execution wiring
+    - derive effect accounting from the effective dispatch keys returned by build_registry
+    - any present operation without known Core metadata remains unknown and makes readiness false
+    - generic builtin local_api metadata is consumed only when the owning provider supplies it
+    - missing builtin effect metadata remains unknown
+    - S02 creates no RequestContext, scope-store, sandbox, executor, or audit authority
+actual_product_files_after_replan:
+  - src/sentinelx_core/operation_registry.py
+  - src/sentinelx_core/canonical_repository_firewall.py
+  - src/sentinelx_core/policy.py
+  - src/sentinelx_core/handlers/edit.py
+  - src/sentinelx_core/handlers/fsmutate.py
+  - src/sentinelx_core/handlers/git_ops.py
+  - src/sentinelx_core/handlers/upload.py
+  - tests/test_operation_effect_registry.py
+  - tests/test_structured_mutation_firewall.py
+shared_overlap_product_files_mutated_by_s02: []
+material_conflict_after_resolution: false
+entry_gate: passed_after_fresh_reconciliation

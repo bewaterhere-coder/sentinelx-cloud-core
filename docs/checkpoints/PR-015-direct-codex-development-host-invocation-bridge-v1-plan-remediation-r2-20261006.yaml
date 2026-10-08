@@ -1,0 +1,68 @@
+schema_version: 1
+kind: devforge_plan_remediation_checkpoint
+task_id: PR-015-direct-codex-development-host-invocation-bridge-v1
+source_command: "#开发计划修复 PR-015-direct-codex-development-host-invocation-bridge-v1"
+
+runtime:
+  devforge_version: "2.68.0"
+  devforge_revision: a13b1113fb3b5938199bad1bf45539eb311ae531
+  sentinelx_canonical_main: 018b78ca20984176d53fbe90039dc795a7f2742f
+
+input:
+  requirement_revision: 1
+  rejected_plan_revision: 1
+  rejected_plan_blob_sha: bf7eefc2bc5ebcf7bc4d45782bec3736b316eae1
+  rejected_review_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r1.md
+  rejected_review_blob_sha: b727a988c2f5c90dc16f26d996e26ee5d3fa6b55
+
+output:
+  revised_plan_revision: 2
+  revised_plan_ref: docs/plans/PR-015-direct-codex-development-host-invocation-bridge-v1-plan.md
+  revised_plan_blob_sha: b1414f58e31e69fd5718479d04eb6b7e9e8475bd
+  requirement_semantics_changed: false
+  transport_changed: false
+  project_binding_changed: false
+  implementation_started: false
+
+addressed_findings:
+  - id: BootstrapExecutionStrategyIncomplete
+    resolution: "freeze direct:codebuddy as the sole intended task-scoped bootstrap target; admission remains owned by explicit #开发引导执行 after Plan approval"
+    live_host_evidence:
+      codebuddy_installation_detected: true
+      devforge_user_rule_detected: true
+    fail_closed:
+      - BootstrapTargetUnavailable
+      - BootstrapTargetUnregistered
+      - BootstrapTransportConflict
+      - BootstrapScopeExpansion
+  - id: DirectCodexFirewallCompositionIncomplete
+    resolution: "bind effective builtin local_api provider map to both dispatch and canonical repository-effect/firewall readiness; require deterministic repository_effect metadata and fail-closed regression coverage"
+
+bootstrap:
+  intended_target:
+    provider: direct
+    adapter: codebuddy
+  explicit_authority_command: "#开发引导执行 PR-015-direct-codex-development-host-invocation-bridge-v1 direct:codebuddy"
+  authority_created_by_this_remediation: false
+  canonical_transport:
+    repository: bewaterhere-coder/sentinelx-cloud-core
+    pr: 15
+    branch: task/direct-codex-development-host-invocation-bridge-v1
+  fallback: forbidden
+
+safety:
+  canonical_main_mutated: false
+  product_code_mutated: false
+  host_policy_mutated: false
+  production_hub_mutated: false
+  provider_rebound: false
+  permission_expansion_used: false
+  credential_mutation_used: false
+  self_approval_performed: false
+
+next_state:
+  stage: plan_review
+  plan_revision: 2
+  plan_approved: false
+  implementation_authorized: false
+  next_expected_actor: reviewer

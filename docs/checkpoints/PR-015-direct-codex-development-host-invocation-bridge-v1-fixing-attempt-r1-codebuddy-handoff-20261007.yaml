@@ -1,0 +1,90 @@
+schema_version: "1.0"
+kind: devforge_fixing_external_development_host_handoff_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-015-direct-codex-development-host-invocation-bridge-v1
+source_command: "#开发执行 PR-015-direct-codex-development-host-invocation-bridge-v1"
+created_at: "2026-10-07"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  version: "2.89.0"
+  revision: a3be53a90737b1710d2c096675018a9c8b183ce0
+  capability: development.execute
+  dispatch: acceptance_fix
+
+attempt:
+  attempt_id: fixing-r1-codebuddy
+  stage: fixing
+  state: external_handoff_ready
+  max_fixing_attempts_consumed: 1
+  resumed_from_prior_attempt: false
+
+bootstrap_override:
+  ref: docs/overrides/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-execution-override.yaml
+  blob_sha: a33802c2eeba930283a24f573c390ab4ee7bd7b7
+  revision: 3
+  mode: fixing_recovery
+  state: active
+  readback_verified: true
+  effective_provider: direct
+  effective_adapter: codebuddy
+  project_binding:
+    provider: direct
+    adapter: codex
+  project_binding_mutated: false
+
+transport:
+  type: github-pr
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 15
+  pr_url: https://github.com/bewaterhere-coder/sentinelx-cloud-core/pull/15
+  branch: task/direct-codex-development-host-invocation-bridge-v1
+  handoff_parent_head: 941e392c3995b5a8c50db9015c2cc35ebac9560a
+  replacement_branch: forbidden
+  replacement_pr: forbidden
+  provider_fallback: forbidden
+
+context_pointers:
+  requirement_ref: docs/requirements/PR-015-direct-codex-development-host-invocation-bridge-v1.md
+  requirement_revision: 2
+  requirement_blob_sha: b913c9ee1db94fec13ca69155cb71dff938091e1
+  plan_ref: docs/plans/PR-015-direct-codex-development-host-invocation-bridge-v1-plan.md
+  plan_revision: 6
+  plan_blob_sha: 2bcea2a44f88e51c8b9378ba6297b61897e638da
+  acceptance_findings_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r5.md
+  acceptance_findings_blob_sha: 988f2a1eb94ab8349576e3db3c88c4def93fb6c0
+  acceptance_checkpoint_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r5-rejected-containment-lifecycle-20261007.yaml
+  finding_classification: repair_local
+  finding_code: direct_codex_containment_proof_lifecycle_unreachable
+
+thin_execution_pointer:
+  directive: >-
+    Fix only the current Acceptance R5 repair_local finding using the existing
+    PR #15 branch. Read the exact Requirement, Approved Plan, Acceptance finding
+    and bootstrap override pointers above. Do not re-plan, create another branch
+    or PR, change project binding, widen permissions, modify Host policy, enable
+    generic exec, or modify the immutable Hub.
+  return_condition:
+    - product code repair committed to the same PR branch
+    - focused direct-Codex tests updated/passing
+    - relevant local_api/readiness lifecycle regressions updated/passing
+    - no replacement transport or permission expansion
+    - PR head commit receipt available for DevForge readback
+
+handoff_validation:
+  exact_pr_url_resolved: true
+  exact_branch_resolved: true
+  requirement_readable: true
+  plan_readable: true
+  acceptance_findings_readable: true
+  fixing_override_current: true
+  target_registered: true
+  target_available: true
+  transport_lock_preserved: true
+  repository_wide_rediscovery_required: false
+  host_runtime_scope_required: false
+  successful_thin_handoff_eligible: true
+
+resume:
+  on_external_host_return: "#开发执行 PR-015-direct-codex-development-host-invocation-bridge-v1"
+  semantics: same_attempt_readback_and_fixing_to_acceptance_resolution

@@ -1,0 +1,133 @@
+schema_version: "1.0"
+kind: devforge_acceptance_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-015-direct-codex-development-host-invocation-bridge-v1
+acceptance_revision: 8
+source_command: "#开发验收 PR-015-direct-codex-development-host-invocation-bridge-v1"
+created_at: "2026-10-07"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  version: "2.93.0"
+  revision: 041f390592a78c13f5eabdc542735dc72485e0ef
+  acceptance_contract: "1.5"
+
+transport:
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 15
+  branch: task/direct-codex-development-host-invocation-bridge-v1
+  evaluated_head_before_decision: 0500e457495a148573fcc2e184d6c7dca8058201
+  product_candidate: 7adfa7a74c437ccc29cdcd7078373c6e8d224904
+  post_candidate_product_drift: false
+  transport_drift: false
+
+decision:
+  result: Approved
+  acceptance_approved_after_transition: true
+  completion_verified: false
+  current_stage: acceptance
+  target_stage: accepted
+  material_decision_required: false
+  blocking_findings: []
+
+lineage:
+  requirement_revision: 2
+  plan_revision: 6
+  plan_blob_sha: 2bcea2a44f88e51c8b9378ba6297b61897e638da
+  fixing_completion_ref: docs/checkpoints/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-attempt-r2-completed-20261007.yaml
+  fixing_completion_blob_sha: 58353ed67f7a8b1299d08fb3d09884d19b1a846c
+  fixing_transition_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-fixing-r2-to-acceptance-transition-receipt.yaml
+  fixing_transition_blob_sha: 72851949e0c23cfb85cb6acb0f43bb97b091ea60
+  acceptance_review_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-acceptance-r8.md
+
+live_evidence:
+  host_id: host_7f0e709ded71ab24
+  agent_version: 0.24.1.dev530+g7adfa7a74
+  direct_codex_readiness:
+    available: true
+    verified: true
+  fixture:
+    repository: bewaterhere-coder/devforge-harness
+    pr_number: 230
+    seed_head: f19dbe1ef072596129884e05797936632f0fb850
+    persisted_head: 900e29a349a8e65d54ab1cad45507c88641d59d3
+    changed_file: fixtures/pr015-ac12/probe.txt
+    remote_readback: after-direct-codex-live
+  canonical_checkout:
+    branch: main
+    head: 018b78ca2098
+    ahead: 0
+    behind: 0
+    dirty: false
+  project_binding:
+    provider: direct
+    adapter: codex
+    unchanged: true
+
+pr013_admission_proof:
+  task_id: PR-013-host-runtime-repository-materialization-scoped-publication-bridge-v1
+  pr_number: 13
+  branch: task/host-runtime-repository-materialization-scoped-publication-bridge-v1
+  head_before: 4a3f8e3504b65d1dc222ecb9421ffa16cd96c76d
+  stage_before: implementation
+  current_slice_before: S03
+  current_slice_state_before: pending
+  project_binding_provider: direct
+  project_binding_adapter: codex
+  devforge_resolution: explicit_project_binding
+  probe:
+    provider: devforge_direct_codex
+    task_identity_exact: true
+    requirement_ref_exact: true
+    plan_ref_exact: true
+    slice_id: S03
+    expected_remote_sha_intentionally_wrong: true
+    terminal_error: direct_codex_remote_head_mismatch
+    implementation_mutation_permitted: false
+  readback:
+    head_after: 4a3f8e3504b65d1dc222ecb9421ffa16cd96c76d
+    stage_after: implementation
+    current_slice_after: S03
+    current_slice_state_after: pending
+    project_binding_unchanged: true
+    task_identity_unchanged: true
+    s03_executed: false
+
+acceptance_matrix:
+  AC1: PASS
+  AC2: PASS
+  AC3: PASS
+  AC4: PASS
+  AC5: PASS
+  AC6: PASS
+  AC7: PASS
+  AC8: PASS
+  AC9: PASS
+  AC10: PASS
+  AC11: PASS
+  AC12: PASS
+
+decision_receipt:
+  readback_required: true
+  readback_verified: true
+  decision_verification_commit: c2f2c406680a87a1ec80cd67d0e517555a6af707
+  decision_review_blob_sha: db65896807e2bf8f73201a632e8da79bf346c23d
+  decision_checkpoint_original_blob_sha: 080d70401a44ebc5f8b49b0882393fa532eb456a
+  task_stage_readback: acceptance
+  acceptance_disposition_readback: approved_pending_transition
+  acceptance_approved_readback: false
+  transition_authorized_after_readback: true
+
+safety:
+  merge_performed: false
+  task_marked_done: false
+  pr013_executed: false
+  production_release_performed: false
+  project_binding_mutated: false
+  host_policy_mutated: false
+  production_hub_mutated: false
+  permission_expansion_used: false
+
+next:
+  after_verified_decision: acceptance_to_accepted
+  canonical_next_command_after_transition: "#开发完成 PR-015-direct-codex-development-host-invocation-bridge-v1"

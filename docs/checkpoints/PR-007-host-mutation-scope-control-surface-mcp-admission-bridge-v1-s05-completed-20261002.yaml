@@ -1,0 +1,73 @@
+schema: devforge.continuation-checkpoint.v1
+project_id: sentinelx-cloud-core
+task_id: PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1
+stage: acceptance
+source_command: "#开发执行 PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1"
+active_slice_id: S05
+slice_state: completed
+completion_disposition: completed_with_external_blocker
+known_build:
+  combined_candidate_branch: candidate/pr007-s05-known-build-20261002
+  combined_candidate_commit: 21b2cb1543b239d64787dd5596b3919989169896
+  live_agent_version: 0.24.1.dev58+g21b2cb154
+  exact_candidate_active: true
+  mutation_scope_advertised: true
+  profiled_script_feature_advertised: true
+  scoped_mutation_readiness_available: true
+  scoped_mutation_readiness_verified: true
+live_generic_relay_evidence:
+  short_lived_authorization_supported: true
+  operator_http_relay_reached_hub: true
+  capabilities_through_generic_op: passed
+  mutation_scope_provision_http_status: 500
+  provision_result: failed_before_agent_handler
+  host_scope_store_contains_s05_lineage: false
+  host_scope_store_contains_s05_task_id: false
+  agent_stderr_contains_provision_handler_traceback: false
+hub_contract_truth:
+  contract_fetched_after_candidate_activation: true
+  agent_capabilities_advertise_mutation_scope: true
+  hub_generic_op_catalog_advertises_mutation_scope: false
+  hub_generic_op_catalog_advertises_script_run: true
+  classification: HubGenericOpProjectionRequired
+  interpretation: Hub generic /op catalog and dispatcher do not yet follow the connected Agent registry for mutation_scope; the live provision attempt returned HTTP 500 before durable Agent scope authority was created
+independent_pr008_boundary:
+  model_facing_script_run_profile_fields_projected: false
+  required_fields_missing:
+    - execution_profile
+    - mutation
+    - lineage
+    - repository
+  classification: HubToolProjectionRequired
+  conflated_with_pr007_generic_relay_blocker: false
+no_escalation:
+  direct_python_probe_after_candidate_activation:
+    command: python --version
+    ok: false
+    error: command_not_allowed
+  python_allowlist_changed: false
+  operator_unrestricted_used: false
+  wrapper_fallback_used: false
+  caller_minted_scope_used: false
+repository_local_verdict:
+  implementation_landed: true
+  slices_s01_through_s04_verified: true
+  s05_live_evidence_produced_precise_external_blocker: true
+  completion_rule_satisfied: true
+  end_to_end_hub_admission_claimed: false
+boundary:
+  disposition: completed
+  slice_completed: true
+  external_blocker: HubGenericOpProjectionRequired
+  secondary_external_blocker: HubToolProjectionRequired
+continuation:
+  mode: enter_acceptance
+  next_expected_actor: acceptance_reviewer
+  next_action_hint: "#开发验收 PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1"
+invariants:
+  canonical_main_not_modified: true
+  pr007_not_merged: true
+  pr008_not_merged: true
+  direct_python_allowlist_not_changed: true
+  pytest_allowlist_not_added: true
+  unrestricted_fallback_not_used: true

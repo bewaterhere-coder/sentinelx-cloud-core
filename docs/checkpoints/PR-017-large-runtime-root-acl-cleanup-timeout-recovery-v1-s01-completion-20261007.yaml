@@ -1,0 +1,93 @@
+schema_version: "1.0"
+kind: devforge_slice_completion_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1
+slice_id: S01
+source_command: "#开发执行 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1"
+result: Completed
+product_candidate: 1165dede238b62e357d352928d67dfca52a3d7af
+repository_reality:
+  canonical_main: 018b78ca20984176d53fbe90039dc795a7f2742f
+  transport_pr: 17
+  transport_branch: task/large-runtime-root-acl-cleanup-timeout-recovery-v1
+  pr015_reviewed_head: 4d6d8918c00d4fa5a6beaf8b770a56008051c911
+  pr015_current_head: 71ee5d83958f6622bdfdea9f088703d2007571d6
+  pr015_increment_reconciliation: non_overlapping
+  pr015_increment_product_overlap: false
+  pr016_reviewed_head: f22ee1881526002547b59df2226fa57aa8f10af6
+  pr016_current_head: f22ee1881526002547b59df2226fa57aa8f10af6
+  pr016_product_overlap_during_s01: false
+implementation:
+  commits:
+    - dd41ded99569078ddfcb0bf8ca6588b20f77d994
+    - 809fb6b62c0318013f85b53b5486c15a4a3dcd42
+    - 347d74013d96e75f49e7615986f0470856ae636c
+    - 1165dede238b62e357d352928d67dfca52a3d7af
+  delivered:
+    - Host-owned runtime_acl_timeout_seconds with default 20 and bounds 5..600
+    - runtime ACL timeout participates in placement policy digest
+    - runtime-root grant/remove receive configured timeout
+    - TimeoutExpired maps to deterministic sandbox-domain error
+    - cleanup timeout/non-zero/readback ambiguity maps to residual-authority failure
+    - exact runtime-root SID readback gates cleanup closure
+    - operator example config documents the bounded timeout
+    - focused policy/digest/runtime ACL tests are bound into Windows regression coverage
+verification:
+  exact_candidate: 1165dede238b62e357d352928d67dfca52a3d7af
+  github_checks:
+    test:
+      conclusion: success
+      url: https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37611894455/job/112760842893
+    windows_process_firewall:
+      conclusion: success
+      url: https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37611894384/job/112760842691
+      covers:
+        - tests/test_windows_mutation_sandbox.py
+        - tests/test_scoped_script_execution.py
+    windows_regression_coverage:
+      conclusion: success
+      url: https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37611894324/job/112760843102
+    windows_identity_compatibility:
+      conclusion: success
+      url: https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37611894350/job/112760842652
+    windows_capability_readiness:
+      conclusion: success
+      url: https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37611894311/job/112760842344
+    windows_effect_and_structured_mutation:
+      conclusion: success
+      url: https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37611894337/job/112760842692
+    devforge_runtime_verification:
+      conclusion: success
+      url: https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37611894484/job/112760843236
+    verification_contracts:
+      conclusion: success
+      url: https://github.com/bewaterhere-coder/sentinelx-cloud-core/actions/runs/37611894340/job/112760842594
+  required_s01_matrix:
+    default_timeout_backward_compatibility: pass
+    bounded_config_validation: pass
+    policy_digest_drift: pass
+    grant_timeout_propagation: pass
+    cleanup_timeout_propagation: pass
+    deterministic_timeout_error: pass
+    cleanup_residual_authority_classification: pass
+    exact_root_sid_readback_gate: pass
+    windows_sandbox_regression: pass
+host_probe:
+  positive_evidence: false
+  reason: current installed Agent still runs pre-PR017 hard-coded 20s runtime ACL cleanup
+  scope_id: mss_xGvJg_iVI54Eq2miMnkEs04h
+  scope_generation: 1
+  scope_state_readback: revoked
+  observed_error: old Agent icacls Unity runtime cleanup timed out after 20 seconds
+  residual_sid_from_error: S-1-15-2-810266419-63756872-3741529613-608510905-3475254470-3846664456-2704435368
+  classification: pre_activation_host_limitation_not_candidate_failure
+  cleanup_required_before_more_live_scoped_probes: true
+slice_boundary:
+  s02_executed: false
+  partial_grant_compensation_implemented: false
+  next_slice: S02
+completion_guard:
+  s01_completion_verified: true
+  task_completion_verified: false
+  acceptance_approved: false
+  canonical_next_action: "#开发执行 PR-017-large-runtime-root-acl-cleanup-timeout-recovery-v1"

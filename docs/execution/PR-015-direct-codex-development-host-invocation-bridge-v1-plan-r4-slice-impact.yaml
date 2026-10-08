@@ -1,0 +1,73 @@
+schema_version: "1.0"
+kind: devforge_execution_slice_impact
+project_id: sentinelx-cloud-core
+task_id: PR-015-direct-codex-development-host-invocation-bridge-v1
+source_command: "#开发计划修复 PR-015-direct-codex-development-host-invocation-bridge-v1"
+requirement_revision: 2
+plan_revision: 4
+plan:
+  ref: docs/plans/PR-015-direct-codex-development-host-invocation-bridge-v1-plan.md
+  blob_sha: cc351da6bd5746a171bdd14bdb34fa07e41c6336
+prior_review:
+  ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r3.md
+  blob_sha: 740ee841cdfa078f08e82ee6220134bba28788f4
+  decision: Rejected
+  findings_addressed:
+    - CandidateTreeTrustBoundaryIncomplete
+    - DeterministicCommitRecoveryIdentityIncomplete
+
+retained_completed_evidence:
+  - slice_id: S01
+    disposition: retained_historical_prerequisite
+    replay_required: false
+  - slice_id: S02
+    disposition: retained_historical_prerequisite
+    replay_required: false
+  - slice_id: S03
+    disposition: retained_historical_prerequisite_with_material_finding
+    replay_required: false
+
+proposed_plan_r4_delta:
+  - slice_id: S04
+    title: Provider-Owned Deterministic Persistence & Canonical Publish Closure
+    state: proposed_pending_plan_review
+    depends_on_historical_evidence: [S01, S02, S03]
+    objective: >-
+      Build the candidate tree from a provider-owned temporary index seeded
+      from the exact admitted parent, create one bit-stable provenance-bound
+      candidate commit with durable same-attempt recovery state, publish only
+      by ordinary fast-forward to the exact canonical PR branch, and prove
+      remote readback consistency.
+    required_boundaries:
+      - codex_checkout_index_is_untrusted
+      - provider_temporary_index_seeded_from_expected_parent
+      - no_filter_blob_tree_construction
+      - hooks_signing_fsmonitor_editor_pager_prompt_disabled
+      - all_commit_sha_inputs_frozen_before_candidate_creation
+      - durable_recovery_journal_outside_candidate_set
+      - same_attempt_bit_identical_candidate_reconstruction
+      - publish_intent_persisted_before_first_push
+      - uncertain_push_readback_only_no_automatic_retry
+      - no_force_no_replacement_transport_no_canonical_checkout_mutation
+    forbidden:
+      - generic_git_surface
+      - generic_shell_or_exec
+      - caller_git_argv_pathspec_commit_metadata
+      - trusting_codex_owned_index_as_candidate_authority
+      - repository_controlled_filter_or_hook_execution
+      - replacement_branch_or_pr
+      - force_or_force_with_lease
+      - canonical_checkout_mutation
+      - permission_or_credential_expansion
+      - provider_rebinding
+      - hub_mutation
+
+formal_slice_set:
+  current_executable_slice_set: null
+  compile_only_after_plan_review_approval: true
+  review_must_bind_exact_plan_blob: cc351da6bd5746a171bdd14bdb34fa07e41c6336
+
+workflow:
+  current_stage_target: plan_review
+  implementation_authorized: false
+  next_command: "#开发评审 PR-015-direct-codex-development-host-invocation-bridge-v1"

@@ -1,0 +1,196 @@
+schema_version: "1.0"
+kind: devforge_execution_slice_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-015-direct-codex-development-host-invocation-bridge-v1
+slice_id: S03
+source_command: "#开发执行 PR-015-direct-codex-development-host-invocation-bridge-v1"
+
+runtime:
+  devforge_version: "2.79.0"
+  devforge_revision: 9382f4b9f79c890d4d2afaacdda399c6011bdbd5
+  runtime_revision_note: >-
+    Standard main revision locked at execution time via authenticated GitHub
+    read (bewaterhere-coder/DevForge@main). Requirement R1 and Approved Plan R2
+    bindings are unchanged; revision drift across this Task's slices is
+    pre-existing (bootstrap override admitted at 2.69.0, S01 at 2.70.0, S02 at
+    2.75.0).
+
+state:
+  task_stage: implementation
+  slice_state: completed
+  execution_disposition: Completed
+  implementation_landed: true
+  completion_receipt_created: true
+  one_execute_one_slice_preserved: true
+
+lineage:
+  plan_revision: 2
+  plan_blob_sha: b1414f58e31e69fd5718479d04eb6b7e9e8475bd
+  slice_set_blob_sha_before: f8fd7ab762f4e0950ffffc355e6a924fd0fc2503
+  authorization_blob_sha: e702a6371980735a47829e001c5ffd24613d391f
+  bootstrap_override_blob_sha: e3f7ac1f77a499592fb01e9eb75d432cc0a94d3d
+  requirement_revision: 1
+
+execution:
+  effective_provider: direct
+  effective_adapter: codebuddy
+  bootstrap_override_active: true
+  provider_fallback_used: false
+  persistent_project_binding: direct/codex
+  project_binding_mutated: false
+  product_candidate_sha: a84db15a8770599718a665fd9c201c7b82b3dd91
+
+admission:
+  canonical_main_before: 018b78ca20984176d53fbe90039dc795a7f2742f
+  pr_head_before_mutation: 7ae171039e08f6f5ac86cc6a455231de07250122
+  plan_blob_sha_matched: true
+  slice_set_blob_sha_matched: true
+  authorization_blob_sha_matched: true
+  bootstrap_override_blob_sha_matched: true
+  canonical_checkout_clean_before_mutation: true
+  canonical_checkout_used_as_implementation_cwd: false
+  execution_workspace: D:\coco\workspaces\bewaterhere-coder\sentinelx-cloud-core\pr015-s03-a1
+
+implementation:
+  summary: >-
+    S03 hardens the structured direct/Codex receipt contract and proves the
+    delivered bridge as product-under-test. normalize_result now carries the
+    canonical repository identity; validate_receipt requires the exact
+    Task/Run/Attempt/Slice echo, the exact canonical repository and PR echo,
+    actual-branch == canonical-branch (fail-closed even when the receipt
+    claims consistency), and the existing workspace/transport/receipt
+    invariants. The exact-candidate physical proof then exposed and fixed a
+    real S02-correction regression in user_git (missing userenv DLL binding).
+  changes:
+    - src/sentinelx_core/direct_codex_result.py: repository identity echo in the
+      payload; validate_receipt extended to exact run_id/attempt_id echo,
+      canonical_pr and canonical_repository echo, and an explicit
+      receipt_branch_mismatch fail-closed check for forged-consistent receipts
+    - src/sentinelx_core/handlers/direct_codex.py: call() passes the full
+      admitted identity (run_id, attempt_id, canonical_pr, canonical_repository)
+      into validate_receipt
+    - src/sentinelx_core/user_git.py: restore the userenv DLL binding in
+      _run_windows_user_git that the S02 correction refactor accidentally
+      dropped; every real user-scoped Git call failed with
+      "name 'userenv' is not defined" wrapped as
+      GitExecutionContextUnavailable
+    - tests/test_direct_codex_execution.py: exact echo positives/negatives,
+      forged-consistent branch-drift negative, remote-readback drift negative,
+      15-case malformed-receipt parametrization, and the new
+      _receipt_kwargs identity helper
+    - tests/test_user_scoped_git.py: regression test proving the Windows runner
+      fails only at its true privilege boundary (WTSQueryUserToken WinError
+      1314) and never on a Python NameError artifact
+
+verification:
+  required:
+    - successful candidate receipt reports provider direct and adapter codex
+    - exact Task/Run/Attempt/Slice identities match
+    - canonical and actual PR/branch match with no migration
+    - remote readback is consistent with the claimed resulting head
+    - malformed or missing receipt fails
+    - transport drift fails
+    - local-only unpersisted implementation cannot be reported as successful canonical execution
+    - exact-candidate direct-Codex bridge can perform one bounded fixture execution under the existing direct/codex project identity
+    - persistent project binding remains unchanged
+  evidence:
+    focused_suite: tests/test_direct_codex_execution.py + tests/test_user_process.py
+    focused_result: 33 passed (test_direct_codex_execution 29, test_user_process 4)
+    regression_subset: tests/test_policy.py + tests/test_user_scoped_git.py +
+      tests/test_direct_codex_provider.py: 82 passed; the single failure is the
+      documented symlink-privilege test (WinError 1314/5), a pre-existing
+      host-privilege failure re-confirmed against the unmodified baseline, not
+      an S03 regression
+    physical_proof:
+      driver: D:\coco\workspaces\bewaterhere-coder\sentinelx-cloud-core\pr015-s03-proof\driver.py
+      evidence_files:
+        - proof-result.json
+        - proof-receipt.json
+        - proof-run.log / proof-run5.log / proof-run6.log / proof-final.log
+      product_under_test: >-
+        The delivered devforge_direct_codex bridge in the S03 workspace with
+        the REAL installed Codex Development Host (@openai/codex 0.154.0, node
+        v24.19.0, ChatGPT session), the real Windows MIC containment proof and
+        the real active-user process substrate.
+      fixture: >-
+        Local bare origin seeded from the exact task-branch head 7ae1710 so the
+        canonical GitHub transport was never touched; exact canonical identity
+        used: repository git://github.com/bewaterhere-coder/sentinelx-cloud-core,
+        PR 15, branch task/direct-codex-development-host-invocation-bridge-v1.
+      runs: 3 complete end-to-end runs (runs 4/6/final) plus one run that
+        failed fast on an unsupported host default model (see host findings)
+      physically_proven:
+        - MIC containment: low-integrity child wrote inside the workspace and
+          was refused (EPERM) on the protected workspace-root sibling by
+          windows_mandatory_integrity_control; no contamination
+        - independent checkout at the exact CAS head; canonical checkout
+          untouched (before/after head comparison)
+        - real @openai/codex chain discovery/verification and bounded
+          active-user execution with job containment and process-tree closure
+        - exact identity echo (task/run/attempt/slice, PR 15, canonical
+          repository, canonical branch == actual branch)
+        - remote readback consistent with the claimed resulting head
+        - local-only unpersisted implementation reported as
+          implementation_not_persisted, never as success (3x, real host)
+        - persistent project binding direct/codex unchanged
+      successful_receipt_semantics: >-
+        The valid persisted receipt (provider direct, adapter codex, exact
+        identity, published, remote-readback-consistent) is proven by
+        test_execute_task_completes_exact_transport_and_receipt with the
+        committed fixture host and passes with the S03 hardening in place.
+      material_finding_real_host_persistence_gap:
+        finding: >-
+          The real Codex host (0.154.0, its own workspace-write sandbox) does
+          real slice work inside the isolated checkout (file edits, pytest
+          runs) but never commits: local_head stays at the admitted CAS head,
+          so the provider-owned publish does not fire and the receipt is
+          honestly incomplete (implementation_not_persisted). The delivered
+          bridge commits nothing on the host's behalf, and provider-owned
+          persistence (commit-on-publish of the direct host's work) is NOT in
+          the S03 authorized-change list, so it was not implemented here.
+        impact: >-
+          With the current plan, a real Codex host cannot produce a persisted
+          successful receipt on its own. Acceptance's deployed proof
+          (PR-013 provider-admission recovery) needs either (a) the direct
+          host to commit within its sandbox, or (b) a plan revision adding
+          provider-owned commit-on-publish of the direct host's verified work.
+        decision_owner: human (plan/acceptance boundary); material decision
+          returned to the operator, not auto-resolved
+      host_findings:
+        - >-
+          user-scoped Git (WTSQueryUserToken) is unavailable from a normal
+          user shell on this host (WinError 1314, pre-existing constraint);
+          the proof driver records the substitution and uses the SAME fixed
+          Git argv through a direct subprocess (no shell) for transport Git
+          only; process execution stayed on the real user-scoped substrate
+        - >-
+          the host's ~/.codex default model gpt-6.1-sol is rejected by the
+          ChatGPT account (HTTP 400); the bridge failed closed and reported
+          the execution as failed. For the proof runs the default model was
+          temporarily switched to gpt-6-astra and the original config restored
+          afterwards from backup
+        - >-
+          a leftover codex .pytest_cache inside the derived workspace broke the
+          next MIC restamp (SetNamedSecurityInfoW WinError 5, the documented
+          host limitation); later proof runs used a fresh derived workspace
+
+claims:
+  caller_never_supplies_workspace_or_executable: true
+  canonical_transport_preserved: true
+  canonical_checkout_unmutated: true
+  no_provider_fallback: true
+  no_permission_or_write_scope_expansion: true
+  no_credential_or_environment_disclosure: true
+  process_tree_contained: true
+  local_only_run_is_not_success: true
+  acceptance_or_completion_claim: false
+
+continuation:
+  next_expected_actor: operator (acceptance boundary)
+  canonical_next_command: "#开发验收 PR-015-direct-codex-development-host-invocation-bridge-v1"
+  note: >-
+    All bound plan slices are complete, so the task-scoped bootstrap override
+    expires per its own expiry rule. Before invoking acceptance, the operator
+    should decide the real-host persistence question recorded in
+    material_finding_real_host_persistence_gap; Acceptance owns the deployed
+    live-Agent proof regardless.

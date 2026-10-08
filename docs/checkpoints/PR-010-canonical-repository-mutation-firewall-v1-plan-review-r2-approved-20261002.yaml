@@ -1,0 +1,42 @@
+schema: devforge.continuation-checkpoint.v1
+project_id: sentinelx-cloud-core
+task_id: PR-010-canonical-repository-mutation-firewall-v1
+stage: implementation
+source_command: "#开发评审 PR-010-canonical-repository-mutation-firewall-v1"
+plan_revision: 2
+plan_review_result: Approved
+requirement_ready: true
+plan_approved: true
+implementation_authorized: true
+acceptance_approved: false
+completion_verified: false
+reviewed_task_head: bb4eadab487bdd56ff16f317a8296177787c2b82
+planning_baseline_main: f7e878f3497582547e5d52cd33b060cae18d2e84
+canonical_main_at_review: f7e878f3497582547e5d52cd33b060cae18d2e84
+observed_dependencies:
+  pr_007_head: d7dd47d1ad253e62c8c8ad5b194c9f94cfc536d3
+  pr_008_head: f7594c468d764ad85c0dc508ad47f009c89793c1
+  authority: observation_only
+artifacts:
+  requirement: docs/requirements/PR-010-canonical-repository-mutation-firewall-v1.md
+  plan: docs/plans/PR-010-canonical-repository-mutation-firewall-v1-plan.md
+  prior_plan_review: docs/reviews/PR-010-canonical-repository-mutation-firewall-v1-plan-review-r1.md
+  plan_review: docs/reviews/PR-010-canonical-repository-mutation-firewall-v1-plan-review-r2.md
+  plan_remediation: docs/checkpoints/PR-010-canonical-repository-mutation-firewall-v1-plan-remediation-r2-20261002.yaml
+  execution_slice_set: docs/execution/PR-010-canonical-repository-mutation-firewall-v1-slices.yaml
+entry_gate:
+  every_slice:
+    - compute exact intended changed-file set before product mutation
+    - re-read canonical main
+    - if overlap with PR-007/PR-008 semantics exists, read exact latest dependency heads, changed files, relevant contracts and stages
+    - persist no-loss composition decision before overlapping product mutation
+  stale_dependency_sha_authority: forbidden
+next_slice: S01
+next_expected_actor: implementer
+next_action_hint: "#开发执行 PR-010-canonical-repository-mutation-firewall-v1"
+notes:
+  - one manual development execution invocation may complete at most one slice
+  - S01 does not advertise the firewall capability merely because core classifier code exists
+  - S02 must reconcile PR-007 before changing handlers/__init__.py if overlap remains
+  - S03 must reconcile PR-007/PR-008 before scoped/capability overlap mutation
+  - approval does not authorize Acceptance, merge, release, production Host activation, unrestricted process fallback, canonical sync bypass, or local canonical-checkout mutation

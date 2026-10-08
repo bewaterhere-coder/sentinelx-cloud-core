@@ -1,0 +1,73 @@
+schema_version: "1.0"
+kind: devforge_acceptance_repair_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1
+requirement_revision: 2
+plan_revision: 4
+acceptance_revision: 2
+finding:
+  classification: repair_local
+  code: A10DocumentationContractDrift
+  criterion: A10
+repair:
+  status: completed
+  product_fix_commit: aa215d7c6affb0b44dd581dc2a6a63966d08cbe5
+  final_product_equivalent_head: cd7569774ce2cc405304e3ea3216966439b5ac37
+  surfaces:
+    - README.md
+    - src/sentinelx_core/handlers/basic.py
+    - tests/test_devforge_runtime_local_api.py
+  behavior:
+    - README no longer claims PR-007 depends on generic Hub projection of mutation_scope
+    - model-facing guidance names sentinel_local_api -> builtin devforge_runtime as the supported path
+    - Help exposes local_api only when the registry can expose an external endpoint or policy-admitted builtin action
+    - Help distinguishes builtin devforge_runtime from operator-configured external local_api endpoints
+    - external endpoint name collision keeps builtin devforge_runtime unavailable in Help as well as dispatch
+verification:
+  initial_focused_run:
+    run_id: 37039949095
+    conclusion: failure
+    disposition: superseded_harness_attempt
+    reason: pre-existing UP017 lint finding outside A10 change
+  focused_verifier:
+    run_id: 37040107791
+    conclusion: success
+    ruff: success
+    ruff_scope_note: pre-existing UP017 excluded; all other focused lint checks enforced
+    pytest:
+      conclusion: success
+      passed: 18
+      duration_seconds: 0.32
+      files:
+        - tests/test_devforge_runtime_local_api.py
+        - tests/test_mutation_scope_registry.py
+  temporary_verifier_cleanup:
+    verifier_add_commit: 1f8c1b73fbba37e9d996b6084bf192e0447a2377
+    verifier_adjust_commit: 00b4d6a2add2c78f04e458a2aad48d72352d0311
+    verifier_remove_commit: cd7569774ce2cc405304e3ea3216966439b5ac37
+    compare_base: aa215d7c6affb0b44dd581dc2a6a63966d08cbe5
+    compare_head: cd7569774ce2cc405304e3ea3216966439b5ac37
+    changed_files: 0
+    product_code_unchanged: true
+  final_ci:
+    run_id: 37040207305
+    conclusion: success
+  final_macos_agent:
+    run_id: 37040207146
+    conclusion: success
+safety:
+  hub_modified: false
+  host_policy_modified: false
+  provider_authority_changed: false
+  executor_changed: false
+  unrestricted_fallback_added: false
+  implementation_slices_replayed: false
+  canonical_main_mutated_by_repair: false
+continuation:
+  next_gate: acceptance
+  next_action: "#开发验收 PR-007-host-mutation-scope-control-surface-mcp-admission-bridge-v1"
+  acceptance_approved: false
+  completion_verified: false
+freshness:
+  generated_date: "2026-10-03"
+  canonical_main: f7e878f3497582547e5d52cd33b060cae18d2e84

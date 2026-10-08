@@ -1,0 +1,111 @@
+schema_version: "1.1"
+kind: devforge_slice_continuation_checkpoint
+project_id: sentinelx-cloud-core
+task_id: PR-011-scoped-verification-toolchain-dependency-capsule-v1
+slice_id: S04
+source_command: "#开发执行 PR-011-scoped-verification-toolchain-dependency-capsule-v1"
+runtime:
+  workflow: project_development
+  devforge_runtime_version: "2.43.0"
+state:
+  stage: implementation
+  current_slice: S04
+  current_slice_state: pending
+  disposition: blocked
+  completion_claimed: false
+repository_reality:
+  reconciled_main: e7064c9bf4fcd15bdb6f5a2678414210c01d1c00
+  task_head_before_checkpoint: 3b2ff22e5c0fd9c483af6e43659e557e2a45e080
+  task_head_ahead_of_main: 142
+  task_head_behind_main: 0
+  canonical_checkout_main_clean: true
+execution_workspace:
+  path: "D:\\coco\\workspaces\\bewaterhere-coder\\sentinelx-cloud-core\\pr011-s04-20261005"
+  isolated_from_canonical_checkout: true
+  candidate_persisted_to_transport: false
+  reason_not_published: required physical Host verification has not passed after the latest candidate correction
+implementation_candidate:
+  summary:
+    - projects an independently gated host_runtime.scoped_verification_node_npm_v1 capability
+    - runs readiness through the existing scoped AppContainer/Job executor
+    - keeps base host_mutation_sandbox_v1 readiness independent when no verification profile is configured
+    - retains request-time source/capsule/toolchain admission and adds a cached verified-toolchain negative drift guard
+    - documents bounded operator diagnostics without provider path or credential projection
+    - keeps GitHub Actions regression evidence distinct from Host-workspace acceptance proof
+  local_files:
+    - src/sentinelx_core/verification_readiness.py
+    - src/sentinelx_core/handlers/basic.py
+    - src/sentinelx_core/handlers/scoped_script.py
+    - tests/test_verification_readiness.py
+    - config.example.windows.yaml
+    - docs/scoped-verification-node-npm-v1.md
+    - .github/workflows/pr011-s04-verification.yml
+host_physical_verification:
+  required_workspace_root: "D:\\coco\\workspaces"
+  latest_probe:
+    available: false
+    reason: one or more Node/npm verification self-checks failed
+    timing_seconds:
+      profile: 1.144
+      toolchain_manifest: 18.732
+      probe: 101.328
+    checks:
+      windows: true
+      base_scoped_mutation: true
+      profile_configured: true
+      profile_stores: true
+      toolchain_integrity: true
+      appcontainer_node: false
+      appcontainer_npm: false
+      dns_denied: false
+      http_denied: false
+      protected_root_denied: false
+      terminal_non_active: true
+      transient_toolchain_authority_absent: true
+    audit:
+      process_spawned_as_appcontainer: true
+      breakaway_allowed: false
+      terminal_scope_state: terminal
+      process_tree_quiescent: true
+      sandbox_write_authority_present_after_terminalization: false
+      returncode: 3221225794
+      returncode_hex: "0xC0000142"
+root_cause:
+  classification: windows_appcontainer_provider_node_loader_initialization_failure
+  strongest_current_hypothesis: synthetic physical fixture copied only node.exe plus npm instead of the complete provider-owned readable toolchain tree, so a local Node distribution with sibling runtime files can fail loader initialization even though the admitted manifest itself is valid
+  remediation_applied_but_not_yet_physically_reverified:
+    - local test fixture now copies the complete resolved Node toolchain root into the provider-owned fixture
+  disproven:
+    - base Windows AppContainer runtime unavailable
+    - verification profile absent
+    - provider verification stores absent
+    - toolchain manifest integrity failure
+    - terminalization or transient toolchain authority cleanup failure
+tool_projection_blocker:
+  generic_script_run:
+    status: blocked
+    reason: configured mutation_execution requires explicit execution_profile but the current model-facing script_run schema does not expose that field
+  devforge_runtime:
+    status: verified_but_not_a_host_test_substitute
+    run_id: run-pr011-s04-20261005-01
+    attempts:
+      - attempt-01
+      - attempt-02
+    evidence:
+      - explicit scoped_mutation execution profile is accepted
+      - provider exact workspace is isolated under D:\\SentinelX\\mutation-workspaces
+      - the AppContainer cannot read D:\\coco\\workspaces source files, so it cannot impersonate the required Host test runner
+safety:
+  canonical_main_mutated: false
+  slice_state_advanced: false
+  completion_receipt_issued: false
+  s05_executed: false
+  network_fallback_used: false
+  allowlist_expansion_used: false
+  operator_unrestricted_used: false
+  duplicate_executor_introduced: false
+continuation:
+  mode: reenter_current_command
+  next_expected_actor: implementer
+  required_next_proof: rerun the S04 physical Windows readiness test under D:\\coco\\workspaces after the complete-toolchain fixture correction; only a passing readback may authorize publishing the candidate and closing S04
+  canonical_next_action: "#开发执行 PR-011-scoped-verification-toolchain-dependency-capsule-v1"

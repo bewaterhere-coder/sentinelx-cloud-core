@@ -1,0 +1,100 @@
+schema_version: "1.0"
+kind: devforge_bootstrap_execution_override_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-015-direct-codex-development-host-invocation-bridge-v1
+source_command: "#开发引导执行 PR-015-direct-codex-development-host-invocation-bridge-v1 direct:codebuddy"
+created_at: "2026-10-07"
+
+runtime:
+  repository: bewaterhere-coder/DevForge
+  version: "2.82.0"
+  revision: e16948004601829813f19dbef4cf3cc018606ff9
+  bootstrap_override_contract: "1.0"
+
+transport:
+  type: github-pr
+  repository: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 15
+  branch: task/direct-codex-development-host-invocation-bridge-v1
+  canonical_main: 018b78ca20984176d53fbe90039dc795a7f2742f
+  transport_preserved: true
+  replacement_branch_created: false
+  replacement_pr_created: false
+
+binding:
+  requirement_revision: 2
+  requirement_ref: docs/requirements/PR-015-direct-codex-development-host-invocation-bridge-v1.md
+  task_blob_after_activation: a8552937c47020cc70af9f8924ea80d12a5c12e1
+  plan_revision: 6
+  plan_ref: docs/plans/PR-015-direct-codex-development-host-invocation-bridge-v1-plan.md
+  plan_blob_sha: 2bcea2a44f88e51c8b9378ba6297b61897e638da
+  plan_review_ref: docs/reviews/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-review-r6.md
+  plan_review_blob_sha: 5e6ff106b7d5befcae4fccc77d83ddae3c674764
+  slice_set_ref: docs/execution/PR-015-direct-codex-development-host-invocation-bridge-v1-plan-r6-slices.yaml
+  slice_set_blob_sha: 192e5446036423297cbcece01a27492ae9aae390
+  selected_slice: S04
+
+self_host_relation:
+  blocked_provider:
+    provider: direct
+    adapter: codex
+  missing_capability: bounded_direct_codex_persistence_closure
+  task_delivers_missing_capability: true
+  verified: true
+
+target:
+  provider: direct
+  adapter: codebuddy
+  registered: true
+  registration_ref: bewaterhere-coder/DevForge@e16948004601829813f19dbef4cf3cc018606ff9:adapters/development/codebuddy.md
+  host_available: true
+  host_id: host_7f0e709ded71ab24
+  evidence:
+    codebuddy_executable_present: true
+    codebuddy_cli_present: true
+    devforge_rule_present: true
+    devforge_rule_enabled: true
+    devforge_rule_always_apply: true
+    agent_rpc_claimed: false
+    handoff_mode: external_direct_development_host_thin_handoff
+
+override:
+  ref: docs/overrides/PR-015-direct-codex-development-host-invocation-bridge-v1-bootstrap-execution-override.yaml
+  blob_sha: 91b527f4c31d422e25ea7e00cc3d317e7a184fd4
+  state: active
+  override_revision: 2
+  readback_verified: true
+  max_slice_completions_per_execute: 1
+  fallback: forbidden
+
+project_binding:
+  provider: direct
+  adapter: codex
+  mutation: false
+
+authority:
+  requirement_change: forbidden
+  plan_change: forbidden
+  gate_change: forbidden
+  acceptance_authority: forbidden
+  permission_expansion: forbidden
+  write_scope_expansion: forbidden
+  transport_migration: forbidden
+  devforge_runtime_mutation: forbidden
+  host_policy_mutation: forbidden
+  production_hub_mutation: forbidden
+  generic_shell_or_exec: forbidden
+  generic_git_surface: forbidden
+  force_push: forbidden
+  canonical_checkout_mutation: forbidden
+
+postconditions:
+  task_stage: implementation
+  plan_approved: true
+  implementation_authorized: true
+  current_slice: S04
+  current_slice_state: pending
+  active_override_required_and_present: true
+  ordinary_project_provider_rebinding: false
+  implementation_executed_by_this_command: false
+  canonical_next_action: "#开发执行 PR-015-direct-codex-development-host-invocation-bridge-v1"
