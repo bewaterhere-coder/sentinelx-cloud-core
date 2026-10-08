@@ -1,0 +1,66 @@
+schema_version: "1.1"
+kind: devforge_artifact_state_transition_receipt
+project_id: sentinelx-cloud-core
+task_id: PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1
+source_command: "#开发验收 PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1"
+transition:
+  from_stage: acceptance
+  to_stage: accepted
+  transition_rule: Approved_acceptance_with_verified_receipt
+  decision: applied
+  next_expected_actor: integration
+
+runtime:
+  devforge_main: ebc25425160790950bd4d4500186652d3bf52416
+  acceptance_contract_sha: 1c5e96a20d665e68b1f68e18b7d294945e501ec2
+
+acceptance:
+  review_ref: docs/reviews/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-acceptance-r1.md
+  review_blob_sha: 6bdf714ca1d09cf62df2b6088406f5799de34ae3
+  review_result: Approved
+  approval_receipt_ref: docs/reviews/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-acceptance-r1-receipt.yaml
+  approval_receipt_blob_sha: bec69e2bd61ff3860bffa9f4fdc8b72d0456c99a
+  receipt_readback_verified: true
+  requirement_revision: 1
+  plan_revision: 1
+  completed_slices: [S01, S02, S03, S04]
+  acceptance_criteria_total: 16
+  acceptance_criteria_passed: 16
+  acceptance_criteria_failed: 0
+
+task_transition:
+  task_ref: docs/requirements/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1.md
+  task_blob_before: 3a1ff833c4cf4c6c0b77c1e34bd19dc0ab6d615a
+  task_blob_after: 48a21b6d544be33c35bece94e142cc8718deecb4
+  task_readback_verified: true
+  stage_after: accepted
+  formal_acceptance_performed: true
+  acceptance_approved: true
+  completion_verified: false
+
+program_gate:
+  original_owner_prs: [13, 14, 19, 20]
+  owner_receipts_verified: [false, false, false, false]
+  mrs01_program_exit: HOLD
+  mrs01_accepted_and_readback: false
+  mrs02_admitted: false
+  devforge_binding_unchanged: direct/codex
+
+transport:
+  repo: bewaterhere-coder/sentinelx-cloud-core
+  pr_number: 27
+  branch: task/minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1
+  base_branch: main
+  main_at_acceptance: 8d2bafba87b529fb458faaa7fbdce39fe225361f
+  head_before_transition_receipt: 075b8936f70487a808df398a598f1af62051e6d7
+  transport_migration: none
+
+boundaries:
+  merge_performed: false
+  original_owner_pr_mutation: false
+  source_test_ci_or_host_mutation: false
+  task_done_claimed: false
+  release_performed: false
+  next_command: "#开发完成 PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1"
+
+verified: true
