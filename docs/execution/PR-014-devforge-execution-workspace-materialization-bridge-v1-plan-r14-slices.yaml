@@ -21,7 +21,7 @@ slices:
   - slice_id: S07A
     objective: Read-only current-main source/PR transport, Direct Codex reachability, Host security and independent root consumer admission/decision
     depends_on: []
-    state: pending
+    state: completed
     scope:
       allowed_effects:
         - github_current_main_and_original_pr14_exact_read
@@ -58,13 +58,16 @@ slices:
         - bounded_run_finalization_checkpoint_and_receipt_readback
     checkpoint:
       required: true
-    run_refs: []
-    completion_receipt_ref: null
+    run_refs: [RUN-PR014-S07A-001]
+    completion_receipt_ref: docs/reviews/PR-014-devforge-execution-workspace-materialization-bridge-v1-s07a-completion-receipt.yaml
 execution_state:
-  current_slice: S07A
-  current_slice_state: pending
-  completed_current_plan_slices: []
-  pending_current_plan_slices: [S07A]
+  current_slice: null
+  current_slice_state: completed_readonly_evidence
+  completed_current_plan_slices: [S07A]
+  pending_current_plan_slices: []
+  owner_security_gate: DecisionRequired/Blocked
+  product_implementation_admitted: false
+  mrs01: HOLD
   historical_slices: [S01, S02, S03A, S04A, S05A, S06A]
   historical_replay: forbidden
   no_next_product_slice: true
