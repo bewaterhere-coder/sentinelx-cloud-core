@@ -7,9 +7,25 @@ task_id: PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure
 requirement_revision: 1
 requirement_blob_sha: 237db269f9cd965a7a2c25d938e679865e3cc102
 plan_revision: 1
-plan_state: ready_for_review
-plan_approved: false
+plan_state: accepted_finalization_ready
+plan_approved: true
 implementation_authorized: false
+finalization:
+  status: accepted_finalization_ready
+  approved_plan_revision: 1
+  approved_plan_semantic_blob_sha: 3d8b5b56e4235cdb22880ec01c45885e7fced8f6
+  execution_complete: true
+  completed_slices: [S01, S02, S03, S04]
+  acceptance_approved: true
+  completion_verified: false
+  original_pr_number: 27
+  integration_pending: true
+  mrs01_program_exit: HOLD
+  mrs02_admitted: false
+  devforge_binding_unchanged: direct/codex
+  premerge_receipt: docs/checkpoints/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-premerge-finalization-r1-receipt.yaml
+  integration_receipt: docs/reviews/PR-027-minimal-runtime-active-lineage-reconciliation-owner-gate-closure-v1-integration-receipt-r1.yaml
+  main_at_finalization: 8d2bafba87b529fb458faaa7fbdce39fe225361f
 project_id: sentinelx-cloud-core
 repository: bewaterhere-coder/sentinelx-cloud-core
 transport:
